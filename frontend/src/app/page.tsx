@@ -27,6 +27,14 @@ export default function Home() {
             </div>
           </Link>
 
+          <Link href="/shifts">
+            <div className="p-8 bg-white border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:shadow-lg transition-all cursor-pointer">
+              <h2 className="text-2xl font-semibold mb-3 text-gray-900">📅 Shifts</h2>
+              <p className="text-gray-600">Create and manage work shifts with filtering and assignments</p>
+              <div className="mt-4 text-blue-600 font-medium">Manage →</div>
+            </div>
+          </Link>
+
           <Link href="/roster">
             <div className="p-8 bg-white border-2 border-blue-500 rounded-xl hover:shadow-xl transition-all cursor-pointer bg-gradient-to-br from-blue-50 to-white">
               <h2 className="text-2xl font-semibold mb-3 text-gray-900">🤖 Auto Roster</h2>
@@ -34,12 +42,6 @@ export default function Home() {
               <div className="mt-4 text-blue-600 font-bold">Generate Now →</div>
             </div>
           </Link>
-
-          <div className="p-8 bg-white border-2 border-gray-200 rounded-xl opacity-75">
-            <h2 className="text-2xl font-semibold mb-3 text-gray-900">📊 Reports</h2>
-            <p className="text-gray-600">Budget summaries, payroll, and compliance reports</p>
-            <div className="mt-4 text-gray-400 font-medium">Coming Soon</div>
-          </div>
         </div>
 
         <div className="mt-12 text-center">

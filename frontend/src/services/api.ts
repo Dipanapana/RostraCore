@@ -43,4 +43,12 @@ export const rosterApi = {
   getEmployeeHours: (params?: any) => api.get('/api/v1/roster/employee-hours', { params }),
 }
 
+export const availabilityApi = {
+  getAll: (params?: any) => api.get('/api/v1/availability', { params }),
+  getById: (id: number) => api.get(`/api/v1/availability/${id}`),
+  create: (data: any) => api.post('/api/v1/availability', data),
+  update: (id: number, data: any) => api.put(`/api/v1/availability/${id}`, data),
+  delete: (id: number) => api.delete(`/api/v1/availability/${id}`),
+}
+
 export default api

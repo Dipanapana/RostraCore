@@ -3,11 +3,14 @@
 import { useState, useEffect } from 'react'
 import { sitesApi } from '@/services/api'
 import { Site } from '@/types'
+import SiteForm from '@/components/SiteForm'
 
 export default function SitesPage() {
   const [sites, setSites] = useState<Site[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showForm, setShowForm] = useState(false)
+  const [editingSite, setEditingSite] = useState<Site | null>(null)
 
   useEffect(() => {
     fetchSites()
@@ -37,6 +40,20 @@ export default function SitesPage() {
     }
   }
 
+  const handleEdit = (site: Site) => {
+    setEditingSite(site)
+    setShowForm(true)
+  }
+
+  const handleCloseForm = () => {
+    setShowForm(false)
+    setEditingSite(null)
+  }
+
+  const handleFormSuccess = () => {
+    fetchSites()
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -51,6 +68,7 @@ export default function SitesPage() {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Sites</h1>
           <button
+            onClick={() => setShowForm(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
           >
             + Add Site
@@ -119,6 +137,12 @@ export default function SitesPage() {
 
                 <div className="flex justify-end space-x-2">
                   <button
+                    onClick={() => handleEdit(site)}
+                    className="text-blue-600 hover:text-blue-900 text-sm font-medium"
+                  >
+                    Edit
+                  </button>
+                  <button
                     onClick={() => handleDelete(site.site_id)}
                     className="text-red-600 hover:text-red-900 text-sm font-medium"
                   >
@@ -129,6 +153,14 @@ export default function SitesPage() {
             ))
           )}
         </div>
+
+        {showForm && (
+          <SiteForm
+            site={editingSite}
+            onClose={handleCloseForm}
+            onSuccess={handleFormSuccess}
+          />
+        )}
       </div>
     </div>
   )

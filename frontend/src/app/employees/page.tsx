@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react'
 import { employeesApi } from '@/services/api'
 import { Employee } from '@/types'
+import EmployeeForm from '@/components/EmployeeForm'
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
 
   useEffect(() => {
     fetchEmployees()
@@ -36,6 +38,20 @@ export default function EmployeesPage() {
     } catch (err: any) {
       alert('Failed to delete employee: ' + err.message)
     }
+  }
+
+  const handleEdit = (employee: Employee) => {
+    setEditingEmployee(employee)
+    setShowForm(true)
+  }
+
+  const handleCloseForm = () => {
+    setShowForm(false)
+    setEditingEmployee(null)
+  }
+
+  const handleFormSuccess = () => {
+    fetchEmployees()
   }
 
   if (loading) {
@@ -132,6 +148,12 @@ export default function EmployeesPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
+                        onClick={() => handleEdit(employee)}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        Edit
+                      </button>
+                      <button
                         onClick={() => handleDelete(employee.employee_id)}
                         className="text-red-600 hover:text-red-900 ml-4"
                       >
@@ -144,6 +166,14 @@ export default function EmployeesPage() {
             </tbody>
           </table>
         </div>
+
+        {showForm && (
+          <EmployeeForm
+            employee={editingEmployee}
+            onClose={handleCloseForm}
+            onSuccess={handleFormSuccess}
+          />
+        )}
       </div>
     </div>
   )

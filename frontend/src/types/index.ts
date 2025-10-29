@@ -45,3 +45,12 @@ export interface RosterSummary {
   employee_hours: Record<number, number>
   average_cost_per_shift: number
 }
+
+export interface Availability {
+  availability_id: number
+  employee_id: number
+  date: string
+  start_time: string
+  end_time: string
+  available: boolean
+}
