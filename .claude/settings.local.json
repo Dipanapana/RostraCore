@@ -8,7 +8,10 @@
       "Bash(git commit:*)",
       "Bash(git config:*)",
       "Bash(python -m venv:*)",
-      "Bash(copy:*)"
+      "Bash(copy:*)",
+      "Bash(docker-compose ps:*)",
+      "Bash(python:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []
