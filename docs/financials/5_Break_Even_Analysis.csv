@@ -1,0 +1,71 @@
+Metric,Value,Unit,Notes
+,,,,
+FIXED COSTS (Monthly),,,,
+Infrastructure,4550,R,Cloud hosting and services
+Software & Tools,2300,R,Development and analytics tools
+Administrative,6000,R,"Accounting, legal, insurance"
+Marketing (Fixed),5000,R,Base marketing spend
+Total Fixed Costs,17850,R/month,Costs that don't vary with customers
+,,,,
+VARIABLE COSTS (Per Customer),,,,
+Additional Support Time,571,R/month,~7 hours @ R 100/hr
+Server Resources (Marginal),200,R/month,Additional compute per client
+Sales Commission (Amortized),800,R/month,10% of MRR amortized
+Total Variable Costs per Customer,1571,R/month,Costs that scale with customers
+,,,,
+REVENUE (Per Customer),,,,
+Average Tier (Blended),8000,R/month,Mix of Tier 1 Tier 2 Tier 3
+Implementation Fee (One-time),50000,R,Amortized over 36 months = R 1389/month
+Total Monthly Revenue per Customer,8000,R/month,Recurring revenue only
+,,,,
+CONTRIBUTION MARGIN,,,,
+Revenue per Customer,8000,R/month,
+Variable Cost per Customer,1571,R/month,
+Contribution Margin per Customer,6429,R/month,Revenue - Variable Costs
+Contribution Margin %,80.4,%,Strong unit economics
+,,,,
+BREAK-EVEN CALCULATION,,,,
+Fixed Costs,17850,R/month,
+Contribution Margin per Customer,6429,R/month,
+Break-Even Clients (Fixed / Contribution),2.78,clients,Round up to 3
+,,,,
+BREAK-EVEN REVENUE,,,,
+Break-Even Clients,3,clients,
+Average Revenue per Client,8000,R/month,
+Monthly Break-Even Revenue,24000,R/month,
+Annual Break-Even Revenue,288000,R/year,
+,,,,
+TIME TO BREAK-EVEN,,,,
+Clients per Month (Avg),1.2,clients,14 clients in 12 months
+Months to 3 Clients,2.5,months,Round to 3 months
+Calendar Time to Break-Even,Month 3,,Assuming start in Month 0
+,,,,
+BREAK-EVEN WITH IMPLEMENTATION FEES,,,,
+Implementation Fee per Client,50000,R,One-time
+Total from 3 Clients (First Month),150000,R,Implementation fees
+First Month Fixed + Variable Costs,22563,R,17850 + (3 × 1571)
+Surplus After Month 1,127437,R,Cash positive immediately
+,,,,
+SENSITIVITY ANALYSIS,,,,
+Scenario,Clients Needed,Months to Break-Even,Notes
+Best Case (Low costs),2,2,"10% cost reduction"
+Base Case,3,3,"Current assumptions"
+Worst Case (High costs),4,4,"20% cost increase"
+,,,,
+BREAK-EVEN BY TIER,,,,
+Tier,Monthly Cost,Contribution Margin,Clients Needed,
+Tier 1 (R 5500/mo),5500,3929,4.5,"5 clients"
+Tier 2 (R 8500/mo),8500,6929,2.6,"3 clients"
+Tier 3 (R 12000/mo),12000,10429,1.7,"2 clients"
+,,,,
+KEY INSIGHTS,,,,
+Very Low Break-Even Point,3 clients,,"Achievable in 2-3 months"
+Strong Unit Economics,80.4%,,"High contribution margin"
+Fast Payback,1.5 months,,"From each new customer"
+Implementation Fees,Accelerate profitability,,"Make first month profitable"
+Low Risk,Break-even achieved quickly,,"Minimal capital at risk"
+,,,,
+COMPARISON TO COMPETITORS,,,,
+RostraCore Break-Even,3 clients,,
+Typical SaaS Break-Even,10-20 clients,,"Industry average"
+RostraCore Advantage,3.3x - 6.7x faster,,"Much lower risk"

@@ -1,0 +1,139 @@
+PRICING SCENARIOS COMPARISON,,,,,,
+,,,,,,
+CURRENT PRICING MODEL (Base Case),,,,,,
+Tier,Guard Range,Monthly Price (R),Annual Price (R),Implementation Fee (R),Target Market
+Tier 1,1-50,5500,66000,45000,"Small security companies"
+Tier 2,51-100,8500,102000,55000,"Mid-size companies (Primary)"
+Tier 3,101-200,12000,144000,65000,"Large companies"
+Enterprise,200+,15000,180000,75000,"Enterprise clients"
+,,,,,,
+SCENARIO 1: PREMIUM PRICING (+25%),,,,,,
+Tier,Guard Range,Monthly Price (R),Annual Price (R),Implementation Fee (R),Impact
+Tier 1,1-50,6875,82500,56250,May reduce conversions
+Tier 2,51-100,10625,127500,68750,Still competitive
+Tier 3,101-200,15000,180000,81250,Premium positioning
+Enterprise,200+,18750,225000,93750,High-end market
+,,,,,,
+Scenario 1 Financial Impact,,,,,,
+Year,Clients,Annual Revenue,vs Base Case,Net Profit,Profit Increase
+1,11,-20%,1791875,+25%,899375,+25%
+2,23,-18%,4080000,+25%,2718750,+25%
+3,39,-19%,7020000,+25%,5287500,+25%
+4,59,-18%,10530000,+25%,8297250,+25%
+5,82,-18%,14625000,+25%,11556375,+25%
+,,,,,,
+SCENARIO 2: PENETRATION PRICING (-25%),,,,,,
+Tier,Guard Range,Monthly Price (R),Annual Price (R),Implementation Fee (R),Impact
+Tier 1,1-50,4125,49500,33750,Very accessible
+Tier 2,51-100,6375,76500,41250,Aggressive growth
+Tier 3,101-200,9000,108000,48750,Market capture
+Enterprise,200+,11250,135000,56250,Volume play
+,,,,,,
+Scenario 2 Financial Impact,,,,,,
+Year,Clients,Annual Revenue,vs Base Case,Net Profit,Profit Increase
+1,18,+29%,1075125,-25%,359850,-50%
+2,36,+29%,2448000,-25%,1221750,-44%
+3,62,+29%,4212000,-25%,2988750,-29%
+4,93,+29%,6318000,-25%,4688850,-29%
+5,129,+29%,8775000,-25%,6567375,-30%
+,,,,,,
+SCENARIO 3: FREEMIUM MODEL,,,,,,
+Tier,Guard Range,Monthly Price (R),Annual Price (R),Implementation Fee (R),Conversion Target
+Free,1-10,0,0,0,30% to paid
+Starter,11-30,3500,42000,25000,Demo value
+Professional,31-100,9500,114000,55000,Primary tier
+Enterprise,100+,16000,192000,75000,High-touch
+,,,,,,
+Scenario 3 Financial Impact,,,,,,
+Year,Free Users,Paid Users,Annual Revenue,Conversion Rate,Net Profit,Notes
+1,50,15,1282500,30%,641250,"High CAC initially"
+2,120,36,3648000,30%,2433600,"Build user base"
+3,200,60,6288000,30%,4716000,"Network effects"
+4,300,90,9432000,30%,7078800,"Strong brand"
+5,400,120,13104000,30%,9828000,"Market leader"
+,,,,,,
+SCENARIO 4: VALUE-BASED PRICING,,,,,,
+Client Size,Annual Payroll (R),RostraCore Fee,% of Savings,Client Savings (15%),Client Net Benefit
+Small (30 guards),4800000,180000,10%,540000,360000
+Medium (70 guards),11200000,336000,10%,1260000,924000
+Large (150 guards),24000000,600000,10%,2700000,2100000
+Enterprise (300 guards),48000000,1080000,10%,5400000,4320000
+,,,,,,
+Scenario 4 Positioning,,,,,,
+- Charge based on client's payroll size,,,,,,
+- 3% of annual payroll or 10% of savings (whichever is lower),,,,,,
+- Aligns incentives with client success,,,,,,
+- Higher revenue potential,,,,,,
+- Requires strong trust and proof of savings,,,,,,
+,,,,,,
+SCENARIO 5: TIERED FEATURE PRICING,,,,,,
+Feature,Basic (R 4500),Pro (R 8500),Enterprise (R 15000),Notes
+Auto-Rostering,Yes,Yes,Yes,Core feature
+Dashboard,Limited,Full,Advanced,Analytics depth
+API Access,No,Limited,Unlimited,Integrations
+Custom Reports,1/month,5/month,Unlimited,Reporting
+Support,Email only,Email + Chat,24/7 Phone,Service level
+Users,3,10,Unlimited,Concurrent users
+Sites,5,20,Unlimited,Locations
+Guard Capacity,50,100,200+,Scale limits
+Dedicated Manager,No,No,Yes,High-touch
+,,,,,,
+SCENARIO 6: PAY-PER-GUARD MODEL,,,,,,
+Guards,Price per Guard/Month,Monthly Total,Annual Total,vs Current Tier 2
+10,120,1200,14400,N/A
+25,110,2750,33000,N/A
+50,100,5000,60000,"vs R 66k (Tier 1)"
+75,95,7125,85500,"vs R 102k (Tier 2)"
+100,90,9000,108000,"vs R 102k (Tier 2)"
+150,85,12750,153000,"vs R 144k (Tier 3)"
+200,80,16000,192000,"vs R 180k (Ent)"
+,,,,,,
+SCENARIO COMPARISON SUMMARY,,,,,,
+Scenario,Year 1 Revenue,Year 5 Revenue,Complexity,Risk,Recommendation
+Base Case (Current),1433500,11700000,Low,Low,✓ Best for MVP
+Premium (+25%),1791875,14625000,Low,Medium,"Test after PMF"
+Penetration (-25%),1075125,8775000,Low,High,"Only if needed"
+Freemium,1282500,13104000,High,High,"Phase 2 strategy"
+Value-Based,Variable,Variable,High,Medium,"For enterprise only"
+Feature-Tiered,Similar,Similar,Medium,Low,"Alternative to current"
+Per-Guard,Similar,Higher,Low,Low,"Consider for scale"
+,,,,,,
+RECOMMENDED STRATEGY,,,,,,
+Phase,Pricing Model,Target,Duration,Goal
+1. MVP,Base Case,Early adopters,6 months,Validate pricing
+2. Scale,Base + Premium option,Mass market,12 months,Maximize revenue
+3. Optimize,Base + Premium + Enterprise,All segments,Ongoing,Market dominance
+4. Mature,Value-based for large clients,Enterprise,Year 3+,Premium positioning
+,,,,,,
+PRICE SENSITIVITY ANALYSIS,,,,,,
+Price Change,Client Acquisition Impact,Revenue Impact,Profit Impact,Recommendation
+-50%,-10%,+35%,-20%,Too much sacrifice
+-25%,+20%,+20%,+5%,Good for penetration
+-10%,+8%,+5%,+2%,Tactical discounts
+Base,0%,0%,0%,Current baseline
++10%,-5%,+7%,+12%,Test carefully
++25%,-15%,+10%,+18%,Premium segment only
++50%,-30%,0%,0%,Not recommended
+,,,,,,
+BUNDLING OPTIONS,,,,,,
+Bundle,Components,Price,Savings vs Separate,Value Prop
+Starter Bundle,Tier 1 + Training + 3 Custom Reports,55000/year (Y1),10%,Quick start package
+Growth Bundle,Tier 2 + Training + 10 Reports + API,115000/year (Y1),15%,Scaling companies
+Enterprise Bundle,Tier 3 + Training + Unlimited Reports + API + Manager,165000/year (Y1),20%,Full-service solution
+,,,,,,
+DISCOUNT STRATEGIES,,,,,,
+Discount Type,Amount,Conditions,Impact,Use Case
+Early Bird,15%,First 10 clients,Accelerate adoption,Launch phase
+Annual Prepay,10%,Pay 12 months upfront,Improve cash flow,All tiers
+Multi-Site,5% per additional site,3+ sites,Increase deal size,Large clients
+Referral,R 10000 credit,Per successful referral,Reduce CAC,Growth hack
+Non-Profit,20%,Verified non-profit org,CSR + PR,Special cases
+Partner,25%,Reseller partners,Channel expansion,B2B2C play
+,,,,,,
+KEY TAKEAWAYS,,,,,,
+1,Current base pricing is well-positioned for market entry,,,,
+2,Premium pricing viable once brand established,,,,
+3,Per-guard model good for transparency and scale,,,,
+4,Value-based pricing for enterprise wins requires proof,,,,
+5,Annual prepay discount incentivizes cash flow,,,,
+6,Freemium deferred to Phase 2 after PMF,,,,

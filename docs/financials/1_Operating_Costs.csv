@@ -1,0 +1,33 @@
+Category,Item,Monthly Cost (R),Annual Cost (R),Notes
+Infrastructure,Cloud Hosting - EC2,2000,24000,2x Medium instances for backend
+Infrastructure,Cloud Hosting - RDS,1000,12000,PostgreSQL managed database
+Infrastructure,Cloud Hosting - S3,300,3600,File storage and backups
+Infrastructure,Cloud Hosting - Bandwidth,200,2400,Data transfer costs
+Infrastructure,Domain & SSL,150,1800,Domain registration and certificates
+Infrastructure,Monitoring Tools,500,6000,"Sentry, LogRocket"
+Infrastructure,Backup Services,400,4800,Automated daily backups
+Infrastructure Subtotal,,4550,54600,
+,,,,
+Development,Developer (Part-time),15000,180000,Backend/Frontend maintenance
+Development,Support Staff (Part-time),8000,96000,Customer support
+Development,Bug Fixes & Updates,5000,60000,Monthly maintenance budget
+Development Subtotal,,28000,336000,
+,,,,
+Software,Development Tools,1000,12000,"IDEs, GitHub, etc"
+Software,API Services,500,6000,"Email, SMS, Maps APIs"
+Software,Analytics Tools,800,9600,"Google Analytics, Mixpanel"
+Software Subtotal,,2300,27600,
+,,,,
+Marketing,Digital Marketing,5000,60000,"Google Ads, Facebook Ads"
+Marketing,Content Creation,2000,24000,Blog posts and videos
+Marketing,Sales Commissions,Variable,Variable,10% of new revenue
+Marketing Subtotal,,7000,84000,
+,,,,
+Administrative,Accounting Services,2500,30000,Bookkeeping and tax prep
+Administrative,Legal Fees,1500,18000,Contracts and compliance
+Administrative,Business Insurance,1000,12000,Professional liability
+Administrative,Office & Misc,1000,12000,Supplies and subscriptions
+Administrative Subtotal,,6000,72000,
+,,,,
+TOTAL,Monthly Operating Costs,47850,574200,
+TOTAL,Annual Operating Costs,,574200,R 574k per year

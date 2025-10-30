@@ -1,0 +1,48 @@
+Month,New Clients,Subscription Revenue (R),Implementation Fees (R),Total Inflows (R),Operating Costs (R),Sales Commissions (R),Total Outflows (R),Net Cash Flow (R),Cumulative Cash (R)
+0 (Start),,,,,-203550,,-203550,-203550,-203550
+1,2,14000,100000,114000,47850,11400,59250,54750,-148800
+2,0,14000,0,14000,47850,1400,49250,-35250,-184050
+3,0,14000,0,14000,47850,1400,49250,-35250,-219300
+4,3,33500,150000,183500,47850,18350,66200,117300,-102000
+5,0,33500,0,33500,47850,3350,51200,-17700,-119700
+6,0,33500,0,33500,47850,3350,51200,-17700,-137400
+7,3,56000,210000,266000,47850,26600,74450,191550,54150
+8,0,56000,0,56000,47850,5600,53450,2550,56700
+9,0,56000,0,56000,47850,5600,53450,2550,59250
+10,5,96000,275000,371000,47850,37100,84950,286050,345300
+11,0,96000,0,96000,47850,9600,57450,38550,383850
+12,0,96000,0,96000,47850,9600,57450,38550,422400
+,,,,,,,,
+YEAR 1 TOTALS,14,598500,735000,1433500,574200,133350,707550,725950,422400
+,,,,,,,,
+Month,New Clients,Subscription Revenue (R),Implementation Fees (R),Total Inflows (R),Operating Costs (R),Sales Commissions (R),Total Outflows (R),Net Cash Flow (R),Cumulative Cash (R)
+13,5,142000,150000,292000,52800,29200,82000,210000,632400
+14,0,142000,0,142000,52800,14200,67000,75000,707400
+15,0,142000,0,142000,52800,14200,67000,75000,782400
+16,5,189500,180000,369500,52800,36950,89750,279750,1062150
+17,0,189500,0,189500,52800,18950,71750,117750,1179900
+18,0,189500,0,189500,52800,18950,71750,117750,1297650
+19,6,254500,220000,474500,52800,47450,100250,374250,1671900
+20,0,254500,0,254500,52800,25450,78250,176250,1848150
+21,0,254500,0,254500,52800,25450,78250,176250,2024400
+22,6,304000,250000,554000,52800,55400,108200,445800,2470200
+23,0,304000,0,304000,52800,30400,83200,220800,2691000
+24,0,304000,0,304000,52800,30400,83200,220800,2911800
+,,,,,,,,
+YEAR 2 TOTALS,22,2364000,800000,3164000,633600,346600,980200,2183800,2911800
+,,,,,,,,
+ASSUMPTIONS & NOTES,,,,,,,,
+Initial Capital Required,203550,,,,,,,"Development, marketing, 3-month runway"
+Break-even Month,7,,,,,,,"When cumulative cash becomes positive"
+Monthly Operating Costs (Y1),47850,,,,,,,"Increases 10% per year"
+Sales Commission Rate,10%,,,,,,,"Percentage of total revenue"
+Implementation Fee (Avg),50000,,,,,,,"One-time per new client"
+MRR Growth Rate,30%,,,,,,,"Average monthly growth Year 1"
+Customer Acquisition Cost,12000,,,,,,,"Marketing and sales per customer"
+,,,,,,,,
+KEY INSIGHTS,,,,,,,,
+Time to Positive Cash Flow,7 months,,,,,,,"From month 7 onwards"
+Cash Position End of Year 1,422400,,,,,,,"Strong cash reserves"
+Cash Position End of Year 2,2911800,,,,,,,"Excellent position for growth"
+Burn Rate (Pre-revenue),-47850,,,,,,,"Monthly loss before revenue"
+Runway with Initial Capital,4.3 months,,,,,,,"Without any revenue"

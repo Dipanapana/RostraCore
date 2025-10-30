@@ -1,0 +1,119 @@
+CLIENT ROI CALCULATOR,Security Company with 70 Guards,,,
+,,,,
+INPUT PARAMETERS,Value,Unit,Notes
+Number of Guards,70,guards,Typical mid-size security company
+Number of Sites,8,sites,"TUT, DoDot, etc"
+Average Hourly Rate,48,R/hour,Guard hourly rate
+Monthly Shifts,1200,shifts,Across all sites
+Average Shift Hours,8,hours,Standard shift length
+,,,,
+CURRENT COSTS (Manual Rostering),Monthly (R),Annual (R),Source
+Administrative Time,25200,302400,40 hours/month @ R 630/hr
+Labor Cost Inefficiency,66667,800000,12% inefficiency @ R 6.67M payroll
+Excess Overtime,41667,500000,15% unplanned overtime
+Scheduling Errors,8000,96000,8-10 errors/month @ R 1k each
+Compliance Issues,8333,100000,"Fines, penalties"
+Turnover Costs (Rostering-related),3000,36000,20% of total turnover
+Total Current Annual Cost,152867,1834400,Pain points being addressed
+,,,,
+ROSTRACORE COSTS,One-Time (R),Annual (R),Notes
+Implementation Fee,55000,0,Year 1 only (Tier 2 70 guards)
+Monthly Subscription (Tier 2),0,102000,R 8500/month
+Training & Onboarding,8000,0,2 days on-site
+Additional Support (Optional),0,12000,R 1000/month extra support
+Total Year 1 Investment,63000,114000,
+Total Ongoing (Year 2+),0,102000,Subscription only
+,,,,
+SAVINGS BREAKDOWN,Year 1 (R),Annual Recurring (R),Savings %
+Administrative Time Saved,302400,302400,95%
+Labor Cost Reduction,800000,800000,15%
+Overtime Optimization,500000,500000,40% of excess
+Error Reduction,96000,96000,85%
+Compliance Improvement,100000,100000,80%
+Turnover Reduction (Indirect),36000,36000,25% improvement
+Total Annual Savings,1834400,1834400,
+,,,,
+ROI CALCULATION,Year 1,Year 2,Year 3,Year 4,Year 5
+RostraCore Costs,177000,102000,102000,102000,102000
+Total Savings,1834400,1834400,1834400,1834400,1834400
+Net Benefit,1657400,1732400,1732400,1732400,1732400
+ROI %,936%,1699%,1699%,1699%,1699%
+Payback Period (Months),1.2,,,,"Less than 2 months"
+,,,,
+CUMULATIVE BENEFIT,Year 1,Year 2,Year 3,Year 4,Year 5
+Total Investment,177000,279000,381000,483000,585000
+Total Savings,1834400,3668800,5503200,7337600,9172000
+Cumulative Net Benefit,1657400,3389800,5122200,6854600,8587000
+Cumulative ROI %,936%,1215%,1344%,1419%,1468%
+,,,,
+BREAKEVEN ANALYSIS,,,,,
+Monthly RostraCore Cost,14750,R/month,"Implementation amortized (Year 1)"
+Monthly Savings,152867,R/month,
+Net Monthly Benefit,138117,R/month,
+Breakeven Point,1.2,months,"Less than 6 weeks!"
+,,,,
+COST AVOIDANCE (What Client Doesn't Spend),,,,
+Item,Without RostraCore,With RostraCore,Savings
+Manual Roster Creation Tool,15000,0,15000
+Overtime Management Software,8000,0,8000
+Compliance Tracking System,12000,0,12000
+Multiple Point Solutions,35000,0,35000
+Total Additional Tools Replaced,70000,0,70000
+,,,,
+PRODUCTIVITY GAINS,,,,
+Metric,Before,After,Improvement
+Hours for Weekly Roster,10,0.5,95% reduction
+Time to Resolve Conflicts,4 hrs/week,0.5 hrs/week,87.5% reduction
+Reporting Time,3 hrs/week,0.25 hrs/week,92% reduction
+Total Admin Hours Saved,17 hrs/week,0.75 hrs/week,96% reduction
+Annual Hours Saved,884,hours,"R 302k value"
+,,,,
+QUALITY IMPROVEMENTS,,,,
+Metric,Before,After,Improvement
+Fill Rate,85%,98%,+13%
+Scheduling Errors,8-10/month,1-2/month,85% reduction
+Overtime Hours (Unplanned),15%,5%,67% reduction
+Compliance Violations,3-5/quarter,0-1/quarter,80% reduction
+Guard Satisfaction,60%,85%,+25%
+Client Satisfaction (SLA),80%,95%,+15%
+,,,,
+COMPARISON TO ALTERNATIVES,,,,
+Solution,Annual Cost,ROI,Limitations
+Excel/Manual,302400,N/A,"Time-consuming, error-prone"
+Generic Scheduling Software,180000,Limited,"Not industry-specific"
+Custom Development,500000+,Negative,"High cost, long timeline"
+Enterprise System (SAP),1000000+,Negative,"Over-engineered, expensive"
+RostraCore,114000,936%,"Perfect fit, fast ROI"
+,,,,
+VALUE SUMMARY,,,,
+Metric,Value,,
+Annual Savings,1834400,R,
+Annual Cost,114000,R,
+Net Annual Benefit,1720400,R,
+ROI (Year 1),936,%,
+Payback Period,1.2,months,
+5-Year Net Benefit,8587000,R,
+5-Year ROI,1468,%,
+,,,,
+SENSITIVITY ANALYSIS,,,,
+Scenario,Annual Savings,Net Benefit,ROI %
+Conservative (-30%),1284080,1170080,662%
+Base Case,1834400,1720400,936%
+Optimistic (+30%),2384720,2270720,1241%
+,,,,
+KEY INSIGHTS,,,,
+Point,Description,,
+Lightning Fast ROI,Payback in 1.2 months,,
+Massive Cost Savings,95% reduction in admin time,,
+No-Brainer Decision,936% Year 1 ROI is exceptional,,
+Compound Benefits,Savings continue every year,,
+Low Risk,Break-even in weeks not months,,
+Multiple Benefits,"Cost, compliance, quality all improve",,
+,,,,
+CLIENT TESTIMONIAL TEMPLATE,,,,
+Before RostraCore,After RostraCore,Impact,
+"We spent 10 hours every week creating rosters","Now it takes 30 minutes","95% time savings"
+"Budget overruns of 15-20% monthly","Now within 3-5% of budget","Costs under control"
+"8-10 scheduling errors per month","1-2 errors per month","85% fewer mistakes"
+"Compliance was a constant worry","Zero violations in 6 months","Peace of mind"
+"Guards complained about unfair schedules","Guards are happier with fair rotation","Improved morale"

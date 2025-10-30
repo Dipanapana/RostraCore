@@ -1,8 +1,35 @@
+"use client";
+
 import Link from 'next/link'
+import { useAuth } from '@/context/AuthContext'
 
 export default function Home() {
+  const { isAuthenticated, user, logout } = useAuth();
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24 bg-gradient-to-br from-blue-50 to-indigo-100">
+    <main className="flex min-h-screen flex-col items-center justify-center p-24 bg-gradient-to-br from-blue-50 to-indigo-100 relative">
+      {/* Auth Status Bar */}
+      <div className="absolute top-4 right-4">
+        {isAuthenticated ? (
+          <div className="flex items-center gap-4">
+            <span className="text-gray-700">👤 {user?.username}</span>
+            <button
+              onClick={logout}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition"
+            >
+              Logout
+            </button>
+          </div>
+        ) : (
+          <Link
+            href="/login"
+            className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition"
+          >
+            Login
+          </Link>
+        )}
+      </div>
+
       <div className="z-10 max-w-5xl w-full">
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold mb-4 text-gray-900">RostraCore v1</h1>
