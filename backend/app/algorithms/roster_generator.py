@@ -78,13 +78,65 @@ class RosterGenerator:
         site_ids: Optional[List[int]] = None
     ) -> List[Dict]:
         """Get all unassigned shifts in the period."""
-        # TODO: Implement database query
-        return []
+        from app.models.shift import Shift
+
+        query = self.db.query(Shift).filter(
+            Shift.start_time >= start_date,
+            Shift.start_time < end_date,
+            Shift.assigned_employee_id == None
+        )
+
+        if site_ids:
+            query = query.filter(Shift.site_id.in_(site_ids))
+
+        shifts = query.all()
+
+        return [
+            {
+                "shift_id": s.shift_id,
+                "site_id": s.site_id,
+                "start_time": s.start_time,
+                "end_time": s.end_time,
+                "required_skill": s.required_skill,
+                "site": {
+                    "site_id": s.site.site_id,
+                    "gps_lat": s.site.gps_lat,
+                    "gps_lng": s.site.gps_lng
+                } if s.site else None
+            }
+            for s in shifts
+        ]
 
     def _get_available_employees(self) -> List[Dict]:
         """Get all active employees."""
-        # TODO: Implement database query
-        return []
+        from app.models.employee import Employee, EmployeeStatus
+
+        employees = self.db.query(Employee).filter(
+            Employee.status == EmployeeStatus.ACTIVE
+        ).all()
+
+        return [
+            {
+                "employee_id": e.employee_id,
+                "first_name": e.first_name,
+                "last_name": e.last_name,
+                "role": e.role,
+                "hourly_rate": e.hourly_rate,
+                "max_hours_week": e.max_hours_week,
+                "home_gps_lat": e.home_gps_lat,
+                "home_gps_lng": e.home_gps_lng,
+                "skills": [e.role.value],  # Basic: role is the main skill
+                "certifications": [
+                    {
+                        "cert_type": cert.cert_type,
+                        "expiry_date": cert.expiry_date,
+                        "verified": cert.verified
+                    }
+                    for cert in e.certifications
+                ]
+            }
+            for e in employees
+        ]
 
     def _generate_feasible_pairs(
         self,
@@ -220,24 +272,71 @@ class RosterGenerator:
 
     def _calculate_distance(self, employee: Dict, shift: Dict) -> float:
         """Calculate distance between employee home and shift site."""
-        # TODO: Implement GPS distance calculation
-        # Using Haversine formula or simple Euclidean approximation
-        return 0.0
+        from app.algorithms.constraints import calculate_haversine_distance
+
+        if not employee.get("home_gps_lat") or not shift.get("site"):
+            return 0.0
+
+        if not shift["site"].get("gps_lat"):
+            return 0.0
+
+        return calculate_haversine_distance(
+            employee["home_gps_lat"],
+            employee["home_gps_lng"],
+            shift["site"]["gps_lat"],
+            shift["site"]["gps_lng"]
+        )
 
     def _check_skill_match(self, employee: Dict, shift: Dict) -> bool:
         """Check if employee has required skills for shift."""
-        # TODO: Implement skill matching logic
-        return True
+        from app.algorithms.constraints import check_skill_match
+
+        required_skill = shift.get("required_skill")
+        if not required_skill:
+            return True
+
+        employee_skills = employee.get("skills", [])
+        return check_skill_match(employee_skills, required_skill)
 
     def _check_certification_valid(self, employee: Dict, shift: Dict) -> bool:
         """Check if employee certifications are valid for shift date."""
-        # TODO: Implement certification validity check
-        return True
+        from app.algorithms.constraints import check_certification_validity
+
+        certifications = employee.get("certifications", [])
+        shift_date = shift["start_time"]
+
+        return check_certification_validity(certifications, shift_date)
 
     def _check_availability(self, employee: Dict, shift: Dict) -> bool:
         """Check if employee is available during shift time."""
-        # TODO: Implement availability check
-        return True
+        from app.models.availability import Availability
+        from app.algorithms.constraints import check_availability_overlap
+
+        # Query availability records for employee
+        availability_records = self.db.query(Availability).filter(
+            Availability.employee_id == employee["employee_id"],
+            Availability.date == shift["start_time"].date()
+        ).all()
+
+        if not availability_records:
+            # No availability records = assume available
+            return True
+
+        availability_dicts = [
+            {
+                "date": a.date,
+                "start_time": a.start_time,
+                "end_time": a.end_time,
+                "available": a.available
+            }
+            for a in availability_records
+        ]
+
+        return check_availability_overlap(
+            availability_dicts,
+            shift["start_time"],
+            shift["end_time"]
+        )
 
     def _check_hour_limits(
         self,
@@ -252,8 +351,22 @@ class RosterGenerator:
 
     def _check_rest_period(self, employee: Dict, shift: Dict) -> bool:
         """Check if employee has minimum rest period before shift."""
-        # TODO: Implement rest period check
-        return True
+        from app.models.shift import Shift
+        from app.algorithms.constraints import check_rest_period
+
+        # Find last shift before this one
+        last_shift = self.db.query(Shift).filter(
+            Shift.assigned_employee_id == employee["employee_id"],
+            Shift.end_time < shift["start_time"]
+        ).order_by(Shift.end_time.desc()).first()
+
+        last_shift_end = last_shift.end_time if last_shift else None
+
+        return check_rest_period(
+            last_shift_end,
+            shift["start_time"],
+            self.min_rest_hours
+        )
 
     def _check_distance(self, employee: Dict, shift: Dict) -> bool:
         """Check if distance from home to site is within limit."""
@@ -262,8 +375,27 @@ class RosterGenerator:
 
     def _get_employee_hours_this_week(self, employee_id: int) -> float:
         """Get total hours worked by employee this week."""
-        # TODO: Implement query for current week hours
-        return 0.0
+        from app.models.shift import Shift
+        from datetime import datetime, timedelta
+
+        # Get start of current week (Monday)
+        today = datetime.now()
+        start_of_week = today - timedelta(days=today.weekday())
+        start_of_week = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        # Query shifts for this week
+        shifts = self.db.query(Shift).filter(
+            Shift.assigned_employee_id == employee_id,
+            Shift.start_time >= start_of_week,
+            Shift.start_time < start_of_week + timedelta(days=7)
+        ).all()
+
+        total_hours = 0.0
+        for shift in shifts:
+            duration = shift.end_time - shift.start_time
+            total_hours += duration.total_seconds() / 3600
+
+        return total_hours
 
     def _calculate_roster_summary(
         self,

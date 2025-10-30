@@ -10,7 +10,15 @@ export default function Home() {
           <p className="text-gray-600">Intelligent security guard scheduling powered by deterministic algorithms</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-12">
+          <Link href="/dashboard">
+            <div className="p-8 bg-white border-2 border-purple-500 rounded-xl hover:shadow-xl transition-all cursor-pointer bg-gradient-to-br from-purple-50 to-white">
+              <h2 className="text-2xl font-semibold mb-3 text-gray-900">📊 Dashboard</h2>
+              <p className="text-gray-600">Real-time analytics, metrics, and insights</p>
+              <div className="mt-4 text-purple-600 font-bold">View Now →</div>
+            </div>
+          </Link>
+
           <Link href="/employees">
             <div className="p-8 bg-white border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:shadow-lg transition-all cursor-pointer">
               <h2 className="text-2xl font-semibold mb-3 text-gray-900">👥 Employees</h2>
@@ -40,6 +48,14 @@ export default function Home() {
               <h2 className="text-2xl font-semibold mb-3 text-gray-900">🤖 Auto Roster</h2>
               <p className="text-gray-600">Generate optimized rosters using constraint-based algorithms</p>
               <div className="mt-4 text-blue-600 font-bold">Generate Now →</div>
+            </div>
+          </Link>
+
+          <Link href="/availability">
+            <div className="p-8 bg-white border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:shadow-lg transition-all cursor-pointer">
+              <h2 className="text-2xl font-semibold mb-3 text-gray-900">🕒 Availability</h2>
+              <p className="text-gray-600">Track employee availability windows</p>
+              <div className="mt-4 text-blue-600 font-medium">Manage →</div>
             </div>
           </Link>
         </div>
