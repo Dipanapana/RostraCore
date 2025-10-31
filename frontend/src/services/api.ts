@@ -51,4 +51,13 @@ export const availabilityApi = {
   delete: (id: number) => api.delete(`/api/v1/availability/${id}`),
 }
 
+export const certificationsApi = {
+  getAll: (params?: any) => api.get('/api/v1/certifications', { params }),
+  getExpiring: (days?: number) => api.get('/api/v1/certifications/expiring', { params: { days } }),
+  getById: (id: number) => api.get(`/api/v1/certifications/${id}`),
+  create: (data: any) => api.post('/api/v1/certifications', data),
+  update: (id: number, data: any) => api.put(`/api/v1/certifications/${id}`, data),
+  delete: (id: number) => api.delete(`/api/v1/certifications/${id}`),
+}
+
 export default api

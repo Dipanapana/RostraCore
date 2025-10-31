@@ -54,3 +54,14 @@ export interface Availability {
   end_time: string
   available: boolean
 }
+
+export interface Certification {
+  cert_id: number
+  employee_id: number
+  cert_type: string
+  issue_date: string
+  expiry_date: string
+  verified: boolean
+  cert_number?: string
+  issuing_authority?: string
+}

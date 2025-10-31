@@ -419,7 +419,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="mt-8 grid grid-cols-2 md:grid-cols-5 gap-4">
           <Link
             href="/employees"
             className="bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-lg text-center transition"
@@ -437,6 +437,12 @@ export default function DashboardPage() {
             className="bg-green-600 hover:bg-green-700 text-white p-4 rounded-lg text-center transition"
           >
             Manage Shifts
+          </Link>
+          <Link
+            href="/certifications"
+            className="bg-orange-600 hover:bg-orange-700 text-white p-4 rounded-lg text-center transition"
+          >
+            Manage Certifications
           </Link>
           <Link
             href="/roster"
