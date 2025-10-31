@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { sitesApi } from '@/services/api'
 import { Site } from '@/types'
 import SiteForm from '@/components/SiteForm'
+import ExportButtons from '@/components/ExportButtons'
 
 export default function SitesPage() {
   const router = useRouter()
@@ -108,12 +109,15 @@ export default function SitesPage() {
         </div>
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Sites</h1>
-          <button
-            onClick={() => setShowForm(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
-          >
-            + Add Site
-          </button>
+          <div className="flex items-center gap-3">
+            <ExportButtons type="sites" />
+            <button
+              onClick={() => setShowForm(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+            >
+              + Add Site
+            </button>
+          </div>
         </div>
 
         {error && (

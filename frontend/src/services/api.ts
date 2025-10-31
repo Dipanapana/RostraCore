@@ -60,4 +60,32 @@ export const certificationsApi = {
   delete: (id: number) => api.delete(`/api/v1/certifications/${id}`),
 }
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
+export const exportsApi = {
+  // PDF Reports
+  rosterPdf: (params?: any) => {
+    const queryString = new URLSearchParams(params).toString()
+    return `${API_BASE_URL}/api/v1/exports/roster/pdf${queryString ? '?' + queryString : ''}`
+  },
+
+  // CSV Exports
+  employeesCsv: () => `${API_BASE_URL}/api/v1/exports/employees/csv`,
+  sitesCsv: () => `${API_BASE_URL}/api/v1/exports/sites/csv`,
+  shiftsCsv: (params?: any) => {
+    const queryString = new URLSearchParams(params).toString()
+    return `${API_BASE_URL}/api/v1/exports/shifts/csv${queryString ? '?' + queryString : ''}`
+  },
+  certificationsCsv: () => `${API_BASE_URL}/api/v1/exports/certifications/csv`,
+
+  // Excel Exports
+  employeesExcel: () => `${API_BASE_URL}/api/v1/exports/employees/excel`,
+  sitesExcel: () => `${API_BASE_URL}/api/v1/exports/sites/excel`,
+  shiftsExcel: (params?: any) => {
+    const queryString = new URLSearchParams(params).toString()
+    return `${API_BASE_URL}/api/v1/exports/shifts/excel${queryString ? '?' + queryString : ''}`
+  },
+  certificationsExcel: () => `${API_BASE_URL}/api/v1/exports/certifications/excel`,
+}
+
 export default api

@@ -6,6 +6,7 @@ import { shiftsApi, sitesApi, employeesApi } from '@/services/api'
 import { Shift, Site, Employee } from '@/types'
 import ShiftForm from '@/components/ShiftForm'
 import Link from 'next/link'
+import ExportButtons from '@/components/ExportButtons'
 
 export default function ShiftsPage() {
   const router = useRouter()
@@ -163,12 +164,15 @@ export default function ShiftsPage() {
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Shift Management</h1>
-          <button
-            onClick={() => setShowForm(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
-          >
-            + Create Shift
-          </button>
+          <div className="flex items-center gap-3">
+            <ExportButtons type="shifts" />
+            <button
+              onClick={() => setShowForm(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
+            >
+              + Create Shift
+            </button>
+          </div>
         </div>
 
         {/* Search and Items Per Page */}

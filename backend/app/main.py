@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api.endpoints import employees, sites, shifts, availability, certifications, expenses, attendance, payroll, roster, dashboard, auth
+from app.api.endpoints import employees, sites, shifts, availability, certifications, expenses, attendance, payroll, roster, dashboard, auth, exports
 
 app = FastAPI(
     title="RostraCore API",
@@ -51,6 +51,7 @@ app.include_router(payroll.router, prefix=f"{settings.API_V1_PREFIX}/payroll", t
 app.include_router(roster.router, prefix=f"{settings.API_V1_PREFIX}/roster", tags=["roster"])
 app.include_router(dashboard.router, prefix=settings.API_V1_PREFIX, tags=["dashboard"])
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX, tags=["auth"])
+app.include_router(exports.router, prefix=settings.API_V1_PREFIX, tags=["exports"])
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { rosterApi } from '@/services/api'
+import ExportButtons from '@/components/ExportButtons'
 
 export default function RosterPage() {
   const router = useRouter()
@@ -159,13 +160,16 @@ export default function RosterPage() {
             <div className="bg-white shadow-md rounded-lg p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">Shift Assignments</h2>
-                <button
-                  onClick={handleConfirm}
-                  disabled={loading}
-                  className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-md font-medium"
-                >
-                  Confirm Roster
-                </button>
+                <div className="flex items-center gap-3">
+                  <ExportButtons type="roster" filters={{start_date: startDate, end_date: endDate}} />
+                  <button
+                    onClick={handleConfirm}
+                    disabled={loading}
+                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-md font-medium"
+                  >
+                    Confirm Roster
+                  </button>
+                </div>
               </div>
 
               {result.assignments.length === 0 ? (
