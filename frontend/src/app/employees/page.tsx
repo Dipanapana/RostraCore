@@ -1,11 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { employeesApi } from '@/services/api'
 import { Employee } from '@/types'
 import EmployeeForm from '@/components/EmployeeForm'
 
 export default function EmployeesPage() {
+  const router = useRouter()
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -65,6 +67,17 @@ export default function EmployeesPage() {
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-7xl mx-auto">
+        <div className="mb-4">
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="flex items-center text-gray-600 hover:text-gray-900"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Dashboard
+          </button>
+        </div>
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Employees</h1>
           <button
