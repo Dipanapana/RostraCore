@@ -49,7 +49,7 @@ app.include_router(expenses.router, prefix=f"{settings.API_V1_PREFIX}/expenses",
 app.include_router(attendance.router, prefix=f"{settings.API_V1_PREFIX}/attendance", tags=["attendance"])
 app.include_router(payroll.router, prefix=f"{settings.API_V1_PREFIX}/payroll", tags=["payroll"])
 app.include_router(roster.router, prefix=f"{settings.API_V1_PREFIX}/roster", tags=["roster"])
-app.include_router(dashboard.router, prefix=f"{settings.API_V1_PREFIX}/dashboard", tags=["dashboard"])
+app.include_router(dashboard.router, prefix=settings.API_V1_PREFIX, tags=["dashboard"])
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX, tags=["auth"])
 
 
