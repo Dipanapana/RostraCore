@@ -453,7 +453,12 @@ class RosterGenerator:
         self,
         assignments: List[Dict],
         shifts: List[Dict]
-    ) -> List[Dict]:
+    ) -> List:
         """Get list of shifts that couldn't be filled."""
+        from app.models.shift import Shift
+
         assigned_shift_ids = {a["shift_id"] for a in assignments}
-        return [s for s in shifts if s["shift_id"] not in assigned_shift_ids]
+        unfilled_shift_ids = [s["shift_id"] for s in shifts if s["shift_id"] not in assigned_shift_ids]
+
+        # Return actual Shift ORM objects for proper serialization
+        return self.db.query(Shift).filter(Shift.shift_id.in_(unfilled_shift_ids)).all() if unfilled_shift_ids else []
