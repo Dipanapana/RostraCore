@@ -501,7 +501,6 @@ export default function ShiftsPage() {
             </div>
           </div>
         )}
-      </div>
 
         {showForm && (
           <ShiftForm

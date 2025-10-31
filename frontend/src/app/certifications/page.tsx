@@ -509,7 +509,6 @@ export default function CertificationsPage() {
             </div>
           </div>
         )}
-      </div>
 
         {showForm && (
           <CertificationForm

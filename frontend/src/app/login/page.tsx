@@ -127,7 +127,7 @@ export default function LoginPage() {
               Password: <span className="font-bold">admin123</span>
             </p>
             <p className="text-xs text-gray-400 mt-2">
-              (Run create_admin.py first if you haven't)
+              (Run create_admin.py first if you haven&apos;t)
             </p>
           </div>
 
