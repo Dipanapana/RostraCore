@@ -36,4 +36,4 @@ class Expense(Base):
     site = relationship("Site", back_populates="expenses")
 
     def __repr__(self):
-        return f"<Expense {self.expense_id}: {self.type} ${self.amount}>"
+        return f"<Expense {self.expense_id}: {self.type} R{self.amount}>"

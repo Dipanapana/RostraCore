@@ -116,7 +116,7 @@ export default function RosterPage() {
               <div className="bg-white shadow rounded-lg p-6">
                 <div className="text-sm text-gray-600">Total Cost</div>
                 <div className="text-2xl font-bold text-gray-900">
-                  ${result.summary.total_cost?.toFixed(2) || '0.00'}
+                  R{result.summary.total_cost?.toFixed(2) || '0.00'}
                 </div>
               </div>
 
@@ -185,7 +185,7 @@ export default function RosterPage() {
                             {assignment.employee_id}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            ${assignment.cost.toFixed(2)}
+                            R{assignment.cost.toFixed(2)}
                           </td>
                         </tr>
                       ))}

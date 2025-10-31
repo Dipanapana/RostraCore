@@ -62,7 +62,7 @@ class RosterGenerator:
 
         # Step 5: Calculate costs and validate
         roster_summary = self._calculate_roster_summary(
-            optimal_assignments, employees
+            optimal_assignments, employees, shifts
         )
 
         return {
@@ -203,22 +203,34 @@ class RosterGenerator:
         if not feasible_pairs:
             return []
 
+        # Find employees who have at least one feasible shift
+        # (Hungarian algorithm fails if any employee has all infinite costs)
+        employees_with_feasible_shifts = set()
+        for emp_id, shift_id in feasible_pairs:
+            employees_with_feasible_shifts.add(emp_id)
+
+        # Filter to only include employees with feasible options
+        feasible_employees = [e for e in employees if e["employee_id"] in employees_with_feasible_shifts]
+
+        if not feasible_employees:
+            return []
+
         # Build cost matrix
-        n_employees = len(employees)
+        n_employees = len(feasible_employees)
         n_shifts = len(shifts)
 
         # Initialize with high cost (infeasible = infinity)
         cost_matrix = np.full((n_employees, n_shifts), np.inf)
 
         # Fill in feasible pairs with actual costs
-        employee_id_to_idx = {e["employee_id"]: i for i, e in enumerate(employees)}
+        employee_id_to_idx = {e["employee_id"]: i for i, e in enumerate(feasible_employees)}
         shift_id_to_idx = {s["shift_id"]: i for i, s in enumerate(shifts)}
 
         for emp_id, shift_id in feasible_pairs:
             emp_idx = employee_id_to_idx[emp_id]
             shift_idx = shift_id_to_idx[shift_id]
 
-            employee = employees[emp_idx]
+            employee = feasible_employees[emp_idx]
             shift = shifts[shift_idx]
 
             cost = self._calculate_assignment_cost(employee, shift)
@@ -232,7 +244,7 @@ class RosterGenerator:
         for emp_idx, shift_idx in zip(row_ind, col_ind):
             if cost_matrix[emp_idx, shift_idx] < np.inf:
                 assignments.append({
-                    "employee_id": employees[emp_idx]["employee_id"],
+                    "employee_id": feasible_employees[emp_idx]["employee_id"],
                     "shift_id": shifts[shift_idx]["shift_id"],
                     "cost": cost_matrix[emp_idx, shift_idx]
                 })
@@ -261,7 +273,7 @@ class RosterGenerator:
 
         # Add distance penalty (optional)
         distance = self._calculate_distance(employee, shift)
-        distance_penalty = distance * 0.1  # $0.10 per km
+        distance_penalty = distance * 0.1  # R0.10 per km
 
         return base_cost + distance_penalty
 
@@ -400,7 +412,8 @@ class RosterGenerator:
     def _calculate_roster_summary(
         self,
         assignments: List[Dict],
-        employees: List[Dict]
+        employees: List[Dict],
+        shifts: List[Dict]
     ) -> Dict:
         """
         Calculate roster summary statistics.
@@ -408,24 +421,32 @@ class RosterGenerator:
         Args:
             assignments: List of assignments
             employees: List of employees
+            shifts: List of all shifts
 
         Returns:
             Summary dict with costs, hours, etc.
         """
         total_cost = sum(a["cost"] for a in assignments)
         total_shifts = len(assignments)
+        total_shifts_available = len(shifts)
 
         employee_hours = {}
+        employees_utilized = set()
         for assignment in assignments:
             emp_id = assignment["employee_id"]
+            employees_utilized.add(emp_id)
             # TODO: Calculate actual hours per employee
             employee_hours[emp_id] = employee_hours.get(emp_id, 0) + 8
+
+        fill_rate = (total_shifts / total_shifts_available * 100) if total_shifts_available > 0 else 0
 
         return {
             "total_cost": total_cost,
             "total_shifts_filled": total_shifts,
             "employee_hours": employee_hours,
-            "average_cost_per_shift": total_cost / total_shifts if total_shifts > 0 else 0
+            "average_cost_per_shift": total_cost / total_shifts if total_shifts > 0 else 0,
+            "fill_rate": fill_rate,
+            "employees_utilized": len(employees_utilized)
         }
 
     def _get_unfilled_shifts(

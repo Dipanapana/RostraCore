@@ -123,7 +123,7 @@ export default function SitesPage() {
                     </span>
                     {site.billing_rate && (
                       <span className="text-sm text-gray-600">
-                        <strong>Rate:</strong> ${site.billing_rate}/hr
+                        <strong>Rate:</strong> R{site.billing_rate}/hr
                       </span>
                     )}
                   </div>
