@@ -1,13 +1,15 @@
 """Roster generation API endpoints."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime, timedelta
 from app.database import get_db
 from app.models.schemas import RosterGenerateRequest, RosterGenerateResponse, ShiftResponse
 from app.algorithms.roster_generator import RosterGenerator
+from app.algorithms.milp_roster_generator import MILPRosterGenerator
 from app.services.shift_service import ShiftService
+from app.config import settings
 
 router = APIRouter()
 
@@ -15,20 +17,42 @@ router = APIRouter()
 @router.post("/generate", response_model=RosterGenerateResponse)
 async def generate_roster(
     request: RosterGenerateRequest,
+    algorithm: Optional[str] = Query(None, description="Algorithm to use: 'hungarian', 'milp', or 'auto'"),
     db: Session = Depends(get_db)
 ):
     """
     Generate optimized roster using algorithmic approach.
 
     This is the main endpoint for auto-rostering.
+
+    Args:
+        request: Roster generation request with dates and site IDs
+        algorithm: Optional algorithm selection ('hungarian', 'milp', 'auto')
+                  If not specified, uses ROSTER_ALGORITHM from settings
+        db: Database session
+
+    Returns:
+        Roster assignments with summary and unfilled shifts
     """
     try:
-        # Initialize roster generator
-        generator = RosterGenerator(db)
-
         # Convert dates to datetime
         start_datetime = datetime.combine(request.start_date, datetime.min.time())
         end_datetime = datetime.combine(request.end_date, datetime.max.time())
+
+        # Determine which algorithm to use
+        selected_algorithm = algorithm or settings.ROSTER_ALGORITHM
+
+        # Auto-select based on roster period length
+        if selected_algorithm == "auto":
+            period_days = (end_datetime - start_datetime).days
+            # Use MILP for periods > 3 days, Hungarian for shorter periods
+            selected_algorithm = "milp" if period_days > 3 else "hungarian"
+
+        # Initialize appropriate generator
+        if selected_algorithm == "milp":
+            generator = MILPRosterGenerator(db)
+        else:
+            generator = RosterGenerator(db)
 
         # Generate roster
         result = generator.generate_roster(
@@ -36,6 +60,9 @@ async def generate_roster(
             end_date=end_datetime,
             site_ids=request.site_ids
         )
+
+        # Add algorithm info to result
+        result["algorithm_used"] = selected_algorithm
 
         return result
 
