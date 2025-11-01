@@ -51,7 +51,10 @@ class MILPRosterGenerator:
         shifts = self._get_unassigned_shifts(start_date, end_date, site_ids)
         employees = self._get_available_employees()
 
+        print(f"[MILP DEBUG] Found {len(shifts)} unassigned shifts and {len(employees)} active employees")
+
         if not shifts or not employees:
+            print(f"[MILP DEBUG] Returning early - no shifts or no employees")
             return {
                 "assignments": [],
                 "summary": self._empty_summary(),
@@ -60,6 +63,21 @@ class MILPRosterGenerator:
 
         # Step 2: Build feasibility matrix
         feasibility_matrix = self._build_feasibility_matrix(shifts, employees)
+
+        # Count feasible pairs
+        feasible_count = sum(1 for v in feasibility_matrix.values() if v["feasible"])
+        total_pairs = len(feasibility_matrix)
+        print(f"[MILP DEBUG] Feasibility: {feasible_count}/{total_pairs} pairs are feasible ({feasible_count/total_pairs*100:.1f}%)")
+
+        if feasible_count == 0:
+            print("[MILP DEBUG] NO FEASIBLE PAIRS - Checking reasons:")
+            reasons_count = {}
+            for (emp_idx, shift_idx), data in feasibility_matrix.items():
+                if not data["feasible"]:
+                    for reason in data["reasons"]:
+                        reasons_count[reason] = reasons_count.get(reason, 0) + 1
+            for reason, count in sorted(reasons_count.items(), key=lambda x: -x[1]):
+                print(f"[MILP DEBUG]   - {reason}: {count} violations")
 
         # Step 3: Create and solve MILP model
         model, assignment_vars, cost_vars = self._build_milp_model(

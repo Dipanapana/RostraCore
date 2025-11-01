@@ -42,16 +42,24 @@ async def generate_roster(
         # Determine which algorithm to use
         selected_algorithm = algorithm or settings.ROSTER_ALGORITHM
 
+        print(f"[ROSTER DEBUG] ROSTER_ALGORITHM from settings: {settings.ROSTER_ALGORITHM}")
+        print(f"[ROSTER DEBUG] Selected algorithm before auto-select: {selected_algorithm}")
+
         # Auto-select based on roster period length
         if selected_algorithm == "auto":
             period_days = (end_datetime - start_datetime).days
             # Use MILP for periods > 3 days, Hungarian for shorter periods
             selected_algorithm = "milp" if period_days > 3 else "hungarian"
+            print(f"[ROSTER DEBUG] Auto-selected {selected_algorithm} based on {period_days} days")
+
+        print(f"[ROSTER DEBUG] Final selected algorithm: {selected_algorithm}")
 
         # Initialize appropriate generator
         if selected_algorithm == "milp":
+            print("[ROSTER DEBUG] Initializing MILPRosterGenerator")
             generator = MILPRosterGenerator(db)
         else:
+            print("[ROSTER DEBUG] Initializing RosterGenerator (Hungarian)")
             generator = RosterGenerator(db)
 
         # Generate roster

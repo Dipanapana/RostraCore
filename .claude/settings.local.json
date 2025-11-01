@@ -30,7 +30,13 @@
       "Bash(alembic upgrade:*)",
       "Bash(alembic history:*)",
       "Bash(alembic revision:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(git push:*)",
+      "Bash(del:*)",
+      "Bash(npx prettier:*)",
+      "Bash(\"C:\\Program Files\\PostgreSQL\\15\\bin\\psql.exe\" --version)",
+      "Bash(\"C:\\Program Files\\PostgreSQL\\16\\bin\\psql.exe\" --version)",
+      "Bash(\"C:\\Program Files\\PostgreSQL\\14\\bin\\psql.exe\" -U postgres -d rostracore_db -c \"SELECT COUNT(*) FROM employees;\")"
     ],
     "deny": [],
     "ask": []

@@ -2,9 +2,9 @@
 
 ## Algorithmic Roster & Budget Engine for Security Operations
 
-**Prepared for:** [Security Company Name]
+**Prepared for:** Initialy TUT and DoDot
 **Date:** October 2025
-**Prepared by:** [Your Company Name]
+**Prepared by:** Blaq Cooperation PTY(LDT)
 **Version:** 1.0
 
 ---
