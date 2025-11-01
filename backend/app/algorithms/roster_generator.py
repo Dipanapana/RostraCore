@@ -236,8 +236,19 @@ class RosterGenerator:
             cost = self._calculate_assignment_cost(employee, shift)
             cost_matrix[emp_idx, shift_idx] = cost
 
+        # Check if cost matrix is all infinite (no feasible solutions)
+        if np.all(np.isinf(cost_matrix)):
+            # No feasible assignments at all
+            return []
+
         # Run Hungarian algorithm
-        row_ind, col_ind = linear_sum_assignment(cost_matrix)
+        try:
+            row_ind, col_ind = linear_sum_assignment(cost_matrix)
+        except ValueError as e:
+            # Handle infeasible matrix
+            if "cost matrix is infeasible" in str(e):
+                return []
+            raise
 
         # Build assignments
         assignments = []
@@ -249,7 +260,7 @@ class RosterGenerator:
                     "cost": cost_matrix[emp_idx, shift_idx]
                 })
 
-        return assignments
+        return assignments  
 
     def _calculate_assignment_cost(
         self,
