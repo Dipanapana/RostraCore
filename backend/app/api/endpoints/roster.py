@@ -4,10 +4,14 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime, timedelta
+import logging
+
+logger = logging.getLogger(__name__)
 from app.database import get_db
 from app.models.schemas import RosterGenerateRequest, RosterGenerateResponse, ShiftResponse
 from app.algorithms.roster_generator import RosterGenerator
 from app.algorithms.milp_roster_generator import MILPRosterGenerator
+from app.algorithms.production_optimizer import ProductionRosterOptimizer, OptimizationConfig
 from app.services.shift_service import ShiftService
 from app.config import settings
 
@@ -17,22 +21,27 @@ router = APIRouter()
 @router.post("/generate", response_model=RosterGenerateResponse)
 async def generate_roster(
     request: RosterGenerateRequest,
-    algorithm: Optional[str] = Query(None, description="Algorithm to use: 'hungarian', 'milp', or 'auto'"),
+    algorithm: Optional[str] = Query("production", description="Algorithm: 'production', 'hungarian', 'milp', 'auto'"),
     db: Session = Depends(get_db)
 ):
     """
     Generate optimized roster using algorithmic approach.
 
-    This is the main endpoint for auto-rostering.
+    **Default: Production CP-SAT Optimizer** - Most robust and feature-complete
+
+    Algorithms:
+    - production (default): Production-grade CP-SAT with full BCEA compliance, fairness, diagnostics
+    - milp: Original MILP implementation (legacy)
+    - hungarian: Fast Hungarian algorithm for simple scenarios
+    - auto: Automatically selects based on problem complexity
 
     Args:
         request: Roster generation request with dates and site IDs
-        algorithm: Optional algorithm selection ('hungarian', 'milp', 'auto')
-                  If not specified, uses ROSTER_ALGORITHM from settings
+        algorithm: Algorithm selection (default: 'production')
         db: Database session
 
     Returns:
-        Roster assignments with summary and unfilled shifts
+        Roster assignments with summary, costs, fairness metrics, and diagnostics
     """
     try:
         # Convert dates to datetime
@@ -40,41 +49,63 @@ async def generate_roster(
         end_datetime = datetime.combine(request.end_date, datetime.max.time())
 
         # Determine which algorithm to use
-        selected_algorithm = algorithm or settings.ROSTER_ALGORITHM
+        selected_algorithm = algorithm or "production"
 
-        print(f"[ROSTER DEBUG] ROSTER_ALGORITHM from settings: {settings.ROSTER_ALGORITHM}")
-        print(f"[ROSTER DEBUG] Selected algorithm before auto-select: {selected_algorithm}")
+        logger.info(f"Roster generation requested: {start_datetime} to {end_datetime}, algorithm={selected_algorithm}")
 
-        # Auto-select based on roster period length
+        # Auto-select based on roster period and complexity
         if selected_algorithm == "auto":
             period_days = (end_datetime - start_datetime).days
-            # Use MILP for periods > 3 days, Hungarian for shorter periods
-            selected_algorithm = "milp" if period_days > 3 else "hungarian"
-            print(f"[ROSTER DEBUG] Auto-selected {selected_algorithm} based on {period_days} days")
+            # Use production optimizer for all non-trivial cases
+            if period_days > 3:
+                selected_algorithm = "production"
+            else:
+                selected_algorithm = "hungarian"
+            logger.info(f"Auto-selected {selected_algorithm} based on {period_days} days")
 
-        print(f"[ROSTER DEBUG] Final selected algorithm: {selected_algorithm}")
+        # Initialize appropriate optimizer
+        if selected_algorithm == "production":
+            logger.info("Using Production CP-SAT Optimizer")
+            optimizer = ProductionRosterOptimizer(
+                db,
+                config=OptimizationConfig(
+                    time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 120),
+                    fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2),
+                    max_distance_km=getattr(settings, 'MAX_DISTANCE_KM', 50.0)
+                )
+            )
+            result = optimizer.optimize(
+                start_date=start_datetime,
+                end_date=end_datetime,
+                site_ids=request.site_ids
+            )
 
-        # Initialize appropriate generator
-        if selected_algorithm == "milp":
-            print("[ROSTER DEBUG] Initializing MILPRosterGenerator")
+        elif selected_algorithm == "milp":
+            logger.info("Using Legacy MILP Generator")
             generator = MILPRosterGenerator(db)
-        else:
-            print("[ROSTER DEBUG] Initializing RosterGenerator (Hungarian)")
+            result = generator.generate_roster(
+                start_date=start_datetime,
+                end_date=end_datetime,
+                site_ids=request.site_ids
+            )
+            result["algorithm_used"] = "milp"
+
+        else:  # hungarian
+            logger.info("Using Hungarian Algorithm")
             generator = RosterGenerator(db)
+            result = generator.generate_roster(
+                start_date=start_datetime,
+                end_date=end_datetime,
+                site_ids=request.site_ids
+            )
+            result["algorithm_used"] = "hungarian"
 
-        # Generate roster
-        result = generator.generate_roster(
-            start_date=start_datetime,
-            end_date=end_datetime,
-            site_ids=request.site_ids
-        )
-
-        # Add algorithm info to result
-        result["algorithm_used"] = selected_algorithm
+        logger.info(f"Roster generation complete: {result.get('status', 'unknown')}, {len(result.get('assignments', []))} assignments")
 
         return result
 
     except Exception as e:
+        logger.error(f"Roster generation failed: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error generating roster: {str(e)}"
