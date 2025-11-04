@@ -36,7 +36,8 @@
       "Bash(npx prettier:*)",
       "Bash(\"C:\\Program Files\\PostgreSQL\\15\\bin\\psql.exe\" --version)",
       "Bash(\"C:\\Program Files\\PostgreSQL\\16\\bin\\psql.exe\" --version)",
-      "Bash(\"C:\\Program Files\\PostgreSQL\\14\\bin\\psql.exe\" -U postgres -d rostracore_db -c \"SELECT COUNT(*) FROM employees;\")"
+      "Bash(\"C:\\Program Files\\PostgreSQL\\14\\bin\\psql.exe\" -U postgres -d rostracore_db -c \"SELECT COUNT(*) FROM employees;\")",
+      "Bash(timeout 30 python:*)"
     ],
     "deny": [],
     "ask": []

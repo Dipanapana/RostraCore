@@ -6,7 +6,8 @@ from typing import List, Optional, Any
 from datetime import date, time
 from app.database import get_db
 from app.models.availability import Availability
-from pydantic import BaseModel, field_serializer
+from pydantic import BaseModel
+from pydantic.functional_serializers import field_serializer
 
 router = APIRouter()
 

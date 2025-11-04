@@ -312,7 +312,7 @@ class ProductionRosterOptimizer:
         shift_date = shift.start_time.date()
 
         for cert in certs:
-            if cert.expiry_date and cert.expiry_date.date() >= shift_date:
+            if cert.expiry_date and cert.expiry_date >= shift_date:
                 return True
 
         return False
