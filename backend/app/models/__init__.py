@@ -12,6 +12,8 @@ from app.models.payroll import PayrollSummary
 from app.models.rules_config import RulesConfig
 from app.models.shift_template import ShiftTemplate
 from app.models.skills_matrix import SkillsMatrix
+from app.models.roster import Roster
+from app.models.shift_assignment import ShiftAssignment
 
 __all__ = [
     "User",
@@ -25,5 +27,7 @@ __all__ = [
     "PayrollSummary",
     "RulesConfig",
     "ShiftTemplate",
-    "SkillsMatrix"
+    "SkillsMatrix",
+    "Roster",
+    "ShiftAssignment"
 ]

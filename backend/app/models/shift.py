@@ -34,6 +34,7 @@ class Shift(Base):
     site = relationship("Site", back_populates="shifts")
     employee = relationship("Employee", back_populates="shifts")
     attendance = relationship("Attendance", back_populates="shift", uselist=False)
+    shift_assignment = relationship("ShiftAssignment", back_populates="shift", uselist=False)
 
     def __repr__(self):
         return f"<Shift {self.shift_id}: Site {self.site_id} at {self.start_time}>"
