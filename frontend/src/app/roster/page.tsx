@@ -1,17 +1,41 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { rosterApi } from '@/services/api'
 import ExportButtons from '@/components/ExportButtons'
+import SecurityLoadingSpinner from '@/components/SecurityLoadingSpinner'
 
 export default function RosterPage() {
   const router = useRouter()
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [loading, setLoading] = useState(false)
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [result, setResult] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Timer effect for elapsed seconds
+  useEffect(() => {
+    if (loading) {
+      setElapsedSeconds(0)
+      timerRef.current = setInterval(() => {
+        setElapsedSeconds((prev) => prev + 1)
+      }, 1000)
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current)
+        timerRef.current = null
+      }
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current)
+      }
+    }
+  }, [loading])
 
   const handleGenerate = async () => {
     if (!startDate || !endDate) {
@@ -54,8 +78,17 @@ export default function RosterPage() {
   }
 
   return (
-    <div className="min-h-screen p-8">
-      <div className="max-w-7xl mx-auto">
+    <>
+      {/* Security-themed loading overlay */}
+      {loading && (
+        <SecurityLoadingSpinner
+          message="Optimizing roster with CP-SAT constraint solver..."
+          elapsedSeconds={elapsedSeconds}
+        />
+      )}
+
+      <div className="min-h-screen p-8">
+        <div className="max-w-7xl mx-auto">
         <div className="mb-4">
           <button
             onClick={() => router.push('/dashboard')}
@@ -226,7 +259,8 @@ export default function RosterPage() {
             )}
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </>
   )
 }

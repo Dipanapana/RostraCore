@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     # Rostering Algorithm Settings
     ROSTER_ALGORITHM: str = "auto"  # Options: "hungarian", "milp", "auto"
     FAIRNESS_WEIGHT: float = 0.2  # Weight for fairness in MILP objective (0-1)
-    MILP_TIME_LIMIT: int = 60  # Maximum solver time in seconds
+    MILP_TIME_LIMIT: int = 180  # Maximum solver time in seconds
 
     # Pagination
     DEFAULT_PAGE_SIZE: int = 50
