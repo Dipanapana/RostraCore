@@ -703,35 +703,34 @@ class ProductionRosterOptimizer:
         assigned_shift_ids = set(a["shift_id"] for a in self.assignments)
         unfilled_shifts = [s for s in self.shifts if s.shift_id not in assigned_shift_ids]
 
-        # Calculate fairness score
-        if len(self.employees) > 1:
-            hours_per_emp = defaultdict(float)
-            for assignment in self.assignments:
-                shift = next(s for s in self.shifts if s.shift_id == assignment["shift_id"])
-                hours = (shift.end_time - shift.start_time).total_seconds() / 3600
-                hours_per_emp[assignment["employee_id"]] += hours
+        # Calculate fairness score and employee hours
+        hours_per_emp = defaultdict(float)
+        for assignment in self.assignments:
+            shift = next(s for s in self.shifts if s.shift_id == assignment["shift_id"])
+            hours = (shift.end_time - shift.start_time).total_seconds() / 3600
+            hours_per_emp[assignment["employee_id"]] += hours
 
-            if hours_per_emp:
-                max_hours = max(hours_per_emp.values())
-                min_hours = min(hours_per_emp.values())
-                self.fairness_score = 1.0 - (max_hours - min_hours) / max(max_hours, 1)
-            else:
-                self.fairness_score = 1.0
+        if len(self.employees) > 1 and hours_per_emp:
+            max_hours = max(hours_per_emp.values())
+            min_hours = min(hours_per_emp.values())
+            self.fairness_score = 1.0 - (max_hours - min_hours) / max(max_hours, 1)
         else:
             self.fairness_score = 1.0
+
+        # Calculate average cost per shift
+        avg_cost = self.total_cost / len(self.assignments) if self.assignments else 0
 
         return {
             "status": "optimal" if self.solution_status == cp_model.OPTIMAL else "feasible",
             "assignments": self.assignments,
             "unfilled_shifts": [self._shift_to_dict(s) for s in unfilled_shifts],
             "summary": {
-                "total_shifts": len(self.shifts),
-                "assigned_shifts": len(self.assignments),
-                "unfilled_shifts": len(unfilled_shifts),
-                "fill_rate": len(self.assignments) / len(self.shifts) * 100 if self.shifts else 0,
                 "total_cost": self.total_cost,
-                "fairness_score": self.fairness_score,
-                "employees_used": len(set(a["employee_id"] for a in self.assignments))
+                "total_shifts_filled": len(self.assignments),
+                "employee_hours": dict(hours_per_emp),
+                "average_cost_per_shift": avg_cost,
+                "fill_rate": (len(self.assignments) / len(self.shifts) * 100) if self.shifts else 0,
+                "employees_utilized": len(set(a["employee_id"] for a in self.assignments))
             },
             "solver_info": {
                 "solve_time": self.solve_time,
@@ -772,13 +771,12 @@ class ProductionRosterOptimizer:
             "assignments": [],
             "unfilled_shifts": [self._shift_to_dict(s) for s in self.shifts],
             "summary": {
-                "total_shifts": len(self.shifts),
-                "assigned_shifts": 0,
-                "unfilled_shifts": len(self.shifts),
-                "fill_rate": 0,
-                "total_cost": 0,
-                "fairness_score": 0,
-                "employees_used": 0
+                "total_cost": 0.0,
+                "total_shifts_filled": 0,
+                "employee_hours": {},
+                "average_cost_per_shift": 0.0,
+                "fill_rate": 0.0,
+                "employees_utilized": 0
             }
         }
 
