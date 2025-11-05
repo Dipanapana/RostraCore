@@ -3,6 +3,23 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, JSON
 from sqlalchemy.sql import func
 from app.database import Base
+import enum
+
+
+class SubscriptionTier(str, enum.Enum):
+    """Subscription tier enum."""
+    STARTER = "starter"
+    PROFESSIONAL = "professional"
+    BUSINESS = "business"
+    ENTERPRISE = "enterprise"
+
+
+class SubscriptionStatus(str, enum.Enum):
+    """Subscription status enum."""
+    ACTIVE = "active"
+    TRIAL = "trial"
+    SUSPENDED = "suspended"
+    CANCELLED = "cancelled"
 
 
 class Organization(Base):

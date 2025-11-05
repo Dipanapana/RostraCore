@@ -54,7 +54,8 @@ class ShiftGroup(Base):
     notes = Column(Text, nullable=True)
 
     # Relationships
-    shifts = relationship("Shift", back_populates="shift_group")
+    # TODO: Add back when Shift model is updated with shift_group_id foreign key
+    # shifts = relationship("Shift", back_populates="shift_group")
 
     def __repr__(self):
         return f"<ShiftGroup(id={self.shift_group_id}, site_id={self.site_id}, guards={self.required_guards}, status='{self.status.value}')>"
