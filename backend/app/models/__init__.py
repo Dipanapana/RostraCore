@@ -14,6 +14,8 @@ from app.models.shift_template import ShiftTemplate
 from app.models.skills_matrix import SkillsMatrix
 from app.models.roster import Roster
 from app.models.shift_assignment import ShiftAssignment
+from app.models.organization import Organization
+from app.models.shift_group import ShiftGroup
 
 __all__ = [
     "User",
@@ -29,5 +31,7 @@ __all__ = [
     "ShiftTemplate",
     "SkillsMatrix",
     "Roster",
-    "ShiftAssignment"
+    "ShiftAssignment",
+    "Organization",
+    "ShiftGroup"
 ]
