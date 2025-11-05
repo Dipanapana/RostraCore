@@ -14,7 +14,8 @@ from app.database import Base
 from app.models import (
     employee, site, shift, availability, certification,
     expense, attendance, payroll, rules_config,
-    shift_template, skills_matrix
+    shift_template, skills_matrix, organization, shift_group,
+    roster, shift_assignment
 )
 
 # this is the Alembic Config object
