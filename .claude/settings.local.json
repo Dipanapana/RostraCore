@@ -40,7 +40,8 @@
       "Bash(timeout 30 python:*)",
       "Bash(timeout 90 curl:*)",
       "Bash(timeout 30 curl:*)",
-      "Bash(\"C:\\Program Files\\PostgreSQL\\14\\bin\\psql.exe\" -U postgres -d rostracore_db -c \"SELECT status, COUNT(*) as count FROM shifts WHERE start_time >= ''2025-11-05'' AND start_time < ''2025-11-13'' GROUP BY status;\")"
+      "Bash(\"C:\\Program Files\\PostgreSQL\\14\\bin\\psql.exe\" -U postgres -d rostracore_db -c \"SELECT status, COUNT(*) as count FROM shifts WHERE start_time >= ''2025-11-05'' AND start_time < ''2025-11-13'' GROUP BY status;\")",
+      "Bash(timeout 90 python:*)"
     ],
     "deny": [],
     "ask": []
