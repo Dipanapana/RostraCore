@@ -448,8 +448,8 @@ class ProductionRosterOptimizer:
                     feasible_vars.append(self.assignment_vars[key])
 
             if feasible_vars:
-                # Exactly 1 employee per shift (or 0 if can't be filled)
-                self.model.Add(sum(feasible_vars) <= 1)
+                # Exactly 1 employee per shift (MUST be filled)
+                self.model.Add(sum(feasible_vars) == 1)
             else:
                 logger.warning(f"Shift {shift.shift_id} has no feasible employees!")
 
