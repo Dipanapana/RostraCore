@@ -54,32 +54,52 @@ def upgrade():
         "service_type IS NULL OR service_type IN ('static', 'patrol', 'armed_response', 'control_room', 'supervisor')"
     )
 
-    # Backfill existing data based on role
-    # Supervisors -> Grade B
-    op.execute("""
-        UPDATE employees
-        SET psira_grade = 'B',
-            service_type = 'supervisor',
-            is_supervisor = TRUE
-        WHERE role = 'supervisor'
-    """)
+    # Backfill existing data based on role (only if employees exist)
+    from sqlalchemy import inspect, text
+    conn = op.get_bind()
+    inspector = inspect(conn)
+    existing_tables = inspector.get_table_names()
 
-    # Armed -> Grade C
-    op.execute("""
-        UPDATE employees
-        SET psira_grade = 'C',
-            service_type = 'patrol',
-            is_armed = TRUE
-        WHERE role = 'armed'
-    """)
+    if 'employees' in existing_tables:
+        # Check if there are any employees
+        result = conn.execute(text("SELECT COUNT(*) FROM employees"))
+        employee_count = result.scalar()
 
-    # Unarmed -> Grade D
-    op.execute("""
-        UPDATE employees
-        SET psira_grade = 'D',
-            service_type = 'static'
-        WHERE role = 'unarmed'
-    """)
+        if employee_count > 0:
+            # Supervisors -> Grade B (only if role column exists and has 'supervisor')
+            try:
+                op.execute("""
+                    UPDATE employees
+                    SET psira_grade = 'B',
+                        service_type = 'supervisor',
+                        is_supervisor = TRUE
+                    WHERE role = 'supervisor'
+                """)
+            except:
+                pass  # Role might not have this value
+
+            # Armed -> Grade C
+            try:
+                op.execute("""
+                    UPDATE employees
+                    SET psira_grade = 'C',
+                        service_type = 'patrol',
+                        is_armed = TRUE
+                    WHERE role = 'armed'
+                """)
+            except:
+                pass
+
+            # Unarmed -> Grade D
+            try:
+                op.execute("""
+                    UPDATE employees
+                    SET psira_grade = 'D',
+                        service_type = 'static'
+                    WHERE role = 'unarmed'
+                """)
+            except:
+                pass
 
 
 def downgrade():

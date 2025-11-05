@@ -31,7 +31,9 @@ load_dotenv()
 
 db_url = os.getenv("DATABASE_URL")
 if db_url:
-    config.set_main_option("sqlalchemy.url", db_url)
+    # Double % for ConfigParser interpolation
+    db_url_escaped = db_url.replace('%', '%%')
+    config.set_main_option("sqlalchemy.url", db_url_escaped)
 
 # add your model's MetaData object here for 'autogenerate' support
 target_metadata = Base.metadata

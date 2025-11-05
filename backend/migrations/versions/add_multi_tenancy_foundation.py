@@ -39,6 +39,11 @@ def upgrade():
     op.create_index('ix_organizations_org_code', 'organizations', ['org_code'])
 
     # Add tenant_id to all existing tables
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+    existing_tables = inspector.get_table_names()
+
     tables_to_update = [
         'employees',
         'sites',
@@ -54,14 +59,15 @@ def upgrade():
     ]
 
     for table_name in tables_to_update:
-        op.add_column(table_name, sa.Column('tenant_id', sa.Integer(), nullable=True))
-        op.create_foreign_key(
-            f'fk_{table_name}_tenant_id',
-            table_name, 'organizations',
-            ['tenant_id'], ['org_id'],
-            ondelete='CASCADE'
-        )
-        op.create_index(f'ix_{table_name}_tenant_id', table_name, ['tenant_id'])
+        if table_name in existing_tables:
+            op.add_column(table_name, sa.Column('tenant_id', sa.Integer(), nullable=True))
+            op.create_foreign_key(
+                f'fk_{table_name}_tenant_id',
+                table_name, 'organizations',
+                ['tenant_id'], ['org_id'],
+                ondelete='CASCADE'
+            )
+            op.create_index(f'ix_{table_name}_tenant_id', table_name, ['tenant_id'])
 
     # Create default organization for existing data
     op.execute("""
@@ -71,15 +77,17 @@ def upgrade():
 
     # Update existing records to belong to default organization
     for table_name in tables_to_update:
-        op.execute(f"""
-            UPDATE {table_name}
-            SET tenant_id = (SELECT org_id FROM organizations WHERE org_code = 'DEFAULT')
-            WHERE tenant_id IS NULL
-        """)
+        if table_name in existing_tables:
+            op.execute(f"""
+                UPDATE {table_name}
+                SET tenant_id = (SELECT org_id FROM organizations WHERE org_code = 'DEFAULT')
+                WHERE tenant_id IS NULL
+            """)
 
     # Make tenant_id NOT NULL after backfill
     for table_name in tables_to_update:
-        op.alter_column(table_name, 'tenant_id', nullable=False)
+        if table_name in existing_tables:
+            op.alter_column(table_name, 'tenant_id', nullable=False)
 
 
 def downgrade():
