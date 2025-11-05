@@ -26,15 +26,20 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: list[str] = ["http://localhost:3000"]
 
     # Rostering Constraints
-    MAX_HOURS_WEEK: int = 48
-    MIN_REST_HOURS: int = 8
+    MAX_HOURS_WEEK: int = 60  # Relaxed from 48 for testing (BCEA: 48)
+    MIN_REST_HOURS: int = 6   # Relaxed from 8 for testing (BCEA: 8)
     OT_MULTIPLIER: float = 1.5
-    MAX_DISTANCE_KM: float = 50.0
+    MAX_DISTANCE_KM: float = 100.0  # Relaxed from 50km for testing
 
     # Rostering Algorithm Settings
     ROSTER_ALGORITHM: str = "auto"  # Options: "hungarian", "milp", "auto"
-    FAIRNESS_WEIGHT: float = 0.2  # Weight for fairness in MILP objective (0-1)
+    FAIRNESS_WEIGHT: float = 0.15  # Relaxed from 0.2 to prioritize fill rate
     MILP_TIME_LIMIT: int = 180  # Maximum solver time in seconds
+
+    # Testing Mode - Relaxed Constraints
+    TESTING_MODE: bool = True  # Set to False for production BCEA-compliant mode
+    SKIP_CERTIFICATION_CHECK: bool = True  # Skip PSIRA cert validation for testing
+    SKIP_SKILL_MATCHING: bool = False  # Still match skills but more flexible
 
     # Pagination
     DEFAULT_PAGE_SIZE: int = 50

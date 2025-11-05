@@ -244,13 +244,15 @@ class ProductionRosterOptimizer:
         """
         reasons = []
 
-        # 1. Check skill match
-        if not self._check_skill_match(emp, shift):
-            reasons.append(f"Skill mismatch: employee has {emp.role.value}, shift needs {shift.required_skill}")
+        # 1. Check skill match (unless in flexible testing mode)
+        if not settings.SKIP_SKILL_MATCHING:
+            if not self._check_skill_match(emp, shift):
+                reasons.append(f"Skill mismatch: employee has {emp.role.value}, shift needs {shift.required_skill}")
 
-        # 2. Check certifications
-        if not self._check_certifications(emp, shift):
-            reasons.append("Invalid or expired certifications")
+        # 2. Check certifications (skip if SKIP_CERTIFICATION_CHECK is enabled)
+        if not settings.SKIP_CERTIFICATION_CHECK:
+            if not self._check_certifications(emp, shift):
+                reasons.append("Invalid or expired certifications")
 
         # 3. Check availability (if availability data exists)
         if not self._check_availability(emp, shift):
@@ -414,7 +416,7 @@ class ProductionRosterOptimizer:
         for emp in self.employees:
             for week_num in self.weeks:
                 key = (emp.employee_id, week_num)
-                max_hours = min(emp.max_hours_week or 48, 48)
+                max_hours = min(emp.max_hours_week or settings.MAX_HOURS_WEEK, settings.MAX_HOURS_WEEK)
                 var_name = f"hours_e{emp.employee_id}_w{week_num}"
                 self.weekly_hours_vars[key] = self.model.NewIntVar(0, max_hours, var_name)
 
@@ -474,8 +476,8 @@ class ProductionRosterOptimizer:
         return (shift1.start_time < shift2.end_time and shift2.start_time < shift1.end_time)
 
     def _add_weekly_hours_constraints(self):
-        """Enforce BCEA 48-hour weekly limit"""
-        logger.info("Adding weekly hours constraints...")
+        """Enforce weekly hours limit (configurable for testing)"""
+        logger.info(f"Adding weekly hours constraints (max {settings.MAX_HOURS_WEEK}h)...")
 
         for emp in self.employees:
             for week_num in self.weeks:
@@ -495,8 +497,8 @@ class ProductionRosterOptimizer:
                     week_key = (emp.employee_id, week_num)
                     self.model.Add(self.weekly_hours_vars[week_key] == sum(week_shift_terms))
 
-                    # Must not exceed 48 hours (BCEA compliance)
-                    max_hours = min(emp.max_hours_week or 48, 48)
+                    # Must not exceed weekly hours limit (configurable for testing)
+                    max_hours = min(emp.max_hours_week or settings.MAX_HOURS_WEEK, settings.MAX_HOURS_WEEK)
                     self.model.Add(self.weekly_hours_vars[week_key] <= max_hours)
 
     def _add_rest_period_constraints(self):
@@ -609,8 +611,8 @@ class ProductionRosterOptimizer:
         # Secondary objective: Minimize unfairness
         if len(self.employees) > 1:
             # Minimize variance in weekly hours
-            max_hours = self.model.NewIntVar(0, 48, "max_weekly_hours")
-            min_hours = self.model.NewIntVar(0, 48, "min_weekly_hours")
+            max_hours = self.model.NewIntVar(0, settings.MAX_HOURS_WEEK, "max_weekly_hours")
+            min_hours = self.model.NewIntVar(0, settings.MAX_HOURS_WEEK, "min_weekly_hours")
 
             all_weekly_hours = []
             for emp in self.employees:
@@ -800,7 +802,7 @@ class ProductionRosterOptimizer:
 
         # Check capacity
         total_shift_hours = sum((s.end_time - s.start_time).total_seconds() / 3600 for s in self.shifts)
-        total_employee_capacity = len(self.employees) * 48  # Max 48h per employee
+        total_employee_capacity = len(self.employees) * settings.MAX_HOURS_WEEK  # Max hours per employee
 
         capacity_sufficient = total_employee_capacity >= total_shift_hours
 

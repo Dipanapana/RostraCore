@@ -37,7 +37,9 @@
       "Bash(\"C:\\Program Files\\PostgreSQL\\15\\bin\\psql.exe\" --version)",
       "Bash(\"C:\\Program Files\\PostgreSQL\\16\\bin\\psql.exe\" --version)",
       "Bash(\"C:\\Program Files\\PostgreSQL\\14\\bin\\psql.exe\" -U postgres -d rostracore_db -c \"SELECT COUNT(*) FROM employees;\")",
-      "Bash(timeout 30 python:*)"
+      "Bash(timeout 30 python:*)",
+      "Bash(timeout 90 curl:*)",
+      "Bash(timeout 30 curl:*)"
     ],
     "deny": [],
     "ask": []
