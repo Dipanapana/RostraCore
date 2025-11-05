@@ -254,9 +254,10 @@ class ProductionRosterOptimizer:
             if not self._check_certifications(emp, shift):
                 reasons.append("Invalid or expired certifications")
 
-        # 3. Check availability (if availability data exists)
-        if not self._check_availability(emp, shift):
-            reasons.append("Employee not available during shift time")
+        # 3. Check availability (skip if SKIP_AVAILABILITY_CHECK is enabled)
+        if not settings.SKIP_AVAILABILITY_CHECK:
+            if not self._check_availability(emp, shift):
+                reasons.append("Employee not available during shift time")
 
         # 4. Check distance
         distance_km = self._calculate_distance(emp, shift)

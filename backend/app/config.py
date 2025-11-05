@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     TESTING_MODE: bool = True  # Set to False for production BCEA-compliant mode
     SKIP_CERTIFICATION_CHECK: bool = True  # Skip PSIRA cert validation for testing
     SKIP_SKILL_MATCHING: bool = False  # Still match skills but more flexible
+    SKIP_AVAILABILITY_CHECK: bool = True  # Skip availability checks for testing (allows all shifts)
 
     # Pagination
     DEFAULT_PAGE_SIZE: int = 50
