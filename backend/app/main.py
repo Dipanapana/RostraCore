@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api.endpoints import employees, sites, shifts, availability, certifications, expenses, attendance, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, shift_groups, analytics, jobs, dashboards
+from app.api.endpoints import employees, sites, shifts, availability, certifications, expenses, attendance, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, shift_groups, analytics, jobs, dashboards, predictions
 
 # Initialize Sentry for error tracking and performance monitoring
 if settings.SENTRY_DSN:
@@ -97,6 +97,7 @@ app.include_router(shift_groups.router, prefix=f"{settings.API_V1_PREFIX}/shift-
 app.include_router(analytics.router, tags=["analytics"])
 app.include_router(jobs.router, tags=["jobs"])
 app.include_router(dashboards.router, tags=["dashboards"])
+app.include_router(predictions.router, tags=["predictions"])
 
 
 if __name__ == "__main__":

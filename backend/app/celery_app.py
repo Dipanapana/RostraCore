@@ -33,19 +33,31 @@ celery_app.autodiscover_tasks(['app.tasks'])
 
 # Celery beat schedule (for periodic tasks)
 celery_app.conf.beat_schedule = {
-    'calculate-daily-metrics': {
-        'task': 'app.tasks.analytics_tasks.calculate_all_daily_metrics',
-        'schedule': 86400.0,  # Run daily (every 24 hours)
-        'options': {'queue': 'analytics'}
-    },
+    # Analytics & Health Scoring
     'calculate-customer-health-scores': {
-        'task': 'app.tasks.analytics_tasks.calculate_all_health_scores',
-        'schedule': 43200.0,  # Run twice daily (every 12 hours)
+        'task': 'app.tasks.prediction_tasks.calculate_all_customer_health_scores',
+        'schedule': 86400.0,  # Run daily at midnight
         'options': {'queue': 'analytics'}
     },
-    'check-expiring-certifications': {
-        'task': 'app.tasks.notification_tasks.send_expiry_alerts',
+
+    # Churn Prediction
+    'calculate-churn-predictions': {
+        'task': 'app.tasks.prediction_tasks.calculate_all_churn_predictions',
         'schedule': 86400.0,  # Run daily
-        'options': {'queue': 'notifications'}
+        'options': {'queue': 'predictions'}
+    },
+
+    # Daily Alerts
+    'generate-daily-alerts': {
+        'task': 'app.tasks.prediction_tasks.generate_daily_alerts',
+        'schedule': 21600.0,  # Run every 6 hours
+        'options': {'queue': 'alerts'}
+    },
+
+    # Pattern Analysis
+    'analyze-shift-patterns': {
+        'task': 'app.tasks.prediction_tasks.analyze_shift_patterns',
+        'schedule': 604800.0,  # Run weekly (every 7 days)
+        'options': {'queue': 'analytics'}
     }
 }
