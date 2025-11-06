@@ -13,6 +13,7 @@ from app.algorithms.roster_generator import RosterGenerator
 from app.algorithms.milp_roster_generator import MILPRosterGenerator
 from app.algorithms.production_optimizer import ProductionRosterOptimizer, OptimizationConfig
 from app.services.shift_service import ShiftService
+from app.services.cache_service import CacheInvalidator
 from app.config import settings
 
 router = APIRouter()
@@ -117,7 +118,11 @@ async def confirm_roster(
     assignments: List[dict],
     db: Session = Depends(get_db)
 ):
-    """Confirm and save generated roster assignments."""
+    """
+    Confirm and save generated roster assignments.
+
+    **Cache Invalidation:** Clears dashboard and shift caches when roster is confirmed.
+    """
     try:
         confirmed_count = 0
         for assignment in assignments:
@@ -128,6 +133,13 @@ async def confirm_roster(
             )
             if shift:
                 confirmed_count += 1
+
+        # Invalidate caches after roster confirmation
+        CacheInvalidator.invalidate_dashboard()
+        CacheInvalidator.invalidate_roster()
+        CacheInvalidator.invalidate_shifts()
+
+        logger.info(f"Roster confirmed: {confirmed_count} shifts assigned, caches invalidated")
 
         return {
             "success": True,

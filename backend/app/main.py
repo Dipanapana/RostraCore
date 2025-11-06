@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api.endpoints import employees, sites, shifts, availability, certifications, expenses, attendance, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, shift_groups, analytics
+from app.api.endpoints import employees, sites, shifts, availability, certifications, expenses, attendance, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, shift_groups, analytics, jobs
 
 app = FastAPI(
     title="RostraCore API",
@@ -35,8 +35,15 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint."""
-    return {"status": "healthy"}
+    """Health check endpoint with Redis status."""
+    from app.services.cache_service import check_redis_health
+
+    redis_health = check_redis_health()
+
+    return {
+        "status": "healthy",
+        "redis": redis_health
+    }
 
 
 # Include routers
@@ -56,6 +63,7 @@ app.include_router(settings_endpoint.router, prefix=f"{settings.API_V1_PREFIX}/s
 app.include_router(organizations.router, prefix=f"{settings.API_V1_PREFIX}/organizations", tags=["organizations"])
 app.include_router(shift_groups.router, prefix=f"{settings.API_V1_PREFIX}/shift-groups", tags=["shift-groups"])
 app.include_router(analytics.router, tags=["analytics"])
+app.include_router(jobs.router, tags=["jobs"])
 
 
 if __name__ == "__main__":

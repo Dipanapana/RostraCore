@@ -12,6 +12,7 @@ from app.models.shift import Shift, ShiftStatus
 from app.models.site import Site
 from app.models.certification import Certification
 from app.models.availability import Availability
+from app.services.cache_service import cached, CacheService
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
@@ -21,9 +22,16 @@ def get_dashboard_metrics(db: Session = Depends(get_db)) -> Dict:
     """
     Get comprehensive dashboard metrics.
 
+    **Cached for 5 minutes** - Significantly improves dashboard load time
+
     Returns:
         Dict with all key metrics for dashboard display
     """
+    # Check cache first
+    cache_key = "dashboard:metrics:all"
+    cached_metrics = CacheService.get(cache_key)
+    if cached_metrics:
+        return cached_metrics
     # Employee Metrics
     total_employees = db.query(Employee).count()
     active_employees = db.query(Employee).filter(
@@ -75,7 +83,7 @@ def get_dashboard_metrics(db: Session = Depends(get_db)) -> Dict:
     # Calculate fill rate
     fill_rate = (assigned_shifts / total_shifts * 100) if total_shifts > 0 else 0
 
-    return {
+    metrics = {
         "employees": {
             "total": total_employees,
             "active": active_employees,
@@ -101,6 +109,11 @@ def get_dashboard_metrics(db: Session = Depends(get_db)) -> Dict:
         }
     }
 
+    # Cache for 5 minutes (300 seconds)
+    CacheService.set(cache_key, metrics, ttl=300)
+
+    return metrics
+
 
 @router.get("/upcoming-shifts")
 def get_upcoming_shifts(
@@ -110,6 +123,8 @@ def get_upcoming_shifts(
     """
     Get upcoming shifts for dashboard display.
 
+    **Cached for 2 minutes** - Reduces database load
+
     Args:
         limit: Maximum number of shifts to return
         db: Database session
@@ -117,11 +132,16 @@ def get_upcoming_shifts(
     Returns:
         List of upcoming shifts with details
     """
+    # Check cache
+    cache_key = f"dashboard:upcoming_shifts:{limit}"
+    cached_shifts = CacheService.get(cache_key)
+    if cached_shifts:
+        return cached_shifts
     shifts = db.query(Shift).filter(
         Shift.start_time > datetime.now()
     ).order_by(Shift.start_time).limit(limit).all()
 
-    return [
+    result = [
         {
             "shift_id": s.shift_id,
             "start_time": s.start_time,
@@ -133,6 +153,11 @@ def get_upcoming_shifts(
         }
         for s in shifts
     ]
+
+    # Cache for 2 minutes (120 seconds)
+    CacheService.set(cache_key, result, ttl=120)
+
+    return result
 
 
 @router.get("/expiring-certifications")
