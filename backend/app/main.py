@@ -5,6 +5,32 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.api.endpoints import employees, sites, shifts, availability, certifications, expenses, attendance, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, shift_groups, analytics, jobs
 
+# Initialize Sentry for error tracking and performance monitoring
+if settings.SENTRY_DSN:
+    import sentry_sdk
+    from sentry_sdk.integrations.fastapi import FastApiIntegration
+    from sentry_sdk.integrations.celery import CeleryIntegration
+    from sentry_sdk.integrations.redis import RedisIntegration
+    from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        environment=settings.SENTRY_ENVIRONMENT,
+        traces_sample_rate=settings.SENTRY_TRACES_SAMPLE_RATE,
+        profiles_sample_rate=settings.SENTRY_PROFILES_SAMPLE_RATE,
+        integrations=[
+            FastApiIntegration(transaction_style="endpoint"),
+            CeleryIntegration(monitor_beat_tasks=True),
+            RedisIntegration(),
+            SqlalchemyIntegration(),
+        ],
+        # Set custom tags for better filtering
+        before_send=lambda event, hint: event,
+        release=f"rostracore@1.0.0",
+        # Capture 100% of errors, but only sample rate of performance transactions
+        enable_tracing=True,
+    )
+
 app = FastAPI(
     title="RostraCore API",
     description="Algorithmic Roster & Budget Engine for Security Guards",
@@ -35,15 +61,21 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint with Redis status."""
-    from app.services.cache_service import check_redis_health
+    """
+    Comprehensive health check endpoint
 
-    redis_health = check_redis_health()
+    Checks:
+    - Database connectivity
+    - Redis cache status
+    - Celery worker availability
 
-    return {
-        "status": "healthy",
-        "redis": redis_health
-    }
+    Returns overall system health status
+    """
+    from app.services.monitoring_service import HealthMonitor
+
+    health_status = HealthMonitor.check_system_health()
+
+    return health_status
 
 
 # Include routers

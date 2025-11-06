@@ -46,6 +46,22 @@ class Settings(BaseSettings):
     DEFAULT_PAGE_SIZE: int = 50
     MAX_PAGE_SIZE: int = 100
 
+    # Monitoring & Error Tracking
+    SENTRY_DSN: Optional[str] = None  # Set in .env for production
+    SENTRY_ENVIRONMENT: str = "development"  # development, staging, production
+    SENTRY_TRACES_SAMPLE_RATE: float = 0.1  # 10% of transactions for performance monitoring
+    SENTRY_PROFILES_SAMPLE_RATE: float = 0.1  # 10% for profiling
+
+    # Redis & Caching
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    REDIS_DB: int = 0
+    REDIS_PASSWORD: Optional[str] = None
+
+    # Celery
+    CELERY_BROKER_URL: str = "redis://localhost:6379/0"
+    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
+
     class Config:
         env_file = ".env"
         case_sensitive = True
