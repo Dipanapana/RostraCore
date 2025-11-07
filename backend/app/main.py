@@ -3,7 +3,33 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api.endpoints import employees, sites, shifts, availability, certifications, expenses, attendance, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, shift_groups, analytics
+from app.api.endpoints import employees, sites, shifts, availability, certifications, expenses, attendance, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, shift_groups, analytics, jobs, dashboards, predictions
+
+# Initialize Sentry for error tracking and performance monitoring
+if settings.SENTRY_DSN:
+    import sentry_sdk
+    from sentry_sdk.integrations.fastapi import FastApiIntegration
+    from sentry_sdk.integrations.celery import CeleryIntegration
+    from sentry_sdk.integrations.redis import RedisIntegration
+    from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        environment=settings.SENTRY_ENVIRONMENT,
+        traces_sample_rate=settings.SENTRY_TRACES_SAMPLE_RATE,
+        profiles_sample_rate=settings.SENTRY_PROFILES_SAMPLE_RATE,
+        integrations=[
+            FastApiIntegration(transaction_style="endpoint"),
+            CeleryIntegration(monitor_beat_tasks=True),
+            RedisIntegration(),
+            SqlalchemyIntegration(),
+        ],
+        # Set custom tags for better filtering
+        before_send=lambda event, hint: event,
+        release=f"rostracore@1.0.0",
+        # Capture 100% of errors, but only sample rate of performance transactions
+        enable_tracing=True,
+    )
 
 app = FastAPI(
     title="RostraCore API",
@@ -35,8 +61,21 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint."""
-    return {"status": "healthy"}
+    """
+    Comprehensive health check endpoint
+
+    Checks:
+    - Database connectivity
+    - Redis cache status
+    - Celery worker availability
+
+    Returns overall system health status
+    """
+    from app.services.monitoring_service import HealthMonitor
+
+    health_status = HealthMonitor.check_system_health()
+
+    return health_status
 
 
 # Include routers
@@ -56,6 +95,9 @@ app.include_router(settings_endpoint.router, prefix=f"{settings.API_V1_PREFIX}/s
 app.include_router(organizations.router, prefix=f"{settings.API_V1_PREFIX}/organizations", tags=["organizations"])
 app.include_router(shift_groups.router, prefix=f"{settings.API_V1_PREFIX}/shift-groups", tags=["shift-groups"])
 app.include_router(analytics.router, tags=["analytics"])
+app.include_router(jobs.router, tags=["jobs"])
+app.include_router(dashboards.router, tags=["dashboards"])
+app.include_router(predictions.router, tags=["predictions"])
 
 
 if __name__ == "__main__":

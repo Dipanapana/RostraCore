@@ -4,7 +4,20 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { rosterApi } from '@/services/api'
 import ExportButtons from '@/components/ExportButtons'
-import SecurityLoadingSpinner from '@/components/SecurityLoadingSpinner'
+
+// Job status type
+type JobStatus = 'PENDING' | 'STARTED' | 'PROGRESS' | 'SUCCESS' | 'FAILURE'
+
+interface JobStatusResponse {
+  job_id: string
+  status: JobStatus
+  progress: number
+  status_message?: string
+  stage?: string
+  result?: any
+  error?: string
+  completed_at?: string
+}
 
 export default function RosterPage() {
   const router = useRouter()
@@ -15,6 +28,11 @@ export default function RosterPage() {
   const [result, setResult] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Async job state
+  const [jobId, setJobId] = useState<string | null>(null)
+  const [jobStatus, setJobStatus] = useState<JobStatusResponse | null>(null)
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
@@ -41,6 +59,51 @@ export default function RosterPage() {
     }
   }, [loading])
 
+  // Poll for job status
+  useEffect(() => {
+    if (jobId && loading) {
+      pollIntervalRef.current = setInterval(async () => {
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/jobs/status/${jobId}`)
+          const data: JobStatusResponse = await response.json()
+          setJobStatus(data)
+
+          if (data.status === 'SUCCESS') {
+            // Job complete!
+            setResult(data.result)
+            setLoading(false)
+            setJobId(null)
+            setCurrentPage(1)
+
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current)
+              pollIntervalRef.current = null
+            }
+          } else if (data.status === 'FAILURE') {
+            // Job failed
+            setError(data.error || 'Job failed')
+            setLoading(false)
+            setJobId(null)
+
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current)
+              pollIntervalRef.current = null
+            }
+          }
+        } catch (err: any) {
+          console.error('Error polling job status:', err)
+        }
+      }, 2000) // Poll every 2 seconds
+
+      return () => {
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current)
+          pollIntervalRef.current = null
+        }
+      }
+    }
+  }, [jobId, loading])
+
   const handleGenerate = async () => {
     if (!startDate || !endDate) {
       alert('Please select both start and end dates')
@@ -50,20 +113,57 @@ export default function RosterPage() {
     try {
       setLoading(true)
       setError(null)
+      setResult(null)
+      setJobStatus(null)
 
-      const response = await rosterApi.generate({
-        start_date: startDate,
-        end_date: endDate,
-        site_ids: null,
-        budget_limit: null
+      // Start async job
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/jobs/roster/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          start_date: startDate,
+          end_date: endDate,
+          site_ids: null,
+          algorithm: 'production',
+          budget_limit: null,
+          user_id: 1, // TODO: Get from auth context
+          org_id: 1,  // TODO: Get from auth context
+        }),
       })
 
-      setResult(response.data)
-      setCurrentPage(1) // Reset to first page on new results
+      if (!response.ok) {
+        throw new Error('Failed to start roster generation job')
+      }
+
+      const data = await response.json()
+      setJobId(data.job_id)
+
     } catch (err: any) {
       setError(err.response?.data?.detail || err.message || 'Failed to generate roster')
-    } finally {
       setLoading(false)
+    }
+  }
+
+  const handleCancelJob = async () => {
+    if (!jobId) return
+
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/jobs/cancel/${jobId}`, {
+        method: 'DELETE',
+      })
+
+      setLoading(false)
+      setJobId(null)
+      setJobStatus(null)
+
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current)
+        pollIntervalRef.current = null
+      }
+    } catch (err: any) {
+      console.error('Error canceling job:', err)
     }
   }
 
@@ -84,12 +184,54 @@ export default function RosterPage() {
 
   return (
     <>
-      {/* Security-themed loading overlay */}
+      {/* Progress overlay */}
       {loading && (
-        <SecurityLoadingSpinner
-          message="Optimizing roster with CP-SAT constraint solver..."
-          elapsedSeconds={elapsedSeconds}
-        />
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <div className="text-center">
+              {/* Animated spinner */}
+              <div className="mb-4 flex justify-center">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600"></div>
+              </div>
+
+              {/* Status message */}
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {jobStatus?.status_message || 'Initializing optimization...'}
+              </h3>
+
+              {/* Progress bar */}
+              <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+                <div
+                  className="bg-blue-600 h-2.5 rounded-full transition-all duration-500"
+                  style={{ width: `${jobStatus?.progress || 0}%` }}
+                ></div>
+              </div>
+
+              {/* Progress percentage */}
+              <div className="text-sm text-gray-600 mb-4">
+                {jobStatus?.progress || 0}% complete
+                {jobStatus?.stage && (
+                  <span className="ml-2 text-xs text-gray-500">
+                    ({jobStatus.stage})
+                  </span>
+                )}
+              </div>
+
+              {/* Elapsed time */}
+              <div className="text-xs text-gray-500 mb-4">
+                Elapsed time: {elapsedSeconds}s
+              </div>
+
+              {/* Cancel button */}
+              <button
+                onClick={handleCancelJob}
+                className="text-red-600 hover:text-red-700 text-sm font-medium"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <div className="min-h-screen p-8">
@@ -121,6 +263,7 @@ export default function RosterPage() {
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                disabled={loading}
               />
             </div>
 
@@ -133,6 +276,7 @@ export default function RosterPage() {
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                disabled={loading}
               />
             </div>
 
@@ -140,17 +284,24 @@ export default function RosterPage() {
               <button
                 onClick={handleGenerate}
                 disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-md font-medium"
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-md font-medium transition-colors"
               >
                 {loading ? 'Generating...' : 'Generate Roster'}
               </button>
             </div>
           </div>
 
-          <p className="text-sm text-gray-600">
-            The system will automatically assign employees to shifts based on skills, availability,
-            certifications, and cost optimization.
-          </p>
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+            <div className="flex items-start">
+              <svg className="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+              <div className="text-sm text-blue-800">
+                <p className="font-medium mb-1">Background Processing</p>
+                <p>Roster generation now runs in the background. You can navigate away and come back later to check results. Large rosters may take several minutes to optimize.</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Error Display */}
@@ -203,7 +354,7 @@ export default function RosterPage() {
                   <button
                     onClick={handleConfirm}
                     disabled={loading}
-                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-md font-medium"
+                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-md font-medium transition-colors"
                   >
                     Confirm Roster
                   </button>
