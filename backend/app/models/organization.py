@@ -1,6 +1,7 @@
 """Organization (tenant) model for multi-tenancy."""
 
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, JSON
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
 import enum
@@ -52,6 +53,9 @@ class Organization(Base):
     # Metadata
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
+
+    # Relationships
+    users = relationship("User", back_populates="organization")
 
     def __repr__(self):
         return f"<Organization(org_id={self.org_id}, company_name='{self.company_name}', tier='{self.subscription_tier}')>"
