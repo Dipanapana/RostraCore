@@ -73,7 +73,7 @@ export default function Home() {
           {/* Primary + Secondary CTAs */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8 animate-fadeIn" style={{ animationDelay: '0.4s' }}>
             <Link
-              href="/login"
+              href="/register"
               className="group px-10 py-5 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full font-bold text-white text-lg overflow-hidden transition-all hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/50 flex items-center gap-2"
             >
               🚀 Start Free 14-Day Trial
