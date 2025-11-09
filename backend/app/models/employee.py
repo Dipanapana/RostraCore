@@ -1,6 +1,6 @@
 """Employee model."""
 
-from sqlalchemy import Column, Integer, String, Float, Boolean, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, Float, Boolean, Date, Text, DateTime, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from app.database import Base
 import enum
@@ -39,6 +39,18 @@ class Employee(Base):
     email = Column(String(255), unique=True, index=True)
     phone = Column(String(20))
 
+    # Self-service portal fields
+    hashed_password = Column(String(255), nullable=True)  # For employee login
+    psira_number = Column(String(50), nullable=True)
+    psira_expiry_date = Column(Date, nullable=True)
+    psira_grade = Column(String(50), nullable=True)  # A, B, C, D, E
+    address = Column(Text, nullable=True)
+    emergency_contact_name = Column(String(200), nullable=True)
+    emergency_contact_phone = Column(String(20), nullable=True)
+    profile_photo_url = Column(String(500), nullable=True)
+    is_active_account = Column(Boolean, default=False)  # Whether employee can login
+    last_login = Column(DateTime(timezone=True), nullable=True)
+
     # Relationships
     shifts = relationship("Shift", back_populates="employee")
     certifications = relationship("Certification", back_populates="employee")
@@ -47,6 +59,7 @@ class Employee(Base):
     attendance = relationship("Attendance", back_populates="employee")
     payroll_summary = relationship("PayrollSummary", back_populates="employee")
     skills = relationship("SkillsMatrix", back_populates="employee")
+    leave_requests = relationship("LeaveRequest", back_populates="employee")
 
     def __repr__(self):
         return f"<Employee {self.employee_id}: {self.first_name} {self.last_name}>"
