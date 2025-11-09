@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api.endpoints import employees, sites, shifts, availability, certifications, expenses, attendance, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, shift_groups, analytics, jobs, dashboards, predictions, clients, leave_requests, employee_portal, incident_reports, daily_reports
+from app.api.endpoints import employees, sites, shifts, availability, certifications, expenses, attendance, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, shift_groups, analytics, jobs, dashboards, predictions, clients, leave_requests, employee_portal, incident_reports, daily_reports, marketplace_guards, marketplace_jobs, marketplace_applications, guard_ratings
 
 # Initialize Sentry for error tracking and performance monitoring
 if settings.SENTRY_DSN:
@@ -103,6 +103,12 @@ app.include_router(leave_requests.router, prefix=f"{settings.API_V1_PREFIX}/leav
 app.include_router(employee_portal.router, prefix=f"{settings.API_V1_PREFIX}/employee-portal", tags=["employee-portal"])
 app.include_router(incident_reports.router, prefix=f"{settings.API_V1_PREFIX}/incident-reports", tags=["incident-reports"])
 app.include_router(daily_reports.router, prefix=f"{settings.API_V1_PREFIX}/daily-reports", tags=["daily-reports"])
+
+# Job Marketplace routes
+app.include_router(marketplace_guards.router, prefix=f"{settings.API_V1_PREFIX}/marketplace/guards", tags=["marketplace-guards"])
+app.include_router(marketplace_jobs.router, prefix=f"{settings.API_V1_PREFIX}/marketplace/jobs", tags=["marketplace-jobs"])
+app.include_router(marketplace_applications.router, prefix=f"{settings.API_V1_PREFIX}/marketplace/applications", tags=["marketplace-applications"])
+app.include_router(guard_ratings.router, prefix=f"{settings.API_V1_PREFIX}/guard-ratings", tags=["guard-ratings"])
 
 
 if __name__ == "__main__":
