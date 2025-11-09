@@ -8,6 +8,8 @@ interface DailyReport {
   ob_id: number;
   site_id: number;
   site_name?: string;
+  client_name?: string;
+  employee_name?: string;
   ob_date: string;
   shift_start: string;
   shift_end: string | null;
@@ -22,6 +24,7 @@ interface DailyReport {
   observations: string | null;
   handover_notes: string | null;
   relieving_officer_id: number | null;
+  relieving_officer_name?: string;
   keys_handed_over: boolean;
   supervisor_reviewed: boolean;
   supervisor_comments: string | null;
@@ -43,6 +46,7 @@ export default function EmployeeDailyReportPage() {
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [printReport, setPrintReport] = useState<DailyReport | null>(null);
 
   const [formData, setFormData] = useState({
     site_id: "",
@@ -222,6 +226,29 @@ export default function EmployeeDailyReportPage() {
     } catch (err: any) {
       setError(err.message || "Failed to submit daily report");
     }
+  };
+
+  const fetchReportDetails = async (obId: number) => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/daily-reports/${obId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setPrintReport(data);
+        // Trigger print after state updates
+        setTimeout(() => window.print(), 100);
+      }
+    } catch (err) {
+      console.error("Failed to fetch report details:", err);
+      setError("Failed to load report details for printing");
+    }
+  };
+
+  const handlePrint = (obId: number) => {
+    fetchReportDetails(obId);
   };
 
   if (loading) {
@@ -696,12 +723,229 @@ export default function EmployeeDailyReportPage() {
                       <p className="text-sm text-blue-100">{report.supervisor_comments}</p>
                     </div>
                   )}
+
+                  <div className="mt-4 flex justify-end">
+                    <button
+                      onClick={() => handlePrint(report.ob_id)}
+                      className="text-xs px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded transition print:hidden"
+                      title="Print daily report"
+                    >
+                      🖨️ Print Report
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
           )}
         </div>
       </div>
+
+      {/* Printable Daily Report - Professional Format */}
+      {printReport && (
+        <div className="hidden print:block fixed inset-0 bg-white z-[9999]">
+          <style jsx global>{`
+            @media print {
+              @page {
+                size: A4;
+                margin: 2cm;
+              }
+              body {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+              }
+              .no-print {
+                display: none !important;
+              }
+            }
+          `}</style>
+
+          <div className="p-8 text-black max-w-4xl mx-auto">
+            {/* Header */}
+            <div className="text-center mb-6 border-b-2 border-black pb-4">
+              <h1 className="text-2xl font-bold uppercase">Daily Occurrence Book</h1>
+              <p className="text-sm mt-1">Shift Activity Report</p>
+              <p className="text-xs mt-1">OB Reference: OB-{printReport.ob_id.toString().padStart(6, '0')}</p>
+            </div>
+
+            {/* Report Information */}
+            <div className="mb-6">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="border border-black p-2">
+                  <span className="font-bold">Client:</span> {printReport.client_name || 'N/A'}
+                </div>
+                <div className="border border-black p-2">
+                  <span className="font-bold">Site:</span> {printReport.site_name}
+                </div>
+                <div className="border border-black p-2">
+                  <span className="font-bold">Security Officer:</span> {printReport.employee_name || 'Employee'}
+                </div>
+                <div className="border border-black p-2">
+                  <span className="font-bold">Date:</span> {new Date(printReport.ob_date).toLocaleDateString()}
+                </div>
+                <div className="border border-black p-2">
+                  <span className="font-bold">Shift Start:</span> {new Date(printReport.shift_start).toLocaleTimeString()}
+                </div>
+                <div className="border border-black p-2">
+                  <span className="font-bold">Shift End:</span> {printReport.shift_end ? new Date(printReport.shift_end).toLocaleTimeString() : 'In Progress'}
+                </div>
+              </div>
+            </div>
+
+            {/* Weather & Patrol Info */}
+            <div className="mb-6">
+              <h2 className="text-lg font-bold border-b border-black mb-2">Shift Overview</h2>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                {printReport.weather_conditions && (
+                  <div className="border border-black p-2">
+                    <span className="font-bold">Weather Conditions:</span> {printReport.weather_conditions}
+                  </div>
+                )}
+                <div className="border border-black p-2">
+                  <span className="font-bold">Patrol Rounds Completed:</span> {printReport.patrol_rounds_completed || 'N/A'}
+                </div>
+              </div>
+            </div>
+
+            {/* Visitors */}
+            {printReport.visitors_logged > 0 && (
+              <div className="mb-6">
+                <h2 className="text-lg font-bold border-b border-black mb-2">Visitors Log ({printReport.visitors_logged})</h2>
+                {printReport.visitor_details && printReport.visitor_details.length > 0 ? (
+                  <table className="w-full border-collapse border border-black text-sm">
+                    <thead>
+                      <tr className="bg-gray-200">
+                        <th className="border border-black p-2 text-left">Name</th>
+                        <th className="border border-black p-2 text-left">Company</th>
+                        <th className="border border-black p-2 text-left">Purpose</th>
+                        <th className="border border-black p-2 text-left">Time In</th>
+                        <th className="border border-black p-2 text-left">Time Out</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {printReport.visitor_details.map((visitor: any, index: number) => (
+                        <tr key={index}>
+                          <td className="border border-black p-2">{visitor.name}</td>
+                          <td className="border border-black p-2">{visitor.company || '-'}</td>
+                          <td className="border border-black p-2">{visitor.purpose || '-'}</td>
+                          <td className="border border-black p-2">{visitor.time_in}</td>
+                          <td className="border border-black p-2">{visitor.time_out || 'Still on site'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p className="text-sm border border-black p-2">Visitors logged but details not recorded</p>
+                )}
+              </div>
+            )}
+
+            {/* Equipment Check */}
+            <div className="mb-6">
+              <h2 className="text-lg font-bold border-b border-black mb-2">Equipment Check</h2>
+              <div className="border border-black p-2 text-sm mb-2">
+                <input type="checkbox" checked={printReport.equipment_checked} readOnly /> Equipment Check Completed
+              </div>
+
+              {printReport.equipment_status && (
+                <div className="border border-black p-3 text-sm mb-2">
+                  <p className="font-bold mb-1">Equipment Status:</p>
+                  <p className="whitespace-pre-wrap">{printReport.equipment_status}</p>
+                </div>
+              )}
+
+              {printReport.equipment_issues && (
+                <div className="border border-black p-3 text-sm bg-yellow-50">
+                  <p className="font-bold mb-1">Equipment Issues:</p>
+                  <p className="whitespace-pre-wrap">{printReport.equipment_issues}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Incidents & Observations */}
+            <div className="mb-6">
+              <h2 className="text-lg font-bold border-b border-black mb-2">Incidents & Observations</h2>
+
+              {printReport.incidents_summary && (
+                <div className="border border-black p-3 text-sm mb-2 bg-yellow-50">
+                  <p className="font-bold mb-1">Incidents Summary:</p>
+                  <p className="whitespace-pre-wrap">{printReport.incidents_summary}</p>
+                </div>
+              )}
+
+              {printReport.observations && (
+                <div className="border border-black p-3 text-sm">
+                  <p className="font-bold mb-1">General Observations:</p>
+                  <p className="whitespace-pre-wrap">{printReport.observations}</p>
+                </div>
+              )}
+
+              {!printReport.incidents_summary && !printReport.observations && (
+                <p className="text-sm border border-black p-2">No incidents or observations reported</p>
+              )}
+            </div>
+
+            {/* Handover */}
+            <div className="mb-6">
+              <h2 className="text-lg font-bold border-b border-black mb-2">Shift Handover</h2>
+
+              <div className="grid grid-cols-2 gap-4 text-sm mb-2">
+                <div className="border border-black p-2">
+                  <span className="font-bold">Relieving Officer ID:</span> {printReport.relieving_officer_id || 'N/A'}
+                </div>
+                <div className="border border-black p-2">
+                  <input type="checkbox" checked={printReport.keys_handed_over} readOnly /> Keys Handed Over
+                </div>
+              </div>
+
+              {printReport.handover_notes && (
+                <div className="border border-black p-3 text-sm">
+                  <p className="font-bold mb-1">Handover Notes:</p>
+                  <p className="whitespace-pre-wrap">{printReport.handover_notes}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Supervisor Review */}
+            {printReport.supervisor_reviewed && (
+              <div className="mb-6">
+                <h2 className="text-lg font-bold border-b border-black mb-2">Supervisor Review</h2>
+                <div className="border border-black p-3 text-sm">
+                  <p><span className="font-bold">Status:</span> REVIEWED & APPROVED</p>
+                  {printReport.supervisor_comments && (
+                    <p className="mt-2"><span className="font-bold">Comments:</span> {printReport.supervisor_comments}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Signatures */}
+            <div className="mt-8">
+              <div className="grid grid-cols-2 gap-8">
+                <div className="border-t-2 border-black pt-2">
+                  <p className="text-sm font-bold">Security Officer Signature</p>
+                  <p className="text-xs mt-1">Date: {new Date(printReport.created_at).toLocaleDateString()}</p>
+                  <p className="text-xs">Time: {new Date(printReport.created_at).toLocaleTimeString()}</p>
+                </div>
+                <div className="border-t-2 border-black pt-2">
+                  <p className="text-sm font-bold">Relieving Officer Signature</p>
+                  <p className="text-xs mt-1">Date: _____________________</p>
+                  <p className="text-xs">Time: _____________________</p>
+                </div>
+              </div>
+              <div className="mt-6 border-t-2 border-black pt-2">
+                <p className="text-sm font-bold">Supervisor Signature</p>
+                <p className="text-xs mt-1">Date: _____________________</p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="mt-6 pt-4 border-t border-gray-400 text-xs text-center text-gray-600">
+              <p>This report is confidential and intended for official use only.</p>
+              <p>Security Daily Occurrence Book | Generated: {new Date().toLocaleString()}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

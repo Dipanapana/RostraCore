@@ -14,6 +14,26 @@ interface IncidentReport {
   site_name: string;
   supervisor_reviewed: boolean;
   created_at: string;
+  action_taken?: string;
+  location_details?: string;
+  exact_location?: string;
+  police_notified?: boolean;
+  police_case_number?: string;
+  police_station?: string;
+  injuries_reported?: boolean;
+  medical_attention_required?: boolean;
+  ambulance_called?: boolean;
+  property_damage?: boolean;
+  property_damage_description?: string;
+  estimated_loss_value?: number;
+  evidence_collected?: boolean;
+  evidence_description?: string;
+  witness_details?: string;
+  suspect_details?: string;
+  victim_details?: string;
+  supervisor_comments?: string;
+  employee_name?: string;
+  client_name?: string;
 }
 
 interface Site {
@@ -32,6 +52,7 @@ export default function IncidentReportsPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [printIncident, setPrintIncident] = useState<IncidentReport | null>(null);
 
   const [formData, setFormData] = useState({
     site_id: "",
@@ -192,6 +213,29 @@ export default function IncidentReportsPage() {
     }
   };
 
+  const fetchIncidentDetails = async (incidentId: number) => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/incident-reports/${incidentId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setPrintIncident(data);
+        // Trigger print after state updates
+        setTimeout(() => window.print(), 100);
+      }
+    } catch (err) {
+      console.error("Failed to fetch incident details:", err);
+      setError("Failed to load incident details for printing");
+    }
+  };
+
+  const handlePrint = (incidentId: number) => {
+    fetchIncidentDetails(incidentId);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
@@ -282,14 +326,23 @@ export default function IncidentReportsPage() {
                       <span className="text-xs text-gray-500">
                         Reported: {new Date(incident.created_at).toLocaleDateString()}
                       </span>
-                      <span className={`text-xs px-2 py-1 rounded ${
-                        incident.status === "closed" ? "bg-gray-500/20 text-gray-300" :
-                        incident.status === "resolved" ? "bg-green-500/20 text-green-300" :
-                        incident.status === "under_investigation" ? "bg-blue-500/20 text-blue-300" :
-                        "bg-orange-500/20 text-orange-300"
-                      }`}>
-                        {incident.status.replace(/_/g, " ")}
-                      </span>
+                      <div className="flex gap-2 items-center">
+                        <button
+                          onClick={() => handlePrint(incident.incident_id)}
+                          className="text-xs px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded transition print:hidden"
+                          title="Print incident report"
+                        >
+                          🖨️ Print
+                        </button>
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          incident.status === "closed" ? "bg-gray-500/20 text-gray-300" :
+                          incident.status === "resolved" ? "bg-green-500/20 text-green-300" :
+                          incident.status === "under_investigation" ? "bg-blue-500/20 text-blue-300" :
+                          "bg-orange-500/20 text-orange-300"
+                        }`}>
+                          {incident.status.replace(/_/g, " ")}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -573,6 +626,202 @@ export default function IncidentReportsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Printable Incident Report - PSIRA Compliant */}
+      {printIncident && (
+        <div className="hidden print:block fixed inset-0 bg-white z-[9999]">
+          <style jsx global>{`
+            @media print {
+              @page {
+                size: A4;
+                margin: 2cm;
+              }
+              body {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+              }
+              .no-print {
+                display: none !important;
+              }
+            }
+          `}</style>
+
+          <div className="p-8 text-black max-w-4xl mx-auto">
+            {/* Header */}
+            <div className="text-center mb-6 border-b-2 border-black pb-4">
+              <h1 className="text-2xl font-bold uppercase">Security Incident Report</h1>
+              <p className="text-sm mt-1">PSIRA Compliant Report Form</p>
+              <p className="text-xs mt-1">Report ID: IR-{printIncident.incident_id.toString().padStart(6, '0')}</p>
+            </div>
+
+            {/* Report Information */}
+            <div className="mb-6">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="border border-black p-2">
+                  <span className="font-bold">Client:</span> {printIncident.client_name || 'N/A'}
+                </div>
+                <div className="border border-black p-2">
+                  <span className="font-bold">Site:</span> {printIncident.site_name}
+                </div>
+                <div className="border border-black p-2">
+                  <span className="font-bold">Reported By:</span> {printIncident.employee_name || 'Employee'}
+                </div>
+                <div className="border border-black p-2">
+                  <span className="font-bold">Date/Time:</span> {new Date(printIncident.incident_date).toLocaleString()}
+                </div>
+                <div className="border border-black p-2">
+                  <span className="font-bold">Incident Type:</span> {printIncident.incident_type.replace(/_/g, ' ').toUpperCase()}
+                </div>
+                <div className="border border-black p-2">
+                  <span className="font-bold">Severity:</span> {printIncident.severity.toUpperCase()}
+                </div>
+              </div>
+            </div>
+
+            {/* Location Details */}
+            <div className="mb-6">
+              <h2 className="text-lg font-bold border-b border-black mb-2">Location Details</h2>
+              <div className="border border-black p-3 text-sm">
+                <p><span className="font-bold">Exact Location:</span> {printIncident.exact_location || 'Not specified'}</p>
+                {printIncident.location_details && (
+                  <p className="mt-1"><span className="font-bold">Additional Details:</span> {printIncident.location_details}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Incident Description */}
+            <div className="mb-6">
+              <h2 className="text-lg font-bold border-b border-black mb-2">Incident Description</h2>
+              <div className="border border-black p-3 text-sm whitespace-pre-wrap">
+                {printIncident.description}
+              </div>
+            </div>
+
+            {/* Action Taken */}
+            {printIncident.action_taken && (
+              <div className="mb-6">
+                <h2 className="text-lg font-bold border-b border-black mb-2">Action Taken</h2>
+                <div className="border border-black p-3 text-sm whitespace-pre-wrap">
+                  {printIncident.action_taken}
+                </div>
+              </div>
+            )}
+
+            {/* Emergency Response */}
+            <div className="mb-6">
+              <h2 className="text-lg font-bold border-b border-black mb-2">Emergency Response</h2>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="border border-black p-2">
+                  <input type="checkbox" checked={printIncident.police_notified} readOnly /> Police Notified
+                </div>
+                <div className="border border-black p-2">
+                  <input type="checkbox" checked={printIncident.injuries_reported} readOnly /> Injuries Reported
+                </div>
+                <div className="border border-black p-2">
+                  <input type="checkbox" checked={printIncident.medical_attention_required} readOnly /> Medical Attention Required
+                </div>
+                <div className="border border-black p-2">
+                  <input type="checkbox" checked={printIncident.ambulance_called} readOnly /> Ambulance Called
+                </div>
+              </div>
+
+              {printIncident.police_notified && (
+                <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                  <div className="border border-black p-2">
+                    <span className="font-bold">Case Number:</span> {printIncident.police_case_number || 'N/A'}
+                  </div>
+                  <div className="border border-black p-2">
+                    <span className="font-bold">Police Station:</span> {printIncident.police_station || 'N/A'}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Property & Evidence */}
+            <div className="mb-6">
+              <h2 className="text-lg font-bold border-b border-black mb-2">Property Damage & Evidence</h2>
+              <div className="grid grid-cols-2 gap-2 text-sm mb-2">
+                <div className="border border-black p-2">
+                  <input type="checkbox" checked={printIncident.property_damage} readOnly /> Property Damage
+                </div>
+                <div className="border border-black p-2">
+                  <input type="checkbox" checked={printIncident.evidence_collected} readOnly /> Evidence Collected
+                </div>
+              </div>
+
+              {printIncident.property_damage && (
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="border border-black p-2 col-span-2">
+                    <span className="font-bold">Damage Description:</span> {printIncident.property_damage_description || 'N/A'}
+                  </div>
+                  <div className="border border-black p-2">
+                    <span className="font-bold">Estimated Loss:</span> {printIncident.estimated_loss_value ? `R ${printIncident.estimated_loss_value.toFixed(2)}` : 'N/A'}
+                  </div>
+                </div>
+              )}
+
+              {printIncident.evidence_collected && printIncident.evidence_description && (
+                <div className="mt-2 border border-black p-2 text-sm">
+                  <span className="font-bold">Evidence Details:</span> {printIncident.evidence_description}
+                </div>
+              )}
+            </div>
+
+            {/* Persons Involved */}
+            <div className="mb-6">
+              <h2 className="text-lg font-bold border-b border-black mb-2">Persons Involved</h2>
+              {printIncident.suspect_details && (
+                <div className="border border-black p-2 text-sm mb-2">
+                  <span className="font-bold">Suspect(s):</span> {printIncident.suspect_details}
+                </div>
+              )}
+              {printIncident.victim_details && (
+                <div className="border border-black p-2 text-sm mb-2">
+                  <span className="font-bold">Victim(s):</span> {printIncident.victim_details}
+                </div>
+              )}
+              {printIncident.witness_details && (
+                <div className="border border-black p-2 text-sm">
+                  <span className="font-bold">Witness(es):</span> {printIncident.witness_details}
+                </div>
+              )}
+            </div>
+
+            {/* Supervisor Review */}
+            {printIncident.supervisor_reviewed && (
+              <div className="mb-6">
+                <h2 className="text-lg font-bold border-b border-black mb-2">Supervisor Review</h2>
+                <div className="border border-black p-3 text-sm">
+                  <p><span className="font-bold">Status:</span> REVIEWED</p>
+                  {printIncident.supervisor_comments && (
+                    <p className="mt-2"><span className="font-bold">Comments:</span> {printIncident.supervisor_comments}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Signatures */}
+            <div className="mt-8">
+              <div className="grid grid-cols-2 gap-8">
+                <div className="border-t-2 border-black pt-2">
+                  <p className="text-sm font-bold">Security Officer Signature</p>
+                  <p className="text-xs mt-1">Date: {new Date(printIncident.created_at).toLocaleDateString()}</p>
+                </div>
+                <div className="border-t-2 border-black pt-2">
+                  <p className="text-sm font-bold">Supervisor Signature</p>
+                  <p className="text-xs mt-1">Date: _____________________</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="mt-6 pt-4 border-t border-gray-400 text-xs text-center text-gray-600">
+              <p>This report is confidential and intended for official use only.</p>
+              <p>PSIRA Compliant | Generated: {new Date().toLocaleString()}</p>
+            </div>
           </div>
         </div>
       )}
