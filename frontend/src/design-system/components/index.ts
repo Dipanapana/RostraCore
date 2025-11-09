@@ -23,3 +23,9 @@ export type { ContextualHelpProps, QuickHelpProps, ProTipProps } from './Context
 
 export { EmpathyError, InlineError, SuccessMessage } from './EmpathyError';
 export type { EmpathyErrorProps, InlineErrorProps, SuccessMessageProps } from './EmpathyError';
+
+export { FeedbackWidget, QuickFeedback } from './FeedbackWidget';
+export type { FeedbackWidgetProps, QuickFeedbackProps, FeedbackData } from './FeedbackWidget';
+
+export { NPSSurvey, NPSBadge } from './NPSSurvey';
+export type { NPSSurveyProps, NPSBadgeProps } from './NPSSurvey';
