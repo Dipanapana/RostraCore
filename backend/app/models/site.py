@@ -23,11 +23,18 @@ class Site(Base):
     min_staff = Column(Integer, default=1)
     notes = Column(Text)
 
+    # Supervisor and geographical fields
+    supervisor_id = Column(Integer, ForeignKey("employees.employee_id", ondelete="SET NULL"), nullable=True)
+    province = Column(String(50), nullable=True)  # Province where site is located
+
     # Relationships
     client = relationship("Client", back_populates="sites")
+    supervisor = relationship("Employee", foreign_keys=[supervisor_id])
     shifts = relationship("Shift", back_populates="site")
     expenses = relationship("Expense", back_populates="site")
     shift_templates = relationship("ShiftTemplate", back_populates="site")
+    incident_reports = relationship("IncidentReport", back_populates="site")
+    daily_reports = relationship("DailyOccurrenceBook", back_populates="site")
 
     def __repr__(self):
         return f"<Site {self.site_id}: {self.client_name}>"

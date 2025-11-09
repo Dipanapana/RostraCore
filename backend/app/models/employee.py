@@ -51,6 +51,10 @@ class Employee(Base):
     is_active_account = Column(Boolean, default=False)  # Whether employee can login
     last_login = Column(DateTime(timezone=True), nullable=True)
 
+    # Supervisor and geographical fields
+    is_supervisor = Column(Boolean, default=False)  # Whether employee is a supervisor
+    province = Column(String(50), nullable=True)  # North West, Northern Cape, Gauteng, etc.
+
     # Relationships
     shifts = relationship("Shift", back_populates="employee")
     certifications = relationship("Certification", back_populates="employee")
@@ -60,6 +64,8 @@ class Employee(Base):
     payroll_summary = relationship("PayrollSummary", back_populates="employee")
     skills = relationship("SkillsMatrix", back_populates="employee")
     leave_requests = relationship("LeaveRequest", back_populates="employee")
+    incident_reports = relationship("IncidentReport", foreign_keys="[IncidentReport.employee_id]", back_populates="employee")
+    daily_reports = relationship("DailyOccurrenceBook", foreign_keys="[DailyOccurrenceBook.employee_id]", back_populates="employee")
 
     def __repr__(self):
         return f"<Employee {self.employee_id}: {self.first_name} {self.last_name}>"
