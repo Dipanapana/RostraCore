@@ -108,7 +108,7 @@ export default function EmployeeDashboardPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <Link
             href="/employee/profile"
             className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:bg-white/20 transition"
@@ -139,6 +139,28 @@ export default function EmployeeDashboardPage() {
             <h3 className="text-xl font-bold text-white">Request Leave</h3>
             <p className="text-gray-300 text-sm mt-2">
               Submit and manage leave requests
+            </p>
+          </Link>
+
+          <Link
+            href="/employee/incidents"
+            className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:bg-white/20 transition"
+          >
+            <div className="text-5xl mb-4">🚨</div>
+            <h3 className="text-xl font-bold text-white">Report Incident</h3>
+            <p className="text-gray-300 text-sm mt-2">
+              Submit incident reports
+            </p>
+          </Link>
+
+          <Link
+            href="/employee/daily-report"
+            className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:bg-white/20 transition"
+          >
+            <div className="text-5xl mb-4">📝</div>
+            <h3 className="text-xl font-bold text-white">Daily Report (OB)</h3>
+            <p className="text-gray-300 text-sm mt-2">
+              Log daily occurrence book
             </p>
           </Link>
 
