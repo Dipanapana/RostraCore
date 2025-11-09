@@ -274,6 +274,53 @@ async def hire_applicant(
     # Mark guard as no longer available
     guard.available_for_work = False
 
+    # Record hire commission (R500) - automatically handled by revenue system
+    # This will check for active bulk packages and apply accordingly
+    from app.models.marketplace_commission import MarketplaceCommission, BulkHiringPackage, CommissionType, CommissionStatus
+    from decimal import Decimal
+    from datetime import date, timedelta
+
+    # Check if organization has active bulk package
+    package = db.query(BulkHiringPackage).filter(
+        BulkHiringPackage.organization_id == job.organization_id,
+        BulkHiringPackage.status == "active",
+        BulkHiringPackage.payment_status == "paid"
+    ).first()
+
+    if package and package.hires_remaining > 0:
+        # Use package quota
+        package.hires_used += 1
+        if package.hires_remaining <= 0:
+            package.status = "expired"
+
+        commission = MarketplaceCommission(
+            organization_id=job.organization_id,
+            commission_type=CommissionType.HIRE,
+            amount=Decimal("0.00"),
+            description=f"Hire covered by {package.package_type} package (Hire {package.hires_used}/{package.hires_quota})",
+            application_id=application.application_id,
+            employee_id=employee.employee_id,
+            job_id=job.job_id,
+            status=CommissionStatus.WAIVED
+        )
+    else:
+        # Charge R500 commission
+        commission = MarketplaceCommission(
+            organization_id=job.organization_id,
+            commission_type=CommissionType.HIRE,
+            amount=Decimal("500.00"),
+            description="Per-hire marketplace commission",
+            application_id=application.application_id,
+            employee_id=employee.employee_id,
+            job_id=job.job_id,
+            status=CommissionStatus.PENDING,
+            due_date=date.today() + timedelta(days=30)
+        )
+
+    db.add(commission)
+    application.commission_charged = True
+    application.commission_id = commission.commission_id
+
     db.commit()
     db.refresh(application)
 
