@@ -16,19 +16,29 @@ class CommissionType(str, Enum):
 class CommissionStatus(str, Enum):
     """Commission payment status."""
     PENDING = "pending"
+    IN_PROGRESS = "in_progress"  # Deductions in progress
     PAID = "paid"
     WAIVED = "waived"  # Waived for promotional reasons
     REFUNDED = "refunded"
 
 
+class DeductionMethod(str, Enum):
+    """How commission is deducted from salary."""
+    FULL = "full"  # Full R500 on first payroll
+    SPLIT = "split"  # Split over 3 payrolls (R166.67 each)
+
+
 class MarketplaceCommission(Base):
     """
-    Commission charged to organizations for marketplace services.
+    Commission deducted from hired guards for marketplace placement.
 
-    Revenue Model:
-    - Per-hire: R500 per successful hire from marketplace
-    - Premium jobs: R200-500 for featured job postings
-    - Bulk packages: Discounted rates for multiple hires
+    REVISED Revenue Model:
+    - Per-hire: R500 deducted from GUARD salary (not company)
+    - Deduction methods:
+      * FULL: R500 deducted on first payroll
+      * SPLIT: R166.67 deducted over 3 payrolls
+    - Premium jobs: Companies pay for featured listings
+    - Bulk packages: Companies can sponsor guard fees in bulk
     """
     __tablename__ = "marketplace_commissions"
 
@@ -45,6 +55,13 @@ class MarketplaceCommission(Base):
     job_id = Column(Integer, ForeignKey("job_postings.job_id", ondelete="SET NULL"), nullable=True)
     application_id = Column(Integer, ForeignKey("job_applications.application_id", ondelete="SET NULL"), nullable=True)
     employee_id = Column(Integer, ForeignKey("employees.employee_id", ondelete="SET NULL"), nullable=True)
+
+    # Salary deduction tracking (NEW - deducted from guard's salary)
+    deduction_method = Column(String(50), nullable=True)  # full or split
+    installments = Column(Integer, nullable=True)  # 1 or 3
+    installments_paid = Column(Integer, default=0)  # How many deductions completed
+    amount_per_installment = Column(Numeric(10, 2), nullable=True)  # Amount per payroll
+    next_deduction_date = Column(Date, nullable=True)  # Next scheduled deduction
 
     # Payment tracking
     status = Column(String(50), nullable=False, server_default="pending")
@@ -63,6 +80,24 @@ class MarketplaceCommission(Base):
     job_posting = relationship("JobPosting", foreign_keys=[job_id])
     application = relationship("JobApplication", foreign_keys=[application_id])
     employee = relationship("Employee", foreign_keys=[employee_id])
+
+    @property
+    def amount_remaining(self):
+        """Calculate remaining amount to be deducted."""
+        if not self.installments or not self.amount_per_installment:
+            return float(self.amount)
+
+        paid_amount = float(self.amount_per_installment) * self.installments_paid
+        return float(self.amount) - paid_amount
+
+    @property
+    def is_fully_paid(self):
+        """Check if commission is fully deducted."""
+        if self.status == CommissionStatus.PAID:
+            return True
+        if self.installments and self.installments_paid >= self.installments:
+            return True
+        return False
 
 
 class PackageType(str, Enum):

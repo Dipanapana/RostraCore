@@ -274,13 +274,19 @@ async def hire_applicant(
     # Mark guard as no longer available
     guard.available_for_work = False
 
-    # Record hire commission (R500) - automatically handled by revenue system
-    # This will check for active bulk packages and apply accordingly
-    from app.models.marketplace_commission import MarketplaceCommission, BulkHiringPackage, CommissionType, CommissionStatus
+    # Record hire commission - DEDUCTED FROM GUARD'S SALARY (not company)
+    from app.models.marketplace_commission import MarketplaceCommission, BulkHiringPackage, CommissionType, CommissionStatus, DeductionMethod
+    from app.models.marketplace_settings import MarketplaceSettings
     from decimal import Decimal
     from datetime import date, timedelta
 
-    # Check if organization has active bulk package
+    # Get configurable commission settings
+    commission_settings = MarketplaceSettings.get_commission_settings(db)
+    commission_amount = Decimal(str(commission_settings.get('amount', 500)))
+    deduction_method = commission_settings.get('deduction_method', 'split')  # full or split
+    installments = commission_settings.get('installments', 3)  # 1 or 3
+
+    # Check if organization has bulk package that SPONSORS guard fees
     package = db.query(BulkHiringPackage).filter(
         BulkHiringPackage.organization_id == job.organization_id,
         BulkHiringPackage.status == "active",
@@ -288,7 +294,7 @@ async def hire_applicant(
     ).first()
 
     if package and package.hires_remaining > 0:
-        # Use package quota
+        # Company sponsors the R500 fee - NO deduction from guard
         package.hires_used += 1
         if package.hires_remaining <= 0:
             package.status = "expired"
@@ -297,25 +303,46 @@ async def hire_applicant(
             organization_id=job.organization_id,
             commission_type=CommissionType.HIRE,
             amount=Decimal("0.00"),
-            description=f"Hire covered by {package.package_type} package (Hire {package.hires_used}/{package.hires_quota})",
+            description=f"Hire fee sponsored by company via {package.package_type} package (Hire {package.hires_used}/{package.hires_quota})",
             application_id=application.application_id,
             employee_id=employee.employee_id,
             job_id=job.job_id,
-            status=CommissionStatus.WAIVED
+            status=CommissionStatus.WAIVED,
+            deduction_method=None,
+            installments=0
         )
     else:
-        # Charge R500 commission
+        # Deduct R500 from GUARD's salary (first payment or split over 3)
+        if deduction_method == 'full':
+            # Full R500 on first payroll
+            installments_count = 1
+            amount_per_payment = commission_amount
+            description = "Marketplace placement fee (deducted from first salary payment)"
+        else:
+            # Split over 3 payrolls (R166.67 each)
+            installments_count = installments
+            amount_per_payment = commission_amount / installments_count
+            description = f"Marketplace placement fee (R{float(amount_per_payment):.2f} per payroll over {installments_count} payments)"
+
         commission = MarketplaceCommission(
             organization_id=job.organization_id,
             commission_type=CommissionType.HIRE,
-            amount=Decimal("500.00"),
-            description="Per-hire marketplace commission",
+            amount=commission_amount,
+            description=description,
             application_id=application.application_id,
             employee_id=employee.employee_id,
             job_id=job.job_id,
             status=CommissionStatus.PENDING,
-            due_date=date.today() + timedelta(days=30)
+            deduction_method=deduction_method,
+            installments=installments_count,
+            installments_paid=0,
+            amount_per_installment=amount_per_payment,
+            next_deduction_date=None  # Will be set when first payroll is processed
         )
+
+        # Link employee to commission for payroll integration
+        employee.marketplace_commission_id = commission.commission_id
+        employee.marketplace_commission_status = "pending"
 
     db.add(commission)
     application.commission_charged = True

@@ -144,7 +144,22 @@ async def generate_payroll(
     ).all()
 
     expenses_total = sum(e.amount for e in expenses)
-    net_pay = gross_pay + expenses_total
+
+    # Process marketplace commission deduction (if applicable)
+    from app.services.commission_deduction_service import CommissionDeductionService
+
+    commission_deduction_result = CommissionDeductionService.process_commission_deductions(
+        db=db,
+        employee_id=payroll_data.employee_id,
+        payroll_period_end=payroll_data.period_end,
+        gross_pay=gross_pay
+    )
+
+    commission_deduction = commission_deduction_result.get('deduction_amount', 0.0)
+    commission_notes = commission_deduction_result.get('notes', '')
+
+    # Calculate net pay (gross + expenses - commission)
+    net_pay = gross_pay + expenses_total - commission_deduction
 
     # Create or update payroll record
     existing = db.query(PayrollSummary).filter(
@@ -188,6 +203,8 @@ async def generate_payroll(
         "overtime_hours": payroll.overtime_hours,
         "gross_pay": payroll.gross_pay,
         "expenses_total": payroll.expenses_total,
+        "marketplace_commission_deduction": commission_deduction,
+        "commission_notes": commission_notes,
         "net_pay": payroll.net_pay
     }
 
