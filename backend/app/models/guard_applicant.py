@@ -79,12 +79,18 @@ class GuardApplicant(Base):
     verified_at = Column(DateTime(timezone=True), nullable=True)
     verified_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
 
+    # CV Generation
+    has_generated_cv = Column(Boolean, default=False)
+    cv_purchase_id = Column(Integer, ForeignKey("cv_purchases.purchase_id", ondelete="SET NULL"), nullable=True)
+
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # Relationships
     applications = relationship("JobApplication", back_populates="applicant")
+    cv_purchases = relationship("CVPurchase", back_populates="applicant", foreign_keys="[CVPurchase.applicant_id]")
+    generated_cvs = relationship("GeneratedCV", back_populates="applicant")
 
     def __repr__(self):
         return f"<GuardApplicant {self.applicant_id}: {self.full_name}>"
