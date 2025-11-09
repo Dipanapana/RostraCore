@@ -421,6 +421,12 @@ export default function DashboardPage() {
         {/* Quick Actions */}
         <div className="mt-8 grid grid-cols-2 md:grid-cols-5 gap-4">
           <Link
+            href="/clients"
+            className="bg-cyan-600 hover:bg-cyan-700 text-white p-4 rounded-lg text-center transition"
+          >
+            Manage Clients
+          </Link>
+          <Link
             href="/employees"
             className="bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-lg text-center transition"
           >
@@ -449,6 +455,30 @@ export default function DashboardPage() {
             className="bg-pink-600 hover:bg-pink-700 text-white p-4 rounded-lg text-center transition"
           >
             Generate Roster
+          </Link>
+          <Link
+            href="/payroll"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-lg text-center transition"
+          >
+            Manage Payroll
+          </Link>
+          <Link
+            href="/attendance"
+            className="bg-teal-600 hover:bg-teal-700 text-white p-4 rounded-lg text-center transition"
+          >
+            Track Attendance
+          </Link>
+          <Link
+            href="/expenses"
+            className="bg-amber-600 hover:bg-amber-700 text-white p-4 rounded-lg text-center transition"
+          >
+            Manage Expenses
+          </Link>
+          <Link
+            href="/admin/leave-approvals"
+            className="bg-rose-600 hover:bg-rose-700 text-white p-4 rounded-lg text-center transition"
+          >
+            Leave Approvals
           </Link>
         </div>
       </div>

@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api.endpoints import employees, sites, shifts, availability, certifications, expenses, attendance, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, shift_groups, analytics, jobs, dashboards, predictions
+from app.api.endpoints import employees, sites, shifts, availability, certifications, expenses, attendance, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, shift_groups, analytics, jobs, dashboards, predictions, clients, leave_requests, employee_portal, incident_reports, daily_reports, marketplace_guards, marketplace_jobs, marketplace_applications, guard_ratings, cv_generator, payments, marketplace_revenue, marketplace_settings, superadmin_analytics
 
 # Initialize Sentry for error tracking and performance monitoring
 if settings.SENTRY_DSN:
@@ -98,6 +98,22 @@ app.include_router(analytics.router, tags=["analytics"])
 app.include_router(jobs.router, tags=["jobs"])
 app.include_router(dashboards.router, tags=["dashboards"])
 app.include_router(predictions.router, tags=["predictions"])
+app.include_router(clients.router, prefix=f"{settings.API_V1_PREFIX}/clients", tags=["clients"])
+app.include_router(leave_requests.router, prefix=f"{settings.API_V1_PREFIX}/leave-requests", tags=["leave-requests"])
+app.include_router(employee_portal.router, prefix=f"{settings.API_V1_PREFIX}/employee-portal", tags=["employee-portal"])
+app.include_router(incident_reports.router, prefix=f"{settings.API_V1_PREFIX}/incident-reports", tags=["incident-reports"])
+app.include_router(daily_reports.router, prefix=f"{settings.API_V1_PREFIX}/daily-reports", tags=["daily-reports"])
+
+# Job Marketplace routes
+app.include_router(marketplace_guards.router, prefix=f"{settings.API_V1_PREFIX}/marketplace/guards", tags=["marketplace-guards"])
+app.include_router(marketplace_jobs.router, prefix=f"{settings.API_V1_PREFIX}/marketplace/jobs", tags=["marketplace-jobs"])
+app.include_router(marketplace_applications.router, prefix=f"{settings.API_V1_PREFIX}/marketplace/applications", tags=["marketplace-applications"])
+app.include_router(guard_ratings.router, prefix=f"{settings.API_V1_PREFIX}/guard-ratings", tags=["guard-ratings"])
+app.include_router(cv_generator.router, prefix=f"{settings.API_V1_PREFIX}/cv-generator", tags=["cv-generator"])
+app.include_router(payments.router, prefix=f"{settings.API_V1_PREFIX}/payments", tags=["payments"])
+app.include_router(marketplace_revenue.router, prefix=f"{settings.API_V1_PREFIX}/marketplace/revenue", tags=["marketplace-revenue"])
+app.include_router(marketplace_settings.router, prefix=f"{settings.API_V1_PREFIX}/marketplace/settings", tags=["marketplace-settings"])
+app.include_router(superadmin_analytics.router, prefix=f"{settings.API_V1_PREFIX}/superadmin/analytics", tags=["superadmin-analytics"])
 
 
 if __name__ == "__main__":

@@ -24,6 +24,7 @@ from app.auth.security import (
     verify_password,
     is_admin,
 )
+from app.services.verification_service import VerificationService
 from app.config import settings
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -328,3 +329,176 @@ def delete_user(
     db.commit()
 
     return None
+
+
+# ============================================================================
+# EMAIL & PHONE VERIFICATION ENDPOINTS
+# ============================================================================
+
+@router.post("/send-verification-email", status_code=status.HTTP_200_OK)
+def send_verification_email(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Send email verification link to current user
+
+    Args:
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        Success message
+    """
+    if current_user.is_email_verified:
+        return {
+            "status": "success",
+            "message": "Email already verified"
+        }
+
+    result = VerificationService.send_verification_email(current_user, db)
+    return result
+
+
+@router.post("/verify-email", status_code=status.HTTP_200_OK)
+def verify_email(
+    token: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Verify email using token from email link
+
+    Args:
+        token: Email verification token
+        db: Database session
+
+    Returns:
+        Success message
+    """
+    result = VerificationService.verify_email_token(token, db)
+
+    if result["status"] == "error":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=result["message"]
+        )
+
+    return result
+
+
+@router.post("/send-phone-verification", status_code=status.HTTP_200_OK)
+def send_phone_verification(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Send SMS verification code to current user
+
+    Args:
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        Success message
+    """
+    if current_user.is_phone_verified:
+        return {
+            "status": "success",
+            "message": "Phone already verified"
+        }
+
+    result = VerificationService.send_phone_verification(current_user, db)
+
+    if result["status"] == "error":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=result["message"]
+        )
+
+    return result
+
+
+@router.post("/verify-phone", status_code=status.HTTP_200_OK)
+def verify_phone(
+    code: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Verify phone using SMS code
+
+    Args:
+        code: 6-digit verification code
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        Success message
+    """
+    result = VerificationService.verify_phone_code(current_user.user_id, code, db)
+
+    if result["status"] == "error":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=result["message"]
+        )
+
+    return result
+
+
+# ============================================================================
+# PASSWORD RESET ENDPOINTS
+# ============================================================================
+
+@router.post("/forgot-password", status_code=status.HTTP_200_OK)
+def forgot_password(
+    email: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Request password reset email
+
+    Args:
+        email: User email address
+        db: Database session
+
+    Returns:
+        Success message (always returns success for security)
+    """
+    result = VerificationService.send_password_reset(email, db)
+    return result
+
+
+@router.post("/reset-password", status_code=status.HTTP_200_OK)
+def reset_password(
+    token: str,
+    new_password: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Reset password using token from email
+
+    Args:
+        token: Password reset token
+        new_password: New password
+        db: Database session
+
+    Returns:
+        Success message
+    """
+    # Validate password strength (basic check)
+    if len(new_password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 8 characters long"
+        )
+
+    result = VerificationService.reset_password(token, new_password, db)
+
+    if result["status"] == "error":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=result["message"]
+        )
+
+    return result
