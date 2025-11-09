@@ -1,6 +1,6 @@
-"""Payment webhook endpoints - PayFast and Stripe integrations."""
+"""Payment webhook endpoints - PayFast integration."""
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request, Header
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import datetime
@@ -17,15 +17,12 @@ router = APIRouter()
 class PaymentInitiateRequest(BaseModel):
     applicant_id: int
     purchase_id: int
-    gateway: str = "payfast"  # payfast or stripe
 
 
 class PaymentInitiateResponse(BaseModel):
-    gateway: str
-    payment_url: Optional[str] = None
-    payment_data: Optional[dict] = None
-    client_secret: Optional[str] = None
-    payment_intent_id: Optional[str] = None
+    gateway: str = "payfast"
+    payment_url: str
+    payment_data: dict
 
 
 @router.post("/initiate", response_model=PaymentInitiateResponse)
@@ -34,9 +31,9 @@ async def initiate_payment(
     db: Session = Depends(get_db)
 ):
     """
-    Initiate payment for CV purchase.
+    Initiate PayFast payment for CV purchase.
 
-    Supports PayFast (South African) and Stripe (International).
+    South African payments only via PayFast.
     """
 
     # Get purchase
@@ -61,7 +58,7 @@ async def initiate_payment(
             detail="Applicant not found"
         )
 
-    # Create payment with chosen gateway
+    # Create PayFast payment
     payment_service = PaymentService(db)
 
     try:
@@ -69,22 +66,14 @@ async def initiate_payment(
             applicant_id=payment_request.applicant_id,
             purchase_id=payment_request.purchase_id,
             buyer_email=applicant.email,
-            buyer_name=applicant.full_name,
-            gateway=payment_request.gateway
+            buyer_name=applicant.full_name
         )
 
-        if payment_request.gateway == "payfast":
-            return PaymentInitiateResponse(
-                gateway="payfast",
-                payment_url=payment_details['payment_url'],
-                payment_data=payment_details['payment_data']
-            )
-        elif payment_request.gateway == "stripe":
-            return PaymentInitiateResponse(
-                gateway="stripe",
-                client_secret=payment_details['client_secret'],
-                payment_intent_id=payment_details['payment_intent_id']
-            )
+        return PaymentInitiateResponse(
+            gateway="payfast",
+            payment_url=payment_details['payment_url'],
+            payment_data=payment_details['payment_data']
+        )
 
     except Exception as e:
         raise HTTPException(
@@ -151,76 +140,6 @@ async def payfast_webhook(request: Request, db: Session = Depends(get_db)):
         purchase.payment_status = PaymentStatus.CANCELLED
 
     db.commit()
-
-    return {"status": "success"}
-
-
-@router.post("/stripe/webhook")
-async def stripe_webhook(
-    request: Request,
-    stripe_signature: str = Header(None, alias="stripe-signature"),
-    db: Session = Depends(get_db)
-):
-    """
-    Stripe webhook endpoint.
-
-    Handles payment intent succeeded, failed, etc.
-    """
-
-    # Get raw body
-    body = await request.body()
-
-    # Initialize payment service
-    payment_service = PaymentService(db)
-
-    # Verify webhook signature
-    event = payment_service.stripe.verify_webhook(body, stripe_signature)
-
-    if not event:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid webhook signature"
-        )
-
-    # Handle different event types
-    event_type = event['type']
-    event_data = event['data']['object']
-
-    if event_type == 'payment_intent.succeeded':
-        # Payment successful
-        metadata = event_data.get('metadata', {})
-        purchase_id = int(metadata.get('purchase_id'))
-
-        purchase = db.query(CVPurchase).filter(
-            CVPurchase.purchase_id == purchase_id
-        ).first()
-
-        if purchase:
-            purchase.payment_status = PaymentStatus.COMPLETED
-            purchase.paid_at = datetime.utcnow()
-            purchase.payment_reference = event_data.get('id')
-
-            # Update applicant
-            applicant = db.query(GuardApplicant).filter(
-                GuardApplicant.applicant_id == purchase.applicant_id
-            ).first()
-            if applicant:
-                applicant.cv_purchase_id = purchase.purchase_id
-
-            db.commit()
-
-    elif event_type == 'payment_intent.payment_failed':
-        # Payment failed
-        metadata = event_data.get('metadata', {})
-        purchase_id = int(metadata.get('purchase_id'))
-
-        purchase = db.query(CVPurchase).filter(
-            CVPurchase.purchase_id == purchase_id
-        ).first()
-
-        if purchase:
-            purchase.payment_status = PaymentStatus.FAILED
-            db.commit()
 
     return {"status": "success"}
 

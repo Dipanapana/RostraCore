@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api.endpoints import employees, sites, shifts, availability, certifications, expenses, attendance, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, shift_groups, analytics, jobs, dashboards, predictions, clients, leave_requests, employee_portal, incident_reports, daily_reports, marketplace_guards, marketplace_jobs, marketplace_applications, guard_ratings, cv_generator, payments, marketplace_revenue, marketplace_settings
+from app.api.endpoints import employees, sites, shifts, availability, certifications, expenses, attendance, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, shift_groups, analytics, jobs, dashboards, predictions, clients, leave_requests, employee_portal, incident_reports, daily_reports, marketplace_guards, marketplace_jobs, marketplace_applications, guard_ratings, cv_generator, payments, marketplace_revenue, marketplace_settings, superadmin_analytics
 
 # Initialize Sentry for error tracking and performance monitoring
 if settings.SENTRY_DSN:
@@ -113,6 +113,7 @@ app.include_router(cv_generator.router, prefix=f"{settings.API_V1_PREFIX}/cv-gen
 app.include_router(payments.router, prefix=f"{settings.API_V1_PREFIX}/payments", tags=["payments"])
 app.include_router(marketplace_revenue.router, prefix=f"{settings.API_V1_PREFIX}/marketplace/revenue", tags=["marketplace-revenue"])
 app.include_router(marketplace_settings.router, prefix=f"{settings.API_V1_PREFIX}/marketplace/settings", tags=["marketplace-settings"])
+app.include_router(superadmin_analytics.router, prefix=f"{settings.API_V1_PREFIX}/superadmin/analytics", tags=["superadmin-analytics"])
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-"""Payment Service - Handle PayFast and Stripe integrations."""
+"""Payment Service - PayFast integration for South African payments."""
 
 import hashlib
 import urllib.parse
@@ -190,130 +190,9 @@ class PayFastService:
             return None
 
 
-class StripeService:
-    """
-    Stripe Payment Gateway Integration (for international payments).
-
-    Docs: https://stripe.com/docs/api
-    """
-
-    def __init__(self, api_key: str, webhook_secret: str):
-        self.api_key = api_key
-        self.webhook_secret = webhook_secret
-        self.base_url = "https://api.stripe.com/v1"
-
-    def create_payment_intent(
-        self,
-        amount: int,  # Amount in cents (e.g., 6000 = R60.00)
-        currency: str,
-        description: str,
-        customer_email: str,
-        metadata: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """
-        Create Stripe Payment Intent.
-
-        Args:
-            amount: Amount in cents (smallest currency unit)
-            currency: Currency code (e.g., 'zar', 'usd')
-            description: Payment description
-            customer_email: Customer email
-            metadata: Additional metadata (payment_id, applicant_id, etc.)
-
-        Returns:
-            Payment intent dictionary with client_secret
-        """
-        try:
-            import stripe
-            stripe.api_key = self.api_key
-
-            intent = stripe.PaymentIntent.create(
-                amount=amount,
-                currency=currency,
-                description=description,
-                receipt_email=customer_email,
-                metadata=metadata,
-                automatic_payment_methods={
-                    'enabled': True,
-                }
-            )
-
-            return {
-                'client_secret': intent.client_secret,
-                'payment_intent_id': intent.id,
-                'amount': intent.amount,
-                'currency': intent.currency,
-                'status': intent.status
-            }
-
-        except Exception as e:
-            print(f"Stripe payment intent error: {e}")
-            raise
-
-    def verify_webhook(self, payload: bytes, signature: str) -> Optional[Dict[str, Any]]:
-        """
-        Verify Stripe webhook signature.
-
-        Args:
-            payload: Raw request body bytes
-            signature: Stripe signature header
-
-        Returns:
-            Event dictionary if valid, None otherwise
-        """
-        try:
-            import stripe
-            stripe.api_key = self.api_key
-
-            event = stripe.Webhook.construct_event(
-                payload,
-                signature,
-                self.webhook_secret
-            )
-
-            return event
-
-        except ValueError as e:
-            # Invalid payload
-            print(f"Invalid Stripe payload: {e}")
-            return None
-        except stripe.error.SignatureVerificationError as e:
-            # Invalid signature
-            print(f"Invalid Stripe signature: {e}")
-            return None
-
-    def get_payment_status(self, payment_intent_id: str) -> Optional[Dict[str, Any]]:
-        """
-        Get Stripe payment intent status.
-
-        Args:
-            payment_intent_id: Stripe payment intent ID
-
-        Returns:
-            Payment intent dictionary or None
-        """
-        try:
-            import stripe
-            stripe.api_key = self.api_key
-
-            intent = stripe.PaymentIntent.retrieve(payment_intent_id)
-
-            return {
-                'id': intent.id,
-                'status': intent.status,
-                'amount': intent.amount,
-                'currency': intent.currency,
-                'metadata': intent.metadata
-            }
-
-        except Exception as e:
-            print(f"Stripe status check error: {e}")
-            return None
-
-
 class PaymentService:
     """
-    Unified payment service supporting multiple gateways.
+    Payment service for South African payments via PayFast.
     """
 
     def __init__(self, db: Session):
@@ -328,61 +207,35 @@ class PaymentService:
             sandbox=True  # Set to False in production
         )
 
-        # Initialize Stripe (International)
-        # In production, load from environment variables
-        self.stripe = StripeService(
-            api_key="sk_test_your_stripe_key",  # Replace with actual key
-            webhook_secret="whsec_your_webhook_secret"  # Replace with actual secret
-        )
-
     def create_cv_payment(
         self,
         applicant_id: int,
         purchase_id: int,
         buyer_email: str,
-        buyer_name: str,
-        gateway: str = "payfast"
+        buyer_name: str
     ) -> Dict[str, Any]:
         """
-        Create payment for CV generation service.
+        Create PayFast payment for CV generation service.
 
         Args:
             applicant_id: Guard applicant ID
             purchase_id: CV purchase ID
             buyer_email: Buyer email
             buyer_name: Buyer full name
-            gateway: Payment gateway ('payfast' or 'stripe')
 
         Returns:
-            Payment details dictionary
+            Payment details dictionary (PayFast form data)
         """
         amount = 60.00  # R60 for CV service
 
-        if gateway == "payfast":
-            return self.payfast.create_payment(
-                amount=amount,
-                item_name="Professional CV Generation Service",
-                item_description="PSIRA-focused CV with 5 professional templates",
-                buyer_email=buyer_email,
-                buyer_name=buyer_name,
-                payment_id=purchase_id,
-                return_url=f"http://localhost:3000/marketplace/cv-templates?payment=success&purchase_id={purchase_id}",
-                cancel_url=f"http://localhost:3000/marketplace/cv-templates?payment=cancelled",
-                notify_url="http://localhost:8000/api/v1/payments/payfast/webhook"
-            )
-
-        elif gateway == "stripe":
-            return self.stripe.create_payment_intent(
-                amount=int(amount * 100),  # Convert to cents
-                currency="zar",
-                description="Professional CV Generation Service",
-                customer_email=buyer_email,
-                metadata={
-                    'applicant_id': str(applicant_id),
-                    'purchase_id': str(purchase_id),
-                    'service': 'cv_generation'
-                }
-            )
-
-        else:
-            raise ValueError(f"Unsupported payment gateway: {gateway}")
+        return self.payfast.create_payment(
+            amount=amount,
+            item_name="Professional CV Generation Service",
+            item_description="PSIRA-focused CV with 5 professional templates",
+            buyer_email=buyer_email,
+            buyer_name=buyer_name,
+            payment_id=purchase_id,
+            return_url=f"http://localhost:3000/marketplace/cv-templates?payment=success&purchase_id={purchase_id}",
+            cancel_url=f"http://localhost:3000/marketplace/cv-templates?payment=cancelled",
+            notify_url="http://localhost:8000/api/v1/payments/payfast/webhook"
+        )
