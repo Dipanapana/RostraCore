@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api.endpoints import employees, sites, shifts, availability, certifications, expenses, attendance, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, shift_groups, analytics, jobs, dashboards, predictions, clients, leave_requests, employee_portal, incident_reports, daily_reports, marketplace_guards, marketplace_jobs, marketplace_applications, guard_ratings, cv_generator
+from app.api.endpoints import employees, sites, shifts, availability, certifications, expenses, attendance, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, shift_groups, analytics, jobs, dashboards, predictions, clients, leave_requests, employee_portal, incident_reports, daily_reports, marketplace_guards, marketplace_jobs, marketplace_applications, guard_ratings, cv_generator, payments
 
 # Initialize Sentry for error tracking and performance monitoring
 if settings.SENTRY_DSN:
@@ -110,6 +110,7 @@ app.include_router(marketplace_jobs.router, prefix=f"{settings.API_V1_PREFIX}/ma
 app.include_router(marketplace_applications.router, prefix=f"{settings.API_V1_PREFIX}/marketplace/applications", tags=["marketplace-applications"])
 app.include_router(guard_ratings.router, prefix=f"{settings.API_V1_PREFIX}/guard-ratings", tags=["guard-ratings"])
 app.include_router(cv_generator.router, prefix=f"{settings.API_V1_PREFIX}/cv-generator", tags=["cv-generator"])
+app.include_router(payments.router, prefix=f"{settings.API_V1_PREFIX}/payments", tags=["payments"])
 
 
 if __name__ == "__main__":

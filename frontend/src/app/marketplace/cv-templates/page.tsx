@@ -92,7 +92,7 @@ export default function CVTemplatesPage() {
     setError(null);
 
     try {
-      // Create purchase
+      // Step 1: Create purchase record
       const purchaseResponse = await fetch("http://localhost:8000/api/v1/cv-generator/purchase", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -110,26 +110,65 @@ export default function CVTemplatesPage() {
 
       const purchase: CVPurchase = await purchaseResponse.json();
 
-      // For demo purposes, automatically confirm payment
-      // In production, this would be done by payment gateway webhook
-      const confirmResponse = await fetch(
-        `http://localhost:8000/api/v1/cv-generator/purchase/${purchase.purchase_id}/confirm`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+      // Step 2: Initiate payment with gateway
+      const paymentResponse = await fetch("http://localhost:8000/api/v1/payments/initiate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          applicant_id: applicantId,
+          purchase_id: purchase.purchase_id,
+          gateway: paymentMethod === "card" ? "stripe" : "payfast", // Use Stripe for cards, PayFast for others
+        }),
+      });
 
-      if (!confirmResponse.ok) {
-        throw new Error("Payment confirmation failed");
+      if (!paymentResponse.ok) {
+        throw new Error("Payment initiation failed");
       }
 
-      // Store purchase locally
-      localStorage.setItem(`cv_purchased_${applicantId}`, purchase.purchase_id.toString());
-      setHasPurchased(true);
-      setPurchaseId(purchase.purchase_id);
-      setShowPaymentModal(false);
-      alert("✅ Purchase successful! You can now generate unlimited CVs.");
+      const paymentData = await paymentResponse.json();
+
+      // Step 3: Handle payment based on gateway
+      if (paymentData.gateway === "payfast") {
+        // Redirect to PayFast payment page
+        const form = document.createElement("form");
+        form.method = "POST";
+        form.action = paymentData.payment_url;
+
+        // Add all payment data as hidden fields
+        Object.entries(paymentData.payment_data).forEach(([key, value]) => {
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = key;
+          input.value = String(value);
+          form.appendChild(input);
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+
+      } else if (paymentData.gateway === "stripe") {
+        // For Stripe, you would typically use Stripe.js here
+        // This requires adding Stripe Elements to your page
+        // For now, show a placeholder message
+        alert("Stripe integration requires Stripe.js. Proceeding with demo confirmation.");
+
+        // Demo: Auto-confirm payment (remove in production)
+        const confirmResponse = await fetch(
+          `http://localhost:8000/api/v1/cv-generator/purchase/${purchase.purchase_id}/confirm`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+
+        if (confirmResponse.ok) {
+          localStorage.setItem(`cv_purchased_${applicantId}`, purchase.purchase_id.toString());
+          setHasPurchased(true);
+          setPurchaseId(purchase.purchase_id);
+          setShowPaymentModal(false);
+          alert("✅ Purchase successful! You can now generate unlimited CVs.");
+        }
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
