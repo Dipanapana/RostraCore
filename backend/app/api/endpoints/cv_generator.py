@@ -1,7 +1,7 @@
 """CV Generator API endpoints - R60 CV generation service."""
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, Response
 from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import datetime, date
@@ -25,7 +25,7 @@ class CVPurchaseCreate(BaseModel):
 class CVGenerateRequest(BaseModel):
     applicant_id: int
     purchase_id: int
-    template_name: str = Field(..., pattern="^(professional|modern|classic)$")
+    template_name: str = Field(..., pattern="^(professional|modern|classic|executive|minimalist)$")
     format: str = Field(default="pdf", pattern="^(pdf|docx)$")
 
 
@@ -213,16 +213,30 @@ async def generate_cv(
         'references': applicant.references
     }
 
-    # Generate HTML
-    html_content = CVGeneratorService.get_template_html(cv_request.template_name, cv_data)
+    # Generate filename
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    file_extension = cv_request.format  # pdf or docx
+    filename = f"cv_{applicant.applicant_id}_{cv_request.template_name}_{timestamp}.{file_extension}"
 
-    # For now, save as HTML (PDF generation requires weasyprint or similar)
-    # In production, you'd convert HTML to PDF here
-    filename = f"cv_{applicant.applicant_id}_{cv_request.template_name}_{datetime.now().strftime('%Y%m%d%H%M%S')}.html"
+    # Create storage directory if it doesn't exist
+    storage_dir = os.path.join(os.getcwd(), "storage", "cvs")
+    os.makedirs(storage_dir, exist_ok=True)
 
-    # You would save to cloud storage (S3, GCS, etc.) in production
-    # For now, we'll just return the HTML content reference
-    file_url = f"/api/v1/cv-generator/download/{filename}"
+    # Generate PDF file
+    if cv_request.format == "pdf":
+        file_path = os.path.join(storage_dir, filename)
+        CVGeneratorService.generate_pdf(cv_request.template_name, cv_data, file_path)
+    else:
+        # For DOCX, we'll save as HTML for now (DOCX generation requires python-docx)
+        # You can implement DOCX generation later if needed
+        html_content = CVGeneratorService.get_template_html(cv_request.template_name, cv_data)
+        filename = filename.replace('.docx', '.html')
+        file_path = os.path.join(storage_dir, filename)
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(html_content)
+
+    # File URL for download
+    file_url = f"/api/v1/cv-generator/download-file/{filename}"
 
     # Create CV record
     generated_cv = GeneratedCV(
@@ -258,10 +272,10 @@ async def preview_template(
     Allows guards to see what each template looks like before purchasing.
     """
 
-    if template_name not in ["professional", "modern", "classic"]:
+    if template_name not in ["professional", "modern", "classic", "executive", "minimalist"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid template name. Choose: professional, modern, or classic"
+            detail="Invalid template name. Choose: professional, modern, classic, executive, or minimalist"
         )
 
     # Sample data for preview
@@ -320,7 +334,7 @@ async def download_cv(
     db: Session = Depends(get_db)
 ):
     """
-    Download generated CV.
+    Download generated CV as PDF (regenerated on-the-fly).
 
     Tracks download count for analytics.
     """
@@ -338,14 +352,57 @@ async def download_cv(
     cv.last_downloaded = datetime.utcnow()
     db.commit()
 
-    # Regenerate CV HTML on-the-fly
-    html_content = CVGeneratorService.get_template_html(cv.template_name, cv.cv_data)
+    # Regenerate CV as PDF bytes (on-the-fly generation for latest data)
+    pdf_bytes = CVGeneratorService.generate_pdf_bytes(cv.template_name, cv.cv_data)
 
-    return HTMLResponse(
-        content=html_content,
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
         headers={
-            "Content-Disposition": f"attachment; filename=CV_{cv.applicant_id}_{cv.template_name}.html"
+            "Content-Disposition": f"attachment; filename=CV_{cv.applicant_id}_{cv.template_name}.pdf"
         }
+    )
+
+
+@router.get("/download-file/{filename}")
+async def download_cv_file(
+    filename: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Download CV file from storage.
+
+    Used for downloading previously generated CV files.
+    """
+
+    # Security check: prevent directory traversal
+    if ".." in filename or "/" in filename or "\\" in filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid filename"
+        )
+
+    storage_dir = os.path.join(os.getcwd(), "storage", "cvs")
+    file_path = os.path.join(storage_dir, filename)
+
+    if not os.path.exists(file_path):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found"
+        )
+
+    # Determine media type based on extension
+    if filename.endswith('.pdf'):
+        media_type = "application/pdf"
+    elif filename.endswith('.html'):
+        media_type = "text/html"
+    else:
+        media_type = "application/octet-stream"
+
+    return FileResponse(
+        path=file_path,
+        media_type=media_type,
+        filename=filename
     )
 
 
@@ -374,13 +431,25 @@ async def list_templates():
                 "title": "Classic",
                 "description": "Traditional formal layout in Times New Roman. Timeless and professional.",
                 "preview_url": "/api/v1/cv-generator/preview/classic"
+            },
+            {
+                "name": "executive",
+                "title": "Executive",
+                "description": "Premium black and gold design with sophisticated layout. Perfect for senior positions and management roles.",
+                "preview_url": "/api/v1/cv-generator/preview/executive"
+            },
+            {
+                "name": "minimalist",
+                "title": "Minimalist",
+                "description": "Ultra-clean black and white design with generous whitespace. Modern and professional simplicity.",
+                "preview_url": "/api/v1/cv-generator/preview/minimalist"
             }
         ],
         "price": 60.00,
         "currency": "ZAR",
         "features": [
             "Generate unlimited CVs with different templates",
-            "Professional PSIRA-focused design",
+            "5 professional PSIRA-focused designs",
             "Download as PDF or Word document",
             "Update anytime with your latest information"
         ]

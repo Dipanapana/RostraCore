@@ -4,6 +4,8 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 import os
 from pathlib import Path
+from io import BytesIO
+from weasyprint import HTML
 
 
 class CVGeneratorService:
@@ -19,8 +21,58 @@ class CVGeneratorService:
             return CVGeneratorService._modern_template(cv_data)
         elif template_name == "classic":
             return CVGeneratorService._classic_template(cv_data)
+        elif template_name == "executive":
+            return CVGeneratorService._executive_template(cv_data)
+        elif template_name == "minimalist":
+            return CVGeneratorService._minimalist_template(cv_data)
         else:
             raise ValueError(f"Unknown template: {template_name}")
+
+    @staticmethod
+    def generate_pdf(template_name: str, cv_data: Dict[str, Any], output_path: str) -> str:
+        """
+        Generate PDF from CV template.
+
+        Args:
+            template_name: Name of the CV template to use
+            cv_data: Dictionary containing guard data
+            output_path: Full path where PDF should be saved
+
+        Returns:
+            Path to the generated PDF file
+        """
+        # Get HTML content
+        html_content = CVGeneratorService.get_template_html(template_name, cv_data)
+
+        # Create output directory if it doesn't exist
+        output_dir = os.path.dirname(output_path)
+        if output_dir and not os.path.exists(output_dir):
+            os.makedirs(output_dir, exist_ok=True)
+
+        # Generate PDF using WeasyPrint
+        HTML(string=html_content).write_pdf(output_path)
+
+        return output_path
+
+    @staticmethod
+    def generate_pdf_bytes(template_name: str, cv_data: Dict[str, Any]) -> bytes:
+        """
+        Generate PDF as bytes (for direct download without saving to disk).
+
+        Args:
+            template_name: Name of the CV template to use
+            cv_data: Dictionary containing guard data
+
+        Returns:
+            PDF content as bytes
+        """
+        # Get HTML content
+        html_content = CVGeneratorService.get_template_html(template_name, cv_data)
+
+        # Generate PDF to bytes
+        pdf_bytes = HTML(string=html_content).write_pdf()
+
+        return pdf_bytes
 
     @staticmethod
     def _professional_template(data: Dict[str, Any]) -> str:
@@ -710,6 +762,511 @@ class CVGeneratorService:
 
     <div style="margin-top: 40px; text-align: center; font-size: 10pt; color: #666;">
         Curriculum Vitae | {data.get('full_name', '')} | Page 1 of 1
+    </div>
+</body>
+</html>
+"""
+
+    @staticmethod
+    def _executive_template(data: Dict[str, Any]) -> str:
+        """Executive CV Template - Premium and sophisticated."""
+
+        skills_boxes = ""
+        if data.get('skills'):
+            for skill in data['skills'][:6]:  # Show top 6 skills
+                skills_boxes += f'<div class="skill-box">{skill}</div>'
+
+        return f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>CV - {data.get('full_name', 'Executive')}</title>
+    <style>
+        @page {{
+            size: A4;
+            margin: 2cm;
+        }}
+        body {{
+            font-family: 'Garamond', 'Georgia', serif;
+            color: #1a1a1a;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }}
+        .header {{
+            background: linear-gradient(to right, #1a1a1a 0%, #2d2d2d 100%);
+            color: #ffffff;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+        }}
+        .header::after {{
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background: #d4af37;
+        }}
+        .header h1 {{
+            font-size: 36px;
+            margin: 0;
+            font-weight: 300;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }}
+        .header .role {{
+            font-size: 16px;
+            margin-top: 15px;
+            color: #d4af37;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 400;
+        }}
+        .contact-bar {{
+            background: #f8f8f8;
+            padding: 15px 30px;
+            margin-bottom: 30px;
+            border-left: 4px solid #d4af37;
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+        }}
+        .contact-item {{
+            color: #2d2d2d;
+        }}
+        .contact-item strong {{
+            color: #1a1a1a;
+            margin-right: 5px;
+        }}
+        .section {{
+            margin-bottom: 30px;
+        }}
+        .section-title {{
+            font-size: 20px;
+            color: #1a1a1a;
+            font-weight: 600;
+            border-bottom: 2px solid #d4af37;
+            padding-bottom: 8px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }}
+        .psira-premium {{
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 5px;
+            text-align: center;
+            margin: 25px 0;
+            position: relative;
+        }}
+        .psira-premium::before {{
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: #d4af37;
+        }}
+        .psira-premium .grade {{
+            font-size: 48px;
+            font-weight: bold;
+            color: #d4af37;
+            margin: 10px 0;
+        }}
+        .psira-premium .label {{
+            font-size: 12px;
+            letter-spacing: 2px;
+            opacity: 0.9;
+        }}
+        .profile-summary {{
+            background: #f8f8f8;
+            padding: 25px;
+            border-left: 4px solid #d4af37;
+            font-size: 15px;
+            line-height: 1.8;
+            font-style: italic;
+            color: #2d2d2d;
+        }}
+        .skill-box {{
+            display: inline-block;
+            background: #1a1a1a;
+            color: white;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 3px;
+            font-size: 13px;
+            font-weight: 500;
+        }}
+        .detail-grid {{
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 15px;
+        }}
+        .detail-item {{
+            padding: 15px;
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-left: 3px solid #d4af37;
+        }}
+        .detail-label {{
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+            margin-bottom: 5px;
+        }}
+        .detail-value {{
+            font-size: 15px;
+            color: #1a1a1a;
+            font-weight: 500;
+        }}
+        .qualification-card {{
+            background: white;
+            border: 1px solid #e0e0e0;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #d4af37;
+        }}
+        .qualification-card h4 {{
+            margin: 0 0 10px 0;
+            color: #1a1a1a;
+            font-size: 16px;
+        }}
+        .footer-signature {{
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid #d4af37;
+            text-align: center;
+        }}
+        .footer-signature .sig-line {{
+            width: 250px;
+            margin: 30px auto 10px auto;
+            border-bottom: 2px solid #1a1a1a;
+            padding-bottom: 5px;
+        }}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{data.get('full_name', 'Executive Professional')}</h1>
+        <div class="role">PSIRA-Certified Security Executive</div>
+    </div>
+
+    <div class="contact-bar">
+        <div class="contact-item"><strong>Email:</strong> {data.get('email', '')}</div>
+        <div class="contact-item"><strong>Phone:</strong> {data.get('phone', '')}</div>
+        <div class="contact-item"><strong>Location:</strong> {data.get('city', '')}, {data.get('province', '')}</div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Executive Summary</div>
+        <div class="profile-summary">
+            Distinguished security professional with {data.get('years_experience', 0)} years of comprehensive
+            experience in the private security industry. PSIRA-certified Grade {data.get('psira_grade', 'N/A')}
+            with a proven track record of excellence in security operations, risk management, and team leadership.
+            Committed to delivering superior security services with unwavering professionalism and integrity.
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">PSIRA Certification</div>
+        <div class="psira-premium">
+            <div class="label">PSIRA REGISTRATION</div>
+            <div class="grade">GRADE {data.get('psira_grade', 'N/A')}</div>
+            <div class="label">Registration No: {data.get('psira_number', 'N/A')}</div>
+            <div class="label" style="margin-top: 10px;">Valid Until: {data.get('psira_expiry_date', 'N/A')}</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Core Competencies</div>
+        <div style="margin: 15px 0;">
+            {skills_boxes if skills_boxes else '<div class="skill-box">Security Operations</div><div class="skill-box">Risk Management</div><div class="skill-box">Team Leadership</div>'}
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Professional Qualifications</div>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <div class="detail-label">PSIRA Registration</div>
+                <div class="detail-value">{data.get('psira_number', 'N/A')}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Grade & Expiry</div>
+                <div class="detail-value">Grade {data.get('psira_grade', 'N/A')} - {data.get('psira_expiry_date', 'N/A')}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Drivers License</div>
+                <div class="detail-value">{'Code ' + data.get('drivers_license_code', '') if data.get('has_drivers_license') else 'Not specified'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Firearm Competency</div>
+                <div class="detail-value">{'Valid - ' + str(data.get('firearm_competency_expiry', '')) if data.get('has_firearm_competency') else 'Not applicable'}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Years of Experience</div>
+                <div class="detail-value">{data.get('years_experience', 0)} Years</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Availability</div>
+                <div class="detail-value">{'Available Immediately' if data.get('available_for_work') else 'Currently Employed'}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Languages</div>
+        <p style="font-size: 15px; color: #2d2d2d;">{', '.join(data.get('languages', ['English'])) if data.get('languages') else 'English'}</p>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Geographic Availability</div>
+        <p style="font-size: 15px; color: #2d2d2d;">
+            <strong>Willing to work in:</strong> {', '.join(data.get('provinces_willing_to_work', [data.get('province', 'N/A')])) if data.get('provinces_willing_to_work') else data.get('province', 'N/A')}
+        </p>
+        <p style="font-size: 15px; color: #2d2d2d;">
+            <strong>Expected Rate:</strong> R{data.get('hourly_rate_expectation', 'Negotiable')} per hour
+        </p>
+    </div>
+
+    <div class="footer-signature">
+        <div class="sig-line"></div>
+        <p style="font-size: 12px; color: #888;">Signature & Date</p>
+        <p style="font-size: 11px; color: #aaa; margin-top: 20px;">Executive CV | Generated: {datetime.now().strftime('%B %Y')}</p>
+    </div>
+</body>
+</html>
+"""
+
+    @staticmethod
+    def _minimalist_template(data: Dict[str, Any]) -> str:
+        """Minimalist CV Template - Clean and simple."""
+
+        return f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>CV - {data.get('full_name', 'Minimalist')}</title>
+    <style>
+        @page {{
+            size: A4;
+            margin: 3cm 2.5cm;
+        }}
+        body {{
+            font-family: 'Helvetica Neue', 'Arial', sans-serif;
+            color: #333;
+            line-height: 1.7;
+            margin: 0;
+            padding: 0;
+            font-size: 11pt;
+        }}
+        .name {{
+            font-size: 32pt;
+            font-weight: 300;
+            color: #000;
+            margin-bottom: 5px;
+            letter-spacing: -1px;
+        }}
+        .role {{
+            font-size: 13pt;
+            color: #666;
+            margin-bottom: 25px;
+            font-weight: 300;
+        }}
+        .contact {{
+            font-size: 10pt;
+            color: #666;
+            margin-bottom: 40px;
+            line-height: 1.8;
+        }}
+        .section {{
+            margin-bottom: 30px;
+        }}
+        h2 {{
+            font-size: 11pt;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #000;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #000;
+        }}
+        .psira-minimal {{
+            padding: 20px 0;
+            margin: 20px 0;
+            border-top: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
+        }}
+        .psira-grid {{
+            display: flex;
+            justify-content: space-between;
+        }}
+        .psira-item {{
+            font-size: 10pt;
+        }}
+        .psira-item strong {{
+            display: block;
+            font-size: 9pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #999;
+            margin-bottom: 3px;
+        }}
+        .info-line {{
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+        }}
+        .info-line:last-child {{
+            border-bottom: none;
+        }}
+        .info-label {{
+            font-size: 10pt;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 9pt;
+        }}
+        .info-value {{
+            font-size: 10pt;
+            color: #333;
+        }}
+        .skills-minimal {{
+            font-size: 10pt;
+            line-height: 2;
+        }}
+        .skill-item {{
+            display: inline;
+            margin-right: 20px;
+        }}
+        .skill-item:after {{
+            content: "•";
+            margin-left: 20px;
+            color: #ccc;
+        }}
+        .skill-item:last-child:after {{
+            content: "";
+        }}
+        p {{
+            margin: 10px 0;
+        }}
+    </style>
+</head>
+<body>
+    <div class="name">{data.get('full_name', 'Security Professional')}</div>
+    <div class="role">PSIRA-Certified Security Professional</div>
+
+    <div class="contact">
+        {data.get('email', '')} • {data.get('phone', '')} • {data.get('city', '')}, {data.get('province', '')}
+    </div>
+
+    <div class="section">
+        <h2>Profile</h2>
+        <p>
+            Security professional with {data.get('years_experience', 0)} years of experience in the private
+            security industry. PSIRA-certified Grade {data.get('psira_grade', 'N/A')} with expertise in security
+            operations and risk management. Available for positions in {', '.join(data.get('provinces_willing_to_work', [data.get('province', 'various provinces')])) if data.get('provinces_willing_to_work') else data.get('province', 'various provinces')}.
+        </p>
+    </div>
+
+    <div class="section">
+        <h2>PSIRA Registration</h2>
+        <div class="psira-minimal">
+            <div class="psira-grid">
+                <div class="psira-item">
+                    <strong>Number</strong>
+                    {data.get('psira_number', 'N/A')}
+                </div>
+                <div class="psira-item">
+                    <strong>Grade</strong>
+                    Grade {data.get('psira_grade', 'N/A')}
+                </div>
+                <div class="psira-item">
+                    <strong>Expiry</strong>
+                    {data.get('psira_expiry_date', 'N/A')}
+                </div>
+                <div class="psira-item">
+                    <strong>Status</strong>
+                    Active
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Qualifications</h2>
+        <div class="info-line">
+            <span class="info-label">Drivers License</span>
+            <span class="info-value">{'Code ' + data.get('drivers_license_code', '') if data.get('has_drivers_license') else 'None'}</span>
+        </div>
+        <div class="info-line">
+            <span class="info-label">Firearm Competency</span>
+            <span class="info-value">{'Valid until ' + str(data.get('firearm_competency_expiry', '')) if data.get('has_firearm_competency') else 'N/A'}</span>
+        </div>
+        <div class="info-line">
+            <span class="info-label">Experience</span>
+            <span class="info-value">{data.get('years_experience', 0)} years</span>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Skills</h2>
+        <div class="skills-minimal">
+            {' '.join([f'<span class="skill-item">{skill}</span>' for skill in data.get('skills', ['Security Operations', 'Patrol', 'Access Control'])]) if data.get('skills') else '<span class="skill-item">Security Operations</span><span class="skill-item">Patrol</span><span class="skill-item">Access Control</span>'}
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Languages</h2>
+        <p>{', '.join(data.get('languages', ['English'])) if data.get('languages') else 'English'}</p>
+    </div>
+
+    <div class="section">
+        <h2>Availability</h2>
+        <div class="info-line">
+            <span class="info-label">Status</span>
+            <span class="info-value">{'Available for immediate employment' if data.get('available_for_work') else 'Currently employed'}</span>
+        </div>
+        <div class="info-line">
+            <span class="info-label">Expected Rate</span>
+            <span class="info-value">R{data.get('hourly_rate_expectation', 'Negotiable')}/hour</span>
+        </div>
+        <div class="info-line">
+            <span class="info-label">Willing to Relocate</span>
+            <span class="info-value">{', '.join(data.get('provinces_willing_to_work', [data.get('province', 'N/A')])) if data.get('provinces_willing_to_work') else data.get('province', 'N/A')}</span>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Personal Details</h2>
+        <div class="info-line">
+            <span class="info-label">ID Number</span>
+            <span class="info-value">{data.get('id_number', 'Available on request')}</span>
+        </div>
+        <div class="info-line">
+            <span class="info-label">Date of Birth</span>
+            <span class="info-value">{data.get('date_of_birth', 'N/A')}</span>
+        </div>
+        <div class="info-line">
+            <span class="info-label">Gender</span>
+            <span class="info-value">{data.get('gender', 'N/A')}</span>
+        </div>
+    </div>
+
+    <div style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; font-size: 9pt; color: #999;">
+        CV Generated {datetime.now().strftime('%B %Y')}
     </div>
 </body>
 </html>
