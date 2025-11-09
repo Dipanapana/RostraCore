@@ -106,3 +106,49 @@ async def assign_employee_to_shift(
             detail=f"Shift with ID {shift_id} not found"
         )
     return shift
+
+
+@router.post("/{shift_id}/unassign", response_model=ShiftResponse)
+async def unassign_employee_from_shift(
+    shift_id: int,
+    db: Session = Depends(get_db)
+):
+    """Unassign employee from shift (manual roster editing)."""
+    shift = ShiftService.get_by_id(db, shift_id)
+    if not shift:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Shift with ID {shift_id} not found"
+        )
+
+    shift.assigned_employee_id = None
+    shift.status = "planned"
+    db.commit()
+    db.refresh(shift)
+    return shift
+
+
+@router.post("/bulk-delete", status_code=status.HTTP_200_OK)
+async def bulk_delete_shifts(
+    shift_ids: List[int],
+    db: Session = Depends(get_db)
+):
+    """Bulk delete shifts (for admin/owner to clean up history)."""
+    deleted_count = 0
+    errors = []
+
+    for shift_id in shift_ids:
+        try:
+            success = ShiftService.delete(db, shift_id)
+            if success:
+                deleted_count += 1
+            else:
+                errors.append(f"Shift {shift_id} not found")
+        except Exception as e:
+            errors.append(f"Shift {shift_id}: {str(e)}")
+
+    return {
+        "deleted_count": deleted_count,
+        "total_requested": len(shift_ids),
+        "errors": errors
+    }
