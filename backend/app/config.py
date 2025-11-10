@@ -1,7 +1,8 @@
 """Application configuration."""
 
 from pydantic_settings import BaseSettings
-from typing import Optional
+from typing import Optional, Union
+from pydantic import field_validator
 
 
 class Settings(BaseSettings):
@@ -24,7 +25,16 @@ class Settings(BaseSettings):
 
     # CORS
     FRONTEND_URL: str = "http://localhost:3000"
-    ALLOWED_ORIGINS: list[str] = ["http://localhost:3000"]
+    ALLOWED_ORIGINS: Union[list[str], str] = "http://localhost:3000"
+
+    @field_validator('ALLOWED_ORIGINS', mode='before')
+    @classmethod
+    def parse_cors_origins(cls, v):
+        """Parse ALLOWED_ORIGINS from string or list."""
+        if isinstance(v, str):
+            # Split comma-separated string and strip whitespace
+            return [origin.strip() for origin in v.split(',')]
+        return v
 
     # Rostering Constraints
     MAX_HOURS_WEEK: int = 60  # Relaxed from 48 for testing (BCEA: 48)
