@@ -363,7 +363,7 @@ class HistoricalPatternAnalyzer:
                 'shift_count': s.total
             }
             for s in sites
-            if (s.filled / s.total) < threshold if s.total > 0 else False
+            if s.total > 0 and (s.filled / s.total) < threshold
         ]
 
         return {
