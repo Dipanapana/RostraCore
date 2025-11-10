@@ -14,7 +14,7 @@ from app.database import get_db
 from app.models.employee import Employee
 from app.models.shift import Shift
 from app.models.site import Site
-from app.models.payroll import Payroll
+from app.models.payroll import PayrollSummarySummary
 from app.models.attendance import Attendance
 from app.models.organization import Organization
 from app.models.availability import Availability
@@ -72,16 +72,16 @@ async def get_executive_dashboard(
     ).scalar() or 0
 
     # 3. Revenue This Month (from payroll)
-    revenue_this_month = db.query(func.sum(Payroll.total_pay)).filter(
-        Payroll.pay_period_start >= month_start,
-        *([Payroll.org_id == org_id] if org_id else [])
+    revenue_this_month = db.query(func.sum(PayrollSummary.total_pay)).filter(
+        PayrollSummary.pay_period_start >= month_start,
+        *([PayrollSummary.org_id == org_id] if org_id else [])
     ).scalar() or Decimal('0.00')
 
     # 4. Revenue Last Month
-    revenue_last_month = db.query(func.sum(Payroll.total_pay)).filter(
-        Payroll.pay_period_start >= last_month_start,
-        Payroll.pay_period_start < month_start,
-        *([Payroll.org_id == org_id] if org_id else [])
+    revenue_last_month = db.query(func.sum(PayrollSummary.total_pay)).filter(
+        PayrollSummary.pay_period_start >= last_month_start,
+        PayrollSummary.pay_period_start < month_start,
+        *([PayrollSummary.org_id == org_id] if org_id else [])
     ).scalar() or Decimal('0.00')
 
     # Calculate revenue growth
@@ -375,14 +375,14 @@ async def get_financial_dashboard(
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     last_month_start = (month_start - timedelta(days=1)).replace(day=1)
 
-    # 1. Monthly Payroll Costs
+    # 1. Monthly PayrollSummary Costs
     payroll_this_month = db.query(
-        func.sum(Payroll.regular_pay).label('regular'),
-        func.sum(Payroll.overtime_pay).label('overtime'),
-        func.sum(Payroll.total_pay).label('total')
+        func.sum(PayrollSummary.regular_pay).label('regular'),
+        func.sum(PayrollSummary.overtime_pay).label('overtime'),
+        func.sum(PayrollSummary.total_pay).label('total')
     ).filter(
-        Payroll.pay_period_start >= month_start,
-        *([Payroll.org_id == org_id] if org_id else [])
+        PayrollSummary.pay_period_start >= month_start,
+        *([PayrollSummary.org_id == org_id] if org_id else [])
     ).first()
 
     regular_pay = float(payroll_this_month.regular or 0)
@@ -390,10 +390,10 @@ async def get_financial_dashboard(
     total_payroll = float(payroll_this_month.total or 0)
 
     # 2. Last Month for Comparison
-    payroll_last_month = db.query(func.sum(Payroll.total_pay)).filter(
-        Payroll.pay_period_start >= last_month_start,
-        Payroll.pay_period_start < month_start,
-        *([Payroll.org_id == org_id] if org_id else [])
+    payroll_last_month = db.query(func.sum(PayrollSummary.total_pay)).filter(
+        PayrollSummary.pay_period_start >= last_month_start,
+        PayrollSummary.pay_period_start < month_start,
+        *([PayrollSummary.org_id == org_id] if org_id else [])
     ).scalar() or Decimal('0.00')
 
     payroll_change = ((total_payroll - float(payroll_last_month)) / float(payroll_last_month) * 100) if float(payroll_last_month) > 0 else 0.0
@@ -435,10 +435,10 @@ async def get_financial_dashboard(
         month_date = (month_start - timedelta(days=i * 30)).replace(day=1)
         next_month = (month_date + timedelta(days=32)).replace(day=1)
 
-        month_cost = db.query(func.sum(Payroll.total_pay)).filter(
-            Payroll.pay_period_start >= month_date,
-            Payroll.pay_period_start < next_month,
-            *([Payroll.org_id == org_id] if org_id else [])
+        month_cost = db.query(func.sum(PayrollSummary.total_pay)).filter(
+            PayrollSummary.pay_period_start >= month_date,
+            PayrollSummary.pay_period_start < next_month,
+            *([PayrollSummary.org_id == org_id] if org_id else [])
         ).scalar() or Decimal('0.00')
 
         cost_trend.append({
