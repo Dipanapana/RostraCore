@@ -73,6 +73,42 @@ class Settings(BaseSettings):
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
 
+    # Email Configuration (SendGrid)
+    SENDGRID_API_KEY: Optional[str] = None
+    FROM_EMAIL: str = "noreply@rostracore.co.za"
+    FROM_NAME: str = "RostraCore"
+
+    # SMTP Configuration (Alternative to SendGrid)
+    SMTP_HOST: Optional[str] = None
+    SMTP_PORT: int = 587
+    SMTP_USER: Optional[str] = None
+    SMTP_PASSWORD: Optional[str] = None
+    SMTP_TLS: bool = True
+
+    # MVP Feature Flags (Option B Security)
+    ENABLE_EMAIL_VERIFICATION: bool = True
+    ENABLE_ORGANIZATION_APPROVAL: bool = True
+    ENABLE_RATE_LIMITING: bool = True
+
+    # Non-MVP Features (Disabled for MVP Launch)
+    ENABLE_MARKETPLACE: bool = False
+    ENABLE_CV_GENERATION: bool = False
+    ENABLE_GUARD_RATINGS: bool = False
+    ENABLE_ADVANCED_ANALYTICS: bool = False
+    ENABLE_BULK_HIRING: bool = False
+    ENABLE_PREMIUM_JOBS: bool = False
+
+    # MVP Pricing Model
+    MVP_MONTHLY_RATE_PER_GUARD: float = 45.00
+    MVP_CURRENCY: str = "ZAR"
+
+    # Security Settings
+    PASSWORD_MIN_LENGTH: int = 12
+    MAX_LOGIN_ATTEMPTS: int = 5
+    ACCOUNT_LOCKOUT_DURATION_MINUTES: int = 30
+    RATE_LIMIT_PER_MINUTE: int = 60
+    RATE_LIMIT_PER_HOUR: int = 1000
+
     class Config:
         env_file = ".env"
         case_sensitive = True

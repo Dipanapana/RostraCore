@@ -1,6 +1,6 @@
 """Organization (tenant) model for multi-tenancy."""
 
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, JSON
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, JSON, Numeric
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -35,8 +35,15 @@ class Organization(Base):
     # Subscription details
     subscription_tier = Column(String(20), nullable=False, default="starter")
     # Tiers: starter, professional, business, enterprise
-    subscription_status = Column(String(20), nullable=False, default="active")
+    subscription_status = Column(String(20), nullable=False, default="trial")
     # Status: active, trial, suspended, cancelled
+
+    # Organization approval workflow (MVP Security - Option B)
+    approval_status = Column(String(20), nullable=False, default="pending_approval")
+    # Status: pending_approval, approved, rejected
+    approved_by = Column(Integer, nullable=True)  # user_id of superadmin who approved
+    approved_at = Column(DateTime, nullable=True)
+    rejection_reason = Column(String(500), nullable=True)
 
     # Limits based on subscription tier
     max_employees = Column(Integer, nullable=True)  # None = unlimited
@@ -50,6 +57,12 @@ class Organization(Base):
     # Billing
     billing_email = Column(String(255), nullable=True)
 
+    # Per-guard billing (MVP - R45/guard/month)
+    active_guard_count = Column(Integer, default=0, nullable=False)  # Auto-calculated
+    monthly_rate_per_guard = Column(Numeric(10, 2), default=45.00, nullable=False)  # R45/month
+    current_month_cost = Column(Numeric(10, 2), default=0.00, nullable=False)  # Auto-calculated
+    last_billing_calculation = Column(DateTime, nullable=True)
+
     # Metadata
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
@@ -57,6 +70,9 @@ class Organization(Base):
     # Relationships
     users = relationship("User", back_populates="organization")
     clients = relationship("Client", back_populates="organization")
+    marketplace_commissions = relationship("MarketplaceCommission", back_populates="organization")
+    bulk_packages = relationship("BulkHiringPackage", back_populates="organization")
+    premium_jobs = relationship("PremiumJobPosting", back_populates="organization")
 
     def __repr__(self):
         return f"<Organization(org_id={self.org_id}, company_name='{self.company_name}', tier='{self.subscription_tier}')>"

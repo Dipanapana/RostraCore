@@ -55,11 +55,45 @@ export default function ExpensesPage() {
     { value: "other", label: "Other" },
   ];
 
+  // Date range filter state
+  const [filterStartDate, setFilterStartDate] = useState("");
+  const [filterEndDate, setFilterEndDate] = useState("");
+  const [filteredExpenses, setFilteredExpenses] = useState<Expense[]>([]);
+
   useEffect(() => {
     fetchExpenses();
     fetchEmployees();
     fetchSites();
   }, [token]);
+
+  // Apply date range filter
+  useEffect(() => {
+    if (!filterStartDate && !filterEndDate) {
+      setFilteredExpenses(expenses);
+      return;
+    }
+
+    const filtered = expenses.filter((expense) => {
+      const expenseDate = new Date(expense.date_incurred);
+
+      if (filterStartDate && filterEndDate) {
+        const filterStart = new Date(filterStartDate);
+        const filterEnd = new Date(filterEndDate);
+        filterEnd.setHours(23, 59, 59, 999);
+        return expenseDate >= filterStart && expenseDate <= filterEnd;
+      } else if (filterStartDate) {
+        const filterStart = new Date(filterStartDate);
+        return expenseDate >= filterStart;
+      } else if (filterEndDate) {
+        const filterEnd = new Date(filterEndDate);
+        filterEnd.setHours(23, 59, 59, 999);
+        return expenseDate <= filterEnd;
+      }
+      return true;
+    });
+
+    setFilteredExpenses(filtered);
+  }, [expenses, filterStartDate, filterEndDate]);
 
   const fetchExpenses = async () => {
     if (!token) return;
@@ -344,6 +378,44 @@ export default function ExpensesPage() {
           </div>
         </div>
 
+        {/* Date Range Filter */}
+        <div className="bg-white shadow rounded-lg p-4 mb-6">
+          <div className="flex items-center gap-4">
+            <label className="text-gray-700 font-medium">Filter by Date:</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={filterStartDate}
+                onChange={(e) => setFilterStartDate(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="Start Date"
+              />
+              <span className="text-gray-500">to</span>
+              <input
+                type="date"
+                value={filterEndDate}
+                onChange={(e) => setFilterEndDate(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="End Date"
+              />
+              {(filterStartDate || filterEndDate) && (
+                <button
+                  onClick={() => {
+                    setFilterStartDate("");
+                    setFilterEndDate("");
+                  }}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Clear Filter
+                </button>
+              )}
+            </div>
+            <div className="ml-auto text-sm text-gray-600">
+              Showing {filteredExpenses.length} of {expenses.length} records
+            </div>
+          </div>
+        </div>
+
         {/* Expenses Table */}
         <div className="bg-white shadow rounded-lg overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
@@ -373,14 +445,16 @@ export default function ExpensesPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {expenses.length === 0 ? (
+              {filteredExpenses.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
-                    No expenses found. Click "Add Expense" to create one.
+                    {expenses.length === 0
+                      ? 'No expenses found. Click "Add Expense" to create one.'
+                      : 'No expenses match the selected date range.'}
                   </td>
                 </tr>
               ) : (
-                expenses.map((expense) => (
+                filteredExpenses.map((expense) => (
                   <tr key={expense.expense_id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">

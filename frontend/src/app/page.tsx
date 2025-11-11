@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/context/AuthContext'
 import PricingSection from '@/components/PricingSection'
-import ROICalculator from '@/components/ROICalculator'
 
 export default function Home() {
   const { isAuthenticated, user, logout } = useAuth();
@@ -27,7 +26,7 @@ export default function Home() {
       <div className="absolute top-6 right-6 z-50">
         {isAuthenticated ? (
           <div className="flex items-center gap-4 backdrop-blur-md bg-white/10 px-6 py-3 rounded-full border border-white/20">
-            <span className="text-white font-medium">👤 {user?.username}</span>
+            <span className="text-white font-medium">{user?.username}</span>
             <button
               onClick={logout}
               className="bg-red-500/80 hover:bg-red-600 text-white px-4 py-2 rounded-full transition-all hover:scale-105"
@@ -49,34 +48,34 @@ export default function Home() {
           SECTION 1: HERO (ABOVE THE FOLD)
       ======================================== */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 pt-20">
-        <div className="text-center max-w-6xl mx-auto">
+        <div className="text-center max-w-5xl mx-auto">
           {/* Logo + Tagline */}
-          <div className="mb-4">
-            <div className="text-sm font-semibold text-white/60 mb-2">ROSTRACORE</div>
-            <div className="text-xs text-white/50">Security Workforce Management</div>
+          <div className="mb-8">
+            <div className="text-lg font-bold text-white mb-2">ROSTRACORE</div>
+            <div className="text-sm text-white/60">Security Workforce Management for South Africa</div>
           </div>
 
-          {/* Main Headline - Loss-Framed */}
-          <h1 className="text-5xl md:text-7xl font-extrabold text-white mb-6 leading-tight animate-fadeIn">
-            Stop Wasting <span className="text-red-400">8 Hours Every Week</span>
+          {/* Main Headline - Clear Value Proposition */}
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight animate-fadeIn">
+            Professional Roster Management
             <br />
-            on Scheduling
+            <span className="text-blue-400">for Security Companies</span>
           </h1>
 
-          {/* Subheadline - Specific Value Proposition */}
-          <p className="text-xl md:text-2xl text-white/80 mb-8 max-w-4xl mx-auto leading-relaxed animate-fadeIn" style={{ animationDelay: '0.2s' }}>
-            South African security companies using RostraCore save <span className="text-green-400 font-bold">R15,000/month</span>
-            <br />
-            and eliminate <span className="text-yellow-400 font-bold">PSIRA compliance fines</span>
+          {/* Subheadline - Specific, Honest */}
+          <p className="text-lg md:text-xl text-white/80 mb-8 max-w-3xl mx-auto leading-relaxed animate-fadeIn" style={{ animationDelay: '0.2s' }}>
+            Automated shift scheduling, PSIRA compliance tracking, and workforce management
+            <br className="hidden md:block" />
+            built specifically for South African security operations
           </p>
 
-          {/* Primary + Secondary CTAs */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8 animate-fadeIn" style={{ animationDelay: '0.4s' }}>
+          {/* Single, Clear CTA */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12 animate-fadeIn" style={{ animationDelay: '0.4s' }}>
             <Link
               href="/register"
-              className="group px-10 py-5 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full font-bold text-white text-lg overflow-hidden transition-all hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/50 flex items-center gap-2"
+              className="group px-10 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full font-bold text-white text-lg overflow-hidden transition-all hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/50 flex items-center gap-2"
             >
-              🚀 Start Free 14-Day Trial
+              Request Access
               <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
@@ -84,35 +83,58 @@ export default function Home() {
 
             <a
               href="#pricing"
-              className="px-10 py-5 backdrop-blur-md bg-white/10 border-2 border-white/30 rounded-full font-bold text-white text-lg hover:bg-white/20 transition-all hover:scale-105"
+              className="px-10 py-4 backdrop-blur-md bg-white/10 border-2 border-white/30 rounded-full font-bold text-white text-lg hover:bg-white/20 transition-all hover:scale-105"
             >
-              📊 See Pricing (R499/month)
+              View Pricing
             </a>
           </div>
 
-          {/* Trust Signals */}
-          <div className="flex flex-wrap justify-center items-center gap-6 text-sm text-white/70 mb-12 animate-fadeIn" style={{ animationDelay: '0.6s' }}>
-            <span className="flex items-center gap-2">✓ No credit card required</span>
-            <span className="flex items-center gap-2">✓ Setup in 10 minutes</span>
-            <span className="flex items-center gap-2">✓ Cancel anytime</span>
+          {/* Trust Signals - Honest, No Fake Numbers */}
+          <div className="flex flex-wrap justify-center items-center gap-8 text-sm text-white/70 mb-12 animate-fadeIn" style={{ animationDelay: '0.6s' }}>
+            <span className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              PSIRA-Aligned
+            </span>
+            <span className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              BCEA-Compliant
+            </span>
+            <span className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              POPIA-Certified
+            </span>
+            <span className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2V7a5 5 0 00-5-5z" />
+              </svg>
+              South African Owned
+            </span>
           </div>
 
-          {/* Social Proof Bar */}
-          <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-6 max-w-4xl mx-auto animate-fadeIn" style={{ animationDelay: '0.8s' }}>
-            <div className="flex flex-col md:flex-row items-center justify-around gap-4 text-center">
+          {/* Registration Process Preview */}
+          <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-8 max-w-3xl mx-auto animate-fadeIn" style={{ animationDelay: '0.8s' }}>
+            <h3 className="text-xl font-bold text-white mb-6">Getting Started</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
               <div>
-                <div className="text-3xl font-bold text-white">150+</div>
-                <div className="text-sm text-white/60">SA Security Companies</div>
+                <div className="text-3xl font-bold text-blue-400 mb-2">1</div>
+                <div className="text-sm font-bold text-white mb-1">Register Company</div>
+                <div className="text-xs text-white/60">Provide company details & PSIRA number</div>
               </div>
-              <div className="hidden md:block w-px h-12 bg-white/20" />
               <div>
-                <div className="text-3xl font-bold text-white">45,000+</div>
-                <div className="text-sm text-white/60">Guards Scheduled</div>
+                <div className="text-3xl font-bold text-blue-400 mb-2">2</div>
+                <div className="text-sm font-bold text-white mb-1">Verification</div>
+                <div className="text-xs text-white/60">Email verification + company review (24-48hrs)</div>
               </div>
-              <div className="hidden md:block w-px h-12 bg-white/20" />
               <div>
-                <div className="text-3xl font-bold text-green-400">R2.1M</div>
-                <div className="text-sm text-white/60">Saved by Customers</div>
+                <div className="text-3xl font-bold text-blue-400 mb-2">3</div>
+                <div className="text-sm font-bold text-white mb-1">Start Managing</div>
+                <div className="text-xs text-white/60">Add guards, create rosters, track compliance</div>
               </div>
             </div>
           </div>
@@ -120,465 +142,235 @@ export default function Home() {
       </div>
 
       {/* ========================================
-          SECTION 2: PROBLEM-AGITATE-SOLUTION
+          SECTION 2: CORE BENEFITS
       ======================================== */}
       <div className="relative z-10 px-6 py-20 border-t border-white/10">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-white mb-4">
-              The Hidden Cost of Manual Scheduling
+              Everything You Need to Manage Your Security Workforce
             </h2>
             <p className="text-xl text-white/70">
-              Every week, manual scheduling silently drains your business
+              Six core features. No complexity. No hidden costs.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Time Drain */}
-            <div className="backdrop-blur-md bg-red-500/10 border-2 border-red-500/30 rounded-2xl p-8 hover:scale-105 transition-all">
-              <div className="text-5xl mb-4">📞</div>
-              <h3 className="text-2xl font-bold text-red-300 mb-4">THE TIME DRAIN</h3>
-              <ul className="space-y-3 text-white/80">
-                <li className="flex items-start gap-2">
-                  <span className="text-red-400">▪</span>
-                  <span>2-3 hours EVERY DAY juggling calls, Excel, WhatsApp messages</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-red-400">▪</span>
-                  <span>Last-minute changes ruin your evenings</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-red-400">▪</span>
-                  <span>Can't scale past 50 guards (scheduling too complex)</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Money Leak */}
-            <div className="backdrop-blur-md bg-orange-500/10 border-2 border-orange-500/30 rounded-2xl p-8 hover:scale-105 transition-all">
-              <div className="text-5xl mb-4">💸</div>
-              <h3 className="text-2xl font-bold text-orange-300 mb-4">THE MONEY LEAK</h3>
-              <ul className="space-y-3 text-white/80">
-                <li className="flex items-start gap-2">
-                  <span className="text-orange-400">▪</span>
-                  <span>Overtime costs 30% higher due to inefficient shifts</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-orange-400">▪</span>
-                  <span>Guard complaints about "unfair" hours = turnover (recruiting cost: R5K ea.)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-orange-400">▪</span>
-                  <span>Travel costs uncalculated = budget overruns</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Compliance Risk */}
-            <div className="backdrop-blur-md bg-yellow-500/10 border-2 border-yellow-500/30 rounded-2xl p-8 hover:scale-105 transition-all">
-              <div className="text-5xl mb-4">⚠️</div>
-              <h3 className="text-2xl font-bold text-yellow-300 mb-4">THE COMPLIANCE RISK</h3>
-              <ul className="space-y-3 text-white/80">
-                <li className="flex items-start gap-2">
-                  <span className="text-yellow-400">▪</span>
-                  <span>PSIRA fines: R50K-R250K per violation</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-yellow-400">▪</span>
-                  <span>Expired certifications = uninsurable guards</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-yellow-400">▪</span>
-                  <span>BCEA violations = lawsuits and reputational damage</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="text-center mt-12">
-            <div className="text-2xl font-bold text-white mb-4">
-              There's a Better Way →
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ========================================
-          SECTION 3: THE SOLUTION
-      ======================================== */}
-      <div className="relative z-10 px-6 py-20 border-t border-white/10">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-5xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-4">
-              Automated Scheduling That Actually Works
-            </h2>
-            <p className="text-xl text-white/70">
-              Not hours. Not minutes. <span className="text-green-400 font-bold">Seconds.</span>
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Time Savings */}
-            <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-8">
-              <div className="text-4xl mb-4">⏰</div>
-              <h3 className="text-2xl font-bold text-white mb-4">GET YOUR TIME BACK</h3>
-              <div className="text-3xl font-bold text-green-400 mb-4">Save 8+ hours per week</div>
-              <p className="text-white/70 mb-4">
-                That's 416 hours per year. What would you do with an extra 10 work weeks?
+            {/* Roster Generation */}
+            <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all">
+              <div className="text-4xl mb-4">📅</div>
+              <h3 className="text-xl font-bold text-white mb-3">Roster Generation</h3>
+              <p className="text-white/70 text-sm mb-4">
+                AI-powered roster generation considering skills, availability, and compliance requirements
               </p>
-              <ul className="space-y-2 text-white/80">
-                <li>• Focus on sales and growth</li>
-                <li>• Scale to 200+ guards</li>
-                <li>• Actually go home on time</li>
-              </ul>
-            </div>
-
-            {/* Cost Reduction */}
-            <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-8">
-              <div className="text-4xl mb-4">💰</div>
-              <h3 className="text-2xl font-bold text-white mb-4">REDUCE LABOR COSTS</h3>
-              <div className="text-3xl font-bold text-green-400 mb-4">Cut costs by 5-12%</div>
-              <p className="text-white/70 mb-4">
-                Average saving: <span className="font-bold text-white">R15K/month</span> (for 50-guard operation)
-              </p>
-              <ul className="space-y-2 text-white/80">
-                <li>• Optimized shift matching</li>
-                <li>• Reduced overtime</li>
+              <ul className="space-y-2 text-sm text-white/60">
+                <li>• Custom shift templates</li>
                 <li>• Fair hour distribution</li>
-                <li>• Smart travel planning</li>
+                <li>• BCEA compliance checks</li>
               </ul>
             </div>
 
-            {/* Compliance */}
-            <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-8">
-              <div className="text-4xl mb-4">✅</div>
-              <h3 className="text-2xl font-bold text-white mb-4">STAY 100% COMPLIANT</h3>
-              <div className="text-3xl font-bold text-green-400 mb-4">Zero fines. Zero stress.</div>
-              <p className="text-white/70 mb-4">
-                Automatic PSIRA & BCEA compliance checking
+            {/* Employee Management */}
+            <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all">
+              <div className="text-4xl mb-4">👥</div>
+              <h3 className="text-xl font-bold text-white mb-3">Employee Management</h3>
+              <p className="text-white/70 text-sm mb-4">
+                Complete guard profiles with skills, certifications, and availability tracking
               </p>
-              <ul className="space-y-2 text-white/80">
-                <li>• Certification expiry alerts (30-day notice)</li>
-                <li>• Rest period enforcement</li>
-                <li>• Weekly hour limits</li>
-                <li>• Meal break tracking</li>
+              <ul className="space-y-2 text-sm text-white/60">
+                <li>• Bulk import/export</li>
+                <li>• Skills matrix</li>
+                <li>• Leave management</li>
               </ul>
             </div>
-          </div>
 
-          {/* How It Works */}
-          <div className="mt-16 backdrop-blur-md bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30 rounded-2xl p-12">
-            <h3 className="text-3xl font-bold text-white mb-8 text-center">
-              🤖 Generate a Full Week's Roster in 8 Seconds
-            </h3>
+            {/* Site Management */}
+            <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all">
+              <div className="text-4xl mb-4">🏢</div>
+              <h3 className="text-xl font-bold text-white mb-3">Site & Client Management</h3>
+              <p className="text-white/70 text-sm mb-4">
+                Manage all your client sites and their specific security requirements
+              </p>
+              <ul className="space-y-2 text-sm text-white/60">
+                <li>• Site profiles</li>
+                <li>• Required certifications</li>
+                <li>• Contact management</li>
+              </ul>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-              <div>
-                <p className="text-xl text-white/80 mb-6">
-                  Our AI considers:
-                </p>
-                <ul className="space-y-3 text-lg text-white/80">
-                  <li className="flex items-center gap-3">
-                    <span className="text-green-400 text-2xl">✓</span>
-                    <span>Guard skills & certifications</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <span className="text-green-400 text-2xl">✓</span>
-                    <span>Site requirements</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <span className="text-green-400 text-2xl">✓</span>
-                    <span>Travel distances</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <span className="text-green-400 text-2xl">✓</span>
-                    <span>Availability windows</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <span className="text-green-400 text-2xl">✓</span>
-                    <span>Fair hour distribution</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <span className="text-green-400 text-2xl">✓</span>
-                    <span>BCEA compliance</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <span className="text-green-400 text-2xl">✓</span>
-                    <span>Budget constraints</span>
-                  </li>
-                </ul>
+            {/* Shift Management */}
+            <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all">
+              <div className="text-4xl mb-4">⏰</div>
+              <h3 className="text-xl font-bold text-white mb-3">Shift Management</h3>
+              <p className="text-white/70 text-sm mb-4">
+                Define and manage shift patterns, hours, and requirements
+              </p>
+              <ul className="space-y-2 text-sm text-white/60">
+                <li>• Flexible scheduling</li>
+                <li>• Shift swaps</li>
+                <li>• Overtime tracking</li>
+              </ul>
+            </div>
 
-                <div className="mt-8">
-                  <Link
-                    href="/login"
-                    className="inline-block px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-full hover:scale-105 transition-all hover:shadow-xl hover:shadow-blue-500/50"
-                  >
-                    Start Free Trial →
-                  </Link>
-                </div>
-              </div>
+            {/* Certification Tracking */}
+            <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all">
+              <div className="text-4xl mb-4">📋</div>
+              <h3 className="text-xl font-bold text-white mb-3">Certification Tracking</h3>
+              <p className="text-white/70 text-sm mb-4">
+                Automatic alerts for expiring PSIRA certifications and compliance documents
+              </p>
+              <ul className="space-y-2 text-sm text-white/60">
+                <li>• 30-day expiry alerts</li>
+                <li>• Document storage</li>
+                <li>• Compliance reporting</li>
+              </ul>
+            </div>
 
-              <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-xl p-6">
-                <div className="bg-black/30 rounded-lg p-6 mb-4">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <span className="text-white/60 text-sm ml-2">Roster Generation</span>
-                  </div>
-                  <div className="space-y-3 font-mono text-sm">
-                    <div className="text-green-400">✓ Analyzing 156 shifts...</div>
-                    <div className="text-green-400">✓ Matching 47 available guards...</div>
-                    <div className="text-green-400">✓ Optimizing costs & fairness...</div>
-                    <div className="text-green-400">✓ Checking PSIRA compliance...</div>
-                    <div className="text-white mt-4 text-lg font-bold">
-                      ⚡ Completed in 8 seconds
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-green-500/20 border border-green-500/50 rounded-lg p-4">
-                  <div className="grid grid-cols-2 gap-4 text-center">
-                    <div>
-                      <div className="text-2xl font-bold text-white">98%</div>
-                      <div className="text-xs text-white/70">Fill Rate</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-white">R12,450</div>
-                      <div className="text-xs text-white/70">Estimated Cost</div>
-                    </div>
-                    <div className="col-span-2">
-                      <div className="text-green-300 font-semibold">100% PSIRA Compliant ✓</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-4 text-center text-sm italic text-white/60">
-                  "This used to take me 6 hours. Now it's 8 seconds. Game changer."
-                  <br />
-                  <span className="text-white/80">— Themba K., JHB Security</span>
-                </div>
-              </div>
+            {/* Analytics */}
+            <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all">
+              <div className="text-4xl mb-4">📊</div>
+              <h3 className="text-xl font-bold text-white mb-3">Basic Analytics</h3>
+              <p className="text-white/70 text-sm mb-4">
+                Simple dashboards to track your operations and workforce utilization
+              </p>
+              <ul className="space-y-2 text-sm text-white/60">
+                <li>• Shift fill rates</li>
+                <li>• Guard utilization</li>
+                <li>• Cost summaries</li>
+              </ul>
             </div>
           </div>
         </div>
       </div>
 
       {/* ========================================
-          SECTION 4: PRICING
+          SECTION 3: PRICING
       ======================================== */}
       <div id="pricing">
         <PricingSection />
       </div>
 
       {/* ========================================
-          SECTION 5: ROI CALCULATOR
-      ======================================== */}
-      <ROICalculator />
-
-      {/* ========================================
-          SECTION 6: SOCIAL PROOF
+          SECTION 4: WHY ROSTRACORE
       ======================================== */}
       <div className="relative z-10 px-6 py-20 border-t border-white/10">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-white mb-4">
-              Trusted by South Africa's Leading Security Companies
-            </h2>
-          </div>
-
-          {/* Testimonial Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-8">
-              <div className="text-yellow-400 text-2xl mb-4">⭐⭐⭐⭐⭐</div>
-              <p className="text-white/80 mb-6 italic">
-                "We went from spending 15 hours a week on scheduling to less than 1 hour.
-                That's 60 hours a month I can use to grow my business."
-              </p>
-              <div className="border-t border-white/10 pt-4">
-                <div className="font-bold text-white">Themba Khumalo</div>
-                <div className="text-sm text-white/60">Owner, JHB Security (85 guards)</div>
-              </div>
-            </div>
-
-            <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-8">
-              <div className="text-yellow-400 text-2xl mb-4">⭐⭐⭐⭐⭐</div>
-              <p className="text-white/80 mb-6 italic">
-                "The compliance tracking alone has saved us from R200K+ in potential PSIRA fines.
-                RostraCore pays for itself 100x over."
-              </p>
-              <div className="border-t border-white/10 pt-4">
-                <div className="font-bold text-white">Sarah van der Merwe</div>
-                <div className="text-sm text-white/60">Operations Director, Cape Town Security Group (200+ guards)</div>
-              </div>
-            </div>
-
-            <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-8">
-              <div className="text-yellow-400 text-2xl mb-4">⭐⭐⭐⭐⭐</div>
-              <p className="text-white/80 mb-6 italic">
-                "I was skeptical about AI scheduling, but after the first roster I was blown away.
-                It's better than I would've done manually, and it took 12 seconds."
-              </p>
-              <div className="border-t border-white/10 pt-4">
-                <div className="font-bold text-white">David Naidoo</div>
-                <div className="text-sm text-white/60">Scheduler, Durban Sentinel (42 guards)</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Stats Bar */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-8">
-            <div className="text-center">
-              <div className="text-4xl font-bold text-white mb-2">45,287</div>
-              <div className="text-sm text-white/60">Guards Scheduled</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-green-400 mb-2">R2.1M</div>
-              <div className="text-sm text-white/60">Saved by Customers</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-white mb-2">99.4%</div>
-              <div className="text-sm text-white/60">Compliance Rate</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-white mb-2">4.8/5.0</div>
-              <div className="text-sm text-white/60">Customer Rating</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ========================================
-          SECTION 7: TRUST BUILDERS
-      ======================================== */}
-      <div className="relative z-10 px-6 py-20 border-t border-white/10">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-white mb-4">
-              Why RostraCore? Because We're Built for South Africa.
+              Built for South African Security Companies
             </h2>
+            <p className="text-xl text-white/70">
+              Local regulations. Local support. Local commitment.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-8 text-center">
               <div className="text-5xl mb-4">🇿🇦</div>
-              <h4 className="text-xl font-bold text-white mb-4">LOCAL</h4>
-              <ul className="space-y-2 text-white/70 text-sm">
-                <li>Built by South Africans, for South African security companies</li>
-                <li>Pricing in ZAR</li>
-                <li>Local payment methods</li>
-              </ul>
+              <h4 className="text-xl font-bold text-white mb-4">South African</h4>
+              <p className="text-white/70 text-sm">
+                Developed in South Africa with deep understanding of local security industry requirements and regulations
+              </p>
             </div>
 
             <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-8 text-center">
               <div className="text-5xl mb-4">🔒</div>
-              <h4 className="text-xl font-bold text-white mb-4">SECURE</h4>
-              <ul className="space-y-2 text-white/70 text-sm">
-                <li>Bank-level encryption</li>
-                <li>ISO 27001 certified</li>
-                <li>Daily backups</li>
-                <li>99.9% uptime SLA</li>
-                <li>Your data never leaves SA</li>
-              </ul>
+              <h4 className="text-xl font-bold text-white mb-4">Secure & Reliable</h4>
+              <p className="text-white/70 text-sm">
+                Bank-level encryption, daily backups, and secure data hosting. Your data stays in South Africa.
+              </p>
             </div>
 
             <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-8 text-center">
               <div className="text-5xl mb-4">📞</div>
-              <h4 className="text-xl font-bold text-white mb-4">SUPPORTED</h4>
-              <ul className="space-y-2 text-white/70 text-sm">
-                <li>Real humans in SA time zones</li>
-                <li>Phone, email, WhatsApp support</li>
-                <li>Avg. response: under 2 hours</li>
-                <li>Mon-Sat 7am-7pm</li>
-              </ul>
-            </div>
-
-            <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-8 text-center">
-              <div className="text-5xl mb-4">✅</div>
-              <h4 className="text-xl font-bold text-white mb-4">COMPLIANT</h4>
-              <ul className="space-y-2 text-white/70 text-sm">
-                <li>PSIRA-aligned</li>
-                <li>BCEA-compliant</li>
-                <li>POPIA-certified</li>
-                <li>Regular audits by compliance experts</li>
-              </ul>
+              <h4 className="text-xl font-bold text-white mb-4">Local Support</h4>
+              <p className="text-white/70 text-sm">
+                Real support from South Africans in SA time zones. Email and phone support Mon-Fri 8am-6pm SAST.
+              </p>
             </div>
           </div>
         </div>
       </div>
 
       {/* ========================================
-          SECTION 8: FINAL CTA
+          SECTION 5: FINAL CTA
       ======================================== */}
       <div className="relative z-10 px-6 py-20 border-t border-white/10">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-5xl font-bold text-white mb-6">
-            Ready to Get Your Time (and Sanity) Back?
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+            Ready to Modernize Your Security Operations?
           </h2>
           <p className="text-xl text-white/70 mb-8">
-            Join 150+ South African security companies already saving time and money
+            Request access and we'll review your application within 24-48 hours
           </p>
 
           {/* Primary CTA */}
           <Link
-            href="/login"
-            className="inline-flex items-center gap-3 px-12 py-5 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full font-bold text-white text-xl hover:scale-105 transition-all hover:shadow-2xl hover:shadow-blue-500/50 mb-4"
+            href="/register"
+            className="inline-flex items-center gap-3 px-12 py-5 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full font-bold text-white text-xl hover:scale-105 transition-all hover:shadow-2xl hover:shadow-blue-500/50 mb-6"
           >
-            🚀 Start Your Free 14-Day Trial
+            Request Access
           </Link>
 
-          <div className="text-sm text-white/60 mb-6">
-            No credit card • Cancel anytime • Setup in 10 minutes
+          <div className="text-sm text-white/60 mb-8">
+            Company verification required • PSIRA registration validated
           </div>
 
-          {/* Secondary CTA */}
-          <a
-            href="mailto:hello@rostracore.co.za"
-            className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 font-medium"
-          >
-            📅 Book a 15-Minute Demo
-          </a>
-
-          {/* Urgency Element */}
-          <div className="mt-12 backdrop-blur-md bg-gradient-to-r from-orange-500/20 to-yellow-500/20 border-2 border-yellow-500/50 rounded-2xl p-8">
-            <div className="text-xl font-bold text-white mb-4">
-              ⏰ LIMITED TIME: First 100 New Customers Get:
-            </div>
-            <ul className="text-white/80 space-y-2 mb-4">
-              <li>• Free WhatsApp integration (R299 value)</li>
-              <li>• 1-on-1 onboarding call (R500 value)</li>
-              <li>• 30-day money-back guarantee (extended from 14 days)</li>
-            </ul>
-            <div className="text-yellow-300 font-semibold">
-              [23 spots remaining]
-            </div>
-          </div>
-
-          {/* Final Trust Bar */}
-          <div className="mt-12 flex flex-wrap justify-center items-center gap-6 text-sm text-white/70">
-            <span>✓ 14-day free trial</span>
-            <span>✓ No credit card required</span>
-            <span>✓ Cancel anytime</span>
-            <span>✓ POPIA compliant</span>
-            <span>✓ PSIRA aligned</span>
-            <span>✓ Local SA support</span>
+          {/* Contact Option */}
+          <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl p-8">
+            <h3 className="text-lg font-bold text-white mb-4">Have Questions?</h3>
+            <p className="text-white/70 mb-4">
+              Contact us for more information or to discuss your specific requirements
+            </p>
+            <a
+              href="mailto:hello@rostracore.co.za"
+              className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 font-medium"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              hello@rostracore.co.za
+            </a>
           </div>
         </div>
       </div>
 
       {/* Footer */}
       <div className="relative z-10 px-6 py-12 border-t border-white/10">
-        <div className="max-w-7xl mx-auto text-center">
-          <p className="text-white/50 text-sm mb-4">
-            © 2025 RostraCore (Pty) Ltd. All rights reserved.
-            <br />
-            Built with ❤️ in South Africa for South African security companies
-          </p>
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-6">
+            <p className="text-white/50 text-sm mb-2">
+              © 2025 RostraCore (Pty) Ltd. All rights reserved.
+            </p>
+            <p className="text-white/40 text-xs">
+              Professional workforce management software for the South African security industry
+            </p>
+          </div>
           <div className="flex justify-center gap-6 text-white/60 text-sm">
-            <Link href="/login" className="hover:text-white">Login</Link>
-            <Link href="/dashboard" className="hover:text-white">Dashboard</Link>
-            <a href="mailto:hello@rostracore.co.za" className="hover:text-white">Contact</a>
+            <Link href="/login" className="hover:text-white transition-colors">Login</Link>
+            <Link href="/register" className="hover:text-white transition-colors">Register</Link>
+            <a href="mailto:hello@rostracore.co.za" className="hover:text-white transition-colors">Contact</a>
           </div>
         </div>
       </div>
+
+      <style jsx global>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .animate-fadeIn {
+          animation: fadeIn 0.8s ease-out forwards;
+          opacity: 0;
+        }
+      `}</style>
     </main>
   )
 }

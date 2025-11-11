@@ -105,6 +105,13 @@ def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # Check email verification (Option B Security - MVP)
+    if settings.ENABLE_EMAIL_VERIFICATION and not user.is_email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Please verify your email before logging in. Check your inbox for the verification link.",
+        )
+
     # Update last login
     user.last_login = datetime.utcnow()
     db.commit()
@@ -141,6 +148,13 @@ def login_json(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Check email verification (Option B Security - MVP)
+    if settings.ENABLE_EMAIL_VERIFICATION and not user.is_email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Please verify your email before logging in. Check your inbox for the verification link.",
         )
 
     # Update last login

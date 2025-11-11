@@ -36,10 +36,44 @@ export default function AttendancePage() {
   const [selectedAttendance, setSelectedAttendance] = useState<AttendanceRecord | null>(null);
   const [notes, setNotes] = useState("");
 
+  // Date range filter state
+  const [filterStartDate, setFilterStartDate] = useState("");
+  const [filterEndDate, setFilterEndDate] = useState("");
+  const [filteredAttendances, setFilteredAttendances] = useState<AttendanceRecord[]>([]);
+
   useEffect(() => {
     fetchAttendances();
     fetchActiveShifts();
   }, [token]);
+
+  // Apply date range filter
+  useEffect(() => {
+    if (!filterStartDate && !filterEndDate) {
+      setFilteredAttendances(attendances);
+      return;
+    }
+
+    const filtered = attendances.filter((attendance) => {
+      const clockInDate = new Date(attendance.clock_in);
+
+      if (filterStartDate && filterEndDate) {
+        const filterStart = new Date(filterStartDate);
+        const filterEnd = new Date(filterEndDate);
+        filterEnd.setHours(23, 59, 59, 999); // Include the entire end date
+        return clockInDate >= filterStart && clockInDate <= filterEnd;
+      } else if (filterStartDate) {
+        const filterStart = new Date(filterStartDate);
+        return clockInDate >= filterStart;
+      } else if (filterEndDate) {
+        const filterEnd = new Date(filterEndDate);
+        filterEnd.setHours(23, 59, 59, 999);
+        return clockInDate <= filterEnd;
+      }
+      return true;
+    });
+
+    setFilteredAttendances(filtered);
+  }, [attendances, filterStartDate, filterEndDate]);
 
   const fetchAttendances = async () => {
     if (!token) return;
@@ -246,6 +280,44 @@ export default function AttendancePage() {
           </div>
         )}
 
+        {/* Date Range Filter */}
+        <div className="bg-white shadow rounded-lg p-4 mb-6">
+          <div className="flex items-center gap-4">
+            <label className="text-gray-700 font-medium">Filter by Date:</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={filterStartDate}
+                onChange={(e) => setFilterStartDate(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Start Date"
+              />
+              <span className="text-gray-500">to</span>
+              <input
+                type="date"
+                value={filterEndDate}
+                onChange={(e) => setFilterEndDate(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="End Date"
+              />
+              {(filterStartDate || filterEndDate) && (
+                <button
+                  onClick={() => {
+                    setFilterStartDate("");
+                    setFilterEndDate("");
+                  }}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Clear Filter
+                </button>
+              )}
+            </div>
+            <div className="ml-auto text-sm text-gray-600">
+              Showing {filteredAttendances.length} of {attendances.length} records
+            </div>
+          </div>
+        </div>
+
         {/* Attendance Table */}
         <div className="bg-white shadow rounded-lg overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
@@ -275,14 +347,16 @@ export default function AttendancePage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {attendances.length === 0 ? (
+              {filteredAttendances.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
-                    No attendance records found. Click "Clock In" to start tracking.
+                    {attendances.length === 0
+                      ? 'No attendance records found. Click "Clock In" to start tracking.'
+                      : 'No attendance records match the selected date range.'}
                   </td>
                 </tr>
               ) : (
-                attendances.map((attendance) => (
+                filteredAttendances.map((attendance) => (
                   <tr key={attendance.attend_id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">

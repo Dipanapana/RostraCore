@@ -5,7 +5,13 @@ from datetime import datetime
 import os
 from pathlib import Path
 from io import BytesIO
-from weasyprint import HTML
+
+try:
+    from weasyprint import HTML
+    WEASYPRINT_AVAILABLE = True
+except (ImportError, OSError) as e:
+    WEASYPRINT_AVAILABLE = False
+    HTML = None
 
 
 class CVGeneratorService:
@@ -41,6 +47,12 @@ class CVGeneratorService:
         Returns:
             Path to the generated PDF file
         """
+        if not WEASYPRINT_AVAILABLE:
+            raise RuntimeError(
+                "WeasyPrint is not available. PDF generation requires WeasyPrint and GTK libraries. "
+                "Please see https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#installation"
+            )
+
         # Get HTML content
         html_content = CVGeneratorService.get_template_html(template_name, cv_data)
 

@@ -245,9 +245,10 @@ NEXTAUTH_SECRET=generate_a_random_secret_here
 NEXTAUTH_URL=http://localhost:3000
 
 # PayFast (South African Payment Gateway - Optional)
-NEXT_PUBLIC_PAYFAST_MERCHANT_ID=your_merchant_id
-NEXT_PUBLIC_PAYFAST_MERCHANT_KEY=your_merchant_key
-PAYFAST_PASSPHRASE=your_passphrase
+NEXT_PUBLIC_PAYFAST_MERCHANT_ID=23763774
+NEXT_PUBLIC_PAYFAST_MERCHANT_KEY=nalk8ycou3gkz
+PAYFAST_PASSPHRASE=I am the 1 whom God is
+#sNEXT_PUBLIC_PAYFAST_URL=https://sandbox.payfast.co.za/eng/process
 
 # Feature Flags
 NEXT_PUBLIC_ENABLE_ANALYTICS=true

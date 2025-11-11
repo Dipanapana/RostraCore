@@ -30,7 +30,7 @@ class JobPosting(Base):
     __tablename__ = "job_postings"
 
     job_id = Column(Integer, primary_key=True, index=True)
-    organization_id = Column(Integer, ForeignKey("organizations.organization_id", ondelete="CASCADE"), nullable=False)
+    organization_id = Column(Integer, ForeignKey("organizations.org_id", ondelete="CASCADE"), nullable=False)
     client_id = Column(Integer, ForeignKey("clients.client_id", ondelete="SET NULL"), nullable=True)
     site_id = Column(Integer, ForeignKey("sites.site_id", ondelete="SET NULL"), nullable=True)
 
@@ -75,6 +75,7 @@ class JobPosting(Base):
     client = relationship("Client")
     site = relationship("Site")
     applications = relationship("JobApplication", back_populates="job")
+    premium_listing = relationship("PremiumJobPosting", back_populates="job_posting", uselist=False)
 
     def __repr__(self):
         return f"<JobPosting {self.job_id}: {self.title}>"

@@ -3,246 +3,276 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
-interface PricingTier {
-  name: string;
-  price: number;
-  annualPrice: number;
-  description: string;
-  savings: string;
-  maxGuards: string;
-  features: string[];
-  popular?: boolean;
-  cta: string;
-  ctaLink: string;
-}
-
-const tiers: PricingTier[] = [
-  {
-    name: 'STARTER',
-    price: 499,
-    annualPrice: 479,
-    description: '1-30 guards',
-    savings: 'Save ~R15K/mo',
-    maxGuards: 'Up to 30 guards',
-    features: [
-      'Unlimited shifts',
-      'AI roster generator',
-      'PSIRA & BCEA compliance',
-      'Dashboard analytics',
-      'Export (CSV, Excel, PDF)',
-      'Email support'
-    ],
-    cta: 'Start Free Trial',
-    ctaLink: '/login'
-  },
-  {
-    name: 'PROFESSIONAL',
-    price: 1299,
-    annualPrice: 1039,
-    description: '30-100 guards',
-    savings: 'Save ~R40K/mo',
-    maxGuards: 'Up to 100 guards',
-    features: [
-      'Everything in STARTER, plus:',
-      'Multi-user access (5 users)',
-      'WhatsApp integration',
-      'SMS notifications',
-      'Mobile app access',
-      'Bulk imports',
-      'Payroll integration',
-      'Auto-fill replacements'
-    ],
-    popular: true,
-    cta: 'Start Free Trial',
-    ctaLink: '/login'
-  },
-  {
-    name: 'BUSINESS',
-    price: 2999,
-    annualPrice: 2399,
-    description: '100-300 guards',
-    savings: 'Save ~R120K/mo',
-    maxGuards: 'Up to 300 guards',
-    features: [
-      'Everything in PROFESSIONAL, plus:',
-      'Priority support',
-      'Custom branding',
-      'API access',
-      'Advanced analytics',
-      'Multi-branch management',
-      '10 users included',
-      'Phone support'
-    ],
-    cta: 'Start Free Trial',
-    ctaLink: '/login'
-  },
-  {
-    name: 'ENTERPRISE',
-    price: 0,
-    annualPrice: 0,
-    description: '300+ guards',
-    savings: 'Custom ROI analysis',
-    maxGuards: 'Unlimited guards',
-    features: [
-      'Everything in BUSINESS, plus:',
-      'Dedicated account manager',
-      'Custom integrations',
-      'SLA guarantee',
-      'White-label option',
-      'Onsite training',
-      '24/7 phone support',
-      'Unlimited users'
-    ],
-    cta: 'Contact Sales',
-    ctaLink: '/login'
-  }
-];
-
 export default function PricingSection() {
-  const [isAnnual, setIsAnnual] = useState(true);
+  const [guardCount, setGuardCount] = useState(50);
 
-  const calculateSavings = (price: number, annualPrice: number) => {
-    const monthlySavings = price - annualPrice;
-    const annualSavings = monthlySavings * 12;
-    return annualSavings;
-  };
+  const calculateMonthly = (guards: number) => guards * 45;
+  const calculateAnnual = (guards: number) => guards * 45 * 12;
 
   return (
     <div className="relative z-10 px-6 py-20 border-t border-white/10">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Heading */}
         <div className="text-center mb-12">
           <h2 className="text-5xl font-bold text-white mb-4">
-            Simple, Honest Pricing
+            Simple, Transparent Pricing
           </h2>
-          <p className="text-xl text-white/70 mb-8">
-            No hidden fees. No per-user charges. No surprises.
-            <br />
-            Choose your plan, cancel anytime.
+          <p className="text-xl text-white/70 mb-4">
+            One clear rate. No hidden fees. No surprises.
           </p>
+          <p className="text-lg text-white/60">
+            Only pay for active guards on your roster
+          </p>
+        </div>
 
-          {/* Billing Toggle */}
-          <div className="inline-flex items-center backdrop-blur-md bg-white/10 border border-white/20 rounded-full p-1">
-            <button
-              onClick={() => setIsAnnual(false)}
-              className={`px-6 py-2 rounded-full transition-all ${
-                !isAnnual ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white' : 'text-white/70'
-              }`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setIsAnnual(true)}
-              className={`px-6 py-2 rounded-full transition-all ${
-                isAnnual ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white' : 'text-white/70'
-              }`}
-            >
-              Annual <span className="text-green-400 font-semibold">(Save 20%)</span>
-            </button>
+        {/* Main Pricing Card */}
+        <div className="max-w-3xl mx-auto mb-16">
+          <div className="backdrop-blur-md bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-2 border-blue-500/30 rounded-3xl p-10 relative overflow-hidden">
+            {/* Decorative gradient */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-400/20 to-transparent rounded-full blur-3xl"></div>
+
+            <div className="relative z-10">
+              {/* Price Per Guard */}
+              <div className="text-center mb-8">
+                <div className="text-white/70 text-sm font-medium mb-2">Per Guard, Per Month</div>
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <span className="text-6xl md:text-7xl font-bold text-white">R45</span>
+                  <div className="text-left">
+                    <div className="text-white/80 text-sm">per guard</div>
+                    <div className="text-white/60 text-xs">per month</div>
+                  </div>
+                </div>
+                <p className="text-white/70 text-sm max-w-xl mx-auto">
+                  Pay only for the guards actively managed on your platform.
+                  <br />No setup fees. No user limits. No hidden costs.
+                </p>
+              </div>
+
+              {/* Interactive Calculator */}
+              <div className="backdrop-blur-md bg-white/10 border border-white/20 rounded-2xl p-8 mb-8">
+                <h4 className="text-lg font-bold text-white mb-6 text-center">Calculate Your Monthly Cost</h4>
+
+                {/* Slider */}
+                <div className="mb-6">
+                  <div className="flex justify-between items-center mb-3">
+                    <label className="text-white/80 text-sm">Number of Guards:</label>
+                    <span className="text-2xl font-bold text-white">{guardCount}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="10"
+                    max="300"
+                    step="10"
+                    value={guardCount}
+                    onChange={(e) => setGuardCount(parseInt(e.target.value))}
+                    className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
+                    style={{
+                      background: `linear-gradient(to right, rgb(59, 130, 246) 0%, rgb(6, 182, 212) ${((guardCount - 10) / 290) * 100}%, rgba(255,255,255,0.2) ${((guardCount - 10) / 290) * 100}%, rgba(255,255,255,0.2) 100%)`
+                    }}
+                  />
+                  <div className="flex justify-between text-xs text-white/50 mt-2">
+                    <span>10</span>
+                    <span>300</span>
+                  </div>
+                </div>
+
+                {/* Cost Breakdown */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center pb-3 border-b border-white/20">
+                    <span className="text-white/70">{guardCount} guards × R45/month</span>
+                    <span className="text-2xl font-bold text-white">R{calculateMonthly(guardCount).toLocaleString()}</span>
+                  </div>
+
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-white/60">Annual cost (12 months)</span>
+                    <span className="text-white/80">R{calculateAnnual(guardCount).toLocaleString()}</span>
+                  </div>
+
+                  <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-4 mt-4">
+                    <div className="text-center">
+                      <div className="text-xs text-green-300 mb-1">Cost Per Guard Per Day</div>
+                      <div className="text-2xl font-bold text-green-400">R1.50</div>
+                      <div className="text-xs text-green-300/70 mt-1">Less than a cup of coffee!</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Features Included */}
+              <div className="mb-8">
+                <h4 className="text-center text-white font-bold mb-6">Everything Included</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-white/80 text-sm">AI Roster Generation</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-white/80 text-sm">Employee Management</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-white/80 text-sm">Site & Client Management</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-white/80 text-sm">Shift Scheduling</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-white/80 text-sm">PSIRA Compliance Tracking</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-white/80 text-sm">Basic Analytics Dashboard</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-white/80 text-sm">Unlimited Admin Users</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-white/80 text-sm">Email Support</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* CTA Button */}
+              <div className="text-center">
+                <Link
+                  href="/register"
+                  className="inline-flex items-center gap-2 px-10 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-full hover:scale-105 transition-all hover:shadow-xl hover:shadow-blue-500/50"
+                >
+                  Request Access
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </Link>
+                <p className="text-white/60 text-sm mt-4">
+                  Company verification required • 24-48 hour approval
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {tiers.map((tier, idx) => (
-            <div
-              key={idx}
-              className={`relative backdrop-blur-md bg-white/5 border rounded-2xl p-6 hover:bg-white/10 transition-all ${
-                tier.popular
-                  ? 'border-blue-500 ring-2 ring-blue-500/50 scale-105'
-                  : 'border-white/10'
-              }`}
-            >
-              {/* Popular Badge */}
-              {tier.popular && (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-orange-500 text-black text-xs font-bold px-4 py-1 rounded-full">
-                  ⭐ MOST POPULAR
-                </div>
-              )}
+        {/* Additional Info */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="text-center">
+            <div className="text-3xl mb-2">💳</div>
+            <h4 className="text-white font-bold mb-2">No Setup Fees</h4>
+            <p className="text-white/60 text-sm">Start immediately after approval with zero setup costs</p>
+          </div>
 
-              {/* Tier Name */}
-              <div className="text-center mb-6">
-                <h3 className="text-sm font-bold text-white/60 mb-2">{tier.name}</h3>
+          <div className="text-center">
+            <div className="text-3xl mb-2">📊</div>
+            <h4 className="text-white font-bold mb-2">Scale Up or Down</h4>
+            <p className="text-white/60 text-sm">Add or remove guards anytime. Pay only for active guards.</p>
+          </div>
 
-                {/* Price */}
-                <div className="mb-2">
-                  {tier.price === 0 ? (
-                    <div className="text-4xl font-bold text-white">Custom</div>
-                  ) : (
-                    <>
-                      <div className="text-5xl font-bold text-white">
-                        R{isAnnual ? tier.annualPrice.toLocaleString() : tier.price.toLocaleString()}
-                      </div>
-                      <div className="text-white/60 text-sm">per month</div>
-                      {isAnnual && tier.price !== 0 && (
-                        <div className="text-green-400 text-xs font-semibold mt-1">
-                          Save R{calculateSavings(tier.price, tier.annualPrice).toLocaleString()}/year
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-
-                {/* Savings */}
-                <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-lg px-3 py-2 mb-2">
-                  <div className="text-green-300 font-bold text-lg">{tier.savings}</div>
-                </div>
-
-                {/* Description */}
-                <div className="text-white/70 text-sm font-medium">{tier.description}</div>
-              </div>
-
-              {/* Features */}
-              <ul className="space-y-3 mb-6">
-                {tier.features.map((feature, fIdx) => (
-                  <li key={fIdx} className="flex items-start gap-2 text-white/80 text-sm">
-                    <span className="text-green-400 flex-shrink-0 mt-0.5">✓</span>
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-
-              {/* CTA Button */}
-              <Link
-                href={tier.ctaLink}
-                className={`block w-full text-center px-6 py-3 rounded-full font-bold transition-all hover:scale-105 ${
-                  tier.popular
-                    ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:shadow-xl hover:shadow-blue-500/50'
-                    : 'border border-white/30 text-white hover:bg-white/10'
-                }`}
-              >
-                {tier.cta}
-              </Link>
-            </div>
-          ))}
+          <div className="text-center">
+            <div className="text-3xl mb-2">🔒</div>
+            <h4 className="text-white font-bold mb-2">No Contracts</h4>
+            <p className="text-white/60 text-sm">Cancel anytime. No long-term commitments required.</p>
+          </div>
         </div>
 
-        {/* Below Pricing Info */}
-        <div className="mt-12 text-center space-y-4">
-          <p className="text-white/60 text-sm">
-            ✓ No credit card required for 14-day trial &nbsp;&nbsp;
-            ✓ Cancel anytime &nbsp;&nbsp;
-            ✓ POPIA compliant &nbsp;&nbsp;
-            ✓ Local SA support
-          </p>
+        {/* FAQ Section */}
+        <div className="mt-16 max-w-3xl mx-auto">
+          <h3 className="text-2xl font-bold text-white mb-8 text-center">Pricing Questions</h3>
+          <div className="space-y-4">
+            <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-xl p-6">
+              <h4 className="text-white font-bold mb-2">What counts as an "active guard"?</h4>
+              <p className="text-white/70 text-sm">
+                Any guard profile in your system that you're actively scheduling and managing. You can deactivate guards who leave or are on extended leave to stop being charged for them.
+              </p>
+            </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href="/login"
-              className="text-blue-400 hover:text-blue-300 font-medium flex items-center gap-2"
-            >
-              📊 Take 1-minute plan quiz →
-            </Link>
-            <span className="text-white/40">|</span>
-            <Link
-              href="/login"
-              className="text-blue-400 hover:text-blue-300 font-medium flex items-center gap-2"
-            >
-              💬 Questions? Chat with us or call 010 880 1234
-            </Link>
+            <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-xl p-6">
+              <h4 className="text-white font-bold mb-2">How is billing calculated?</h4>
+              <p className="text-white/70 text-sm">
+                We count your active guards at the end of each month and bill you R45 per guard. For example, if you have 50 active guards, your monthly bill is R2,250.
+              </p>
+            </div>
+
+            <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-xl p-6">
+              <h4 className="text-white font-bold mb-2">Are there any other fees?</h4>
+              <p className="text-white/70 text-sm">
+                No. The R45 per guard per month includes everything - unlimited admin users, full feature access, email support, and all updates. No hidden fees.
+              </p>
+            </div>
+
+            <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-xl p-6">
+              <h4 className="text-white font-bold mb-2">What if I need more features?</h4>
+              <p className="text-white/70 text-sm">
+                Contact us at hello@rostracore.co.za to discuss custom requirements, integrations, or additional features for your specific needs.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Trust Signals */}
+        <div className="mt-12 text-center">
+          <div className="flex flex-wrap justify-center items-center gap-6 text-sm text-white/60">
+            <span className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              POPIA Compliant
+            </span>
+            <span className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              Secure Payment Processing
+            </span>
+            <span className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              South African Company
+            </span>
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        input[type="range"]::-webkit-slider-thumb {
+          appearance: none;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: white;
+          cursor: pointer;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: white;
+          cursor: pointer;
+          border: none;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+      `}</style>
     </div>
   );
 }

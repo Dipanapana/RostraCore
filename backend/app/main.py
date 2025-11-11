@@ -3,7 +3,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api.endpoints import employees, sites, shifts, availability, certifications, expenses, attendance, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, shift_groups, analytics, jobs, dashboards, predictions, clients, leave_requests, employee_portal, incident_reports, daily_reports, marketplace_guards, marketplace_jobs, marketplace_applications, guard_ratings, cv_generator, payments, marketplace_revenue, marketplace_settings, superadmin_analytics
+from app.api.endpoints import employees, sites, shifts, availability, certifications, expenses, attendance, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, organization_approval, organization_users, shift_groups, analytics, jobs, dashboards, predictions, clients, leave_requests, employee_portal, incident_reports, daily_reports, marketplace_guards, marketplace_jobs, marketplace_applications, guard_ratings, cv_generator, payments, marketplace_revenue, marketplace_settings, superadmin_analytics
+from app.middleware import RateLimitMiddleware
 
 # Initialize Sentry for error tracking and performance monitoring
 if settings.SENTRY_DSN:
@@ -47,6 +48,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Rate limiting middleware (Option B Security - MVP)
+app.add_middleware(RateLimitMiddleware)
 
 
 @app.get("/")
@@ -93,6 +97,8 @@ app.include_router(auth.router, prefix=settings.API_V1_PREFIX, tags=["auth"])
 app.include_router(exports.router, prefix=settings.API_V1_PREFIX, tags=["exports"])
 app.include_router(settings_endpoint.router, prefix=f"{settings.API_V1_PREFIX}/settings", tags=["settings"])
 app.include_router(organizations.router, prefix=f"{settings.API_V1_PREFIX}/organizations", tags=["organizations"])
+app.include_router(organization_approval.router, prefix=f"{settings.API_V1_PREFIX}/organizations", tags=["organization-approval"])
+app.include_router(organization_users.router, prefix=f"{settings.API_V1_PREFIX}/organizations", tags=["organization-users"])
 app.include_router(shift_groups.router, prefix=f"{settings.API_V1_PREFIX}/shift-groups", tags=["shift-groups"])
 app.include_router(analytics.router, tags=["analytics"])
 app.include_router(jobs.router, tags=["jobs"])

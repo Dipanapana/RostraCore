@@ -48,39 +48,41 @@ class VerificationService:
         # Build verification URL
         verification_url = f"{settings.FRONTEND_URL}/verify-email?token={token}"
 
-        # TODO: Send actual email using SMTP or email service
-        # For now, log the URL (in production, use SendGrid, AWS SES, etc.)
-        logger.info(f"Email verification URL for {user.email}: {verification_url}")
-
-        # In development, we'll just return the URL
-        if settings.ENVIRONMENT == "development":
-            return {
-                "status": "success",
-                "message": "Verification email sent",
-                "verification_url": verification_url,  # Only in dev!
-                "token": token  # Only in dev!
-            }
-
-        # In production, send actual email
+        # Send verification email using email service
         try:
-            # Example using a hypothetical email service
-            # email_service.send(
-            #     to=user.email,
-            #     subject="Verify your RostraCore email",
-            #     body=f"Click here to verify: {verification_url}"
-            # )
-            pass
+            from app.services.email_service import EmailService
+
+            result = EmailService.send_verification_email(
+                to=user.email,
+                verification_url=verification_url,
+                user_name=user.full_name or user.username
+            )
+
+            if result["status"] == "success":
+                logger.info(f"Verification email sent to {user.email}")
+
+                # In development mode, include URL for easy testing
+                if settings.ENVIRONMENT == "development" and result.get("dev_mode"):
+                    return {
+                        "status": "success",
+                        "message": "Verification email sent",
+                        "verification_url": verification_url,  # Only in dev!
+                        "token": token  # Only in dev!
+                    }
+
+                return {
+                    "status": "success",
+                    "message": f"Verification email sent to {user.email}"
+                }
+            else:
+                return result
+
         except Exception as e:
             logger.error(f"Failed to send verification email: {e}")
             return {
                 "status": "error",
                 "message": "Failed to send verification email"
             }
-
-        return {
-            "status": "success",
-            "message": f"Verification email sent to {user.email}"
-        }
 
     @staticmethod
     def verify_email_token(token: str, db: Session) -> Dict:

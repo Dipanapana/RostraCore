@@ -46,6 +46,11 @@ class User(Base):
     password_reset_token = Column(String(255), nullable=True)
     password_reset_sent_at = Column(DateTime(timezone=True), nullable=True)
 
+    # Account lockout (Option B Security - MVP)
+    failed_login_attempts = Column(Integer, default=0, nullable=False)
+    account_locked_until = Column(DateTime(timezone=True), nullable=True)
+    last_failed_login = Column(DateTime(timezone=True), nullable=True)
+
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

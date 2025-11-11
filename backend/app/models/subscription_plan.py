@@ -42,8 +42,8 @@ class SubscriptionPlan(Base):
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
 
-    # Relationships
-    organizations = relationship("Organization", back_populates="subscription_plan")
+    # Note: Organizations reference subscription tiers by string (not FK relationship)
+    # The subscription_tier column in organizations table stores tier names directly
 
     def has_feature(self, feature_name: str) -> bool:
         """Check if plan has a specific feature."""

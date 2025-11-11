@@ -56,7 +56,7 @@ class CVPurchase(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     # Relationships
-    applicant = relationship("GuardApplicant", back_populates="cv_purchases")
+    applicant = relationship("GuardApplicant", back_populates="cv_purchases", foreign_keys=[applicant_id])
     generated_cvs = relationship("GeneratedCV", back_populates="purchase")
 
     def __repr__(self):

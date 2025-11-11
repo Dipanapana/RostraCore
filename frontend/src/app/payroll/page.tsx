@@ -28,10 +28,44 @@ export default function PayrollPage() {
   const [periodEnd, setPeriodEnd] = useState("");
   const [employees, setEmployees] = useState<any[]>([]);
 
+  // Date range filter state
+  const [filterStartDate, setFilterStartDate] = useState("");
+  const [filterEndDate, setFilterEndDate] = useState("");
+  const [filteredPayrolls, setFilteredPayrolls] = useState<PayrollRecord[]>([]);
+
   useEffect(() => {
     fetchPayrolls();
     fetchEmployees();
   }, [token]);
+
+  // Apply date range filter whenever payrolls or filter dates change
+  useEffect(() => {
+    if (!filterStartDate && !filterEndDate) {
+      setFilteredPayrolls(payrolls);
+      return;
+    }
+
+    const filtered = payrolls.filter((payroll) => {
+      const periodStart = new Date(payroll.period_start);
+      const periodEnd = new Date(payroll.period_end);
+
+      if (filterStartDate && filterEndDate) {
+        const filterStart = new Date(filterStartDate);
+        const filterEnd = new Date(filterEndDate);
+        // Check if payroll period overlaps with filter range
+        return periodStart <= filterEnd && periodEnd >= filterStart;
+      } else if (filterStartDate) {
+        const filterStart = new Date(filterStartDate);
+        return periodEnd >= filterStart;
+      } else if (filterEndDate) {
+        const filterEnd = new Date(filterEndDate);
+        return periodStart <= filterEnd;
+      }
+      return true;
+    });
+
+    setFilteredPayrolls(filtered);
+  }, [payrolls, filterStartDate, filterEndDate]);
 
   const fetchPayrolls = async () => {
     if (!token) return;
@@ -194,6 +228,44 @@ export default function PayrollPage() {
           </div>
         )}
 
+        {/* Date Range Filter */}
+        <div className="bg-white shadow rounded-lg p-4 mb-6">
+          <div className="flex items-center gap-4">
+            <label className="text-gray-700 font-medium">Filter by Period:</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={filterStartDate}
+                onChange={(e) => setFilterStartDate(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="Start Date"
+              />
+              <span className="text-gray-500">to</span>
+              <input
+                type="date"
+                value={filterEndDate}
+                onChange={(e) => setFilterEndDate(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="End Date"
+              />
+              {(filterStartDate || filterEndDate) && (
+                <button
+                  onClick={() => {
+                    setFilterStartDate("");
+                    setFilterEndDate("");
+                  }}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Clear Filter
+                </button>
+              )}
+            </div>
+            <div className="ml-auto text-sm text-gray-600">
+              Showing {filteredPayrolls.length} of {payrolls.length} records
+            </div>
+          </div>
+        </div>
+
         {/* Payroll Table */}
         <div className="bg-white shadow rounded-lg overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
@@ -226,14 +298,16 @@ export default function PayrollPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {payrolls.length === 0 ? (
+              {filteredPayrolls.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
-                    No payroll records found. Click "Generate Payroll" to create one.
+                    {payrolls.length === 0
+                      ? 'No payroll records found. Click "Generate Payroll" to create one.'
+                      : 'No payroll records match the selected date range.'}
                   </td>
                 </tr>
               ) : (
-                payrolls.map((payroll) => (
+                filteredPayrolls.map((payroll) => (
                   <tr key={payroll.payroll_id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">

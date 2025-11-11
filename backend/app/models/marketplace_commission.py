@@ -43,7 +43,7 @@ class MarketplaceCommission(Base):
     __tablename__ = "marketplace_commissions"
 
     commission_id = Column(Integer, primary_key=True, index=True)
-    organization_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.org_id", ondelete="CASCADE"), nullable=False, index=True)
     commission_type = Column(String(50), nullable=False, index=True)
 
     # Commission details
@@ -126,7 +126,7 @@ class BulkHiringPackage(Base):
     __tablename__ = "bulk_hiring_packages"
 
     package_id = Column(Integer, primary_key=True, index=True)
-    organization_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.org_id", ondelete="CASCADE"), nullable=False, index=True)
 
     # Package details
     package_type = Column(String(50), nullable=False, index=True)
@@ -188,7 +188,7 @@ class PremiumJobPosting(Base):
 
     premium_job_id = Column(Integer, primary_key=True, index=True)
     job_id = Column(Integer, ForeignKey("job_postings.job_id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
-    organization_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.org_id", ondelete="CASCADE"), nullable=False, index=True)
 
     # Premium features
     featured = Column(Boolean, default=True)
