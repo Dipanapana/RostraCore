@@ -10,6 +10,12 @@ Transform RostraCore into **GuardianOS** - South Africa's leading AI-powered sec
 
 ## ✅ Completed
 1. **Critical Bug Fix** - Employee hours calculation now uses actual shift duration instead of hardcoded 8 hours
+2. **Excel Import System** - Bulk import for employees and sites with validation
+3. **Demo Preparation** - Complete Friday demo guide with sample data files
+4. **PayFast Recurring Billing** - Full subscription integration with per-guard billing
+5. **Client-Specific Rosters** - API endpoint `/api/v1/roster/generate-for-client/{client_id}` implemented
+6. **Subscription Service** - Complete subscription lifecycle management (create, pause, cancel)
+7. **Organization Subscription Fields** - Database schema updated with PayFast subscription tracking
 
 ---
 
@@ -35,18 +41,19 @@ Transform RostraCore into **GuardianOS** - South Africa's leading AI-powered sec
 - [ ] "Upgrade Now" modal
 - [ ] Feature limit warnings
 
-### Priority 3: PayFast Recurring Billing (6 hours)
-- [ ] Extend PayFast integration for subscriptions
-- [ ] Per-guard billing calculation (`active_guards × R45`)
+### Priority 3: PayFast Recurring Billing ✅ COMPLETE
+- [x] Extend PayFast integration for subscriptions
+- [x] Per-guard billing calculation (`active_guards × R45`)
+- [x] Subscription lifecycle (create, pause, unpause, cancel)
 - [ ] Invoice generation service (PDF)
 - [ ] Payment history UI
 - [ ] Failed payment handling (dunning)
 
-### Priority 4: Client-Specific Rosters (4 hours)
-- [ ] Add client dropdown to roster wizard
-- [ ] Filter sites by selected client
-- [ ] Save client-specific templates
-- [ ] API endpoint: `/api/v1/roster/generate-for-client/{client_id}`
+### Priority 4: Client-Specific Rosters ✅ COMPLETE
+- [ ] Add client dropdown to roster wizard (frontend)
+- [ ] Filter sites by selected client (frontend)
+- [ ] Save client-specific templates (frontend)
+- [x] API endpoint: `/api/v1/roster/generate-for-client/{client_id}`
 
 ---
 
