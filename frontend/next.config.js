@@ -2,18 +2,17 @@
 const nextConfig = {
   reactStrictMode: true,
 
-  // Enable instrumentation for Sentry
-  experimental: {
-    instrumentationHook: true,
-  },
+  // Disable instrumentation - was causing 20+ second page loads
+  // experimental: {
+  //   instrumentationHook: true,
+  // },
 
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
   },
 
-  // Sentry source maps configuration
-  // Note: Sentry CLI will handle source map upload if configured
-  productionBrowserSourceMaps: true,
+  // Disable source maps for development performance
+  productionBrowserSourceMaps: false,
 }
 
 // Inject Sentry config via withSentryConfig if Sentry is enabled

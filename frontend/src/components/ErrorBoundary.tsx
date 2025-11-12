@@ -2,11 +2,12 @@
 
 /**
  * Error Boundary Component
- * Catches React errors and reports them to Sentry
+ * Catches React errors and logs them
+ * NOTE: Sentry disabled for development - was causing 20+ second page loads
  */
 
 import React, { Component, ReactNode } from 'react';
-import * as Sentry from '@sentry/nextjs';
+// import * as Sentry from '@sentry/nextjs'; // DISABLED - causing performance issues
 
 interface Props {
   children: ReactNode;
@@ -29,14 +30,14 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // Log error to Sentry
-    Sentry.captureException(error, {
-      contexts: {
-        react: {
-          componentStack: errorInfo.componentStack,
-        },
-      },
-    });
+    // Log error to console (Sentry disabled for performance)
+    // Sentry.captureException(error, {
+    //   contexts: {
+    //     react: {
+    //       componentStack: errorInfo.componentStack,
+    //     },
+    //   },
+    // });
 
     console.error('Error caught by boundary:', error, errorInfo);
   }
