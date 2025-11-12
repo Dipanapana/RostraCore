@@ -46,6 +46,19 @@ celery_app.conf.beat_schedule = {
         'options': {'queue': 'default'}
     },
 
+    # Monthly Billing
+    'calculate-monthly-billing': {
+        'task': 'app.tasks.billing_tasks.calculate_monthly_billing',
+        'schedule': 2592000.0,  # Run monthly (30 days)
+        'options': {'queue': 'default'}
+    },
+
+    'send-monthly-invoices': {
+        'task': 'app.tasks.billing_tasks.send_monthly_invoices',
+        'schedule': 2592000.0,  # Run monthly (30 days)
+        'options': {'queue': 'default'}
+    },
+
     # Analytics & Health Scoring
     'calculate-customer-health-scores': {
         'task': 'app.tasks.prediction_tasks.calculate_all_customer_health_scores',
