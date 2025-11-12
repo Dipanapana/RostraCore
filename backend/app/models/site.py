@@ -47,6 +47,7 @@ class Site(Base):
     shift_templates = relationship("ShiftTemplate", back_populates="site")
     incident_reports = relationship("IncidentReport", back_populates="site")
     daily_reports = relationship("DailyOccurrenceBook", back_populates="site")
+    ob_entries = relationship("OBEntry", back_populates="site")
 
     def __repr__(self):
         return f"<Site {self.site_id}: {self.client_name}>"

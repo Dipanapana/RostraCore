@@ -18,7 +18,13 @@
       "Bash(redis-server.exe:*)",
       "Bash(./redis-server.exe)",
       "Bash(celery:*)",
-      "Bash(redis-cli.exe FLUSHALL:*)"
+      "Bash(redis-cli.exe FLUSHALL:*)",
+      "Bash(\"C:\\Program Files\\PostgreSQL\\14\\bin\\psql.exe\" -U postgres -d rostracore_db -c \"SELECT COUNT(*) as total_employees, COUNT(*) FILTER (WHERE is_active = true) as active_employees FROM employees;\")",
+      "Bash(\"C:\\Program Files\\PostgreSQL\\14\\bin\\psql.exe\" -U postgres -d rostracore_db -c \"SELECT COUNT(*) as total_sites, COUNT(*) FILTER (WHERE is_active = true) as active_sites FROM sites;\")",
+      "Bash(\"C:\\Program Files\\PostgreSQL\\14\\bin\\psql.exe\" -U postgres -d rostracore_db -c \"SELECT COUNT(*) as total_shifts FROM shifts WHERE start_time >= CURRENT_DATE;\")",
+      "Bash(timeout 120 python:*)",
+      "Bash(timeout 15 echo:*)",
+      "Bash(timeout 20 echo:*)"
     ],
     "deny": [],
     "ask": []

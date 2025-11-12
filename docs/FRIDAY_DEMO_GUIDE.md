@@ -39,7 +39,7 @@
 ---
 
 ### 2. Employee Management (10 minutes)
-
+ 
 #### Manual Employee Creation (3 minutes)
 **Navigate to:** `/employees`
 

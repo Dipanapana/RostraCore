@@ -73,6 +73,7 @@ class Employee(Base):
     incident_reports = relationship("IncidentReport", foreign_keys="[IncidentReport.employee_id]", back_populates="employee")
     daily_reports = relationship("DailyOccurrenceBook", foreign_keys="[DailyOccurrenceBook.employee_id]", back_populates="employee")
     ratings = relationship("GuardRating", foreign_keys="[GuardRating.employee_id]", back_populates="employee")
+    ob_entries = relationship("OBEntry", foreign_keys="[OBEntry.employee_id]", back_populates="employee")
 
     def __repr__(self):
         return f"<Employee {self.employee_id}: {self.first_name} {self.last_name}>"
