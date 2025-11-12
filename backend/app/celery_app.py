@@ -33,6 +33,19 @@ celery_app.autodiscover_tasks(['app.tasks'])
 
 # Celery beat schedule (for periodic tasks)
 celery_app.conf.beat_schedule = {
+    # Trial Management
+    'check-expired-trials': {
+        'task': 'app.tasks.trial_tasks.check_expired_trials',
+        'schedule': 86400.0,  # Run daily at midnight
+        'options': {'queue': 'default'}
+    },
+
+    'send-trial-reminders': {
+        'task': 'app.tasks.trial_tasks.send_trial_reminders',
+        'schedule': 86400.0,  # Run daily
+        'options': {'queue': 'default'}
+    },
+
     # Analytics & Health Scoring
     'calculate-customer-health-scores': {
         'task': 'app.tasks.prediction_tasks.calculate_all_customer_health_scores',

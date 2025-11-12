@@ -441,13 +441,24 @@ class RosterGenerator:
         total_shifts = len(assignments)
         total_shifts_available = len(shifts)
 
+        # Create shift lookup map for efficient access
+        shift_map = {s["shift_id"]: s for s in shifts}
+
         employee_hours = {}
         employees_utilized = set()
         for assignment in assignments:
             emp_id = assignment["employee_id"]
+            shift_id = assignment["shift_id"]
             employees_utilized.add(emp_id)
-            # TODO: Calculate actual hours per employee
-            employee_hours[emp_id] = employee_hours.get(emp_id, 0) + 8
+
+            # Calculate actual hours from shift start/end times
+            shift = shift_map.get(shift_id)
+            if shift:
+                actual_hours = self._calculate_shift_hours(shift)
+                employee_hours[emp_id] = employee_hours.get(emp_id, 0) + actual_hours
+            else:
+                # Fallback to 8 hours if shift not found (shouldn't happen)
+                employee_hours[emp_id] = employee_hours.get(emp_id, 0) + 8
 
         fill_rate = (total_shifts / total_shifts_available * 100) if total_shifts_available > 0 else 0
 

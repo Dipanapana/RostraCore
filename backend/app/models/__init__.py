@@ -20,6 +20,7 @@ from app.models.leave_request import LeaveRequest
 from app.models.client import Client
 from app.models.incident_report import IncidentReport
 from app.models.daily_occurrence_book import DailyOccurrenceBook
+from app.models.ob_entry import OBEntry
 from app.models.guard_rating import GuardRating
 from app.models.job_posting import JobPosting
 from app.models.job_application import JobApplication
@@ -50,6 +51,7 @@ __all__ = [
     "Client",
     "IncidentReport",
     "DailyOccurrenceBook",
+    "OBEntry",
     "GuardRating",
     "JobPosting",
     "JobApplication",

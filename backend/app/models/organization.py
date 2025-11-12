@@ -38,6 +38,10 @@ class Organization(Base):
     subscription_status = Column(String(20), nullable=False, default="trial")
     # Status: active, trial, suspended, cancelled
 
+    # Trial tracking (14-day free trial)
+    trial_start_date = Column(DateTime, nullable=True)  # When trial began
+    trial_end_date = Column(DateTime, nullable=True)    # When trial expires (auto-set to start + 14 days)
+
     # Organization approval workflow (MVP Security - Option B)
     approval_status = Column(String(20), nullable=False, default="pending_approval")
     # Status: pending_approval, approved, rejected

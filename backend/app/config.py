@@ -8,6 +8,11 @@ from pydantic import field_validator
 class Settings(BaseSettings):
     """Application settings."""
 
+    # Application Branding
+    APP_NAME: str = "GuardianOS"
+    APP_TAGLINE: str = "AI-Powered Security Workforce Management"
+    COMPANY_NAME: str = "GuardianOS (Pty) Ltd"
+
     # Database
     DATABASE_URL: str = "postgresql://rostracore_user:password@localhost:5432/rostracore"
 
@@ -75,8 +80,8 @@ class Settings(BaseSettings):
 
     # Email Configuration (SendGrid)
     SENDGRID_API_KEY: Optional[str] = None
-    FROM_EMAIL: str = "noreply@rostracore.co.za"
-    FROM_NAME: str = "RostraCore"
+    FROM_EMAIL: str = "noreply@guardianos.co.za"
+    FROM_NAME: str = "GuardianOS"
 
     # SMTP Configuration (Alternative to SendGrid)
     SMTP_HOST: Optional[str] = None
