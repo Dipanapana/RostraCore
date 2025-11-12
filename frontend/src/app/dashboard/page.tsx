@@ -99,24 +99,32 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log("[DASHBOARD] useEffect triggered");
     let mounted = true;
 
     const fetchData = async () => {
+      console.log("[DASHBOARD] fetchData starting, mounted:", mounted);
       if (!mounted) return;
 
       setLoading(true);
+      console.log("[DASHBOARD] Loading state set to true");
+
       try {
+        console.log("[DASHBOARD] Starting API calls...");
         // Add timeout to prevent hanging
         const timeout = (ms: number) => new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Request timeout')), ms)
         );
 
-        const fetchWithTimeout = (url: string) =>
-          Promise.race([
+        const fetchWithTimeout = (url: string) => {
+          console.log("[DASHBOARD] Fetching:", url);
+          return Promise.race([
             axios.get(url, { timeout: 10000 }),
             timeout(10000)
           ]);
+        };
 
+        console.log("[DASHBOARD] Making parallel API calls...");
         const [metricsRes, shiftsRes, certsRes, trendsRes, weeklyRes] =
           await Promise.all([
             fetchWithTimeout(`${API_URL}/api/v1/dashboard/metrics`),
@@ -126,7 +134,9 @@ export default function DashboardPage() {
             fetchWithTimeout(`${API_URL}/api/v1/dashboard/weekly-summary`),
           ]);
 
+        console.log("[DASHBOARD] All API calls completed");
         if (mounted) {
+          console.log("[DASHBOARD] Setting state with fetched data");
           setMetrics((metricsRes as any).data);
           setUpcomingShifts((shiftsRes as any).data);
           setExpiringCerts((certsRes as any).data);
@@ -134,8 +144,9 @@ export default function DashboardPage() {
           setWeeklySummary((weeklyRes as any).data);
         }
       } catch (error) {
-        console.error("Error fetching dashboard data:", error);
+        console.error("[DASHBOARD] Error fetching dashboard data:", error);
         if (mounted) {
+          console.log("[DASHBOARD] Setting empty data on error");
           // Set empty data on error to allow page to render
           setMetrics(null);
           setUpcomingShifts([]);
@@ -145,6 +156,7 @@ export default function DashboardPage() {
         }
       } finally {
         if (mounted) {
+          console.log("[DASHBOARD] Setting loading to false");
           setLoading(false);
         }
       }
@@ -153,6 +165,7 @@ export default function DashboardPage() {
     fetchData();
 
     return () => {
+      console.log("[DASHBOARD] Cleanup - unmounting");
       mounted = false;
     };
   }, []);
