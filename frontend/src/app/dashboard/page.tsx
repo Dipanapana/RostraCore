@@ -99,21 +99,78 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchDashboardData();
+    let mounted = true;
+
+    const fetchData = async () => {
+      if (!mounted) return;
+
+      setLoading(true);
+      try {
+        // Add timeout to prevent hanging
+        const timeout = (ms: number) => new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Request timeout')), ms)
+        );
+
+        const fetchWithTimeout = (url: string) =>
+          Promise.race([
+            axios.get(url, { timeout: 10000 }),
+            timeout(10000)
+          ]);
+
+        const [metricsRes, shiftsRes, certsRes, trendsRes, weeklyRes] =
+          await Promise.all([
+            fetchWithTimeout(`${API_URL}/api/v1/dashboard/metrics`),
+            fetchWithTimeout(`${API_URL}/api/v1/dashboard/upcoming-shifts?limit=5`),
+            fetchWithTimeout(`${API_URL}/api/v1/dashboard/expiring-certifications?days_ahead=30`),
+            fetchWithTimeout(`${API_URL}/api/v1/dashboard/cost-trends?days=14`),
+            fetchWithTimeout(`${API_URL}/api/v1/dashboard/weekly-summary`),
+          ]);
+
+        if (mounted) {
+          setMetrics((metricsRes as any).data);
+          setUpcomingShifts((shiftsRes as any).data);
+          setExpiringCerts((certsRes as any).data);
+          setCostTrends((trendsRes as any).data.trend || []);
+          setWeeklySummary((weeklyRes as any).data);
+        }
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+        if (mounted) {
+          // Set empty data on error to allow page to render
+          setMetrics(null);
+          setUpcomingShifts([]);
+          setExpiringCerts([]);
+          setCostTrends([]);
+          setWeeklySummary(null);
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const fetchDashboardData = async () => {
+    // Keep this function for potential refresh button
     setLoading(true);
     try {
       const [metricsRes, shiftsRes, certsRes, trendsRes, weeklyRes] =
         await Promise.all([
-          axios.get(`${API_URL}/api/v1/dashboard/metrics`),
-          axios.get(`${API_URL}/api/v1/dashboard/upcoming-shifts?limit=5`),
+          axios.get(`${API_URL}/api/v1/dashboard/metrics`, { timeout: 10000 }),
+          axios.get(`${API_URL}/api/v1/dashboard/upcoming-shifts?limit=5`, { timeout: 10000 }),
           axios.get(
-            `${API_URL}/api/v1/dashboard/expiring-certifications?days_ahead=30`
+            `${API_URL}/api/v1/dashboard/expiring-certifications?days_ahead=30`,
+            { timeout: 10000 }
           ),
-          axios.get(`${API_URL}/api/v1/dashboard/cost-trends?days=14`),
-          axios.get(`${API_URL}/api/v1/dashboard/weekly-summary`),
+          axios.get(`${API_URL}/api/v1/dashboard/cost-trends?days=14`, { timeout: 10000 }),
+          axios.get(`${API_URL}/api/v1/dashboard/weekly-summary`, { timeout: 10000 }),
         ]);
 
       setMetrics(metricsRes.data);
