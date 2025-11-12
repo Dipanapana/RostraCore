@@ -67,6 +67,14 @@ class Organization(Base):
     current_month_cost = Column(Numeric(10, 2), default=0.00, nullable=False)  # Auto-calculated
     last_billing_calculation = Column(DateTime, nullable=True)
 
+    # PayFast Subscription Integration
+    payfast_subscription_token = Column(String(100), nullable=True)  # PayFast subscription token
+    payfast_subscription_status = Column(String(20), nullable=True)  # active, paused, cancelled
+    subscription_started_at = Column(DateTime, nullable=True)
+    subscription_next_billing_date = Column(DateTime, nullable=True)
+    payment_method_last_four = Column(String(4), nullable=True)  # Last 4 digits of card
+    payment_failures = Column(Integer, default=0, nullable=False)  # Track consecutive failures
+
     # Metadata
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)

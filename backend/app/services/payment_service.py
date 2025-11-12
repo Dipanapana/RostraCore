@@ -189,6 +189,182 @@ class PayFastService:
             print(f"PayFast status check error: {e}")
             return None
 
+    def create_subscription(
+        self,
+        amount: float,
+        subscription_name: str,
+        billing_date: str,
+        recurring_amount: float,
+        frequency: int,
+        cycles: int,
+        buyer_email: str,
+        buyer_name: str,
+        subscription_id: int,
+        return_url: str,
+        cancel_url: str,
+        notify_url: str
+    ) -> Dict[str, Any]:
+        """
+        Create PayFast recurring subscription.
+
+        Args:
+            amount: Initial payment amount in ZAR
+            subscription_name: Name of subscription
+            billing_date: Next billing date (YYYY-MM-DD)
+            recurring_amount: Monthly recurring amount
+            frequency: Billing frequency (3 = monthly, 4 = quarterly, 5 = biannually, 6 = annually)
+            cycles: Number of billing cycles (0 = indefinite)
+            buyer_email: Buyer's email
+            buyer_name: Buyer's full name
+            subscription_id: Your subscription ID
+            return_url: Return URL after payment
+            cancel_url: Cancel URL
+            notify_url: IPN notification URL
+
+        Returns:
+            Dictionary with subscription URL and data
+        """
+        # Build subscription data
+        data = {
+            'merchant_id': self.merchant_id,
+            'merchant_key': self.merchant_key,
+            'return_url': return_url,
+            'cancel_url': cancel_url,
+            'notify_url': notify_url,
+            'name_first': buyer_name.split()[0] if ' ' in buyer_name else buyer_name,
+            'name_last': buyer_name.split()[-1] if ' ' in buyer_name else '',
+            'email_address': buyer_email,
+            'amount': f"{amount:.2f}",
+            'item_name': subscription_name,
+            'item_description': f"{subscription_name} - Monthly Recurring Billing",
+            'm_payment_id': str(subscription_id),
+
+            # Subscription-specific fields
+            'subscription_type': '1',  # 1 = subscription
+            'billing_date': billing_date,
+            'recurring_amount': f"{recurring_amount:.2f}",
+            'frequency': str(frequency),  # 3 = monthly
+            'cycles': str(cycles),  # 0 = indefinite
+        }
+
+        # Generate signature
+        data['signature'] = self.generate_signature(data)
+
+        return {
+            'payment_url': self.process_url,
+            'payment_data': data
+        }
+
+    def pause_subscription(self, subscription_token: str) -> bool:
+        """
+        Pause a PayFast subscription.
+
+        Args:
+            subscription_token: PayFast subscription token
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            url = f"https://api.payfast.co.za/subscriptions/{subscription_token}/pause"
+            headers = self._generate_api_headers()
+
+            response = requests.put(url, headers=headers, timeout=10)
+            return response.status_code == 200
+
+        except Exception as e:
+            print(f"PayFast pause subscription error: {e}")
+            return False
+
+    def unpause_subscription(self, subscription_token: str) -> bool:
+        """
+        Unpause a PayFast subscription.
+
+        Args:
+            subscription_token: PayFast subscription token
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            url = f"https://api.payfast.co.za/subscriptions/{subscription_token}/unpause"
+            headers = self._generate_api_headers()
+
+            response = requests.put(url, headers=headers, timeout=10)
+            return response.status_code == 200
+
+        except Exception as e:
+            print(f"PayFast unpause subscription error: {e}")
+            return False
+
+    def cancel_subscription(self, subscription_token: str) -> bool:
+        """
+        Cancel a PayFast subscription.
+
+        Args:
+            subscription_token: PayFast subscription token
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            url = f"https://api.payfast.co.za/subscriptions/{subscription_token}/cancel"
+            headers = self._generate_api_headers()
+
+            response = requests.put(url, headers=headers, timeout=10)
+            return response.status_code == 200
+
+        except Exception as e:
+            print(f"PayFast cancel subscription error: {e}")
+            return False
+
+    def fetch_subscription(self, subscription_token: str) -> Optional[Dict[str, Any]]:
+        """
+        Fetch subscription details from PayFast.
+
+        Args:
+            subscription_token: PayFast subscription token
+
+        Returns:
+            Subscription details dictionary or None
+        """
+        try:
+            url = f"https://api.payfast.co.za/subscriptions/{subscription_token}/fetch"
+            headers = self._generate_api_headers()
+
+            response = requests.get(url, headers=headers, timeout=10)
+
+            if response.status_code == 200:
+                return response.json()
+            else:
+                return None
+
+        except Exception as e:
+            print(f"PayFast fetch subscription error: {e}")
+            return None
+
+    def _generate_api_headers(self) -> Dict[str, str]:
+        """Generate headers for PayFast API calls."""
+        timestamp = datetime.utcnow().isoformat()
+
+        # Generate signature
+        signature_data = ''.join([
+            self.merchant_id,
+            timestamp
+        ])
+
+        if self.passphrase:
+            signature_data += self.passphrase
+
+        signature = hashlib.md5(signature_data.encode()).hexdigest()
+
+        return {
+            'merchant-id': self.merchant_id,
+            'version': 'v1',
+            'timestamp': timestamp,
+            'signature': signature
+        }
+
 
 class PaymentService:
     """
