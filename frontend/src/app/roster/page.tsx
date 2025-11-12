@@ -312,7 +312,7 @@ export default function RosterPage() {
         )}
 
         {/* Results Display */}
-        {result && (
+        {result && result.summary && (
           <div className="space-y-6">
             {/* Summary Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
