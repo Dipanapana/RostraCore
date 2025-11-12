@@ -6,7 +6,19 @@
       "Bash(timeout 3 curl:*)",
       "Bash(timeout 3 echo:*)",
       "Bash(timeout 2 echo:*)",
-      "Bash(\"C:\\Program Files\\PostgreSQL\\14\\bin\\psql.exe\" -U postgres -d rostracore_db -c \"UPDATE employees SET email = REPLACE(email, '' '', '''') WHERE email LIKE ''% %'';\")"
+      "Bash(\"C:\\Program Files\\PostgreSQL\\14\\bin\\psql.exe\" -U postgres -d rostracore_db -c \"UPDATE employees SET email = REPLACE(email, '' '', '''') WHERE email LIKE ''% %'';\")",
+      "Bash(\"C:\\Program Files\\PostgreSQL\\14\\bin\\psql.exe\" -U postgres -d rostracore_db -c \"SELECT employee_id, first_name, last_name, email FROM employees WHERE email LIKE ''% %'' ORDER BY employee_id;\")",
+      "Bash(\"C:\\Program Files\\PostgreSQL\\14\\bin\\psql.exe\":*)",
+      "Bash(where:*)",
+      "Bash(wsl which:*)",
+      "Bash(wsl sudo apt update:*)",
+      "Bash(wsl sudo apt install:*)",
+      "Bash(wsl bash -c \"cd /tmp && wget http://archive.ubuntu.com/ubuntu/pool/main/g/gcc-14/libatomic1_14.2.0-4ubuntu2~24.04_amd64.deb && sudo dpkg -i libatomic1_14.2.0-4ubuntu2~24.04_amd64.deb && sudo apt install -f -y\")",
+      "Bash(start /B redis-server.exe)",
+      "Bash(redis-server.exe:*)",
+      "Bash(./redis-server.exe)",
+      "Bash(celery:*)",
+      "Bash(redis-cli.exe FLUSHALL:*)"
     ],
     "deny": [],
     "ask": []

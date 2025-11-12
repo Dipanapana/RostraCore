@@ -83,11 +83,10 @@ def generate_roster_task(
 
         # Select and configure algorithm
         if algorithm == 'production':
-            optimizer = ProductionRosterOptimizer(self.db)
             config = OptimizationConfig(
-                max_time_seconds=180,
-                budget_limit=budget_limit
+                time_limit_seconds=180
             )
+            optimizer = ProductionRosterOptimizer(self.db, config=config)
 
             self.update_state(
                 state='PROGRESS',
@@ -96,10 +95,9 @@ def generate_roster_task(
 
             # Run optimization
             result = optimizer.optimize(
-                start_date=start_dt.date(),
-                end_date=end_dt.date(),
-                site_ids=site_ids if site_ids else None,
-                config=config
+                start_date=start_dt,
+                end_date=end_dt,
+                site_ids=site_ids if site_ids else None
             )
 
         elif algorithm == 'milp':
