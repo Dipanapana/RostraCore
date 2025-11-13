@@ -17,8 +17,6 @@ import {
   LogOut,
   Menu,
   X,
-  Download,
-  Smartphone,
 } from "lucide-react";
 
 interface NavItem {
@@ -173,26 +171,6 @@ export default function Sidebar() {
           </div>
         </div>
       </nav>
-
-      {/* Mobile App Card */}
-      <div className="p-4">
-        <div className="bg-gray-900 rounded-2xl p-6 relative overflow-hidden">
-          {/* Decorative circles */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-600/20 rounded-full blur-2xl" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-emerald-600/10 rounded-full blur-xl" />
-
-          <div className="relative z-10">
-            <Smartphone className="w-8 h-8 text-white mb-3" />
-            <h3 className="text-white font-semibold mb-1">Download our</h3>
-            <h3 className="text-white font-semibold mb-3">Mobile App</h3>
-            <p className="text-gray-400 text-xs mb-4">Get it on your mobile</p>
-            <button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
-              <Download className="w-4 h-4" />
-              Download
-            </button>
-          </div>
-        </div>
-      </div>
     </>
   );
 
