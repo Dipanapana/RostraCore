@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import Link from "next/link";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 
 interface AttendanceRecord {
   attend_id: number;
@@ -227,47 +227,38 @@ export default function AttendancePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading attendance records...</p>
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading attendance records...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex justify-between items-center">
+    <>
+      <DashboardLayout>
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Attendance Tracking</h1>
-              <p className="mt-1 text-sm text-gray-500">
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">Attendance Tracking</h1>
+              <p className="text-gray-600">
                 Clock in/out and manage employee attendance
               </p>
             </div>
-            <div className="flex gap-4">
-              <Link
-                href="/dashboard"
-                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                ← Back to Dashboard
-              </Link>
+            <div>
               <button
                 onClick={() => setShowClockInModal(true)}
-                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium shadow-sm"
               >
                 Clock In
               </button>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
             {error}
@@ -411,7 +402,8 @@ export default function AttendancePage() {
             </tbody>
           </table>
         </div>
-      </div>
+        </div>
+      </DashboardLayout>
 
       {/* Clock In Modal */}
       {showClockInModal && (
@@ -529,6 +521,6 @@ export default function AttendancePage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

@@ -80,12 +80,16 @@ export default function PricingSection() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center pb-3 border-b border-white/20">
                     <span className="text-white/70">{guardCount} guards × R45/month</span>
-                    <span className="text-2xl font-bold text-white">R{calculateMonthly(guardCount).toLocaleString()}</span>
+                    <span className="text-2xl font-bold text-white" suppressHydrationWarning>
+                      R{calculateMonthly(guardCount).toLocaleString()}
+                    </span>
                   </div>
 
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-white/60">Annual cost (12 months)</span>
-                    <span className="text-white/80">R{calculateAnnual(guardCount).toLocaleString()}</span>
+                    <span className="text-white/80" suppressHydrationWarning>
+                      R{calculateAnnual(guardCount).toLocaleString()}
+                    </span>
                   </div>
 
                   <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-4 mt-4">
@@ -221,7 +225,7 @@ export default function PricingSection() {
             <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-xl p-6">
               <h4 className="text-white font-bold mb-2">What if I need more features?</h4>
               <p className="text-white/70 text-sm">
-                Contact us at hello@rostracore.co.za to discuss custom requirements, integrations, or additional features for your specific needs.
+                Contact us at hello@guardianos.co.za to discuss custom requirements, integrations, or additional features for your specific needs.
               </p>
             </div>
           </div>
