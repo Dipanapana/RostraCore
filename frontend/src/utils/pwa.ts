@@ -80,7 +80,7 @@ function showUpdateNotification() {
   if (typeof window === 'undefined') return;
 
   const shouldReload = window.confirm(
-    'A new version of RostraCore is available. Reload to update?'
+    'A new version of GuardianOS is available. Reload to update?'
   );
 
   if (shouldReload) {

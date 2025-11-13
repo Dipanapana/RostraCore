@@ -7,8 +7,8 @@ import ErrorBoundary from '@/components/ErrorBoundary'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'RostraCore - Security Guard Roster Management',
-  description: 'Algorithmic Roster & Budget Engine for Security Guards',
+  title: 'GuardianOS - Security Workforce Management',
+  description: 'AI-Powered Security Workforce Management System',
 }
 
 export default function RootLayout({
