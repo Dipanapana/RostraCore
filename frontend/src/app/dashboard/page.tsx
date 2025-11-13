@@ -217,12 +217,13 @@ export default function DashboardPage() {
         {/* Header */}
         <div className="mb-8 flex items-start justify-between">
           <div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Dashboard
-          </h1>
-          <p className="text-gray-600">
-            Real-time insights and analytics for GuardianOS
-          </p>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              Dashboard
+            </h1>
+            <p className="text-gray-600">
+              Real-time insights and analytics for GuardianOS
+            </p>
+          </div>
         </div>
 
         {/* Key Metrics Cards */}
