@@ -97,14 +97,60 @@ class ShiftService:
         return query.all()
 
     @staticmethod
-    def assign_employee(db: Session, shift_id: int, employee_id: int) -> Optional[Shift]:
-        """Assign employee to shift."""
+    def assign_employee(db: Session, shift_id: int, employee_id: int, roster_id: Optional[int] = None) -> Optional[Shift]:
+        """
+        Assign employee to shift.
+
+        FIXED: Now creates ShiftAssignment record in addition to updating Shift.assigned_employee_id
+        This resolves the dual tracking issue where assignments were only tracked in one place.
+
+        Args:
+            db: Database session
+            shift_id: ID of shift to assign
+            employee_id: ID of employee to assign
+            roster_id: Optional roster ID for tracking (can be None for manual assignments)
+
+        Returns:
+            Updated Shift object or None if shift not found
+        """
+        from app.models.shift_assignment import ShiftAssignment
+        from app.models.employee import Employee
+
         db_shift = ShiftService.get_by_id(db, shift_id)
         if not db_shift:
             return None
 
+        # Get employee for cost calculation
+        employee = db.query(Employee).filter(Employee.employee_id == employee_id).first()
+        if not employee:
+            return None
+
+        # Update shift assignment (old system - kept for backward compatibility)
         db_shift.assigned_employee_id = employee_id
         db_shift.status = "confirmed"
+
+        # FIXED: Create or update ShiftAssignment record (new system)
+        # Check if assignment already exists
+        existing_assignment = db.query(ShiftAssignment).filter(
+            ShiftAssignment.shift_id == shift_id
+        ).first()
+
+        if existing_assignment:
+            # Update existing assignment
+            existing_assignment.employee_id = employee_id
+            if roster_id:
+                existing_assignment.roster_id = roster_id
+        else:
+            # Create new assignment
+            assignment = ShiftAssignment(
+                shift_id=shift_id,
+                employee_id=employee_id,
+                roster_id=roster_id  # Can be None for manual assignments
+            )
+            # Calculate cost breakdown
+            assignment.calculate_cost(db_shift, employee)
+            db.add(assignment)
+
         db.commit()
         db.refresh(db_shift)
         return db_shift

@@ -417,52 +417,95 @@ if not employee.get("home_gps_lat") or not shift.get("site"):
 
 ---
 
-## 6. Recommended Fixes (Priority Order)
+## 6. ✅ FIXES APPLIED
 
-### HIGH PRIORITY
+### ✅ HIGH PRIORITY FIXES (ALL COMPLETED)
 
-1. **Fix Certification Logic**
+1. **✅ Fixed Certification Logic** (Issue #2)
    ```python
-   # backend/app/algorithms/constraints.py line 58
-   # Change to:
-   if not certifications:
-       return False  # Require at least one certification
-   return False  # No valid certs found
+   # backend/app/algorithms/constraints.py line 67
+   # FIXED: Changed from:
+   return len(certifications) == 0  # No certs required (WRONG!)
+   # To:
+   return False  # Require at least one valid certification
    ```
+   - Added `skip_check` parameter to respect `settings.SKIP_CERTIFICATION_CHECK`
+   - In production, employees without certifications will be rejected
+   - Testing mode can bypass this check
 
-2. **Include SkillsMatrix in Skill Matching**
+2. **✅ Included SkillsMatrix in Skill Matching** (Issue #3)
    ```python
-   # backend/app/algorithms/roster_generator.py line 128
-   employee_skills = [e.role.value]
-   if hasattr(e, 'skills') and e.skills:
-       employee_skills.extend([skill.skill_name for skill in e.skills])
+   # backend/app/algorithms/roster_generator.py line 142-161
+   def _get_employee_skills(self, employee) -> List[str]:
+       # Start with role as primary skill
+       skills = [employee.role.value]
+       # Add skills from SkillsMatrix
+       if hasattr(employee, 'skills') and employee.skills:
+           for skill in employee.skills:
+               if skill.skill_name and skill.skill_name not in skills:
+                   skills.append(skill.skill_name)
+       return skills
    ```
+   - Now properly includes specialized skills from SkillsMatrix table
+   - Employees with driver, dog handler, etc. skills are now matched correctly
 
-3. **Sync Shift.assigned_employee_id with ShiftAssignment**
-   - When creating ShiftAssignment, also update Shift.assigned_employee_id
-   - Or remove the field entirely and use joins
+3. **✅ Synced Shift.assigned_employee_id with ShiftAssignment** (Issue #1)
+   ```python
+   # backend/app/services/shift_service.py line 100-156
+   def assign_employee(db, shift_id, employee_id, roster_id=None):
+       # Update shift (old system)
+       db_shift.assigned_employee_id = employee_id
+       # Create ShiftAssignment record (new system)
+       assignment = ShiftAssignment(...)
+       assignment.calculate_cost(db_shift, employee)
+       db.add(assignment)
+   ```
+   - Now creates/updates ShiftAssignment when assigning employees
+   - Maintains both systems for backward compatibility
+   - Calculates cost breakdown automatically
 
-### MEDIUM PRIORITY
+### ✅ MEDIUM PRIORITY FIXES (ALL COMPLETED)
 
-4. **Make Availability Check Configurable**
-   - Add `allow_without_availability` config flag
-   - Document the behavior clearly
+4. **✅ Made Availability Check Configurable** (Issue #4)
+   ```python
+   # backend/app/algorithms/roster_generator.py line 365-379
+   if settings.SKIP_AVAILABILITY_CHECK:
+       return True  # Testing mode
+   if not availability_records:
+       return settings.TESTING_MODE  # Strict in production
+   ```
+   - Uses `settings.SKIP_AVAILABILITY_CHECK` flag
+   - More strict in production (requires availability records)
+   - Configurable via settings.TESTING_MODE
 
-5. **Improve GPS Handling**
-   - Log warning when GPS is missing
-   - Make distance constraint optional
-   - Consider returning penalty value instead of 0
+5. **✅ Clarified Site vs Shift required_skill** (Issue #6)
+   ```python
+   # backend/app/models/shift.py line 47-63
+   @property
+   def effective_required_skill(self) -> str:
+       if self.required_skill:
+           return self.required_skill
+       # Inherit from site if not specified
+       if self.site and self.site.required_skill:
+           return self.site.required_skill
+       return ""
+   ```
+   - Added `effective_required_skill` property
+   - Shifts inherit site's required_skill if not specified
+   - Roster generator uses this property
 
-6. **Clarify Site vs Shift required_skill**
-   - Document relationship
-   - Add validation to ensure consistency
+6. **✅ Testing Mode Configuration Already Existed**
+   - `settings.SKIP_CERTIFICATION_CHECK` was already defined
+   - `settings.SKIP_AVAILABILITY_CHECK` was already defined
+   - `settings.TESTING_MODE` was already defined
+   - Now properly utilized in roster generation
 
-### LOW PRIORITY
+### ⚠️ NOT FIXED (As Requested)
 
-7. **Add Testing Mode Configuration**
-   - Make SKIP_CERTIFICATION_CHECK a proper config setting
-   - Add other testing mode flags
-   - Document testing mode behavior
+**Issue #5: GPS Validation Bypassed**
+- Left unchanged as per user request
+- Missing GPS coordinates still result in distance = 0
+- Consider addressing in future for production deployment
 
 ---
 

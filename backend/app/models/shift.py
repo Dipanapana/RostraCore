@@ -45,6 +45,24 @@ class Shift(Base):
         return f"<Shift {self.shift_id}: Site {self.site_id} at {self.start_time}>"
 
     @property
+    def effective_required_skill(self) -> str:
+        """
+        Get the effective required skill for this shift.
+
+        FIXED: If shift-specific required_skill is not set, inherit from site.
+        This resolves confusion between Site.required_skill and Shift.required_skill.
+
+        Returns:
+            Required skill string (shift-specific if set, otherwise site's skill)
+        """
+        if self.required_skill:
+            return self.required_skill
+        # Inherit from site if not specified
+        if self.site and self.site.required_skill:
+            return self.site.required_skill
+        return ""  # No skill requirement
+
+    @property
     def duration_hours(self) -> float:
         """Calculate shift duration in hours"""
         if self.start_time and self.end_time:
