@@ -28,7 +28,8 @@ def check_skill_match(employee_skills: List[str], required_skill: str) -> bool:
 def check_certification_validity(
     certifications: List[Dict],
     shift_date: datetime,
-    required_cert_type: Optional[str] = None
+    required_cert_type: Optional[str] = None,
+    skip_check: bool = False
 ) -> bool:
     """
     Check if employee has valid certifications for shift date.
@@ -37,10 +38,15 @@ def check_certification_validity(
         certifications: List of employee certifications
         shift_date: Date of the shift
         required_cert_type: Optional specific certification type required
+        skip_check: If True, skip certification validation (testing mode)
 
     Returns:
         True if certifications are valid
     """
+    # Testing mode: skip certification check
+    if skip_check:
+        return True
+
     if required_cert_type:
         # Check specific certification
         for cert in certifications:
@@ -55,7 +61,10 @@ def check_certification_validity(
         if cert["expiry_date"] > shift_date.date():
             return True
 
-    return len(certifications) == 0  # No certs required
+    # FIXED: Require at least one valid certification
+    # Employees without certifications should not pass validation
+    # In production, security guards must have PSIRA certification
+    return False
 
 
 def check_availability_overlap(
