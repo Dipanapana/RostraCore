@@ -91,7 +91,7 @@ export default function RegisterPage() {
         <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 shadow-2xl">
           {/* Logo/Title */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-white mb-2">RostraCore</h1>
+            <h1 className="text-4xl font-bold text-white mb-2">GuardianOS</h1>
             <p className="text-gray-300">Create your account</p>
           </div>
 
@@ -348,7 +348,7 @@ export default function RegisterPage() {
         {/* Footer */}
         <div className="mt-8 text-center">
           <p className="text-gray-400 text-sm">
-            RostraCore v1.0 • Algorithmic Roster Engine
+            GuardianOS v1.0 • AI-Powered Security Management
           </p>
         </div>
       </div>

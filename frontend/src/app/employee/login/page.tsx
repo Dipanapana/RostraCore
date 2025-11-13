@@ -55,7 +55,7 @@ export default function EmployeeLoginPage() {
         {/* Logo/Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-white mb-2">
-            RostraCore
+            GuardianOS
           </h1>
           <p className="text-gray-300">Employee Portal</p>
         </div>

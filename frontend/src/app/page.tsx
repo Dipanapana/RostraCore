@@ -51,7 +51,7 @@ export default function Home() {
         <div className="text-center max-w-5xl mx-auto">
           {/* Logo + Tagline */}
           <div className="mb-8">
-            <div className="text-lg font-bold text-white mb-2">ROSTRACORE</div>
+            <div className="text-lg font-bold text-white mb-2">GUARDIANOS</div>
             <div className="text-sm text-white/60">Security Workforce Management for South Africa</div>
           </div>
 
@@ -251,7 +251,7 @@ export default function Home() {
       </div>
 
       {/* ========================================
-          SECTION 4: WHY ROSTRACORE
+          SECTION 4: WHY GUARDIANOS
       ======================================== */}
       <div className="relative z-10 px-6 py-20 border-t border-white/10">
         <div className="max-w-6xl mx-auto">
@@ -323,13 +323,13 @@ export default function Home() {
               Contact us for more information or to discuss your specific requirements
             </p>
             <a
-              href="mailto:hello@rostracore.co.za"
+              href="mailto:hello@guardianos.co.za"
               className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 font-medium"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
-              hello@rostracore.co.za
+              hello@guardianos.co.za
             </a>
           </div>
         </div>
@@ -340,7 +340,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-6">
             <p className="text-white/50 text-sm mb-2">
-              © 2025 RostraCore (Pty) Ltd. All rights reserved.
+              © 2025 GuardianOS (Pty) Ltd. All rights reserved.
             </p>
             <p className="text-white/40 text-xs">
               Professional workforce management software for the South African security industry
@@ -349,7 +349,7 @@ export default function Home() {
           <div className="flex justify-center gap-6 text-white/60 text-sm">
             <Link href="/login" className="hover:text-white transition-colors">Login</Link>
             <Link href="/register" className="hover:text-white transition-colors">Register</Link>
-            <a href="mailto:hello@rostracore.co.za" className="hover:text-white transition-colors">Contact</a>
+            <a href="mailto:hello@guardianos.co.za" className="hover:text-white transition-colors">Contact</a>
           </div>
         </div>
       </div>

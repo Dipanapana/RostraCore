@@ -218,7 +218,7 @@ export default function DashboardPage() {
               📊 Dashboard
             </h1>
             <p className="text-gray-300">
-              Real-time insights and analytics for RostraCore
+              Real-time insights and analytics for GuardianOS
             </p>
           </div>
           <Link

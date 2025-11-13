@@ -27,14 +27,14 @@ if settings.SENTRY_DSN:
         ],
         # Set custom tags for better filtering
         before_send=lambda event, hint: event,
-        release=f"rostracore@1.0.0",
+        release=f"guardianos@1.0.0",
         # Capture 100% of errors, but only sample rate of performance transactions
         enable_tracing=True,
     )
 
 app = FastAPI(
-    title="RostraCore API",
-    description="Algorithmic Roster & Budget Engine for Security Guards",
+    title="GuardianOS API",
+    description="AI-Powered Security Workforce Management System",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc"
