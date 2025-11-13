@@ -78,7 +78,10 @@ def decode_access_token(token: str) -> dict:
 
 def authenticate_user(db: Session, username: str, password: str) -> Optional[User]:
     """
-    Authenticate a user.
+    Authenticate a user with account lockout protection (Option B Security - MVP).
+
+    This function implements account lockout after MAX_LOGIN_ATTEMPTS failed attempts.
+    Accounts are locked for ACCOUNT_LOCKOUT_DURATION_MINUTES.
 
     Args:
         db: Database session
@@ -87,6 +90,9 @@ def authenticate_user(db: Session, username: str, password: str) -> Optional[Use
 
     Returns:
         User object if authenticated, None otherwise
+
+    Raises:
+        HTTPException: If account is locked
     """
     # Try username first
     user = db.query(User).filter(User.username == username).first()
@@ -95,9 +101,54 @@ def authenticate_user(db: Session, username: str, password: str) -> Optional[Use
     if not user:
         user = db.query(User).filter(User.email == username).first()
 
-    # Verify password
-    if not user or not verify_password(password, user.hashed_password):
+    # User not found - return None (don't reveal if username exists)
+    if not user:
         return None
+
+    # Check if account is locked
+    if user.account_locked_until:
+        if datetime.utcnow() < user.account_locked_until:
+            # Account is still locked
+            time_remaining = (user.account_locked_until - datetime.utcnow()).total_seconds() / 60
+            raise HTTPException(
+                status_code=status.HTTP_423_LOCKED,
+                detail=f"Account locked due to too many failed login attempts. Try again in {int(time_remaining)} minutes."
+            )
+        else:
+            # Lockout period expired - reset counters
+            user.failed_login_attempts = 0
+            user.account_locked_until = None
+            user.last_failed_login = None
+            db.commit()
+
+    # Verify password
+    if not verify_password(password, user.hashed_password):
+        # Failed login attempt
+        user.failed_login_attempts += 1
+        user.last_failed_login = datetime.utcnow()
+
+        # Check if should lock account
+        if user.failed_login_attempts >= settings.MAX_LOGIN_ATTEMPTS:
+            user.account_locked_until = datetime.utcnow() + timedelta(
+                minutes=settings.ACCOUNT_LOCKOUT_DURATION_MINUTES
+            )
+            db.commit()
+
+            raise HTTPException(
+                status_code=status.HTTP_423_LOCKED,
+                detail=f"Account locked due to {settings.MAX_LOGIN_ATTEMPTS} failed login attempts. Try again in {settings.ACCOUNT_LOCKOUT_DURATION_MINUTES} minutes."
+            )
+
+        db.commit()
+
+        # Return None to indicate auth failure (let calling code handle the response)
+        return None
+
+    # Successful login - reset failed attempts counter
+    user.failed_login_attempts = 0
+    user.account_locked_until = None
+    user.last_failed_login = None
+    db.commit()
 
     return user
 

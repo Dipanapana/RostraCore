@@ -249,17 +249,20 @@ class ProductionRosterOptimizer:
         """
         reasons = []
 
-        # 1. Check skill match
-        if not self._check_skill_match(emp, shift):
-            reasons.append(f"Skill mismatch: employee has {emp.role.value}, shift needs {shift.required_skill}")
+        # 1. Check skill match (unless in flexible testing mode)
+        if not settings.SKIP_SKILL_MATCHING:
+            if not self._check_skill_match(emp, shift):
+                reasons.append(f"Skill mismatch: employee has {emp.role.value}, shift needs {shift.required_skill}")
 
-        # 2. Check certifications
-        if not self._check_certifications(emp, shift):
-            reasons.append("Invalid or expired certifications")
+        # 2. Check certifications (skip if SKIP_CERTIFICATION_CHECK is enabled)
+        if not settings.SKIP_CERTIFICATION_CHECK:
+            if not self._check_certifications(emp, shift):
+                reasons.append("Invalid or expired certifications")
 
-        # 3. Check availability (if availability data exists)
-        if not self._check_availability(emp, shift):
-            reasons.append("Employee not available during shift time")
+        # 3. Check availability (skip if SKIP_AVAILABILITY_CHECK is enabled)
+        if not settings.SKIP_AVAILABILITY_CHECK:
+            if not self._check_availability(emp, shift):
+                reasons.append("Employee not available during shift time")
 
         # 4. Check distance
         distance_km = self._calculate_distance(emp, shift)
@@ -427,7 +430,7 @@ class ProductionRosterOptimizer:
         for emp in self.employees:
             for week_num in self.weeks:
                 key = (emp.employee_id, week_num)
-                max_hours = min(emp.max_hours_week or 48, 48)
+                max_hours = min(emp.max_hours_week or settings.MAX_HOURS_WEEK, settings.MAX_HOURS_WEEK)
                 var_name = f"hours_e{emp.employee_id}_w{week_num}"
                 self.weekly_hours_vars[key] = self.model.NewIntVar(0, max_hours, var_name)
 
@@ -458,8 +461,8 @@ class ProductionRosterOptimizer:
                     feasible_vars.append(self.assignment_vars[key])
 
             if feasible_vars:
-                # Exactly 1 employee per shift (or 0 if can't be filled)
-                self.model.Add(sum(feasible_vars) <= 1)
+                # Exactly 1 employee per shift (MUST be filled)
+                self.model.Add(sum(feasible_vars) == 1)
             else:
                 logger.warning(f"Shift {shift.shift_id} has no feasible employees!")
 
@@ -487,8 +490,8 @@ class ProductionRosterOptimizer:
         return (shift1.start_time < shift2.end_time and shift2.start_time < shift1.end_time)
 
     def _add_weekly_hours_constraints(self):
-        """Enforce BCEA 48-hour weekly limit"""
-        logger.info("Adding weekly hours constraints...")
+        """Enforce weekly hours limit (configurable for testing)"""
+        logger.info(f"Adding weekly hours constraints (max {settings.MAX_HOURS_WEEK}h)...")
 
         for emp in self.employees:
             for week_num in self.weeks:
@@ -508,8 +511,8 @@ class ProductionRosterOptimizer:
                     week_key = (emp.employee_id, week_num)
                     self.model.Add(self.weekly_hours_vars[week_key] == sum(week_shift_terms))
 
-                    # Must not exceed 48 hours (BCEA compliance)
-                    max_hours = min(emp.max_hours_week or 48, 48)
+                    # Must not exceed weekly hours limit (configurable for testing)
+                    max_hours = min(emp.max_hours_week or settings.MAX_HOURS_WEEK, settings.MAX_HOURS_WEEK)
                     self.model.Add(self.weekly_hours_vars[week_key] <= max_hours)
 
     def _add_rest_period_constraints(self):
@@ -622,8 +625,8 @@ class ProductionRosterOptimizer:
         # Secondary objective: Minimize unfairness
         if len(self.employees) > 1:
             # Minimize variance in weekly hours
-            max_hours = self.model.NewIntVar(0, 48, "max_weekly_hours")
-            min_hours = self.model.NewIntVar(0, 48, "min_weekly_hours")
+            max_hours = self.model.NewIntVar(0, settings.MAX_HOURS_WEEK, "max_weekly_hours")
+            min_hours = self.model.NewIntVar(0, settings.MAX_HOURS_WEEK, "min_weekly_hours")
 
             all_weekly_hours = []
             for emp in self.employees:
@@ -716,35 +719,34 @@ class ProductionRosterOptimizer:
         assigned_shift_ids = set(a["shift_id"] for a in self.assignments)
         unfilled_shifts = [s for s in self.shifts if s.shift_id not in assigned_shift_ids]
 
-        # Calculate fairness score
-        if len(self.employees) > 1:
-            hours_per_emp = defaultdict(float)
-            for assignment in self.assignments:
-                shift = next(s for s in self.shifts if s.shift_id == assignment["shift_id"])
-                hours = (shift.end_time - shift.start_time).total_seconds() / 3600
-                hours_per_emp[assignment["employee_id"]] += hours
+        # Calculate fairness score and employee hours
+        hours_per_emp = defaultdict(float)
+        for assignment in self.assignments:
+            shift = next(s for s in self.shifts if s.shift_id == assignment["shift_id"])
+            hours = (shift.end_time - shift.start_time).total_seconds() / 3600
+            hours_per_emp[assignment["employee_id"]] += hours
 
-            if hours_per_emp:
-                max_hours = max(hours_per_emp.values())
-                min_hours = min(hours_per_emp.values())
-                self.fairness_score = 1.0 - (max_hours - min_hours) / max(max_hours, 1)
-            else:
-                self.fairness_score = 1.0
+        if len(self.employees) > 1 and hours_per_emp:
+            max_hours = max(hours_per_emp.values())
+            min_hours = min(hours_per_emp.values())
+            self.fairness_score = 1.0 - (max_hours - min_hours) / max(max_hours, 1)
         else:
             self.fairness_score = 1.0
+
+        # Calculate average cost per shift
+        avg_cost = self.total_cost / len(self.assignments) if self.assignments else 0
 
         return {
             "status": "optimal" if self.solution_status == cp_model.OPTIMAL else "feasible",
             "assignments": self.assignments,
             "unfilled_shifts": [self._shift_to_dict(s) for s in unfilled_shifts],
             "summary": {
-                "total_shifts": len(self.shifts),
-                "assigned_shifts": len(self.assignments),
-                "unfilled_shifts": len(unfilled_shifts),
-                "fill_rate": len(self.assignments) / len(self.shifts) * 100 if self.shifts else 0,
                 "total_cost": self.total_cost,
-                "fairness_score": self.fairness_score,
-                "employees_used": len(set(a["employee_id"] for a in self.assignments))
+                "total_shifts_filled": len(self.assignments),
+                "employee_hours": dict(hours_per_emp),
+                "average_cost_per_shift": avg_cost,
+                "fill_rate": (len(self.assignments) / len(self.shifts) * 100) if self.shifts else 0,
+                "employees_utilized": len(set(a["employee_id"] for a in self.assignments))
             },
             "solver_info": {
                 "solve_time": self.solve_time,
@@ -785,13 +787,12 @@ class ProductionRosterOptimizer:
             "assignments": [],
             "unfilled_shifts": [self._shift_to_dict(s) for s in self.shifts],
             "summary": {
-                "total_shifts": len(self.shifts),
-                "assigned_shifts": 0,
-                "unfilled_shifts": len(self.shifts),
-                "fill_rate": 0,
-                "total_cost": 0,
-                "fairness_score": 0,
-                "employees_used": 0
+                "total_cost": 0.0,
+                "total_shifts_filled": 0,
+                "employee_hours": {},
+                "average_cost_per_shift": 0.0,
+                "fill_rate": 0.0,
+                "employees_utilized": 0
             }
         }
 
@@ -815,7 +816,7 @@ class ProductionRosterOptimizer:
 
         # Check capacity
         total_shift_hours = sum((s.end_time - s.start_time).total_seconds() / 3600 for s in self.shifts)
-        total_employee_capacity = len(self.employees) * 48  # Max 48h per employee
+        total_employee_capacity = len(self.employees) * settings.MAX_HOURS_WEEK  # Max hours per employee
 
         capacity_sufficient = total_employee_capacity >= total_shift_hours
 

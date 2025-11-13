@@ -54,14 +54,29 @@ class EmployeeResponse(EmployeeBase):
 # Site Schemas
 class SiteBase(BaseModel):
     client_name: str = Field(..., min_length=1, max_length=200)
+    site_name: Optional[str] = None
     address: str = Field(..., min_length=1, max_length=500)
+
+    # Detailed location fields
+    street_address: Optional[str] = None
+    suburb: Optional[str] = None
+    city: Optional[str] = None
+    province: Optional[str] = None
+    postal_code: Optional[str] = None
+    country: str = Field(default="South Africa")
+
+    # GPS coordinates
     gps_lat: Optional[float] = None
     gps_lng: Optional[float] = None
+    gps_accuracy: Optional[float] = None
+    location_notes: Optional[str] = None
+
     shift_pattern: Optional[str] = None
     required_skill: Optional[str] = None
     billing_rate: Optional[float] = None
     min_staff: int = Field(default=1, ge=1)
     notes: Optional[str] = None
+    supervisor_id: Optional[int] = None
 
 
 class SiteCreate(SiteBase):
@@ -70,14 +85,29 @@ class SiteCreate(SiteBase):
 
 class SiteUpdate(BaseModel):
     client_name: Optional[str] = None
+    site_name: Optional[str] = None
     address: Optional[str] = None
+
+    # Detailed location fields
+    street_address: Optional[str] = None
+    suburb: Optional[str] = None
+    city: Optional[str] = None
+    province: Optional[str] = None
+    postal_code: Optional[str] = None
+    country: Optional[str] = None
+
+    # GPS coordinates
     gps_lat: Optional[float] = None
     gps_lng: Optional[float] = None
+    gps_accuracy: Optional[float] = None
+    location_notes: Optional[str] = None
+
     shift_pattern: Optional[str] = None
     required_skill: Optional[str] = None
     billing_rate: Optional[float] = None
     min_staff: Optional[int] = None
     notes: Optional[str] = None
+    supervisor_id: Optional[int] = None
 
 
 class SiteResponse(SiteBase):

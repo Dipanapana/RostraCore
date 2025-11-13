@@ -35,7 +35,7 @@ export const shiftsApi = {
 }
 
 export const rosterApi = {
-  generate: (data: any) => api.post('/api/v1/roster/generate', data),
+  generate: (data: any) => api.post('/api/v1/roster/generate', data, { timeout: 180000 }), // 180 second timeout for optimization
   preview: (params?: any) => api.get('/api/v1/roster/preview', { params }),
   confirm: (data: any) => api.post('/api/v1/roster/confirm', data),
   getBudgetSummary: (params?: any) => api.get('/api/v1/roster/budget-summary', { params }),

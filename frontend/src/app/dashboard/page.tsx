@@ -99,21 +99,91 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchDashboardData();
+    console.log("[DASHBOARD] useEffect triggered");
+    let mounted = true;
+
+    const fetchData = async () => {
+      console.log("[DASHBOARD] fetchData starting, mounted:", mounted);
+      if (!mounted) return;
+
+      setLoading(true);
+      console.log("[DASHBOARD] Loading state set to true");
+
+      try {
+        console.log("[DASHBOARD] Starting API calls...");
+        // Add timeout to prevent hanging
+        const timeout = (ms: number) => new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Request timeout')), ms)
+        );
+
+        const fetchWithTimeout = (url: string) => {
+          console.log("[DASHBOARD] Fetching:", url);
+          return Promise.race([
+            axios.get(url, { timeout: 10000 }),
+            timeout(10000)
+          ]);
+        };
+
+        console.log("[DASHBOARD] Making parallel API calls...");
+        const [metricsRes, shiftsRes, certsRes, trendsRes, weeklyRes] =
+          await Promise.all([
+            fetchWithTimeout(`${API_URL}/api/v1/dashboard/metrics`),
+            fetchWithTimeout(`${API_URL}/api/v1/dashboard/upcoming-shifts?limit=5`),
+            fetchWithTimeout(`${API_URL}/api/v1/dashboard/expiring-certifications?days_ahead=30`),
+            fetchWithTimeout(`${API_URL}/api/v1/dashboard/cost-trends?days=14`),
+            fetchWithTimeout(`${API_URL}/api/v1/dashboard/weekly-summary`),
+          ]);
+
+        console.log("[DASHBOARD] All API calls completed");
+        if (mounted) {
+          console.log("[DASHBOARD] Setting state with fetched data");
+          setMetrics((metricsRes as any).data);
+          setUpcomingShifts((shiftsRes as any).data);
+          setExpiringCerts((certsRes as any).data);
+          setCostTrends((trendsRes as any).data.trend || []);
+          setWeeklySummary((weeklyRes as any).data);
+        }
+      } catch (error) {
+        console.error("[DASHBOARD] Error fetching dashboard data:", error);
+        if (mounted) {
+          console.log("[DASHBOARD] Setting empty data on error");
+          // Set empty data on error to allow page to render
+          setMetrics(null);
+          setUpcomingShifts([]);
+          setExpiringCerts([]);
+          setCostTrends([]);
+          setWeeklySummary(null);
+        }
+      } finally {
+        if (mounted) {
+          console.log("[DASHBOARD] Setting loading to false");
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      console.log("[DASHBOARD] Cleanup - unmounting");
+      mounted = false;
+    };
   }, []);
 
   const fetchDashboardData = async () => {
+    // Keep this function for potential refresh button
     setLoading(true);
     try {
       const [metricsRes, shiftsRes, certsRes, trendsRes, weeklyRes] =
         await Promise.all([
-          axios.get(`${API_URL}/api/v1/dashboard/metrics`),
-          axios.get(`${API_URL}/api/v1/dashboard/upcoming-shifts?limit=5`),
+          axios.get(`${API_URL}/api/v1/dashboard/metrics`, { timeout: 10000 }),
+          axios.get(`${API_URL}/api/v1/dashboard/upcoming-shifts?limit=5`, { timeout: 10000 }),
           axios.get(
-            `${API_URL}/api/v1/dashboard/expiring-certifications?days_ahead=30`
+            `${API_URL}/api/v1/dashboard/expiring-certifications?days_ahead=30`,
+            { timeout: 10000 }
           ),
-          axios.get(`${API_URL}/api/v1/dashboard/cost-trends?days=14`),
-          axios.get(`${API_URL}/api/v1/dashboard/weekly-summary`),
+          axios.get(`${API_URL}/api/v1/dashboard/cost-trends?days=14`, { timeout: 10000 }),
+          axios.get(`${API_URL}/api/v1/dashboard/weekly-summary`, { timeout: 10000 }),
         ]);
 
       setMetrics(metricsRes.data);
@@ -421,6 +491,12 @@ export default function DashboardPage() {
         {/* Quick Actions */}
         <div className="mt-8 grid grid-cols-2 md:grid-cols-5 gap-4">
           <Link
+            href="/clients"
+            className="bg-cyan-600 hover:bg-cyan-700 text-white p-4 rounded-lg text-center transition"
+          >
+            Manage Clients
+          </Link>
+          <Link
             href="/employees"
             className="bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-lg text-center transition"
           >
@@ -449,6 +525,30 @@ export default function DashboardPage() {
             className="bg-pink-600 hover:bg-pink-700 text-white p-4 rounded-lg text-center transition"
           >
             Generate Roster
+          </Link>
+          <Link
+            href="/payroll"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-lg text-center transition"
+          >
+            Manage Payroll
+          </Link>
+          <Link
+            href="/attendance"
+            className="bg-teal-600 hover:bg-teal-700 text-white p-4 rounded-lg text-center transition"
+          >
+            Track Attendance
+          </Link>
+          <Link
+            href="/expenses"
+            className="bg-amber-600 hover:bg-amber-700 text-white p-4 rounded-lg text-center transition"
+          >
+            Manage Expenses
+          </Link>
+          <Link
+            href="/admin/leave-approvals"
+            className="bg-rose-600 hover:bg-rose-700 text-white p-4 rounded-lg text-center transition"
+          >
+            Leave Approvals
           </Link>
         </div>
       </div>

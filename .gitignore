@@ -69,3 +69,4 @@ exports/*.csv
 # Temporary files
 tmp/
 temp/
+nul

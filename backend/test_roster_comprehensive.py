@@ -145,145 +145,229 @@ def generate_roster(db):
 
         employee_ids = [emp.employee_id for emp in employees]
         site_ids = [site.site_id for site in sites]
+Tests roster generation with current database data and prints debug information
+"""
+
+import sys
+import os
+sys.path.insert(0, os.path.dirname(__file__))
+
+from datetime import datetime, timedelta
+from sqlalchemy.orm import Session
+from app.database import engine, get_db
+from app.models import Employee, Site, Shift
+from app.algorithms.roster_generator import RosterGenerator
+from app.config import settings
+
+def test_roster_generation():
+    """Test roster generation with actual database data"""
+
+    print("="*80)
+    print("ROSTRACORE ROSTER GENERATION TEST")
+    print("="*80)
+
+    db: Session = next(get_db())
+
+    try:
+        # 1. Check Database Data
+        print("\n[1] DATABASE STATUS:")
+        print("-"*80)
+
+        employees = db.query(Employee).filter(Employee.status == "ACTIVE").all()
+        sites = db.query(Site).all()
+        existing_shifts = db.query(Shift).filter(Shift.start_time >= datetime.now()).count()
+
+        print(f"✓ Active Employees: {len(employees)}")
+        print(f"✓ Sites: {len(sites)}")
+        print(f"✓ Existing Future Shifts: {existing_shifts}")
+
+        if not employees:
+            print("\n❌ ERROR: No active employees found!")
+            print("   Run: python scripts/create_sample_data.py")
+            return
+
+        if not sites:
+            print("\n❌ ERROR: No sites found!")
+            print("   Run: python scripts/create_sample_data.py")
+            return
+
+        # Print employee details
+        print("\n[2] EMPLOYEE DETAILS:")
+        print("-"*80)
+        for emp in employees[:5]:  # Show first 5
+            print(f"  • {emp.first_name} {emp.last_name}")
+            print(f"    - ID: {emp.employee_id}")
+            print(f"    - Role: {emp.role}")
+            print(f"    - Hourly Rate: R{emp.hourly_rate}")
+            print(f"    - Home GPS: ({emp.home_gps_lat}, {emp.home_gps_lng})")
+            print(f"    - Status: {emp.status}")
+
+        if len(employees) > 5:
+            print(f"  ... and {len(employees) - 5} more employees")
+
+        # Print site details
+        print("\n[3] SITE DETAILS:")
+        print("-"*80)
+        for site in sites[:5]:  # Show first 5
+            print(f"  • {site.site_name}")
+            print(f"    - ID: {site.site_id}")
+            print(f"    - Client: {site.client_name}")
+            print(f"    - Required Skill: {site.required_skill}")
+            print(f"    - Min Staff: {site.min_staff}")
+            print(f"    - GPS: ({site.gps_lat}, {site.gps_lng})")
+
+        if len(sites) > 5:
+            print(f"  ... and {len(sites) - 5} more sites")
+
+        # 2. Create Test Shifts for Next Week
+        print("\n[4] GENERATING TEST SHIFTS FOR NEXT WEEK:")
+        print("-"*80)
+
+        start_date = datetime.now() + timedelta(days=1)
+        start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_date = start_date + timedelta(days=7)
+
+        print(f"Period: {start_date.date()} to {end_date.date()}")
+
+        # Delete existing test shifts in this range
+        db.query(Shift).filter(
+            Shift.start_time >= start_date,
+            Shift.start_time < end_date
+        ).delete()
+        db.commit()
+
+        # Create shifts for each site
+        test_shifts_created = 0
+        for site in sites[:3]:  # Use first 3 sites
+            for day in range(7):  # 7 days
+                shift_date = start_date + timedelta(days=day)
+
+                # Morning shift: 08:00 - 16:00
+                morning_shift = Shift(
+                    site_id=site.site_id,
+                    start_time=shift_date.replace(hour=8),
+                    end_time=shift_date.replace(hour=16),
+                    required_skill=site.required_skill or "Security Guard",
+                    status="unassigned"
+                )
+                db.add(morning_shift)
+                test_shifts_created += 1
+
+                # Evening shift: 16:00 - 00:00
+                evening_shift = Shift(
+                    site_id=site.site_id,
+                    start_time=shift_date.replace(hour=16),
+                    end_time=(shift_date + timedelta(days=1)).replace(hour=0),
+                    required_skill=site.required_skill or "Security Guard",
+                    status="unassigned"
+                )
+                db.add(evening_shift)
+                test_shifts_created += 1
+
+        db.commit()
+        print(f"✓ Created {test_shifts_created} test shifts")
+
+        # 3. Initialize Roster Generator
+        print("\n[5] INITIALIZING ROSTER GENERATOR:")
+        print("-"*80)
+
+        unassigned_shifts = db.query(Shift).filter(
+            Shift.start_time >= start_date,
+            Shift.start_time < end_date,
+            Shift.assigned_employee_id == None
+        ).all()
+
+        print(f"Unassigned Shifts: {len(unassigned_shifts)}")
+        print(f"Algorithm: {settings.ROSTER_ALGORITHM}")
+        print(f"Max Hours/Week: {settings.MAX_HOURS_WEEK}")
+        print(f"Min Rest Hours: {settings.MIN_REST_HOURS}")
+        print(f"Max Distance: {settings.MAX_DISTANCE_KM} km")
+        print(f"Testing Mode: {settings.TESTING_MODE}")
+
+        generator = RosterGenerator(db, algorithm="production")
+
+        # 4. Generate Roster
+        print("\n[6] GENERATING ROSTER:")
+        print("-"*80)
+        print("This may take a few seconds...")
 
         result = generator.generate_roster(
             start_date=start_date,
             end_date=end_date,
-            employee_ids=employee_ids,
-            site_ids=site_ids
+            employee_ids=[emp.employee_id for emp in employees],
+            site_ids=[site.site_id for site in sites[:3]]
         )
+
+        # 5. Display Results
+        print("\n[7] ROSTER GENERATION RESULTS:")
+        print("="*80)
+
+        print(f"\n📊 SUMMARY:")
+        print(f"  • Total Shifts: {result['summary']['total_shifts']}")
+        print(f"  • Assigned: {result['summary']['assigned_shifts']}")
+        print(f"  • Unassigned: {result['summary']['unassigned_shifts']}")
+        print(f"  • Fill Rate: {result['summary']['fill_rate']:.1f}%")
+        print(f"  • Total Cost: R{result['summary']['total_cost']:.2f}")
+        print(f"  • Total Hours: {result['summary']['total_hours']:.1f}")
+        print(f"  • Fairness Score: {result['summary']['fairness_score']:.3f}")
+
+        print(f"\n📋 ASSIGNED SHIFTS:")
+        print("-"*80)
+
+        if result['assignments']:
+            for i, assignment in enumerate(result['assignments'][:10], 1):  # Show first 10
+                emp = db.query(Employee).filter_by(employee_id=assignment['employee_id']).first()
+                site = db.query(Site).filter_by(site_id=assignment['site_id']).first()
+
+                print(f"{i}. {emp.first_name} {emp.last_name} → {site.site_name}")
+                print(f"   {assignment['start_time']} to {assignment['end_time']}")
+                print(f"   Duration: {assignment['duration_hours']:.1f}h | Cost: R{assignment['cost']:.2f}")
+                print()
+
+            if len(result['assignments']) > 10:
+                print(f"... and {len(result['assignments']) - 10} more assignments")
+        else:
+            print("❌ No shifts were assigned!")
+            print("\nPossible reasons:")
+            print("  1. No employees meet the skill requirements")
+            print("  2. All employees exceed max hours constraints")
+            print("  3. Distance constraints are too restrictive")
+            print(f"\nTesting Mode: {settings.TESTING_MODE}")
+            print(f"Skip Certification Check: {settings.SKIP_CERTIFICATION_CHECK}")
+            print(f"Skip Availability Check: {settings.SKIP_AVAILABILITY_CHECK}")
+
+        print(f"\n⚠️  UNASSIGNED SHIFTS:")
+        print("-"*80)
+
+        if result['unassigned']:
+            for i, shift_id in enumerate(result['unassigned'][:5], 1):  # Show first 5
+                shift = db.query(Shift).filter_by(shift_id=shift_id).first()
+                site = db.query(Site).filter_by(site_id=shift.site_id).first()
+
+                print(f"{i}. {site.site_name}")
+                print(f"   {shift.start_time} to {shift.end_time}")
+                print(f"   Required Skill: {shift.required_skill}")
+                print()
+
+            if len(result['unassigned']) > 5:
+                print(f"... and {len(result['unassigned']) - 5} more unassigned shifts")
+        else:
+            print("✓ All shifts were successfully assigned!")
+
+        print("\n" + "="*80)
+        print("TEST COMPLETE")
+        print("="*80)
 
         return result
 
     except Exception as e:
-        print(f"\nERROR DURING GENERATION:")
-        print(f"  {type(e).__name__}: {str(e)}")
+        print(f"\n❌ ERROR: {str(e)}")
         import traceback
         traceback.print_exc()
         return None
 
-
-def analyze_results(db, result):
-    """Analyze roster generation results"""
-    print_section("STEP 6: RESULTS ANALYSIS")
-
-    if not result:
-        print("ERROR: No result to analyze!")
-        return
-
-    if not result.get("success"):
-        print("ROSTER GENERATION FAILED!")
-        print(f"Message: {result.get('message', 'Unknown error')}")
-        return
-
-    # Get summary
-    summary = result.get("summary", {})
-    assignments = result.get("assignments", [])
-
-    print(f"STATUS: SUCCESS!")
-    print(f"\nAssignments Made: {len(assignments)}")
-    print(f"Total Cost: R {summary.get('total_cost', 0):.2f}")
-    print(f"Total Hours: {summary.get('total_hours', 0):.1f}")
-
-    if summary.get("unfilled_shifts"):
-        print(f"\nUNFILLED SHIFTS: {len(summary['unfilled_shifts'])}")
-        if len(summary['unfilled_shifts']) > 0:
-            print("These shifts could not be filled:")
-            for shift_info in summary['unfilled_shifts'][:10]:
-                print(f"  - {shift_info}")
-
-    # Show sample assignments
-    if assignments:
-        print(f"\nSAMPLE ASSIGNMENTS (first 15):")
-        for i, assignment in enumerate(assignments[:15], 1):
-            emp = db.query(Employee).filter(Employee.employee_id == assignment['employee_id']).first()
-            shift = db.query(Shift).filter(Shift.shift_id == assignment['shift_id']).first()
-
-            if emp and shift:
-                emp_name = f"{emp.first_name} {emp.last_name}"
-                site_name = shift.site.site_name if shift.site else "Unknown"
-                date_str = shift.shift_date.strftime("%Y-%m-%d")
-                time_str = f"{shift.start_time.strftime('%H:%M')}-{shift.end_time.strftime('%H:%M')}"
-
-                print(f"{i:2d}. {date_str} {time_str} - {emp_name} @ {site_name}")
-
-    # Employee workload
-    print("\nEMPLOYEE WORKLOAD:")
-    employee_hours = {}
-    for assignment in assignments:
-        emp_id = assignment['employee_id']
-        if emp_id not in employee_hours:
-            employee_hours[emp_id] = {
-                'shifts': 0,
-                'hours': 0,
-                'cost': 0
-            }
-        employee_hours[emp_id]['shifts'] += 1
-        employee_hours[emp_id]['hours'] += assignment.get('hours', 0)
-        employee_hours[emp_id]['cost'] += assignment.get('cost', 0)
-
-    for emp_id, stats in employee_hours.items():
-        emp = db.query(Employee).filter(Employee.employee_id == emp_id).first()
-        if emp:
-            print(f"  {emp.first_name} {emp.last_name}: {stats['shifts']} shifts, {stats['hours']:.1f} hours, R {stats['cost']:.2f}")
-
-
-def main():
-    """Main test function"""
-    print_header("ROSTRACORE ROSTER GENERATION TEST")
-
-    db = next(get_db())
-
-    try:
-        # Step 1: Check database
-        if not check_database_status(db):
-            print("\nTEST ABORTED: Fix database issues first!")
-            print("\nQuick fixes:")
-            print("  1. Add employees: Go to Employees page and create 3-5 employees")
-            print("  2. Add sites: Go to Clients page and create 1-2 sites")
-            print("  3. Add shifts: Go to Shifts page and create 10-15 shifts")
-            sys.exit(1)
-
-        # Step 2-4: Show details
-        show_employee_details(db)
-        show_site_details(db)
-        show_shift_details(db)
-
-        # Step 5: Generate roster
-        result = generate_roster(db)
-
-        # Step 6: Analyze results
-        analyze_results(db, result)
-
-        print_header("TEST COMPLETE")
-
-        if result and result.get("success"):
-            print("STATUS: ROSTER GENERATION WORKING!")
-            print("\nNext steps:")
-            print("  1. Test roster generation from the frontend")
-            print("  2. Verify assignments in the Roster page")
-            print("  3. Check dashboard metrics update correctly")
-        else:
-            print("STATUS: ROSTER GENERATION FAILED")
-            print("\nTroubleshooting:")
-            print("  1. Check backend/app/config.py settings:")
-            print("     - TESTING_MODE = True")
-            print("     - SKIP_CERTIFICATION_CHECK = True")
-            print("     - SKIP_AVAILABILITY_CHECK = True")
-            print("     - MAX_HOURS_WEEK = 60")
-            print("     - MIN_REST_HOURS = 6")
-            print("  2. Ensure employees have correct roles matching shift requirements")
-            print("  3. Check backend logs for detailed error messages")
-            print("  4. Refer to ROSTER_GENERATION_FIX_GUIDE.md for complete guide")
-
-    except Exception as e:
-        print_header("CRITICAL ERROR")
-        print(f"Error: {type(e).__name__}")
-        print(f"Message: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
-
+    finally:
+        db.close()
 
 if __name__ == "__main__":
-    main()
+    test_roster_generation()

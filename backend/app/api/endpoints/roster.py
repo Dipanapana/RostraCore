@@ -13,7 +13,10 @@ from app.algorithms.roster_generator import RosterGenerator
 from app.algorithms.milp_roster_generator import MILPRosterGenerator
 from app.algorithms.production_optimizer import ProductionRosterOptimizer, OptimizationConfig
 from app.services.shift_service import ShiftService
+from app.services.cache_service import CacheInvalidator
 from app.config import settings
+from app.models.site import Site
+from app.models.client import Client
 
 router = APIRouter()
 
@@ -117,7 +120,11 @@ async def confirm_roster(
     assignments: List[dict],
     db: Session = Depends(get_db)
 ):
-    """Confirm and save generated roster assignments."""
+    """
+    Confirm and save generated roster assignments.
+
+    **Cache Invalidation:** Clears dashboard and shift caches when roster is confirmed.
+    """
     try:
         confirmed_count = 0
         for assignment in assignments:
@@ -128,6 +135,13 @@ async def confirm_roster(
             )
             if shift:
                 confirmed_count += 1
+
+        # Invalidate caches after roster confirmation
+        CacheInvalidator.invalidate_dashboard()
+        CacheInvalidator.invalidate_roster()
+        CacheInvalidator.invalidate_shifts()
+
+        logger.info(f"Roster confirmed: {confirmed_count} shifts assigned, caches invalidated")
 
         return {
             "success": True,
@@ -245,3 +259,149 @@ async def get_budget_summary(
         "total_shifts": len(shifts),
         "fill_rate": round(filled_shifts / len(shifts) * 100, 2) if shifts else 0
     }
+
+
+@router.post("/generate-for-client/{client_id}", response_model=RosterGenerateResponse)
+async def generate_roster_for_client(
+    client_id: int,
+    start_date: datetime,
+    end_date: datetime,
+    algorithm: Optional[str] = Query("production", description="Algorithm: 'production', 'hungarian', 'milp', 'auto'"),
+    db: Session = Depends(get_db)
+):
+    """
+    Generate optimized roster for a specific client's sites.
+
+    **Client-Specific Roster Generation**
+
+    This endpoint automatically includes all sites belonging to the specified client,
+    making it easy to generate rosters for specific clients without manually selecting sites.
+
+    Args:
+        client_id: Client ID to generate roster for
+        start_date: Start date for roster period
+        end_date: End date for roster period
+        algorithm: Algorithm selection (default: 'production')
+        db: Database session
+
+    Returns:
+        Roster assignments with summary, costs, fairness metrics, and diagnostics
+    """
+    try:
+        # Verify client exists
+        client = db.query(Client).filter(Client.client_id == client_id).first()
+
+        if not client:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Client with ID {client_id} not found"
+            )
+
+        # Get all sites for this client
+        sites = db.query(Site).filter(Site.client_id == client_id).all()
+
+        if not sites:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"No sites found for client '{client.client_name}' (ID: {client_id})"
+            )
+
+        site_ids = [site.site_id for site in sites]
+
+        logger.info(
+            f"Client-specific roster generation for '{client.client_name}' "
+            f"(ID: {client_id}): {len(site_ids)} sites, "
+            f"{start_date} to {end_date}"
+        )
+
+        # Convert dates to datetime if needed
+        if isinstance(start_date, datetime):
+            start_datetime = start_date
+        else:
+            start_datetime = datetime.combine(start_date, datetime.min.time())
+
+        if isinstance(end_date, datetime):
+            end_datetime = end_date
+        else:
+            end_datetime = datetime.combine(end_date, datetime.max.time())
+
+        # Determine which algorithm to use
+        selected_algorithm = algorithm or "production"
+
+        # Auto-select based on roster period and complexity
+        if selected_algorithm == "auto":
+            period_days = (end_datetime - start_datetime).days
+            if period_days > 3:
+                selected_algorithm = "production"
+            else:
+                selected_algorithm = "hungarian"
+            logger.info(f"Auto-selected {selected_algorithm} based on {period_days} days")
+
+        # Initialize appropriate optimizer
+        if selected_algorithm == "production":
+            logger.info("Using Production CP-SAT Optimizer")
+            optimizer = ProductionRosterOptimizer(
+                db,
+                config=OptimizationConfig(
+                    time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 120),
+                    fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2),
+                    max_distance_km=getattr(settings, 'MAX_DISTANCE_KM', 50.0)
+                )
+            )
+            result = optimizer.optimize(
+                start_date=start_datetime,
+                end_date=end_datetime,
+                site_ids=site_ids
+            )
+
+        elif selected_algorithm == "milp":
+            logger.info("Using Legacy MILP Generator")
+            generator = MILPRosterGenerator(db)
+            result = generator.generate_roster(
+                start_date=start_datetime,
+                end_date=end_datetime,
+                site_ids=site_ids
+            )
+            result["algorithm_used"] = "milp"
+
+        else:  # hungarian
+            logger.info("Using Hungarian Algorithm")
+            generator = RosterGenerator(db)
+            result = generator.generate_roster(
+                start_date=start_datetime,
+                end_date=end_datetime,
+                site_ids=site_ids
+            )
+            result["algorithm_used"] = "hungarian"
+
+        # Add client information to result
+        result["client"] = {
+            "client_id": client.client_id,
+            "client_name": client.client_name,
+            "site_count": len(site_ids),
+            "sites": [
+                {
+                    "site_id": site.site_id,
+                    "site_name": site.site_name or site.client_name,
+                    "address": site.address
+                }
+                for site in sites
+            ]
+        }
+
+        logger.info(
+            f"Client-specific roster complete for '{client.client_name}': "
+            f"{result.get('status', 'unknown')}, "
+            f"{len(result.get('assignments', []))} assignments"
+        )
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Client-specific roster generation failed: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generating roster for client: {str(e)}"
+        )

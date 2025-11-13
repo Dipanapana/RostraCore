@@ -54,12 +54,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUserInfo = async (authToken: string) => {
     try {
+      console.log("[AUTH] Fetching user info from API...");
       const response = await axios.get(`${API_URL}/api/v1/auth/me`, {
         headers: { Authorization: `Bearer ${authToken}` },
       });
+      console.log("[AUTH] User info received:", response.data);
       setUser(response.data);
     } catch (error) {
-      console.error("Failed to fetch user info:", error);
+      console.error("[AUTH] Failed to fetch user info:", error);
       // Token invalid, clear it
       localStorage.removeItem("token");
       setToken(null);
@@ -71,20 +73,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (username: string, password: string) => {
     try {
+      console.log("[AUTH] 1. Starting login process...");
       const response = await axios.post(`${API_URL}/api/v1/auth/login-json`, {
         username,
         password,
       });
 
+      console.log("[AUTH] 2. Login successful, received token");
       const { access_token } = response.data;
       setToken(access_token);
       localStorage.setItem("token", access_token);
 
       // Fetch user info
+      console.log("[AUTH] 3. Fetching user info...");
       await fetchUserInfo(access_token);
 
       // Redirect to dashboard
+      console.log("[AUTH] 4. Redirecting to dashboard...");
       router.push("/dashboard");
+      console.log("[AUTH] 5. Push completed");
     } catch (error: any) {
       console.error("Login failed:", error);
       throw new Error(

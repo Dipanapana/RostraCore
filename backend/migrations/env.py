@@ -14,7 +14,8 @@ from app.database import Base
 from app.models import (
     employee, site, shift, availability, certification,
     expense, attendance, payroll, rules_config,
-    shift_template, skills_matrix
+    shift_template, skills_matrix, organization, shift_group,
+    roster, shift_assignment
 )
 
 # this is the Alembic Config object
@@ -30,7 +31,9 @@ load_dotenv()
 
 db_url = os.getenv("DATABASE_URL")
 if db_url:
-    config.set_main_option("sqlalchemy.url", db_url)
+    # Double % for ConfigParser interpolation
+    db_url_escaped = db_url.replace('%', '%%')
+    config.set_main_option("sqlalchemy.url", db_url_escaped)
 
 # add your model's MetaData object here for 'autogenerate' support
 target_metadata = Base.metadata

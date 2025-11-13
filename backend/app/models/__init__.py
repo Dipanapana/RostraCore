@@ -12,6 +12,23 @@ from app.models.payroll import PayrollSummary
 from app.models.rules_config import RulesConfig
 from app.models.shift_template import ShiftTemplate
 from app.models.skills_matrix import SkillsMatrix
+from app.models.roster import Roster
+from app.models.shift_assignment import ShiftAssignment
+from app.models.organization import Organization
+from app.models.shift_group import ShiftGroup
+from app.models.leave_request import LeaveRequest
+from app.models.client import Client
+from app.models.incident_report import IncidentReport
+from app.models.daily_occurrence_book import DailyOccurrenceBook
+from app.models.ob_entry import OBEntry
+from app.models.guard_rating import GuardRating
+from app.models.job_posting import JobPosting
+from app.models.job_application import JobApplication
+from app.models.guard_applicant import GuardApplicant
+from app.models.cv_generation import CVPurchase, GeneratedCV
+from app.models.marketplace_commission import MarketplaceCommission, BulkHiringPackage, PremiumJobPosting
+from app.models.subscription_plan import SubscriptionPlan
+from app.models.analytics import AnalyticsEvent, AnalyticsDailyMetrics, CustomerHealthScore, FeatureUsageStats, ABTest, ABTestAssignment
 
 __all__ = [
     "User",
@@ -25,5 +42,30 @@ __all__ = [
     "PayrollSummary",
     "RulesConfig",
     "ShiftTemplate",
-    "SkillsMatrix"
+    "SkillsMatrix",
+    "Roster",
+    "ShiftAssignment",
+    "Organization",
+    "ShiftGroup",
+    "LeaveRequest",
+    "Client",
+    "IncidentReport",
+    "DailyOccurrenceBook",
+    "OBEntry",
+    "GuardRating",
+    "JobPosting",
+    "JobApplication",
+    "GuardApplicant",
+    "CVPurchase",
+    "GeneratedCV",
+    "MarketplaceCommission",
+    "BulkHiringPackage",
+    "PremiumJobPosting",
+    "SubscriptionPlan",
+    "AnalyticsEvent",
+    "AnalyticsDailyMetrics",
+    "CustomerHealthScore",
+    "FeatureUsageStats",
+    "ABTest",
+    "ABTestAssignment"
 ]
