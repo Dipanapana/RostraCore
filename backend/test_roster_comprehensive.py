@@ -1,5 +1,150 @@
 """
 Comprehensive Roster Generation Test Script
+Tests roster generation end-to-end with detailed diagnostics
+"""
+
+from app.database import get_db
+from app.models.employee import Employee
+from app.models.site import Site
+from app.models.shift import Shift
+from app.services.roster_generator import RosterGenerator
+from datetime import datetime, timedelta
+import sys
+
+
+def print_header(title):
+    """Print formatted header"""
+    print("\n" + "=" * 80)
+    print(title.center(80))
+    print("=" * 80 + "\n")
+
+
+def print_section(title):
+    """Print formatted section"""
+    print("\n" + "-" * 80)
+    print(title)
+    print("-" * 80)
+
+
+def check_database_status(db):
+    """Check database has required data"""
+    print_section("STEP 1: DATABASE STATUS CHECK")
+
+    employees = db.query(Employee).filter(Employee.status == "ACTIVE").all()
+    sites = db.query(Site).all()
+    unfilled_shifts = db.query(Shift).filter(Shift.status == "UNFILLED").all()
+    all_shifts = db.query(Shift).all()
+
+    print(f"Active Employees: {len(employees)}")
+    print(f"Total Sites: {len(sites)}")
+    print(f"Unfilled Shifts: {len(unfilled_shifts)}")
+    print(f"Total Shifts: {len(all_shifts)}")
+
+    # Validation
+    errors = []
+    if len(employees) == 0:
+        errors.append("NO EMPLOYEES FOUND - Add employees first!")
+    elif len(employees) < 3:
+        errors.append(f"WARNING: Only {len(employees)} employees - may not be enough for optimization")
+
+    if len(sites) == 0:
+        errors.append("NO SITES FOUND - Add sites/clients first!")
+
+    if len(unfilled_shifts) == 0:
+        errors.append("NO UNFILLED SHIFTS - Create shifts first!")
+
+    if errors:
+        print("\nERRORS FOUND:")
+        for error in errors:
+            print(f"  X {error}")
+        return False
+
+    print("\nSTATUS: OK - Database has sufficient data")
+    return True
+
+
+def show_employee_details(db):
+    """Show detailed employee information"""
+    print_section("STEP 2: EMPLOYEE DETAILS")
+
+    employees = db.query(Employee).filter(Employee.status == "ACTIVE").all()
+
+    for emp in employees:
+        print(f"\nEmployee: {emp.first_name} {emp.last_name} (ID: {emp.employee_id})")
+        print(f"  Role: {emp.role}")
+        print(f"  Hourly Rate: R {emp.hourly_rate:.2f}")
+        print(f"  Status: {emp.status}")
+        if emp.skills:
+            skills_data = emp.skills[0] if emp.skills else None
+            if skills_data:
+                print(f"  Skills: Armed={skills_data.armed}, Supervisor={skills_data.is_supervisor}")
+
+
+def show_site_details(db):
+    """Show detailed site information"""
+    print_section("STEP 3: SITE DETAILS")
+
+    sites = db.query(Site).all()
+
+    for site in sites:
+        print(f"\nSite: {site.site_name} (ID: {site.site_id})")
+        print(f"  Location: {site.location if hasattr(site, 'location') else 'N/A'}")
+        print(f"  Client: {site.client.client_name if site.client else 'N/A'}")
+
+        # Count shifts at this site
+        shifts = db.query(Shift).filter(Shift.site_id == site.site_id).all()
+        unfilled = [s for s in shifts if s.status == "UNFILLED"]
+        print(f"  Shifts: {len(unfilled)} unfilled / {len(shifts)} total")
+
+
+def show_shift_details(db):
+    """Show detailed shift information"""
+    print_section("STEP 4: SHIFT DETAILS")
+
+    unfilled_shifts = db.query(Shift).filter(Shift.status == "UNFILLED").order_by(Shift.shift_date, Shift.start_time).all()
+
+    if len(unfilled_shifts) > 20:
+        print(f"Showing first 20 of {len(unfilled_shifts)} unfilled shifts:\n")
+        shifts_to_show = unfilled_shifts[:20]
+    else:
+        print(f"All {len(unfilled_shifts)} unfilled shifts:\n")
+        shifts_to_show = unfilled_shifts
+
+    for shift in shifts_to_show:
+        site_name = shift.site.site_name if shift.site else "Unknown Site"
+        print(f"{shift.shift_date} {shift.start_time}-{shift.end_time} @ {site_name}")
+        print(f"  Required: {shift.required_guards} x {shift.role_required}")
+        print(f"  Status: {shift.status}")
+
+
+def generate_roster(db):
+    """Test roster generation"""
+    print_section("STEP 5: GENERATING ROSTER")
+
+    # Get date range from unfilled shifts
+    unfilled_shifts = db.query(Shift).filter(Shift.status == "UNFILLED").all()
+    if not unfilled_shifts:
+        print("ERROR: No unfilled shifts to generate roster for!")
+        return None
+
+    shift_dates = [s.shift_date for s in unfilled_shifts]
+    start_date = min(shift_dates)
+    end_date = max(shift_dates)
+
+    print(f"Date Range: {start_date} to {end_date}")
+    print(f"Shifts to Fill: {len(unfilled_shifts)}")
+    print(f"Algorithm: production (CP-SAT optimizer)")
+    print("\nGenerating roster... (this may take 30-60 seconds)")
+
+    try:
+        generator = RosterGenerator(db, algorithm="production")
+
+        # Get all employee and site IDs
+        employees = db.query(Employee).filter(Employee.status == "ACTIVE").all()
+        sites = db.query(Site).all()
+
+        employee_ids = [emp.employee_id for emp in employees]
+        site_ids = [site.site_id for site in sites]
 Tests roster generation with current database data and prints debug information
 """
 

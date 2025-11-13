@@ -42,9 +42,14 @@ class OptimizationConfig:
     distance_penalty_per_km: float = 2.0
     night_premium_per_hour: float = 20.0
     weekend_premium_per_hour: float = 30.0
-    max_distance_km: float = 50.0
+    max_distance_km: float = None  # Will use settings.MAX_DISTANCE_KM if None
     enable_emergency_mode: bool = False
     locked_assignments: Optional[Dict[Tuple[int, int], bool]] = None
+
+    def __post_init__(self):
+        """Set defaults from settings if not provided"""
+        if self.max_distance_km is None:
+            self.max_distance_km = settings.MAX_DISTANCE_KM
 
 
 @dataclass
@@ -301,6 +306,10 @@ class ProductionRosterOptimizer:
     def _check_certifications(self, emp: Employee, shift: Shift) -> bool:
         """Check if employee has valid certifications for shift date"""
 
+        # Skip check in testing mode
+        if settings.TESTING_MODE and settings.SKIP_CERTIFICATION_CHECK:
+            return True
+
         # Get all certifications for employee
         certs = self.db.query(Certification).filter(
             Certification.employee_id == emp.employee_id,
@@ -322,6 +331,10 @@ class ProductionRosterOptimizer:
 
     def _check_availability(self, emp: Employee, shift: Shift) -> bool:
         """Check if employee is available during shift time"""
+
+        # Skip check in testing mode
+        if settings.TESTING_MODE and settings.SKIP_AVAILABILITY_CHECK:
+            return True
 
         shift_date = shift.start_time.date()
         shift_start_time = shift.start_time.time()
