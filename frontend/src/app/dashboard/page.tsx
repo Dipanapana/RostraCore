@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import Link from "next/link";
 import { Users, Calendar, MapPin, AlertTriangle } from "lucide-react";
 import {
   LineChart,
@@ -21,7 +20,7 @@ import {
 } from "recharts";
 import StatCard from "@/components/ui/StatCard";
 import Card from "@/components/ui/Card";
-import Button from "@/components/ui/Button";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -213,23 +212,16 @@ export default function DashboardPage() {
   const COLORS = ["#0ea5e9", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6"];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <DashboardLayout>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8 flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-1">
-              Dashboard
-            </h1>
-            <p className="text-gray-600">
-              Real-time insights and analytics for GuardianOS
-            </p>
-          </div>
-          <Link href="/">
-            <Button variant="secondary">
-              ← Back to Home
-            </Button>
-          </Link>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-1">
+            Dashboard
+          </h1>
+          <p className="text-gray-600">
+            Real-time insights and analytics for GuardianOS
+          </p>
         </div>
 
         {/* Key Metrics Cards */}
@@ -516,6 +508,6 @@ export default function DashboardPage() {
           </Link>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }
