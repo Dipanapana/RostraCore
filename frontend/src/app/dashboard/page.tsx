@@ -358,43 +358,31 @@ export default function DashboardPage() {
             )}
           </Card>
 
-          {/* Shift Status Pie Chart */}
-          <Card title="Shift Status Distribution">
+          {/* Project Analysis - Cost Trends */}
+          <Card title="Project Analysis">
             <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={[
-                    {
-                      name: "Assigned",
-                      value: metrics?.shifts.assigned || 0,
-                    },
-                    {
-                      name: "Unassigned",
-                      value: metrics?.shifts.unassigned || 0,
-                    },
-                  ]}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) =>
-                    `${name}: ${(percent * 100).toFixed(0)}%`
-                  }
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {[0, 1].map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
+              <BarChart data={costTrends}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis
+                  dataKey="date"
+                  stroke="#6b7280"
+                  tick={{ fill: "#6b7280", fontSize: 12 }}
+                  tickFormatter={(value) => {
+                    const date = new Date(value);
+                    return `${date.getMonth() + 1}/${date.getDate()}`;
+                  }}
+                />
+                <YAxis stroke="#6b7280" tick={{ fill: "#6b7280", fontSize: 12 }} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "#fff",
                     border: "1px solid #e5e7eb",
                     borderRadius: "8px",
                   }}
+                  formatter={(value) => [`R${Number(value).toLocaleString()}`, "Cost"]}
                 />
-              </PieChart>
+                <Bar dataKey="cost" fill="#10b981" radius={[6, 6, 0, 0]} />
+              </BarChart>
             </ResponsiveContainer>
           </Card>
         </div>
