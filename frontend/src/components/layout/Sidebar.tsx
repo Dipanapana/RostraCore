@@ -13,6 +13,9 @@ import {
   Award,
   Clock,
   BarChart3,
+  DollarSign,
+  Receipt,
+  FileCheck,
   Settings,
   HelpCircle,
   LogOut,
@@ -72,6 +75,21 @@ const menuItems: NavItem[] = [
     name: "Analytics",
     href: "/analytics",
     icon: BarChart3,
+  },
+  {
+    name: "Payroll",
+    href: "/payroll",
+    icon: DollarSign,
+  },
+  {
+    name: "Expenses",
+    href: "/expenses",
+    icon: Receipt,
+  },
+  {
+    name: "Leave Approval",
+    href: "/admin/leave-approvals",
+    icon: FileCheck,
   },
 ];
 
