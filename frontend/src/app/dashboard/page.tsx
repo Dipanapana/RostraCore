@@ -225,6 +225,25 @@ export default function DashboardPage() {
               Real-time insights and analytics for GuardianOS
             </p>
           </div>
+          <Link
+            href="/roster"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium shadow-sm transition-all flex items-center gap-2"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            Generate Roster
+          </Link>
         </div>
 
         {/* Key Metrics Cards */}
@@ -304,38 +323,39 @@ export default function DashboardPage() {
 
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Project Analysis Chart */}
-          <Card title="Project Analysis">
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={costTrends}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis
-                  dataKey="date"
-                  stroke="#6b7280"
-                  tick={{ fill: "#6b7280" }}
-                  tickFormatter={(value) => {
-                    const date = new Date(value);
-                    return `${date.getMonth() + 1}/${date.getDate()}`;
-                  }}
-                />
-                <YAxis stroke="#6b7280" tick={{ fill: "#6b7280" }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#fff",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "8px",
-                  }}
-                />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="cost"
-                  stroke="#0ea5e9"
-                  strokeWidth={2}
-                  name="Daily Cost (R)"
-                />
-              </LineChart>
-            </ResponsiveContainer>
+          {/* Expiring Certifications */}
+          <Card title="Expiring Certifications">
+            {expiringCerts.length === 0 ? (
+              <p className="text-gray-500">No certifications expiring soon.</p>
+            ) : (
+              <div className="space-y-3">
+                {expiringCerts.slice(0, 5).map((cert) => (
+                  <div
+                    key={cert.cert_id}
+                    className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="font-semibold text-gray-900">
+                        {cert.employee_name}
+                      </div>
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium ${
+                          cert.days_until_expiry <= 7
+                            ? "bg-red-100 text-red-700"
+                            : "bg-yellow-100 text-yellow-700"
+                        }`}
+                      >
+                        {cert.days_until_expiry} days
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600">{cert.cert_type}</p>
+                    <p className="text-sm text-gray-500">
+                      Expires: {new Date(cert.expiry_date).toLocaleDateString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </Card>
 
           {/* Shift Status Pie Chart */}
@@ -411,105 +431,6 @@ export default function DashboardPage() {
               </div>
             )}
           </Card>
-
-          {/* Team Collaboration - Expiring Certifications */}
-          <Card title="Team Collaboration">
-            {expiringCerts.length === 0 ? (
-              <p className="text-gray-500">No certifications expiring soon.</p>
-            ) : (
-              <div className="space-y-3">
-                {expiringCerts.slice(0, 5).map((cert) => (
-                  <div
-                    key={cert.cert_id}
-                    className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="font-semibold text-gray-900">
-                        {cert.employee_name}
-                      </div>
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${
-                          cert.days_until_expiry <= 7
-                            ? "bg-red-100 text-red-700"
-                            : "bg-yellow-100 text-yellow-700"
-                        }`}
-                      >
-                        {cert.days_until_expiry} days
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600">{cert.cert_type}</p>
-                    <p className="text-sm text-gray-500">
-                      Expires: {new Date(cert.expiry_date).toLocaleDateString()}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="mt-8 grid grid-cols-2 md:grid-cols-5 gap-4">
-          <Link
-            href="/clients"
-            className="bg-cyan-600 hover:bg-cyan-700 text-white p-4 rounded-lg text-center transition"
-          >
-            Manage Clients
-          </Link>
-          <Link
-            href="/employees"
-            className="bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-lg text-center transition"
-          >
-            Manage Employees
-          </Link>
-          <Link
-            href="/sites"
-            className="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-lg text-center transition"
-          >
-            Manage Sites
-          </Link>
-          <Link
-            href="/shifts"
-            className="bg-green-600 hover:bg-green-700 text-white p-4 rounded-lg text-center transition"
-          >
-            Manage Shifts
-          </Link>
-          <Link
-            href="/certifications"
-            className="bg-orange-600 hover:bg-orange-700 text-white p-4 rounded-lg text-center transition"
-          >
-            Manage Certifications
-          </Link>
-          <Link
-            href="/roster"
-            className="bg-pink-600 hover:bg-pink-700 text-white p-4 rounded-lg text-center transition"
-          >
-            Generate Roster
-          </Link>
-          <Link
-            href="/payroll"
-            className="bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-lg text-center transition"
-          >
-            Manage Payroll
-          </Link>
-          <Link
-            href="/attendance"
-            className="bg-teal-600 hover:bg-teal-700 text-white p-4 rounded-lg text-center transition"
-          >
-            Track Attendance
-          </Link>
-          <Link
-            href="/expenses"
-            className="bg-amber-600 hover:bg-amber-700 text-white p-4 rounded-lg text-center transition"
-          >
-            Manage Expenses
-          </Link>
-          <Link
-            href="/admin/leave-approvals"
-            className="bg-rose-600 hover:bg-rose-700 text-white p-4 rounded-lg text-center transition"
-          >
-            Leave Approvals
-          </Link>
         </div>
       </div>
     </DashboardLayout>
