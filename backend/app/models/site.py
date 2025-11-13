@@ -29,7 +29,6 @@ class Site(Base):
     gps_lng = Column(Float, nullable=True)
     gps_accuracy = Column(Float, nullable=True)  # Accuracy in meters
     location_notes = Column(Text, nullable=True)  # Specific instructions (e.g., "Enter via back gate")
-
     shift_pattern = Column(String(50))  # day/night/12hr
     required_skill = Column(String(100))
     billing_rate = Column(Float)

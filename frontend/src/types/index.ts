@@ -15,6 +15,7 @@ export interface Employee {
 
 export interface Site {
   site_id: number
+  site_name: string
   client_name: string
   address: string
   gps_lat?: number

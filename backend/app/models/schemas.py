@@ -53,8 +53,8 @@ class EmployeeResponse(EmployeeBase):
 
 # Site Schemas
 class SiteBase(BaseModel):
-    client_name: str = Field(..., min_length=1, max_length=200)
     site_name: Optional[str] = None
+    client_name: str = Field(..., min_length=1, max_length=200)
     address: str = Field(..., min_length=1, max_length=500)
 
     # Detailed location fields
@@ -84,8 +84,8 @@ class SiteCreate(SiteBase):
 
 
 class SiteUpdate(BaseModel):
-    client_name: Optional[str] = None
     site_name: Optional[str] = None
+    client_name: Optional[str] = None
     address: Optional[str] = None
 
     # Detailed location fields
