@@ -209,7 +209,7 @@ export default function IncidentReportsPage() {
       case "high": return "bg-orange-500/20 text-orange-300 border-orange-500/50";
       case "medium": return "bg-yellow-500/20 text-yellow-300 border-yellow-500/50";
       case "low": return "bg-green-500/20 text-green-300 border-green-500/50";
-      default: return "bg-gray-500/20 text-gray-300 border-gray-500/50";
+      default: return "bg-gray-500/20 text-gray-600 border-gray-500/50";
     }
   };
 
@@ -238,31 +238,31 @@ export default function IncidentReportsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-900 text-xl">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div className="bg-white/10 backdrop-blur-lg border-b border-white/20">
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-white">Incident Reports</h1>
-              <p className="text-gray-300 mt-1">Report and track security incidents</p>
+              <h1 className="text-3xl font-bold text-gray-900">Incident Reports</h1>
+              <p className="text-gray-600 mt-1">Report and track security incidents</p>
             </div>
             <div className="flex gap-4">
               <Link
                 href="/employee/dashboard"
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-lg transition"
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-900 border border-gray-300 rounded-lg transition"
               >
                 ← Back
               </Link>
               <button
                 onClick={() => setShowModal(true)}
-                className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition font-semibold"
+                className="px-6 py-2 bg-red-600 hover:bg-red-700 text-gray-900 rounded-lg transition font-semibold"
               >
                 🚨 Report Incident
               </button>
@@ -273,40 +273,40 @@ export default function IncidentReportsPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {error && (
-          <div className="mb-6 bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg">
+          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
             {error}
             <button onClick={() => setError("")} className="float-right text-red-200">×</button>
           </div>
         )}
 
         {success && (
-          <div className="mb-6 bg-green-500/20 border border-green-500/50 text-green-200 px-4 py-3 rounded-lg">
+          <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
             {success}
             <button onClick={() => setSuccess("")} className="float-right text-green-200">×</button>
           </div>
         )}
 
-        <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-card overflow-hidden">
           <div className="p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">My Incident Reports</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">My Incident Reports</h2>
             {incidents.length === 0 ? (
-              <p className="text-gray-400">No incident reports found.</p>
+              <p className="text-gray-500">No incident reports found.</p>
             ) : (
               <div className="space-y-4">
                 {incidents.map((incident) => (
                   <div
                     key={incident.incident_id}
-                    className="bg-white/5 rounded-lg p-4 border border-white/10"
+                    className="bg-gray-50 rounded-lg p-4 border border-gray-200"
                   >
                     <div className="flex justify-between items-start mb-3">
                       <div>
-                        <h3 className="font-semibold text-white capitalize">
+                        <h3 className="font-semibold text-gray-900 capitalize">
                           {incident.incident_type.replace(/_/g, " ")}
                         </h3>
-                        <p className="text-sm text-gray-300 mt-1">
+                        <p className="text-sm text-gray-600 mt-1">
                           {new Date(incident.incident_date).toLocaleString()}
                         </p>
-                        <p className="text-sm text-gray-400">{incident.site_name}</p>
+                        <p className="text-sm text-gray-500">{incident.site_name}</p>
                       </div>
                       <div className="flex gap-2">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getSeverityColor(incident.severity)}`}>
@@ -321,7 +321,7 @@ export default function IncidentReportsPage() {
                         </span>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-300 line-clamp-2">{incident.description}</p>
+                    <p className="text-sm text-gray-600 line-clamp-2">{incident.description}</p>
                     <div className="mt-3 flex justify-between items-center">
                       <span className="text-xs text-gray-500">
                         Reported: {new Date(incident.created_at).toLocaleDateString()}
@@ -329,13 +329,13 @@ export default function IncidentReportsPage() {
                       <div className="flex gap-2 items-center">
                         <button
                           onClick={() => handlePrint(incident.incident_id)}
-                          className="text-xs px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded transition print:hidden"
+                          className="text-xs px-3 py-1 bg-blue-600 hover:bg-blue-700 text-gray-900 rounded transition print:hidden"
                           title="Print incident report"
                         >
                           🖨️ Print
                         </button>
                         <span className={`text-xs px-2 py-1 rounded ${
-                          incident.status === "closed" ? "bg-gray-500/20 text-gray-300" :
+                          incident.status === "closed" ? "bg-gray-500/20 text-gray-600" :
                           incident.status === "resolved" ? "bg-green-500/20 text-green-300" :
                           incident.status === "under_investigation" ? "bg-blue-500/20 text-blue-300" :
                           "bg-orange-500/20 text-orange-300"
@@ -356,19 +356,19 @@ export default function IncidentReportsPage() {
       {showModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-slate-800 rounded-xl p-8 max-w-4xl w-full my-8 border border-white/20">
-            <h2 className="text-2xl font-bold text-white mb-6">🚨 Report Incident</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">🚨 Report Incident</h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Basic Information */}
               <div className="bg-white/5 p-4 rounded-lg">
-                <h3 className="text-lg font-semibold text-white mb-4">Basic Information</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-2">Site *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Site *</label>
                     <select
                       value={formData.site_id}
                       onChange={(e) => setFormData({ ...formData, site_id: e.target.value })}
-                      className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-red-500"
+                      className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-red-500"
                       required
                     >
                       <option value="">Select Site</option>
@@ -381,22 +381,22 @@ export default function IncidentReportsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-2">Incident Date/Time *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Incident Date/Time *</label>
                     <input
                       type="datetime-local"
                       value={formData.incident_date}
                       onChange={(e) => setFormData({ ...formData, incident_date: e.target.value })}
-                      className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-red-500"
+                      className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-red-500"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-2">Incident Type *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Incident Type *</label>
                     <select
                       value={formData.incident_type}
                       onChange={(e) => setFormData({ ...formData, incident_type: e.target.value })}
-                      className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-red-500"
+                      className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-red-500"
                       required
                     >
                       <option value="theft">Theft</option>
@@ -418,11 +418,11 @@ export default function IncidentReportsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-2">Severity *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Severity *</label>
                     <select
                       value={formData.severity}
                       onChange={(e) => setFormData({ ...formData, severity: e.target.value })}
-                      className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-red-500"
+                      className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-red-500"
                       required
                     >
                       <option value="low">Low</option>
@@ -433,12 +433,12 @@ export default function IncidentReportsPage() {
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-200 mb-2">Exact Location</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Exact Location</label>
                     <input
                       type="text"
                       value={formData.exact_location}
                       onChange={(e) => setFormData({ ...formData, exact_location: e.target.value })}
-                      className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-red-500"
+                      className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-red-500"
                       placeholder="e.g., Main gate, Building A entrance, Parking lot section 2"
                     />
                   </div>
@@ -447,27 +447,27 @@ export default function IncidentReportsPage() {
 
               {/* Description */}
               <div className="bg-white/5 p-4 rounded-lg">
-                <h3 className="text-lg font-semibold text-white mb-4">Incident Details</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Incident Details</h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-2">Description *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
                     <textarea
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       rows={4}
-                      className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-red-500"
+                      className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-red-500"
                       placeholder="Provide detailed description of what happened..."
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-2">Action Taken</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Action Taken</label>
                     <textarea
                       value={formData.action_taken}
                       onChange={(e) => setFormData({ ...formData, action_taken: e.target.value })}
                       rows={3}
-                      className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-red-500"
+                      className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-red-500"
                       placeholder="What actions did you take in response?"
                     />
                   </div>
@@ -476,9 +476,9 @@ export default function IncidentReportsPage() {
 
               {/* Checkboxes */}
               <div className="bg-white/5 p-4 rounded-lg">
-                <h3 className="text-lg font-semibold text-white mb-4">Additional Information</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Information</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <label className="flex items-center text-white">
+                  <label className="flex items-center text-gray-900">
                     <input
                       type="checkbox"
                       checked={formData.police_notified}
@@ -488,7 +488,7 @@ export default function IncidentReportsPage() {
                     Police Notified
                   </label>
 
-                  <label className="flex items-center text-white">
+                  <label className="flex items-center text-gray-900">
                     <input
                       type="checkbox"
                       checked={formData.client_notified}
@@ -498,7 +498,7 @@ export default function IncidentReportsPage() {
                     Client Notified
                   </label>
 
-                  <label className="flex items-center text-white">
+                  <label className="flex items-center text-gray-900">
                     <input
                       type="checkbox"
                       checked={formData.injuries_reported}
@@ -508,7 +508,7 @@ export default function IncidentReportsPage() {
                     Injuries Reported
                   </label>
 
-                  <label className="flex items-center text-white">
+                  <label className="flex items-center text-gray-900">
                     <input
                       type="checkbox"
                       checked={formData.medical_attention_required}
@@ -518,7 +518,7 @@ export default function IncidentReportsPage() {
                     Medical Attention Required
                   </label>
 
-                  <label className="flex items-center text-white">
+                  <label className="flex items-center text-gray-900">
                     <input
                       type="checkbox"
                       checked={formData.ambulance_called}
@@ -528,7 +528,7 @@ export default function IncidentReportsPage() {
                     Ambulance Called
                   </label>
 
-                  <label className="flex items-center text-white">
+                  <label className="flex items-center text-gray-900">
                     <input
                       type="checkbox"
                       checked={formData.property_damage}
@@ -538,7 +538,7 @@ export default function IncidentReportsPage() {
                     Property Damage
                   </label>
 
-                  <label className="flex items-center text-white">
+                  <label className="flex items-center text-gray-900">
                     <input
                       type="checkbox"
                       checked={formData.evidence_collected}
@@ -548,7 +548,7 @@ export default function IncidentReportsPage() {
                     Evidence Collected
                   </label>
 
-                  <label className="flex items-center text-white">
+                  <label className="flex items-center text-gray-900">
                     <input
                       type="checkbox"
                       checked={formData.follow_up_required}
@@ -562,21 +562,21 @@ export default function IncidentReportsPage() {
                 {formData.police_notified && (
                   <div className="grid grid-cols-2 gap-4 mt-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-200 mb-2">Police Case Number</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Police Case Number</label>
                       <input
                         type="text"
                         value={formData.police_case_number}
                         onChange={(e) => setFormData({ ...formData, police_case_number: e.target.value })}
-                        className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-red-500"
+                        className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-red-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-200 mb-2">Police Station</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Police Station</label>
                       <input
                         type="text"
                         value={formData.police_station}
                         onChange={(e) => setFormData({ ...formData, police_station: e.target.value })}
-                        className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-red-500"
+                        className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-red-500"
                       />
                     </div>
                   </div>
@@ -585,22 +585,22 @@ export default function IncidentReportsPage() {
                 {formData.property_damage && (
                   <div className="grid grid-cols-2 gap-4 mt-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-200 mb-2">Property Damage Description</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Property Damage Description</label>
                       <textarea
                         value={formData.property_damage_description}
                         onChange={(e) => setFormData({ ...formData, property_damage_description: e.target.value })}
                         rows={2}
-                        className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-red-500"
+                        className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-red-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-200 mb-2">Estimated Loss (ZAR)</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Estimated Loss (ZAR)</label>
                       <input
                         type="number"
                         step="0.01"
                         value={formData.estimated_loss_value}
                         onChange={(e) => setFormData({ ...formData, estimated_loss_value: e.target.value })}
-                        className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-red-500"
+                        className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-red-500"
                       />
                     </div>
                   </div>
@@ -614,13 +614,13 @@ export default function IncidentReportsPage() {
                     setShowModal(false);
                     resetForm();
                   }}
-                  className="flex-1 px-4 py-2 border border-white/20 rounded-lg text-white hover:bg-white/10 transition"
+                  className="flex-1 px-4 py-2 border border-white/20 rounded-lg text-gray-900 hover:bg-white/10 transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition font-semibold"
+                  className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-gray-900 rounded-lg transition font-semibold"
                 >
                   Submit Incident Report
                 </button>

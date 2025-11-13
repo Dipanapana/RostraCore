@@ -87,18 +87,18 @@ export default function EmployeeDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white/10 backdrop-blur-lg border-b border-white/20">
+      <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-white">Welcome back, {employeeName}!</h1>
-              <p className="text-gray-300 mt-1">Your employee dashboard</p>
+              <h1 className="text-3xl font-bold text-gray-900">Welcome back, {employeeName}!</h1>
+              <p className="text-gray-600 mt-1">Your employee dashboard</p>
             </div>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-200 border border-red-500/50 rounded-lg transition"
+              className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg transition font-medium"
             >
               Logout
             </button>
@@ -111,91 +111,91 @@ export default function EmployeeDashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <Link
             href="/employee/profile"
-            className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:bg-white/20 transition"
+            className="bg-white rounded-xl p-6 shadow-card hover:shadow-card-hover transition group"
           >
             <div className="text-5xl mb-4">👤</div>
-            <h3 className="text-xl font-bold text-white">My Profile</h3>
-            <p className="text-gray-300 text-sm mt-2">
+            <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition">My Profile</h3>
+            <p className="text-gray-600 text-sm mt-2">
               Update personal info, PSIRA details
             </p>
           </Link>
 
           <Link
             href="/employee/clock"
-            className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:bg-white/20 transition"
+            className="bg-white rounded-xl p-6 shadow-card hover:shadow-card-hover transition group"
           >
             <div className="text-5xl mb-4">⏰</div>
-            <h3 className="text-xl font-bold text-white">Clock In/Out</h3>
-            <p className="text-gray-300 text-sm mt-2">
+            <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition">Clock In/Out</h3>
+            <p className="text-gray-600 text-sm mt-2">
               Track your shift attendance
             </p>
           </Link>
 
           <Link
             href="/employee/leave"
-            className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:bg-white/20 transition"
+            className="bg-white rounded-xl p-6 shadow-card hover:shadow-card-hover transition group"
           >
             <div className="text-5xl mb-4">📅</div>
-            <h3 className="text-xl font-bold text-white">Request Leave</h3>
-            <p className="text-gray-300 text-sm mt-2">
+            <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition">Request Leave</h3>
+            <p className="text-gray-600 text-sm mt-2">
               Submit and manage leave requests
             </p>
           </Link>
 
           <Link
             href="/employee/incidents"
-            className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:bg-white/20 transition"
+            className="bg-white rounded-xl p-6 shadow-card hover:shadow-card-hover transition group"
           >
             <div className="text-5xl mb-4">🚨</div>
-            <h3 className="text-xl font-bold text-white">Report Incident</h3>
-            <p className="text-gray-300 text-sm mt-2">
+            <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition">Report Incident</h3>
+            <p className="text-gray-600 text-sm mt-2">
               Submit incident reports
             </p>
           </Link>
 
           <Link
             href="/employee/daily-report"
-            className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:bg-white/20 transition"
+            className="bg-white rounded-xl p-6 shadow-card hover:shadow-card-hover transition group"
           >
             <div className="text-5xl mb-4">📝</div>
-            <h3 className="text-xl font-bold text-white">Daily Report (OB)</h3>
-            <p className="text-gray-300 text-sm mt-2">
+            <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition">Daily Report (OB)</h3>
+            <p className="text-gray-600 text-sm mt-2">
               Log daily occurrence book
             </p>
           </Link>
 
           <Link
             href="/employee/certificates"
-            className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:bg-white/20 transition"
+            className="bg-white rounded-xl p-6 shadow-card hover:shadow-card-hover transition group"
           >
             <div className="text-5xl mb-4">📄</div>
-            <h3 className="text-xl font-bold text-white">Certificates</h3>
-            <p className="text-gray-300 text-sm mt-2">
+            <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition">Certificates</h3>
+            <p className="text-gray-600 text-sm mt-2">
               Upload and manage certificates
             </p>
           </Link>
         </div>
 
         {/* Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Upcoming Shifts */}
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-            <h2 className="text-2xl font-bold text-white mb-4">Upcoming Shifts</h2>
+          <div className="bg-white rounded-xl p-6 shadow-card">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Upcoming Shifts</h2>
             {upcomingShifts.length === 0 ? (
-              <p className="text-gray-400">No upcoming shifts scheduled.</p>
+              <p className="text-gray-500">No upcoming shifts scheduled.</p>
             ) : (
               <div className="space-y-3">
                 {upcomingShifts.map((shift) => (
                   <div
                     key={shift.shift_id}
-                    className="bg-white/5 rounded-lg p-4 border border-white/10"
+                    className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition"
                   >
-                    <div className="font-semibold text-white">{shift.site_name}</div>
-                    <p className="text-sm text-gray-300 mt-1">
+                    <div className="font-semibold text-gray-900">{shift.site_name}</div>
+                    <p className="text-sm text-gray-600 mt-1">
                       {new Date(shift.start_time).toLocaleString()} -{" "}
                       {new Date(shift.end_time).toLocaleTimeString()}
                     </p>
-                    <span className="px-2 py-1 bg-blue-500/20 text-blue-300 rounded text-xs mt-2 inline-block">
+                    <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs mt-2 inline-block font-medium">
                       {shift.status}
                     </span>
                   </div>
@@ -205,34 +205,34 @@ export default function EmployeeDashboardPage() {
           </div>
 
           {/* Leave Requests */}
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-            <h2 className="text-2xl font-bold text-white mb-4">Recent Leave Requests</h2>
+          <div className="bg-white rounded-xl p-6 shadow-card">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Recent Leave Requests</h2>
             {leaveRequests.length === 0 ? (
-              <p className="text-gray-400">No leave requests found.</p>
+              <p className="text-gray-500">No leave requests found.</p>
             ) : (
               <div className="space-y-3">
                 {leaveRequests.map((leave) => (
                   <div
                     key={leave.leave_id}
-                    className="bg-white/5 rounded-lg p-4 border border-white/10"
+                    className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition"
                   >
                     <div className="flex justify-between items-start">
                       <div>
-                        <div className="font-semibold text-white capitalize">
+                        <div className="font-semibold text-gray-900 capitalize">
                           {leave.leave_type.replace(/_/g, " ")}
                         </div>
-                        <p className="text-sm text-gray-300 mt-1">
+                        <p className="text-sm text-gray-600 mt-1">
                           {new Date(leave.start_date).toLocaleDateString()} -{" "}
                           {new Date(leave.end_date).toLocaleDateString()}
                         </p>
                       </div>
                       <span
-                        className={`px-2 py-1 rounded text-xs ${
+                        className={`px-2 py-1 rounded text-xs font-medium ${
                           leave.status === "approved"
-                            ? "bg-green-500/20 text-green-300"
+                            ? "bg-green-100 text-green-700"
                             : leave.status === "pending"
-                            ? "bg-yellow-500/20 text-yellow-300"
-                            : "bg-red-500/20 text-red-300"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : "bg-red-100 text-red-700"
                         }`}
                       >
                         {leave.status}

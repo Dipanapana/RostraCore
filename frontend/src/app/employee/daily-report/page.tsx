@@ -253,25 +253,25 @@ export default function EmployeeDailyReportPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-900 text-xl">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white/10 backdrop-blur-lg border-b border-white/20">
+      <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-white">Daily Occurrence Book</h1>
-              <p className="text-gray-300 mt-1">Log your shift activities and observations</p>
+              <h1 className="text-3xl font-bold text-gray-900">Daily Occurrence Book</h1>
+              <p className="text-gray-600 mt-1">Log your shift activities and observations</p>
             </div>
             <Link
               href="/employee/dashboard"
-              className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-lg transition"
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-900 border border-gray-300 rounded-lg transition"
             >
               ← Back to Dashboard
             </Link>
@@ -281,11 +281,11 @@ export default function EmployeeDailyReportPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {error && (
-          <div className="mb-6 bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg">
+          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
             {error}
             <button
               onClick={() => setError("")}
-              className="float-right text-red-200 hover:text-white"
+              className="float-right text-red-200 hover:text-gray-900"
             >
               ×
             </button>
@@ -293,11 +293,11 @@ export default function EmployeeDailyReportPage() {
         )}
 
         {success && (
-          <div className="mb-6 bg-green-500/20 border border-green-500/50 text-green-200 px-4 py-3 rounded-lg">
+          <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
             {success}
             <button
               onClick={() => setSuccess("")}
-              className="float-right text-green-200 hover:text-white"
+              className="float-right text-green-200 hover:text-gray-900"
             >
               ×
             </button>
@@ -308,7 +308,7 @@ export default function EmployeeDailyReportPage() {
         <div className="mb-8">
           <button
             onClick={() => setShowForm(!showForm)}
-            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition"
+            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-gray-900 font-semibold rounded-lg transition"
           >
             {showForm ? "Cancel" : "+ New Daily Report"}
           </button>
@@ -318,12 +318,12 @@ export default function EmployeeDailyReportPage() {
         {showForm && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
             <div className="bg-slate-900 rounded-xl border border-white/20 w-full max-w-4xl my-8">
-              <div className="sticky top-0 bg-slate-900 border-b border-white/20 p-6 rounded-t-xl z-10">
+              <div className="sticky top-0 bg-slate-900 border-b border-gray-200 p-6 rounded-t-xl z-10">
                 <div className="flex justify-between items-center">
-                  <h2 className="text-2xl font-bold text-white">New Daily Report (OB)</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">New Daily Report (OB)</h2>
                   <button
                     onClick={() => setShowForm(false)}
-                    className="text-gray-400 hover:text-white text-2xl"
+                    className="text-gray-500 hover:text-gray-900 text-2xl"
                   >
                     ×
                   </button>
@@ -332,17 +332,17 @@ export default function EmployeeDailyReportPage() {
 
               <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto">
                 {/* Shift Information */}
-                <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                  <h3 className="text-lg font-semibold text-white mb-4">Shift Information</h3>
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Shift Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-200 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Site *
                       </label>
                       <select
                         value={formData.site_id}
                         onChange={(e) => setFormData({ ...formData, site_id: e.target.value })}
-                        className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
+                        className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-purple-500"
                         required
                       >
                         <option value="">Select Site</option>
@@ -355,65 +355,65 @@ export default function EmployeeDailyReportPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-200 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Date *
                       </label>
                       <input
                         type="date"
                         value={formData.ob_date}
                         onChange={(e) => setFormData({ ...formData, ob_date: e.target.value })}
-                        className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
+                        className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-purple-500"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-200 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Shift Start *
                       </label>
                       <input
                         type="datetime-local"
                         value={formData.shift_start}
                         onChange={(e) => setFormData({ ...formData, shift_start: e.target.value })}
-                        className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
+                        className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-purple-500"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-200 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Shift End
                       </label>
                       <input
                         type="datetime-local"
                         value={formData.shift_end}
                         onChange={(e) => setFormData({ ...formData, shift_end: e.target.value })}
-                        className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
+                        className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-purple-500"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-200 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Weather Conditions
                       </label>
                       <input
                         type="text"
                         value={formData.weather_conditions}
                         onChange={(e) => setFormData({ ...formData, weather_conditions: e.target.value })}
-                        className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
+                        className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
                         placeholder="e.g., Clear, Rainy, Windy"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-200 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Patrol Rounds Completed
                       </label>
                       <input
                         type="number"
                         value={formData.patrol_rounds_completed}
                         onChange={(e) => setFormData({ ...formData, patrol_rounds_completed: e.target.value })}
-                        className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
+                        className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-purple-500"
                         min="0"
                       />
                     </div>
@@ -421,52 +421,52 @@ export default function EmployeeDailyReportPage() {
                 </div>
 
                 {/* Visitor Management */}
-                <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                  <h3 className="text-lg font-semibold text-white mb-4">Visitors</h3>
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Visitors</h3>
 
                   {/* Add Visitor Form */}
                   <div className="mb-4 p-4 bg-white/5 rounded-lg border border-white/10">
-                    <h4 className="text-sm font-semibold text-white mb-3">Add Visitor</h4>
+                    <h4 className="text-sm font-semibold text-gray-900 mb-3">Add Visitor</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <input
                         type="text"
                         value={visitorForm.name}
                         onChange={(e) => setVisitorForm({ ...visitorForm, name: e.target.value })}
-                        className="px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
+                        className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
                         placeholder="Visitor Name *"
                       />
                       <input
                         type="text"
                         value={visitorForm.company}
                         onChange={(e) => setVisitorForm({ ...visitorForm, company: e.target.value })}
-                        className="px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
+                        className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
                         placeholder="Company"
                       />
                       <input
                         type="text"
                         value={visitorForm.purpose}
                         onChange={(e) => setVisitorForm({ ...visitorForm, purpose: e.target.value })}
-                        className="px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
+                        className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
                         placeholder="Purpose of Visit"
                       />
                       <input
                         type="time"
                         value={visitorForm.time_in}
                         onChange={(e) => setVisitorForm({ ...visitorForm, time_in: e.target.value })}
-                        className="px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm focus:ring-2 focus:ring-purple-500"
+                        className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:ring-2 focus:ring-purple-500"
                         placeholder="Time In *"
                       />
                       <input
                         type="time"
                         value={visitorForm.time_out}
                         onChange={(e) => setVisitorForm({ ...visitorForm, time_out: e.target.value })}
-                        className="px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm focus:ring-2 focus:ring-purple-500"
+                        className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:ring-2 focus:ring-purple-500"
                         placeholder="Time Out"
                       />
                       <button
                         type="button"
                         onClick={handleAddVisitor}
-                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition"
+                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-gray-900 text-sm rounded-lg transition"
                       >
                         + Add Visitor
                       </button>
@@ -476,13 +476,13 @@ export default function EmployeeDailyReportPage() {
                   {/* Visitors List */}
                   {formData.visitor_details.length > 0 && (
                     <div className="space-y-2">
-                      <h4 className="text-sm font-semibold text-white">Logged Visitors ({formData.visitor_details.length})</h4>
+                      <h4 className="text-sm font-semibold text-gray-900">Logged Visitors ({formData.visitor_details.length})</h4>
                       {formData.visitor_details.map((visitor, index) => (
                         <div key={index} className="flex justify-between items-center bg-white/5 p-3 rounded-lg border border-white/10">
-                          <div className="text-sm text-white">
+                          <div className="text-sm text-gray-900">
                             <span className="font-semibold">{visitor.name}</span>
-                            {visitor.company && <span className="text-gray-400"> - {visitor.company}</span>}
-                            <div className="text-xs text-gray-400 mt-1">
+                            {visitor.company && <span className="text-gray-500"> - {visitor.company}</span>}
+                            <div className="text-xs text-gray-500 mt-1">
                               {visitor.purpose && <span>{visitor.purpose} | </span>}
                               In: {visitor.time_in}
                               {visitor.time_out && <span> | Out: {visitor.time_out}</span>}
@@ -502,8 +502,8 @@ export default function EmployeeDailyReportPage() {
                 </div>
 
                 {/* Equipment Check */}
-                <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                  <h3 className="text-lg font-semibold text-white mb-4">Equipment Check</h3>
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Equipment Check</h3>
                   <div className="space-y-4">
                     <div className="flex items-center">
                       <input
@@ -512,33 +512,33 @@ export default function EmployeeDailyReportPage() {
                         onChange={(e) => setFormData({ ...formData, equipment_checked: e.target.checked })}
                         className="w-5 h-5 bg-white/10 border-white/20 rounded focus:ring-2 focus:ring-purple-500"
                       />
-                      <label className="ml-3 text-sm text-gray-200">
+                      <label className="ml-3 text-sm text-gray-700">
                         Equipment check completed
                       </label>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-200 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Equipment Status
                       </label>
                       <textarea
                         value={formData.equipment_status}
                         onChange={(e) => setFormData({ ...formData, equipment_status: e.target.value })}
                         rows={3}
-                        className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
+                        className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
                         placeholder="List equipment checked and their status..."
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-200 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Equipment Issues (if any)
                       </label>
                       <textarea
                         value={formData.equipment_issues}
                         onChange={(e) => setFormData({ ...formData, equipment_issues: e.target.value })}
                         rows={3}
-                        className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
+                        className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
                         placeholder="Describe any equipment problems or maintenance needed..."
                       />
                     </div>
@@ -546,31 +546,31 @@ export default function EmployeeDailyReportPage() {
                 </div>
 
                 {/* Incidents & Observations */}
-                <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                  <h3 className="text-lg font-semibold text-white mb-4">Incidents & Observations</h3>
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Incidents & Observations</h3>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-200 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Incidents Summary
                       </label>
                       <textarea
                         value={formData.incidents_summary}
                         onChange={(e) => setFormData({ ...formData, incidents_summary: e.target.value })}
                         rows={3}
-                        className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
+                        className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
                         placeholder="Brief summary of any incidents during shift..."
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-200 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         General Observations
                       </label>
                       <textarea
                         value={formData.observations}
                         onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
                         rows={4}
-                        className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
+                        className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
                         placeholder="Any notable observations, unusual activities, or important notes..."
                       />
                     </div>
@@ -578,32 +578,32 @@ export default function EmployeeDailyReportPage() {
                 </div>
 
                 {/* Handover */}
-                <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                  <h3 className="text-lg font-semibold text-white mb-4">Handover</h3>
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Handover</h3>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-200 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Handover Notes
                       </label>
                       <textarea
                         value={formData.handover_notes}
                         onChange={(e) => setFormData({ ...formData, handover_notes: e.target.value })}
                         rows={3}
-                        className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
+                        className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
                         placeholder="Information for the next shift..."
                       />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-200 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
                           Relieving Officer ID
                         </label>
                         <input
                           type="number"
                           value={formData.relieving_officer_id}
                           onChange={(e) => setFormData({ ...formData, relieving_officer_id: e.target.value })}
-                          className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
+                          className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-purple-500"
                           placeholder="Next officer's employee ID"
                         />
                       </div>
@@ -615,7 +615,7 @@ export default function EmployeeDailyReportPage() {
                           onChange={(e) => setFormData({ ...formData, keys_handed_over: e.target.checked })}
                           className="w-5 h-5 bg-white/10 border-white/20 rounded focus:ring-2 focus:ring-purple-500"
                         />
-                        <label className="ml-3 text-sm text-gray-200">
+                        <label className="ml-3 text-sm text-gray-700">
                           Keys handed over to next officer
                         </label>
                       </div>
@@ -627,7 +627,7 @@ export default function EmployeeDailyReportPage() {
                 <div className="sticky bottom-0 bg-slate-900 pt-4 border-t border-white/20">
                   <button
                     type="submit"
-                    className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition"
+                    className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-gray-900 font-semibold rounded-lg transition"
                   >
                     Submit Daily Report
                   </button>
@@ -638,13 +638,13 @@ export default function EmployeeDailyReportPage() {
         )}
 
         {/* Reports List */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-          <h2 className="text-2xl font-bold text-white mb-6">Your Daily Reports</h2>
+        <div className="bg-white rounded-xl p-6 shadow-card">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Daily Reports</h2>
 
           {reports.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">📝</div>
-              <p className="text-gray-400 text-lg">No daily reports submitted yet.</p>
+              <p className="text-gray-500 text-lg">No daily reports submitted yet.</p>
               <p className="text-gray-500 text-sm mt-2">
                 Click "New Daily Report" to log your shift activities.
               </p>
@@ -659,7 +659,7 @@ export default function EmployeeDailyReportPage() {
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <div className="flex items-center gap-3">
-                        <h3 className="text-lg font-semibold text-white">
+                        <h3 className="text-lg font-semibold text-gray-900">
                           {report.site_name || `Site #${report.site_id}`}
                         </h3>
                         {report.supervisor_reviewed && (
@@ -668,12 +668,12 @@ export default function EmployeeDailyReportPage() {
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-400 mt-1">
+                      <p className="text-sm text-gray-500 mt-1">
                         {new Date(report.ob_date).toLocaleDateString()} - Shift: {new Date(report.shift_start).toLocaleTimeString()}
                         {report.shift_end && ` to ${new Date(report.shift_end).toLocaleTimeString()}`}
                       </p>
                     </div>
-                    <div className="text-right text-sm text-gray-400">
+                    <div className="text-right text-sm text-gray-500">
                       Submitted: {new Date(report.created_at).toLocaleDateString()}
                     </div>
                   </div>
@@ -681,22 +681,22 @@ export default function EmployeeDailyReportPage() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
                     {report.weather_conditions && (
                       <div className="text-sm">
-                        <span className="text-gray-400">Weather:</span>
-                        <span className="text-white ml-2">{report.weather_conditions}</span>
+                        <span className="text-gray-500">Weather:</span>
+                        <span className="text-gray-900 ml-2">{report.weather_conditions}</span>
                       </div>
                     )}
                     {report.patrol_rounds_completed !== null && (
                       <div className="text-sm">
-                        <span className="text-gray-400">Patrols:</span>
-                        <span className="text-white ml-2">{report.patrol_rounds_completed}</span>
+                        <span className="text-gray-500">Patrols:</span>
+                        <span className="text-gray-900 ml-2">{report.patrol_rounds_completed}</span>
                       </div>
                     )}
                     <div className="text-sm">
-                      <span className="text-gray-400">Visitors:</span>
-                      <span className="text-white ml-2">{report.visitors_logged}</span>
+                      <span className="text-gray-500">Visitors:</span>
+                      <span className="text-gray-900 ml-2">{report.visitors_logged}</span>
                     </div>
                     <div className="text-sm">
-                      <span className="text-gray-400">Equipment:</span>
+                      <span className="text-gray-500">Equipment:</span>
                       <span className={`ml-2 ${report.equipment_checked ? "text-green-300" : "text-yellow-300"}`}>
                         {report.equipment_checked ? "✓ Checked" : "Not Checked"}
                       </span>
@@ -705,8 +705,8 @@ export default function EmployeeDailyReportPage() {
 
                   {report.observations && (
                     <div className="mt-3 p-3 bg-white/5 rounded-lg border border-white/10">
-                      <p className="text-xs text-gray-400 mb-1">Observations:</p>
-                      <p className="text-sm text-gray-200">{report.observations}</p>
+                      <p className="text-xs text-gray-500 mb-1">Observations:</p>
+                      <p className="text-sm text-gray-700">{report.observations}</p>
                     </div>
                   )}
 
@@ -727,7 +727,7 @@ export default function EmployeeDailyReportPage() {
                   <div className="mt-4 flex justify-end">
                     <button
                       onClick={() => handlePrint(report.ob_id)}
-                      className="text-xs px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded transition print:hidden"
+                      className="text-xs px-3 py-1 bg-blue-600 hover:bg-blue-700 text-gray-900 rounded transition print:hidden"
                       title="Print daily report"
                     >
                       🖨️ Print Report

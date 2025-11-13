@@ -160,25 +160,25 @@ export default function EmployeeProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading profile...</div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-900 text-xl">Loading profile...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white/10 backdrop-blur-lg border-b border-white/20">
+      <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-white">My Profile</h1>
-              <p className="text-gray-300 mt-1">Manage your personal information and PSIRA details</p>
+              <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
+              <p className="text-gray-600 mt-1">Manage your personal information and PSIRA details</p>
             </div>
             <Link
               href="/employee/dashboard"
-              className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-lg transition"
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-900 border border-gray-300 rounded-lg transition"
             >
               ← Back to Dashboard
             </Link>
@@ -188,11 +188,11 @@ export default function EmployeeProfilePage() {
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {error && (
-          <div className="mb-6 bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg">
+          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
             {error}
             <button
               onClick={() => setError("")}
-              className="float-right text-red-200 hover:text-white"
+              className="float-right text-red-200 hover:text-gray-900"
             >
               ×
             </button>
@@ -200,11 +200,11 @@ export default function EmployeeProfilePage() {
         )}
 
         {success && (
-          <div className="mb-6 bg-green-500/20 border border-green-500/50 text-green-200 px-4 py-3 rounded-lg">
+          <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
             {success}
             <button
               onClick={() => setSuccess("")}
-              className="float-right text-green-200 hover:text-white"
+              className="float-right text-green-200 hover:text-gray-900"
             >
               ×
             </button>
@@ -213,51 +213,51 @@ export default function EmployeeProfilePage() {
 
         {/* Profile Card */}
         {profile && (
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 mb-8">
+          <div className="bg-white rounded-xl p-6 shadow-card mb-8">
             <div className="flex items-center">
-              <div className="w-20 h-20 bg-purple-600 rounded-full flex items-center justify-center text-3xl text-white font-bold">
+              <div className="w-20 h-20 bg-purple-600 rounded-full flex items-center justify-center text-3xl text-gray-900 font-bold">
                 {profile.first_name.charAt(0)}{profile.last_name.charAt(0)}
               </div>
               <div className="ml-6">
-                <h2 className="text-2xl font-bold text-white">
+                <h2 className="text-2xl font-bold text-gray-900">
                   {profile.first_name} {profile.last_name}
                 </h2>
-                <p className="text-gray-300">{profile.role.toUpperCase()} - ID: {profile.id_number}</p>
-                <p className="text-gray-400 text-sm">{profile.email}</p>
+                <p className="text-gray-600">{profile.role.toUpperCase()} - ID: {profile.id_number}</p>
+                <p className="text-gray-500 text-sm">{profile.email}</p>
               </div>
             </div>
           </div>
         )}
 
         {/* Tabs */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden">
-          <div className="flex border-b border-white/20">
+        <div className="bg-white rounded-xl shadow-card overflow-hidden">
+          <div className="flex border-b border-gray-200">
             <button
               onClick={() => setActiveTab("personal")}
-              className={`flex-1 px-6 py-4 text-white font-semibold transition ${
+              className={`flex-1 px-6 py-4 text-gray-900 font-semibold transition ${
                 activeTab === "personal"
                   ? "bg-purple-600/30 border-b-2 border-purple-500"
-                  : "hover:bg-white/5"
+                  : "hover:bg-gray-50"
               }`}
             >
               Personal Information
             </button>
             <button
               onClick={() => setActiveTab("psira")}
-              className={`flex-1 px-6 py-4 text-white font-semibold transition ${
+              className={`flex-1 px-6 py-4 text-gray-900 font-semibold transition ${
                 activeTab === "psira"
                   ? "bg-purple-600/30 border-b-2 border-purple-500"
-                  : "hover:bg-white/5"
+                  : "hover:bg-gray-50"
               }`}
             >
               PSIRA Information
             </button>
             <button
               onClick={() => setActiveTab("certificates")}
-              className={`flex-1 px-6 py-4 text-white font-semibold transition ${
+              className={`flex-1 px-6 py-4 text-gray-900 font-semibold transition ${
                 activeTab === "certificates"
                   ? "bg-purple-600/30 border-b-2 border-purple-500"
-                  : "hover:bg-white/5"
+                  : "hover:bg-gray-50"
               }`}
             >
               Certificates
@@ -270,82 +270,82 @@ export default function EmployeeProfilePage() {
               <form onSubmit={handlePersonalUpdate} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       First Name
                     </label>
                     <input
                       type="text"
                       value={personalForm.first_name}
                       onChange={(e) => setPersonalForm({ ...personalForm, first_name: e.target.value })}
-                      className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Last Name
                     </label>
                     <input
                       type="text"
                       value={personalForm.last_name}
                       onChange={(e) => setPersonalForm({ ...personalForm, last_name: e.target.value })}
-                      className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Phone Number
                     </label>
                     <input
                       type="tel"
                       value={personalForm.phone}
                       onChange={(e) => setPersonalForm({ ...personalForm, phone: e.target.value })}
-                      className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
                       placeholder="+27 XX XXX XXXX"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Emergency Contact Name
                     </label>
                     <input
                       type="text"
                       value={personalForm.emergency_contact_name}
                       onChange={(e) => setPersonalForm({ ...personalForm, emergency_contact_name: e.target.value })}
-                      className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Emergency Contact Phone
                     </label>
                     <input
                       type="tel"
                       value={personalForm.emergency_contact_phone}
                       onChange={(e) => setPersonalForm({ ...personalForm, emergency_contact_phone: e.target.value })}
-                      className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-200 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Address
                   </label>
                   <textarea
                     value={personalForm.address}
                     onChange={(e) => setPersonalForm({ ...personalForm, address: e.target.value })}
                     rows={3}
-                    className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition"
+                  className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-gray-900 font-semibold rounded-lg transition"
                 >
                   Update Personal Information
                 </button>
@@ -357,26 +357,26 @@ export default function EmployeeProfilePage() {
               <form onSubmit={handlePsiraUpdate} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       PSIRA Number *
                     </label>
                     <input
                       type="text"
                       value={psiraForm.psira_number}
                       onChange={(e) => setPsiraForm({ ...psiraForm, psira_number: e.target.value })}
-                      className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-purple-500"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       PSIRA Grade *
                     </label>
                     <select
                       value={psiraForm.psira_grade}
                       onChange={(e) => setPsiraForm({ ...psiraForm, psira_grade: e.target.value })}
-                      className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-purple-500"
                       required
                     >
                       <option value="">Select Grade</option>
@@ -389,26 +389,26 @@ export default function EmployeeProfilePage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Expiry Date *
                     </label>
                     <input
                       type="date"
                       value={psiraForm.psira_expiry_date}
                       onChange={(e) => setPsiraForm({ ...psiraForm, psira_expiry_date: e.target.value })}
-                      className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-purple-500"
                       required
                     />
                   </div>
                 </div>
 
-                <div className="bg-yellow-500/20 border border-yellow-500/50 text-yellow-200 px-4 py-3 rounded-lg">
+                <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg">
                   <strong>Important:</strong> Ensure your PSIRA registration is always up to date. You will not be assigned to shifts if your PSIRA is expired.
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition"
+                  className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-gray-900 font-semibold rounded-lg transition"
                 >
                   Update PSIRA Information
                 </button>
@@ -418,22 +418,22 @@ export default function EmployeeProfilePage() {
             {/* Certificates Tab */}
             {activeTab === "certificates" && (
               <div className="space-y-4">
-                <p className="text-gray-300">
+                <p className="text-gray-600">
                   Upload your certificates to keep your profile up to date.
                 </p>
 
                 <div className="border-2 border-dashed border-white/20 rounded-lg p-8 text-center">
                   <div className="text-5xl mb-4">📄</div>
-                  <p className="text-white font-semibold mb-2">Upload Certificate</p>
-                  <p className="text-gray-400 text-sm mb-4">
+                  <p className="text-gray-900 font-semibold mb-2">Upload Certificate</p>
+                  <p className="text-gray-500 text-sm mb-4">
                     Drag and drop files here, or click to browse
                   </p>
-                  <button className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition">
+                  <button className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-gray-900 rounded-lg transition">
                     Browse Files
                   </button>
                 </div>
 
-                <div className="text-gray-400 text-sm">
+                <div className="text-gray-500 text-sm">
                   <p>Supported file types: PDF, JPG, PNG (Max 5MB)</p>
                   <p className="mt-1">Accepted certificates: Training certificates, qualifications, licenses</p>
                 </div>

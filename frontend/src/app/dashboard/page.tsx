@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
+import { Users, Calendar, MapPin, AlertTriangle } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -18,6 +19,9 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import StatCard from "@/components/ui/StatCard";
+import Card from "@/components/ui/Card";
+import Button from "@/components/ui/Button";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -200,186 +204,146 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-        <div className="text-white text-xl">Loading dashboard...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-gray-900 text-xl">Loading dashboard...</div>
       </div>
     );
   }
 
-  const COLORS = ["#8b5cf6", "#ec4899", "#3b82f6", "#10b981", "#f59e0b"];
+  const COLORS = ["#0ea5e9", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6"];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
+    <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8 flex justify-between items-center">
           <div>
-            <h1 className="text-4xl font-bold text-white mb-2">
-              📊 Dashboard
+            <h1 className="text-3xl font-bold text-gray-900 mb-1">
+              Dashboard
             </h1>
-            <p className="text-gray-300">
+            <p className="text-gray-600">
               Real-time insights and analytics for GuardianOS
             </p>
           </div>
-          <Link
-            href="/"
-            className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg transition"
-          >
-            ← Back to Home
+          <Link href="/">
+            <Button variant="secondary">
+              ← Back to Home
+            </Button>
           </Link>
         </div>
 
         {/* Key Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {/* Employees Card */}
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-300 text-sm">Total Employees</p>
-                <p className="text-4xl font-bold text-white mt-2">
-                  {metrics?.employees.total || 0}
-                </p>
-                <p className="text-green-400 text-sm mt-2">
-                  {metrics?.employees.active || 0} Active
-                </p>
-              </div>
-              <div className="text-5xl">👥</div>
-            </div>
-          </div>
-
-          {/* Shifts Card */}
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-300 text-sm">Total Shifts</p>
-                <p className="text-4xl font-bold text-white mt-2">
-                  {metrics?.shifts.total || 0}
-                </p>
-                <p className="text-blue-400 text-sm mt-2">
-                  {metrics?.shifts.fill_rate || 0}% Fill Rate
-                </p>
-              </div>
-              <div className="text-5xl">📅</div>
-            </div>
-          </div>
-
-          {/* Sites Card */}
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-300 text-sm">Active Sites</p>
-                <p className="text-4xl font-bold text-white mt-2">
-                  {metrics?.sites.total || 0}
-                </p>
-                <p className="text-purple-400 text-sm mt-2">Client Locations</p>
-              </div>
-              <div className="text-5xl">📍</div>
-            </div>
-          </div>
-
-          {/* Certifications Card */}
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-300 text-sm">Cert Warnings</p>
-                <p className="text-4xl font-bold text-white mt-2">
-                  {metrics?.certifications.expiring_soon || 0}
-                </p>
-                <p className="text-yellow-400 text-sm mt-2">Expiring Soon</p>
-              </div>
-              <div className="text-5xl">⚠️</div>
-            </div>
-          </div>
+          <StatCard
+            title="Total Employees"
+            value={metrics?.employees.total || 0}
+            subtitle={`${metrics?.employees.active || 0} Active`}
+            icon={Users}
+            color="blue"
+          />
+          <StatCard
+            title="Total Shifts"
+            value={metrics?.shifts.total || 0}
+            subtitle={`${metrics?.shifts.fill_rate || 0}% Fill Rate`}
+            icon={Calendar}
+            color="green"
+          />
+          <StatCard
+            title="Active Sites"
+            value={metrics?.sites.total || 0}
+            subtitle="Client Locations"
+            icon={MapPin}
+            color="purple"
+          />
+          <StatCard
+            title="Cert Warnings"
+            value={metrics?.certifications.expiring_soon || 0}
+            subtitle="Expiring Soon"
+            icon={AlertTriangle}
+            color="orange"
+          />
         </div>
 
         {/* Weekly Summary */}
         {weeklySummary && (
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 mb-8">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              📆 This Week Summary
-            </h2>
+          <Card title="This Week Summary" className="mb-8">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div>
-                <p className="text-gray-300 text-sm">Shifts This Week</p>
-                <p className="text-3xl font-bold text-white mt-1">
+                <p className="text-sm font-medium text-gray-600">Shifts This Week</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">
                   {weeklySummary.shifts.total}
                 </p>
-                <p className="text-green-400 text-sm mt-1">
+                <p className="text-sm text-green-600 mt-1">
                   {weeklySummary.shifts.assigned} Assigned
                 </p>
               </div>
               <div>
-                <p className="text-gray-300 text-sm">Total Cost</p>
-                <p className="text-3xl font-bold text-white mt-1">
+                <p className="text-sm font-medium text-gray-600">Total Cost</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">
                   R{weeklySummary.costs.total.toLocaleString()}
                 </p>
-                <p className="text-blue-400 text-sm mt-1">
+                <p className="text-sm text-blue-600 mt-1">
                   R{weeklySummary.costs.avg_per_shift.toFixed(2)} / shift
                 </p>
               </div>
               <div>
-                <p className="text-gray-300 text-sm">Total Hours</p>
-                <p className="text-3xl font-bold text-white mt-1">
+                <p className="text-sm font-medium text-gray-600">Total Hours</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">
                   {weeklySummary.hours.total.toFixed(1)}h
                 </p>
-                <p className="text-purple-400 text-sm mt-1">
+                <p className="text-sm text-purple-600 mt-1">
                   {weeklySummary.hours.avg_per_employee.toFixed(1)}h / employee
                 </p>
               </div>
               <div>
-                <p className="text-gray-300 text-sm">Employees Used</p>
-                <p className="text-3xl font-bold text-white mt-1">
+                <p className="text-sm font-medium text-gray-600">Employees Used</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">
                   {weeklySummary.employees_utilized}
                 </p>
-                <p className="text-pink-400 text-sm mt-1">Active this week</p>
+                <p className="text-sm text-pink-600 mt-1">Active this week</p>
               </div>
             </div>
-          </div>
+          </Card>
         )}
 
         {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Cost Trends Chart */}
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              💰 Cost Trends (Last 14 Days)
-            </h2>
+          <Card title="Cost Trends (Last 14 Days)">
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={costTrends}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis
                   dataKey="date"
-                  stroke="#fff"
-                  tick={{ fill: "#fff" }}
+                  stroke="#6b7280"
+                  tick={{ fill: "#6b7280" }}
                   tickFormatter={(value) => {
                     const date = new Date(value);
                     return `${date.getMonth() + 1}/${date.getDate()}`;
                   }}
                 />
-                <YAxis stroke="#fff" tick={{ fill: "#fff" }} />
+                <YAxis stroke="#6b7280" tick={{ fill: "#6b7280" }} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "#1e293b",
-                    border: "1px solid #475569",
+                    backgroundColor: "#fff",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "8px",
                   }}
                 />
                 <Legend />
                 <Line
                   type="monotone"
                   dataKey="cost"
-                  stroke="#8b5cf6"
+                  stroke="#0ea5e9"
                   strokeWidth={2}
                   name="Daily Cost (R)"
                 />
               </LineChart>
             </ResponsiveContainer>
-          </div>
+          </Card>
 
           {/* Shift Status Pie Chart */}
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              📊 Shift Status Distribution
-            </h2>
+          <Card title="Shift Status Distribution">
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
@@ -407,85 +371,85 @@ export default function DashboardPage() {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#fff",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "8px",
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
-          </div>
+          </Card>
         </div>
 
         {/* Tables Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Upcoming Shifts */}
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              ⏰ Upcoming Shifts
-            </h2>
+          <Card title="Upcoming Shifts">
             {upcomingShifts.length === 0 ? (
-              <p className="text-gray-400">No upcoming shifts scheduled.</p>
+              <p className="text-gray-500">No upcoming shifts scheduled.</p>
             ) : (
               <div className="space-y-3">
                 {upcomingShifts.map((shift) => (
                   <div
                     key={shift.shift_id}
-                    className="bg-white/5 rounded-lg p-4 border border-white/10 hover:bg-white/10 transition"
+                    className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition"
                   >
                     <div className="flex justify-between items-start mb-2">
-                      <div className="font-semibold text-white">
+                      <div className="font-semibold text-gray-900">
                         {shift.site_name}
                       </div>
-                      <span className="px-2 py-1 bg-blue-500/20 text-blue-300 rounded text-xs">
+                      <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">
                         {shift.status}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-300">
+                    <p className="text-sm text-gray-600">
                       {new Date(shift.start_time).toLocaleString()}
                     </p>
-                    <p className="text-sm text-gray-400">
+                    <p className="text-sm text-gray-500">
                       {shift.employee_name} • {shift.required_skill || "Any"}
                     </p>
                   </div>
                 ))}
               </div>
             )}
-          </div>
+          </Card>
 
           {/* Expiring Certifications */}
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              ⚠️ Expiring Certifications
-            </h2>
+          <Card title="Expiring Certifications">
             {expiringCerts.length === 0 ? (
-              <p className="text-gray-400">No certifications expiring soon.</p>
+              <p className="text-gray-500">No certifications expiring soon.</p>
             ) : (
               <div className="space-y-3">
                 {expiringCerts.slice(0, 5).map((cert) => (
                   <div
                     key={cert.cert_id}
-                    className="bg-white/5 rounded-lg p-4 border border-white/10 hover:bg-white/10 transition"
+                    className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition"
                   >
                     <div className="flex justify-between items-start mb-2">
-                      <div className="font-semibold text-white">
+                      <div className="font-semibold text-gray-900">
                         {cert.employee_name}
                       </div>
                       <span
-                        className={`px-2 py-1 rounded text-xs ${
+                        className={`px-2 py-1 rounded text-xs font-medium ${
                           cert.days_until_expiry <= 7
-                            ? "bg-red-500/20 text-red-300"
-                            : "bg-yellow-500/20 text-yellow-300"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-yellow-100 text-yellow-700"
                         }`}
                       >
                         {cert.days_until_expiry} days
                       </span>
                     </div>
-                    <p className="text-sm text-gray-300">{cert.cert_type}</p>
-                    <p className="text-sm text-gray-400">
+                    <p className="text-sm text-gray-600">{cert.cert_type}</p>
+                    <p className="text-sm text-gray-500">
                       Expires: {new Date(cert.expiry_date).toLocaleDateString()}
                     </p>
                   </div>
                 ))}
               </div>
             )}
-          </div>
+          </Card>
         </div>
 
         {/* Quick Actions */}
