@@ -1,14 +1,13 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
 import { certificationsApi, employeesApi } from '@/services/api'
 import { Certification, Employee } from '@/types'
 import CertificationForm from '@/components/CertificationForm'
 import ExportButtons from '@/components/ExportButtons'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 export default function CertificationsPage() {
-  const router = useRouter()
   const [certifications, setCertifications] = useState<Certification[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
@@ -151,29 +150,23 @@ export default function CertificationsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading certifications...</div>
-      </div>
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-lg">Loading certifications...</div>
+        </div>
+      </DashboardLayout>
     )
   }
 
   return (
-    <div className="min-h-screen p-8 bg-gray-50">
+    <DashboardLayout>
       <div className="max-w-7xl mx-auto">
-        <div className="mb-4">
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="flex items-center text-gray-600 hover:text-gray-900"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back to Dashboard
-          </button>
-        </div>
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Certifications Management</h1>
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">Certifications Management</h1>
+            <p className="text-gray-600">Track and manage employee certifications and licenses</p>
+          </div>
           <div className="flex items-center gap-3">
             <ExportButtons type="certifications" />
             <button
@@ -510,14 +503,14 @@ export default function CertificationsPage() {
           </div>
         )}
 
-        {showForm && (
-          <CertificationForm
-            certification={editingCertification}
-            onClose={handleCloseForm}
-            onSuccess={handleFormSuccess}
-          />
-        )}
+      {showForm && (
+        <CertificationForm
+          certification={editingCertification}
+          onClose={handleCloseForm}
+          onSuccess={handleFormSuccess}
+        />
+      )}
       </div>
-    </div>
+    </DashboardLayout>
   )
 }

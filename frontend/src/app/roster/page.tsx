@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 import { rosterApi } from '@/services/api'
 import ExportButtons from '@/components/ExportButtons'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 // Job status type
 type JobStatus = 'PENDING' | 'STARTED' | 'PROGRESS' | 'SUCCESS' | 'FAILURE'
@@ -20,7 +20,6 @@ interface JobStatusResponse {
 }
 
 export default function RosterPage() {
-  const router = useRouter()
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [loading, setLoading] = useState(false)
@@ -234,20 +233,12 @@ export default function RosterPage() {
         </div>
       )}
 
-      <div className="min-h-screen p-8">
+      <DashboardLayout>
         <div className="max-w-7xl mx-auto">
-        <div className="mb-4">
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="flex items-center text-gray-600 hover:text-gray-900"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back to Dashboard
-          </button>
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Roster Generation</h1>
+          <p className="text-gray-600">AI-powered shift optimization and scheduling</p>
         </div>
-        <h1 className="text-3xl font-bold mb-8">Roster Generation</h1>
 
         {/* Generation Form */}
         <div className="bg-white shadow-md rounded-lg p-6 mb-8">
@@ -532,7 +523,7 @@ export default function RosterPage() {
           </div>
         )}
         </div>
-      </div>
+      </DashboardLayout>
     </>
   )
 }
