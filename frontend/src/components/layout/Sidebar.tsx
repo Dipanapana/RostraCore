@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
+  Briefcase,
   MapPin,
   Calendar,
   ClipboardList,
@@ -31,6 +32,11 @@ const menuItems: NavItem[] = [
     name: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
+  },
+  {
+    name: "Clients",
+    href: "/clients",
+    icon: Briefcase,
   },
   {
     name: "Employees",

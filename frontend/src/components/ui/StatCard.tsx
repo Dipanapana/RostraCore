@@ -11,28 +11,34 @@ interface StatCardProps {
   }
   subtitle?: string
   color?: 'blue' | 'green' | 'orange' | 'red' | 'purple'
+  progress?: number // 0-100 percentage
 }
 
 const colorClasses = {
   blue: {
     icon: 'bg-blue-50 text-blue-600',
     trend: 'text-blue-600',
+    progress: 'bg-blue-600',
   },
   green: {
     icon: 'bg-green-50 text-green-600',
     trend: 'text-green-600',
+    progress: 'bg-green-600',
   },
   orange: {
     icon: 'bg-orange-50 text-orange-600',
     trend: 'text-orange-600',
+    progress: 'bg-orange-600',
   },
   red: {
     icon: 'bg-red-50 text-red-600',
     trend: 'text-red-600',
+    progress: 'bg-red-600',
   },
   purple: {
     icon: 'bg-purple-50 text-purple-600',
     trend: 'text-purple-600',
+    progress: 'bg-purple-600',
   },
 }
 
@@ -43,6 +49,7 @@ export default function StatCard({
   trend,
   subtitle,
   color = 'blue',
+  progress,
 }: StatCardProps) {
   const colors = colorClasses[color]
 
@@ -54,6 +61,16 @@ export default function StatCard({
           <p className="text-3xl font-bold text-gray-900">{value}</p>
           {subtitle && (
             <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
+          )}
+          {progress !== undefined && (
+            <div className="mt-3">
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full transition-all ${colors.progress}`}
+                  style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+                />
+              </div>
+            </div>
           )}
           {trend && (
             <div className="mt-2 flex items-center">

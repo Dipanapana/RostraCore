@@ -234,7 +234,7 @@ export default function DashboardPage() {
             value={metrics?.employees.total || 0}
             subtitle={`${metrics?.employees.active || 0} Active`}
             icon={Users}
-            color="blue"
+            color="green"
           />
           <StatCard
             title="Total Shifts"
@@ -242,6 +242,7 @@ export default function DashboardPage() {
             subtitle={`${metrics?.shifts.fill_rate || 0}% Fill Rate`}
             icon={Calendar}
             color="green"
+            progress={metrics?.shifts.fill_rate || 0}
           />
           <StatCard
             title="Active Sites"
@@ -303,8 +304,8 @@ export default function DashboardPage() {
 
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Cost Trends Chart */}
-          <Card title="Cost Trends (Last 14 Days)">
+          {/* Project Analysis Chart */}
+          <Card title="Project Analysis">
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={costTrends}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -378,10 +379,10 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Tables Row */}
+        {/* Project List & Team Collaboration */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Upcoming Shifts */}
-          <Card title="Upcoming Shifts">
+          {/* Shifts List */}
+          <Card title="Shifts">
             {upcomingShifts.length === 0 ? (
               <p className="text-gray-500">No upcoming shifts scheduled.</p>
             ) : (
@@ -411,8 +412,8 @@ export default function DashboardPage() {
             )}
           </Card>
 
-          {/* Expiring Certifications */}
-          <Card title="Expiring Certifications">
+          {/* Team Collaboration - Expiring Certifications */}
+          <Card title="Team Collaboration">
             {expiringCerts.length === 0 ? (
               <p className="text-gray-500">No certifications expiring soon.</p>
             ) : (
