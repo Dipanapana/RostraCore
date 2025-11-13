@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Link from "next/link";
 import { Users, Calendar, MapPin, AlertTriangle } from "lucide-react";
 import {
   LineChart,
