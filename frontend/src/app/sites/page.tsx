@@ -66,9 +66,9 @@ export default function SitesPage() {
     return sites.filter(site => {
       const searchLower = searchTerm.toLowerCase()
       return (
-        site.site_name.toLowerCase().includes(searchLower) ||
-        site.client_name.toLowerCase().includes(searchLower) ||
-        site.address.toLowerCase().includes(searchLower) ||
+        (site.site_name?.toLowerCase().includes(searchLower)) ||
+        (site.client_name?.toLowerCase().includes(searchLower)) ||
+        (site.address?.toLowerCase().includes(searchLower)) ||
         (site.required_skill?.toLowerCase().includes(searchLower)) ||
         (site.shift_pattern?.toLowerCase().includes(searchLower))
       )
@@ -170,17 +170,17 @@ export default function SitesPage() {
             currentSites.map((site) => (
               <div key={site.site_id} className="bg-white shadow-md rounded-lg p-6 hover:shadow-lg transition-shadow">
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-xl font-semibold text-gray-900">{site.site_name}</h3>
+                  <h3 className="text-xl font-semibold text-gray-900">{site.site_name || 'Unnamed Site'}</h3>
                   <span className="text-sm text-gray-500">#{site.site_id}</span>
                 </div>
                 <div className="mb-4">
-                  <span className="text-sm text-gray-500 italic">{site.client_name}</span>
+                  <span className="text-sm text-gray-500 italic">{site.client_name || 'No client'}</span>
                 </div>
 
                 <div className="space-y-2 mb-4">
                   <div className="flex items-start">
                     <span className="text-gray-600 text-sm">
-                      <strong>Address:</strong> {site.address}
+                      <strong>Address:</strong> {site.address || 'No address provided'}
                     </span>
                   </div>
 
