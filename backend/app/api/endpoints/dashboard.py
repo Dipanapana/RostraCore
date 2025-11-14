@@ -12,6 +12,7 @@ from app.models.shift import Shift, ShiftStatus
 from app.models.site import Site
 from app.models.certification import Certification
 from app.models.availability import Availability
+from app.models.user import User
 from app.services.cache_service import cached, CacheService
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
@@ -32,7 +33,12 @@ def get_dashboard_metrics(db: Session = Depends(get_db)) -> Dict:
     cached_metrics = CacheService.get(cache_key)
     if cached_metrics:
         return cached_metrics
-    # Employee Metrics
+
+    # User Metrics (authentication accounts)
+    total_users = db.query(User).count()
+    active_users = db.query(User).filter(User.is_active == True).count()
+
+    # Employee Metrics (security guards)
     total_employees = db.query(Employee).count()
     active_employees = db.query(Employee).filter(
         Employee.status == EmployeeStatus.ACTIVE
@@ -84,6 +90,10 @@ def get_dashboard_metrics(db: Session = Depends(get_db)) -> Dict:
     fill_rate = (assigned_shifts / total_shifts * 100) if total_shifts > 0 else 0
 
     metrics = {
+        "users": {
+            "total": total_users,
+            "active": active_users
+        },
         "employees": {
             "total": total_employees,
             "active": active_employees,

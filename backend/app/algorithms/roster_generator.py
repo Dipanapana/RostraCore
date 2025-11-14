@@ -27,7 +27,7 @@ class RosterGenerator:
         self.max_hours_week = settings.MAX_HOURS_WEEK
         self.min_rest_hours = settings.MIN_REST_HOURS
         self.ot_multiplier = settings.OT_MULTIPLIER
-        self.max_distance_km = settings.MAX_DISTANCE_KM
+        # NOTE: max_distance_km removed - distance constraints disabled
 
     def generate_roster(
         self,
@@ -193,14 +193,13 @@ class RosterGenerator:
             for shift in shifts:
                 shift_id = shift["shift_id"]
 
-                # Check all constraints
+                # Check all constraints (NOTE: Distance check removed - guards can work anywhere)
                 if self._check_skill_match(employee, shift):
                     if self._check_certification_valid(employee, shift):
                         if self._check_availability(employee, shift):
                             if self._check_hour_limits(employee, shift, current_hours):
                                 if self._check_rest_period(employee, shift):
-                                    if self._check_distance(employee, shift):
-                                        feasible_pairs.append((employee_id, shift_id))
+                                    feasible_pairs.append((employee_id, shift_id))
 
         return feasible_pairs
 
@@ -293,7 +292,9 @@ class RosterGenerator:
         """
         Calculate cost of assigning employee to shift.
 
-        Cost = (hourly_rate × hours) + distance_penalty
+        Cost = (hourly_rate × hours)
+
+        NOTE: Distance penalty removed - distance no longer affects cost
 
         Args:
             employee: Employee dict
@@ -305,11 +306,7 @@ class RosterGenerator:
         hours = self._calculate_shift_hours(shift)
         base_cost = employee["hourly_rate"] * hours
 
-        # Add distance penalty (optional)
-        distance = self._calculate_distance(employee, shift)
-        distance_penalty = distance * 0.1  # R0.10 per km
-
-        return base_cost + distance_penalty
+        return base_cost
 
     def _calculate_shift_hours(self, shift: Dict) -> float:
         """Calculate duration of shift in hours."""

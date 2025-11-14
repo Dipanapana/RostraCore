@@ -58,7 +58,14 @@ async def list_clients(
     offset: int = 0,
     db: Session = Depends(get_db)
 ):
-    """List all clients with optional filtering."""
+    """
+    List all clients with optional filtering.
+
+    NOTE: This endpoint does NOT require authentication to allow
+    public access for marketplace/directory features.
+    If you want to restrict to authenticated users only, add:
+    current_user: User = Depends(get_current_user)
+    """
     query = db.query(Client)
 
     if org_id:

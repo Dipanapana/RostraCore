@@ -26,6 +26,10 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 interface DashboardMetrics {
+  users: {
+    total: number;
+    active: number;
+  };
   employees: {
     total: number;
     active: number;
@@ -249,9 +253,16 @@ export default function DashboardPage() {
         {/* Key Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
+            title="Total Users"
+            value={metrics?.users.total || 0}
+            subtitle={`${metrics?.users.active || 0} Active`}
+            icon={Users}
+            color="blue"
+          />
+          <StatCard
             title="Total Employees"
             value={metrics?.employees.total || 0}
-            subtitle={`${metrics?.employees.active || 0} Active`}
+            subtitle={`${metrics?.employees.active || 0} Active Guards`}
             icon={Users}
             color="green"
           />
@@ -270,6 +281,10 @@ export default function DashboardPage() {
             icon={MapPin}
             color="purple"
           />
+        </div>
+
+        {/* Secondary Metrics Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
             title="Cert Warnings"
             value={metrics?.certifications.expiring_soon || 0}
@@ -277,6 +292,45 @@ export default function DashboardPage() {
             icon={AlertTriangle}
             color="orange"
           />
+          <div className="bg-white p-6 rounded-lg shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Expired Certs</p>
+                <p className="text-2xl font-bold text-red-600 mt-2">
+                  {metrics?.certifications.expired || 0}
+                </p>
+              </div>
+              <div className="p-3 bg-red-100 rounded-lg">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Unassigned Shifts</p>
+                <p className="text-2xl font-bold text-amber-600 mt-2">
+                  {metrics?.shifts.unassigned || 0}
+                </p>
+              </div>
+              <div className="p-3 bg-amber-100 rounded-lg">
+                <Calendar className="w-6 h-6 text-amber-600" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Upcoming Shifts</p>
+                <p className="text-2xl font-bold text-blue-600 mt-2">
+                  {metrics?.shifts.upcoming || 0}
+                </p>
+              </div>
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <Calendar className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Weekly Summary */}

@@ -39,17 +39,11 @@ class OptimizationConfig:
     num_workers: int = 8
     fairness_weight: float = 0.2
     cost_weight: float = 1.0
-    distance_penalty_per_km: float = 2.0
     night_premium_per_hour: float = 20.0
     weekend_premium_per_hour: float = 30.0
-    max_distance_km: float = None  # Will use settings.MAX_DISTANCE_KM if None
     enable_emergency_mode: bool = False
     locked_assignments: Optional[Dict[Tuple[int, int], bool]] = None
-
-    def __post_init__(self):
-        """Set defaults from settings if not provided"""
-        if self.max_distance_km is None:
-            self.max_distance_km = settings.MAX_DISTANCE_KM
+    # NOTE: Distance constraints have been removed - guards can be assigned regardless of distance
 
 
 @dataclass
@@ -69,10 +63,11 @@ class ProductionRosterOptimizer:
     - BCEA compliance (48h weekly, 8h rest, meal breaks)
     - PSIRA certification validation
     - Skills and certification matching
-    - Distance-based assignment
     - Fairness and workload balancing
     - Emergency re-optimization support
     - Comprehensive diagnostics and logging
+
+    NOTE: Distance constraints removed - guards can be assigned regardless of location
     """
 
     def __init__(
@@ -264,15 +259,12 @@ class ProductionRosterOptimizer:
             if not self._check_availability(emp, shift):
                 reasons.append("Employee not available during shift time")
 
-        # 4. Check distance
-        distance_km = self._calculate_distance(emp, shift)
-        if distance_km > self.config.max_distance_km:
-            reasons.append(f"Distance {distance_km:.1f}km exceeds max {self.config.max_distance_km}km")
+        # NOTE: Distance checking removed - guards can be assigned regardless of distance
 
         # Calculate cost if feasible
         cost = 0.0
         if not reasons:
-            cost = self._calculate_assignment_cost(emp, shift, distance_km)
+            cost = self._calculate_assignment_cost(emp, shift)
 
         return FeasibilityCheck(
             is_feasible=len(reasons) == 0,
@@ -383,7 +375,7 @@ class ProductionRosterOptimizer:
 
         return km
 
-    def _calculate_assignment_cost(self, emp: Employee, shift: Shift, distance_km: float) -> float:
+    def _calculate_assignment_cost(self, emp: Employee, shift: Shift) -> float:
         """Calculate total cost for an assignment"""
 
         # Base labor cost
@@ -398,10 +390,9 @@ class ProductionRosterOptimizer:
         if shift.start_time.weekday() >= 5:  # Saturday=5, Sunday=6
             base_cost += self.config.weekend_premium_per_hour * hours
 
-        # Travel cost
-        travel_cost = distance_km * self.config.distance_penalty_per_km
+        # NOTE: Travel cost removed - distance no longer affects cost
 
-        return base_cost + travel_cost
+        return base_cost
 
     def _create_variables(self):
         """Create all CP-SAT decision variables"""
