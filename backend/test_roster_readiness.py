@@ -65,17 +65,16 @@ def test_roster_readiness():
         # Check 3: Sites
         print("\n[3/7] Checking sites...")
         total_sites = db.query(Site).count()
-        active_sites = db.query(Site).filter(Site.is_active == True).count()
 
         if total_sites == 0:
             issues_found.append("❌ NO SITES: Cannot generate roster without sites")
             print(f"    ❌ No sites found!")
         else:
-            print(f"    ✅ {active_sites} active sites (out of {total_sites} total)")
+            print(f"    ✅ {total_sites} sites found")
 
             # Show sample sites
-            sample_sites = db.query(Site).filter(Site.is_active == True).limit(3).all()
-            print("\n    Sample active sites:")
+            sample_sites = db.query(Site).limit(3).all()
+            print("\n    Sample sites:")
             for site in sample_sites:
                 print(f"      - {site.site_name or site.client_name}")
                 print(f"        ID: {site.site_id}, Min Staff: {site.min_staff}")
