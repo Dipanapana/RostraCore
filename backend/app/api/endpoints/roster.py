@@ -17,6 +17,8 @@ from app.services.cache_service import CacheInvalidator
 from app.config import settings
 from app.models.site import Site
 from app.models.client import Client
+from app.models.user import User
+from app.api.deps import get_current_user
 
 router = APIRouter()
 
@@ -25,7 +27,8 @@ router = APIRouter()
 async def generate_roster(
     request: RosterGenerateRequest,
     algorithm: Optional[str] = Query("production", description="Algorithm: 'production', 'hungarian', 'milp', 'auto'"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """
     Generate optimized roster using algorithmic approach.

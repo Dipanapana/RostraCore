@@ -26,7 +26,8 @@ class EmployeeBase(BaseModel):
 
 
 class EmployeeCreate(EmployeeBase):
-    pass
+    org_id: Optional[int] = None  # Set automatically from current user if not provided
+    assigned_client_id: Optional[int] = None  # Optional client assignment
 
 
 class EmployeeUpdate(BaseModel):
@@ -42,10 +43,13 @@ class EmployeeUpdate(BaseModel):
     status: Optional[EmployeeStatus] = None
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
+    assigned_client_id: Optional[int] = None  # Allow updating client assignment
 
 
 class EmployeeResponse(EmployeeBase):
     employee_id: int
+    org_id: int  # Include organization in response
+    assigned_client_id: Optional[int] = None  # Include client assignment in response
 
     class Config:
         from_attributes = True

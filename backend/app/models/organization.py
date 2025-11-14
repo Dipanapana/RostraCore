@@ -81,6 +81,7 @@ class Organization(Base):
 
     # Relationships
     users = relationship("User", back_populates="organization")
+    employees = relationship("Employee", back_populates="organization")
     clients = relationship("Client", back_populates="organization")
     marketplace_commissions = relationship("MarketplaceCommission", back_populates="organization")
     bulk_packages = relationship("BulkHiringPackage", back_populates="organization")

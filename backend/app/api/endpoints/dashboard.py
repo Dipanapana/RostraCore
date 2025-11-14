@@ -13,49 +13,75 @@ from app.models.site import Site
 from app.models.certification import Certification
 from app.models.availability import Availability
 from app.models.user import User
+from app.models.client import Client
 from app.services.cache_service import cached, CacheService
+from app.api.deps import get_current_user
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
 
 @router.get("/metrics")
-def get_dashboard_metrics(db: Session = Depends(get_db)) -> Dict:
+def get_dashboard_metrics(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> Dict:
     """
-    Get comprehensive dashboard metrics.
+    Get comprehensive dashboard metrics filtered by organization.
 
     **Cached for 5 minutes** - Significantly improves dashboard load time
 
     Returns:
         Dict with all key metrics for dashboard display
     """
-    # Check cache first
-    cache_key = "dashboard:metrics:all"
+    # Get organization ID from current user
+    org_id = current_user.org_id
+    if not org_id:
+        # Fallback for users without organization (superadmin)
+        org_id = 1
+
+    # Check cache first (include org_id in cache key for multi-tenancy)
+    cache_key = f"dashboard:metrics:org_{org_id}"
     cached_metrics = CacheService.get(cache_key)
     if cached_metrics:
         return cached_metrics
 
-    # User Metrics (authentication accounts)
-    total_users = db.query(User).count()
-    active_users = db.query(User).filter(User.is_active == True).count()
+    # User Metrics (authentication accounts) - filtered by organization
+    total_users = db.query(User).filter(User.org_id == org_id).count()
+    active_users = db.query(User).filter(
+        User.org_id == org_id,
+        User.is_active == True
+    ).count()
 
-    # Employee Metrics (security guards)
-    total_employees = db.query(Employee).count()
+    # Employee Metrics (security guards) - filtered by organization
+    total_employees = db.query(Employee).filter(Employee.org_id == org_id).count()
     active_employees = db.query(Employee).filter(
+        Employee.org_id == org_id,
         Employee.status == EmployeeStatus.ACTIVE
     ).count()
     inactive_employees = total_employees - active_employees
 
-    # Shift Metrics
-    total_shifts = db.query(Shift).count()
+    # Shift Metrics - filtered by organization through sites
+    # Get all sites belonging to clients in this organization
+    org_site_ids = db.query(Site.site_id).join(Client).filter(
+        Client.org_id == org_id
+    ).subquery()
+
+    total_shifts = db.query(Shift).filter(
+        Shift.site_id.in_(org_site_ids)
+    ).count()
+
     upcoming_shifts = db.query(Shift).filter(
+        Shift.site_id.in_(org_site_ids),
         Shift.start_time > datetime.now()
     ).count()
 
     assigned_shifts = db.query(Shift).filter(
+        Shift.site_id.in_(org_site_ids),
         Shift.assigned_employee_id != None
     ).count()
 
     unassigned_shifts = db.query(Shift).filter(
+        Shift.site_id.in_(org_site_ids),
         Shift.assigned_employee_id == None
     ).count()
 
@@ -66,25 +92,32 @@ def get_dashboard_metrics(db: Session = Depends(get_db)) -> Dict:
     end_of_week = start_of_week + timedelta(days=7)
 
     shifts_this_week = db.query(Shift).filter(
+        Shift.site_id.in_(org_site_ids),
         Shift.start_time >= start_of_week,
         Shift.start_time < end_of_week
     ).count()
 
-    # Site Metrics
-    total_sites = db.query(Site).count()
+    # Site Metrics - filtered by organization
+    total_sites = db.query(Site).join(Client).filter(
+        Client.org_id == org_id
+    ).count()
 
-    # Certification Expiry Warnings
-    expiring_soon = db.query(Certification).filter(
+    # Certification Expiry Warnings - filtered by organization through employees
+    expiring_soon = db.query(Certification).join(Employee).filter(
+        Employee.org_id == org_id,
         Certification.expiry_date <= datetime.now().date() + timedelta(days=30),
         Certification.expiry_date > datetime.now().date()
     ).count()
 
-    expired_certifications = db.query(Certification).filter(
+    expired_certifications = db.query(Certification).join(Employee).filter(
+        Employee.org_id == org_id,
         Certification.expiry_date <= datetime.now().date()
     ).count()
 
-    # Availability Stats
-    total_availability_records = db.query(Availability).count()
+    # Availability Stats - filtered by organization through employees
+    total_availability_records = db.query(Availability).join(Employee).filter(
+        Employee.org_id == org_id
+    ).count()
 
     # Calculate fill rate
     fill_rate = (assigned_shifts / total_shifts * 100) if total_shifts > 0 else 0
@@ -128,26 +161,38 @@ def get_dashboard_metrics(db: Session = Depends(get_db)) -> Dict:
 @router.get("/upcoming-shifts")
 def get_upcoming_shifts(
     limit: int = 10,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ) -> List[Dict]:
     """
-    Get upcoming shifts for dashboard display.
+    Get upcoming shifts for dashboard display (filtered by organization).
 
     **Cached for 2 minutes** - Reduces database load
 
     Args:
         limit: Maximum number of shifts to return
         db: Database session
+        current_user: Current authenticated user
 
     Returns:
         List of upcoming shifts with details
     """
-    # Check cache
-    cache_key = f"dashboard:upcoming_shifts:{limit}"
+    # Get organization ID
+    org_id = current_user.org_id or 1
+
+    # Check cache (include org_id)
+    cache_key = f"dashboard:upcoming_shifts:org_{org_id}:{limit}"
     cached_shifts = CacheService.get(cache_key)
     if cached_shifts:
         return cached_shifts
+
+    # Get shifts for sites in this organization
+    org_site_ids = db.query(Site.site_id).join(Client).filter(
+        Client.org_id == org_id
+    ).subquery()
+
     shifts = db.query(Shift).filter(
+        Shift.site_id.in_(org_site_ids),
         Shift.start_time > datetime.now()
     ).order_by(Shift.start_time).limit(limit).all()
 
@@ -173,21 +218,25 @@ def get_upcoming_shifts(
 @router.get("/expiring-certifications")
 def get_expiring_certifications(
     days_ahead: int = 30,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ) -> List[Dict]:
     """
-    Get certifications expiring soon.
+    Get certifications expiring soon (filtered by organization).
 
     Args:
         days_ahead: Number of days to look ahead
         db: Database session
+        current_user: Current authenticated user
 
     Returns:
         List of expiring certifications
     """
+    org_id = current_user.org_id or 1
     expiry_threshold = datetime.now().date() + timedelta(days=days_ahead)
 
-    certs = db.query(Certification).filter(
+    certs = db.query(Certification).join(Employee).filter(
+        Employee.org_id == org_id,
         Certification.expiry_date <= expiry_threshold,
         Certification.expiry_date > datetime.now().date()
     ).order_by(Certification.expiry_date).all()
@@ -209,22 +258,31 @@ def get_expiring_certifications(
 @router.get("/cost-trends")
 def get_cost_trends(
     days: int = 30,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ) -> Dict:
     """
-    Get cost trends for the specified period.
+    Get cost trends for the specified period (filtered by organization).
 
     Args:
         days: Number of days to analyze
         db: Database session
+        current_user: Current authenticated user
 
     Returns:
         Cost trend data
     """
+    org_id = current_user.org_id or 1
     start_date = datetime.now() - timedelta(days=days)
+
+    # Get shifts for sites in this organization
+    org_site_ids = db.query(Site.site_id).join(Client).filter(
+        Client.org_id == org_id
+    ).subquery()
 
     # Query shifts in the period
     shifts = db.query(Shift).filter(
+        Shift.site_id.in_(org_site_ids),
         Shift.start_time >= start_date,
         Shift.assigned_employee_id != None
     ).all()
@@ -268,22 +326,26 @@ def get_cost_trends(
 @router.get("/employee-utilization")
 def get_employee_utilization(
     days: int = 30,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ) -> List[Dict]:
     """
-    Get employee utilization statistics.
+    Get employee utilization statistics (filtered by organization).
 
     Args:
         days: Number of days to analyze
         db: Database session
+        current_user: Current authenticated user
 
     Returns:
         Employee utilization data
     """
+    org_id = current_user.org_id or 1
     start_date = datetime.now() - timedelta(days=days)
 
-    # Get all active employees
+    # Get all active employees in this organization
     employees = db.query(Employee).filter(
+        Employee.org_id == org_id,
         Employee.status == EmployeeStatus.ACTIVE
     ).all()
 
@@ -318,17 +380,26 @@ def get_employee_utilization(
 
 
 @router.get("/site-coverage")
-def get_site_coverage(db: Session = Depends(get_db)) -> List[Dict]:
+def get_site_coverage(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> List[Dict]:
     """
-    Get coverage statistics per site.
+    Get coverage statistics per site (filtered by organization).
 
     Args:
         db: Database session
+        current_user: Current authenticated user
 
     Returns:
         Site coverage data
     """
-    sites = db.query(Site).all()
+    org_id = current_user.org_id or 1
+
+    # Get sites for clients in this organization
+    sites = db.query(Site).join(Client).filter(
+        Client.org_id == org_id
+    ).all()
 
     coverage_data = []
 
@@ -367,23 +438,34 @@ def get_site_coverage(db: Session = Depends(get_db)) -> List[Dict]:
 
 
 @router.get("/weekly-summary")
-def get_weekly_summary(db: Session = Depends(get_db)) -> Dict:
+def get_weekly_summary(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> Dict:
     """
-    Get summary statistics for the current week.
+    Get summary statistics for the current week (filtered by organization).
 
     Args:
         db: Database session
+        current_user: Current authenticated user
 
     Returns:
         Weekly summary data
     """
+    org_id = current_user.org_id or 1
     today = datetime.now()
     start_of_week = today - timedelta(days=today.weekday())
     start_of_week = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
     end_of_week = start_of_week + timedelta(days=7)
 
+    # Get shifts for sites in this organization
+    org_site_ids = db.query(Site.site_id).join(Client).filter(
+        Client.org_id == org_id
+    ).subquery()
+
     # Shifts this week
     shifts_this_week = db.query(Shift).filter(
+        Shift.site_id.in_(org_site_ids),
         Shift.start_time >= start_of_week,
         Shift.start_time < end_of_week
     ).all()

@@ -73,10 +73,12 @@ class ProductionRosterOptimizer:
     def __init__(
         self,
         db: Session,
-        config: Optional[OptimizationConfig] = None
+        config: Optional[OptimizationConfig] = None,
+        org_id: Optional[int] = None
     ):
         self.db = db
         self.config = config or OptimizationConfig()
+        self.org_id = org_id  # Organization ID for multi-tenancy filtering
 
         # CP-SAT components
         self.model = cp_model.CpModel()
@@ -211,10 +213,16 @@ class ProductionRosterOptimizer:
                 self.weeks.append(week_num)
             current_date += timedelta(days=1)
 
-        # Load active employees
-        self.employees = self.db.query(Employee).filter(
+        # Load active employees (filtered by organization if multi-tenancy is enabled)
+        employee_query = self.db.query(Employee).filter(
             Employee.status == EmployeeStatus.ACTIVE
-        ).all()
+        )
+
+        if self.org_id is not None:
+            employee_query = employee_query.filter(Employee.org_id == self.org_id)
+            logger.info(f"Filtering employees by organization ID: {self.org_id}")
+
+        self.employees = employee_query.all()
         logger.info(f"Loaded {len(self.employees)} active employees")
 
         # Load sites
