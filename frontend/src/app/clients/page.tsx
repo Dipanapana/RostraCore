@@ -85,7 +85,14 @@ export default function ClientsPage() {
   }, [clients, filterStartDate, filterEndDate]);
 
   const fetchClients = async () => {
-    if (!token) return;
+    if (!token) {
+      console.log("[CLIENTS] No token available, waiting for auth...");
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    console.log("[CLIENTS] Fetching clients with token...");
 
     try {
       const response = await fetch(
@@ -95,16 +102,24 @@ export default function ClientsPage() {
         }
       );
 
+      console.log("[CLIENTS] Response status:", response.status);
+
       if (response.ok) {
         const data = await response.json();
+        console.log("[CLIENTS] Fetched", data.length, "clients");
         setClients(data);
+        setError("");
       } else {
-        setError("Failed to fetch clients");
+        const errorText = await response.text();
+        console.error("[CLIENTS] Error response:", errorText);
+        setError(`Failed to fetch clients: ${response.status} ${response.statusText}`);
       }
     } catch (err: any) {
+      console.error("[CLIENTS] Fetch error:", err);
       setError(err.message || "Failed to fetch clients");
     } finally {
       setLoading(false);
+      console.log("[CLIENTS] Fetch complete, loading=false");
     }
   };
 
