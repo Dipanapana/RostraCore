@@ -26,7 +26,7 @@ class MILPRosterGenerator:
         self.max_hours_week = settings.MAX_HOURS_WEEK
         self.min_rest_hours = settings.MIN_REST_HOURS
         self.ot_multiplier = settings.OT_MULTIPLIER
-        self.max_distance_km = settings.MAX_DISTANCE_KM
+        # NOTE: max_distance_km removed - distance constraints disabled
         self.fairness_weight = getattr(settings, 'FAIRNESS_WEIGHT', 0.2)
         self.time_limit_seconds = getattr(settings, 'MILP_TIME_LIMIT', 60)
 
@@ -223,33 +223,16 @@ class MILPRosterGenerator:
                     feasible = False
                     reasons.append("invalid_certification")
 
-                # 3. Distance constraint
-                if employee.get("home_gps_lat") and shift.get("site"):
-                    if shift["site"].get("gps_lat"):
-                        distance = calculate_haversine_distance(
-                            employee["home_gps_lat"],
-                            employee["home_gps_lng"],
-                            shift["site"]["gps_lat"],
-                            shift["site"]["gps_lng"]
-                        )
-                        if distance > self.max_distance_km:
-                            feasible = False
-                            reasons.append("too_far")
-                    else:
-                        distance = 0.0
-                else:
-                    distance = 0.0
+                # NOTE: Distance constraint removed - guards can work anywhere
 
                 # Calculate cost (even if not feasible, for analysis)
                 shift_hours = shift["hours"]
                 labor_cost = employee["hourly_rate"] * shift_hours
-                distance_penalty = distance * 0.1  # R0.10 per km
-                total_cost = int(labor_cost + distance_penalty)  # CP-SAT requires int
+                total_cost = int(labor_cost)  # CP-SAT requires int
 
                 feasibility[(emp_idx, shift_idx)] = {
                     "feasible": feasible,
                     "cost": total_cost,
-                    "distance": distance,
                     "reasons": reasons if not feasible else []
                 }
 

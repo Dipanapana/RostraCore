@@ -73,8 +73,7 @@ async def generate_roster(
                 db,
                 config=OptimizationConfig(
                     time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 120),
-                    fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2),
-                    max_distance_km=getattr(settings, 'MAX_DISTANCE_KM', 50.0)
+                    fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2)
                 )
             )
             result = optimizer.optimize(
@@ -344,8 +343,7 @@ async def generate_roster_for_client(
                 db,
                 config=OptimizationConfig(
                     time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 120),
-                    fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2),
-                    max_distance_km=getattr(settings, 'MAX_DISTANCE_KM', 50.0)
+                    fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2)
                 )
             )
             result = optimizer.optimize(
