@@ -25,6 +25,13 @@ class Employee(Base):
     __tablename__ = "employees"
 
     employee_id = Column(Integer, primary_key=True, index=True)
+
+    # Multi-tenancy: Employee belongs to an organization
+    org_id = Column(Integer, ForeignKey("organizations.org_id", ondelete="CASCADE"), nullable=False, index=True)
+
+    # Optional: Employee can be primarily assigned to a specific client
+    assigned_client_id = Column(Integer, ForeignKey("clients.client_id", ondelete="SET NULL"), nullable=True, index=True)
+
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
     id_number = Column(String(50), unique=True, nullable=False, index=True)
@@ -62,6 +69,8 @@ class Employee(Base):
     marketplace_applicant_id = Column(Integer, ForeignKey("guard_applicants.applicant_id", ondelete="SET NULL"), nullable=True)
 
     # Relationships
+    organization = relationship("Organization", back_populates="employees")
+    assigned_client = relationship("Client", foreign_keys=[assigned_client_id], backref="assigned_employees")
     shifts = relationship("Shift", back_populates="employee")
     certifications = relationship("Certification", back_populates="employee")
     availability = relationship("Availability", back_populates="employee")
