@@ -10,7 +10,7 @@ from app.models.organization import Organization, SubscriptionTier, Subscription
 from app.models.user import User, UserRole
 from app.auth.security import get_current_user
 from app.config import settings
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 router = APIRouter()
@@ -114,16 +114,22 @@ async def create_organization(
 
     limits = tier_limits.get(org_data.subscription_tier, {})
 
-    # Create organization
+    # Create organization with 14-day trial period
+    trial_start = datetime.utcnow()
+    trial_end = trial_start + timedelta(days=14)
+
     new_org = Organization(
         org_code=org_data.org_code,
         company_name=org_data.company_name,
         psira_company_registration=org_data.psira_company_registration,
         subscription_tier=org_data.subscription_tier,
+        subscription_status=SubscriptionStatus.TRIAL,  # Start on trial
         max_employees=org_data.max_employees or limits.get("employees"),
         max_sites=org_data.max_sites or limits.get("sites"),
         max_shifts_per_month=org_data.max_shifts_per_month or limits.get("shifts"),
-        billing_email=org_data.billing_email
+        billing_email=org_data.billing_email,
+        trial_start_date=trial_start,
+        trial_end_date=trial_end
     )
 
     db.add(new_org)

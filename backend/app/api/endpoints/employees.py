@@ -60,6 +60,23 @@ async def create_employee(
     """Create new employee (automatically assigned to user's organization)."""
     org_id = current_user.org_id or 1
 
+    # Check subscription limits (guard limit enforcement)
+    from app.models.organization import Organization
+    organization = db.query(Organization).filter(Organization.org_id == org_id).first()
+    if organization:
+        current_employee_count = db.query(Employee).filter(
+            Employee.org_id == org_id,
+            Employee.status == EmployeeStatus.ACTIVE
+        ).count()
+
+        # Check if adding a new employee would exceed the limit
+        allowed, message = organization.check_limit('employees', current_employee_count)
+        if not allowed:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Employee limit reached. {message}. Upgrade your subscription to add more guards."
+            )
+
     # Check if ID number already exists in this organization
     existing = EmployeeService.get_by_id_number(db, employee_data.id_number, org_id=org_id)
     if existing:
