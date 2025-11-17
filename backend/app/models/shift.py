@@ -24,7 +24,7 @@ class Shift(Base):
     start_time = Column(DateTime, nullable=False, index=True)
     end_time = Column(DateTime, nullable=False)
     required_skill = Column(String(100))
-    assigned_employee_id = Column(Integer, ForeignKey("employees.employee_id"), index=True)
+    required_staff = Column(Integer, nullable=False, default=1)  # Number of guards needed
     status = Column(SQLEnum(ShiftStatus), default=ShiftStatus.PLANNED)
     created_by = Column(String(100))
     is_overtime = Column(Boolean, default=False)
@@ -37,9 +37,7 @@ class Shift(Base):
 
     # Relationships
     site = relationship("Site", back_populates="shifts")
-    employee = relationship("Employee", back_populates="shifts")
-    attendance = relationship("Attendance", back_populates="shift", uselist=False)
-    shift_assignment = relationship("ShiftAssignment", back_populates="shift", uselist=False)
+    shift_assignments = relationship("ShiftAssignment", back_populates="shift", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Shift {self.shift_id}: Site {self.site_id} at {self.start_time}>"

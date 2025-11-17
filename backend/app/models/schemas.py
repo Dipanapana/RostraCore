@@ -126,7 +126,7 @@ class ShiftBase(BaseModel):
     start_time: datetime
     end_time: datetime
     required_skill: Optional[str] = None
-    assigned_employee_id: Optional[int] = None
+    required_staff: int = 1  # Number of guards needed for this shift
     status: ShiftStatus = ShiftStatus.PLANNED
     created_by: Optional[str] = None
     is_overtime: bool = False
@@ -142,7 +142,7 @@ class ShiftUpdate(BaseModel):
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
     required_skill: Optional[str] = None
-    assigned_employee_id: Optional[int] = None
+    required_staff: Optional[int] = None
     status: Optional[ShiftStatus] = None
     is_overtime: Optional[bool] = None
     notes: Optional[str] = None
@@ -150,6 +150,26 @@ class ShiftUpdate(BaseModel):
 
 class ShiftResponse(ShiftBase):
     shift_id: int
+
+    class Config:
+        from_attributes = True
+
+
+# Shift Assignment Schemas
+class ShiftAssignmentBase(BaseModel):
+    shift_id: int
+    employee_id: int
+    status: str = "pending"
+
+
+class ShiftAssignmentCreate(ShiftAssignmentBase):
+    pass
+
+
+class ShiftAssignmentResponse(ShiftAssignmentBase):
+    assignment_id: int
+    assigned_at: datetime
+    total_cost: float = 0.0
 
     class Config:
         from_attributes = True
