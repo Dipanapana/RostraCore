@@ -77,36 +77,53 @@ class RosterGenerator:
         end_date: datetime,
         site_ids: Optional[List[int]] = None
     ) -> List[Dict]:
-        """Get all unassigned shifts in the period."""
+        """
+        Get all shifts that need more guards assigned.
+        Multi-guard support: A shift needs assignment if current assignments < required_staff.
+        """
         from app.models.shift import Shift
+        from app.models.shift_assignment import ShiftAssignment, AssignmentStatus
+        from sqlalchemy import func
 
         query = self.db.query(Shift).filter(
             Shift.start_time >= start_date,
-            Shift.start_time < end_date,
-            Shift.assigned_employee_id == None
+            Shift.start_time < end_date
         )
 
         if site_ids:
             query = query.filter(Shift.site_id.in_(site_ids))
 
-        shifts = query.all()
+        all_shifts = query.all()
 
-        return [
-            {
-                "shift_id": s.shift_id,
-                "site_id": s.site_id,
-                "start_time": s.start_time,
-                "end_time": s.end_time,
-                # FIXED: Use effective_required_skill to inherit from site if not set
-                "required_skill": s.effective_required_skill,
-                "site": {
-                    "site_id": s.site.site_id,
-                    "gps_lat": s.site.gps_lat,
-                    "gps_lng": s.site.gps_lng
-                } if s.site else None
-            }
-            for s in shifts
-        ]
+        # Filter shifts that need more guards
+        shifts_needing_guards = []
+        for s in all_shifts:
+            # Count current non-cancelled assignments
+            current_assignments = self.db.query(func.count(ShiftAssignment.assignment_id)).filter(
+                ShiftAssignment.shift_id == s.shift_id,
+                ShiftAssignment.status.in_([AssignmentStatus.PENDING, AssignmentStatus.CONFIRMED])
+            ).scalar() or 0
+
+            # If shift needs more guards, add it (with slots remaining)
+            slots_remaining = s.required_staff - current_assignments
+            if slots_remaining > 0:
+                shifts_needing_guards.append({
+                    "shift_id": s.shift_id,
+                    "site_id": s.site_id,
+                    "start_time": s.start_time,
+                    "end_time": s.end_time,
+                    "required_skill": s.effective_required_skill,
+                    "required_staff": s.required_staff,
+                    "current_assignments": current_assignments,
+                    "slots_remaining": slots_remaining,
+                    "site": {
+                        "site_id": s.site.site_id,
+                        "gps_lat": s.site.gps_lat,
+                        "gps_lng": s.site.gps_lng
+                    } if s.site else None
+                })
+
+        return shifts_needing_guards
 
     def _get_available_employees(self) -> List[Dict]:
         """Get all active employees."""
