@@ -36,6 +36,16 @@ def create_sample_data():
         print("CREATING SAMPLE TEST DATA FOR ROSTER GENERATION")
         print("=" * 60)
 
+        # 0. Delete existing test data if it exists
+        print("\n0. Checking for existing test data...")
+        existing_org = db.query(Organization).filter(Organization.org_code == "TEST001").first()
+        if existing_org:
+            print(f"   + Found existing test organization (ID: {existing_org.org_id})")
+            print(f"   + Deleting existing test data (cascading deletes will clean up related records)...")
+            db.delete(existing_org)
+            db.commit()
+            print(f"   + Successfully deleted test organization")
+
         # 1. Create test organization
         print("\n1. Creating test organization...")
         test_org = Organization(
@@ -58,9 +68,12 @@ def create_sample_data():
 
         # 2. Create test admin user
         print("\n2. Creating test admin user...")
+        # Use unique username with timestamp to avoid conflicts
+        from random import randint
+        random_suffix = randint(1000, 9999)
         test_admin = User(
-            username="testadmin",
-            email="admin@testsecurity.co.za",
+            username=f"testadmin{random_suffix}",
+            email=f"admin{random_suffix}@testsecurity.co.za",
             hashed_password=get_password_hash("TestPassword123!"),
             full_name="Test Administrator",
             role=UserRole.ADMIN,
@@ -70,37 +83,44 @@ def create_sample_data():
         )
         db.add(test_admin)
         db.commit()
-        print(f"   + Created admin user: {test_admin.username}")
+        print(f"   + Created admin user: {test_admin.username} / TestPassword123!")
 
         # 3. Create sample employees (guards)
         print("\n3. Creating 10 sample employees...")
         employees = []
 
         employee_data = [
-            {"first_name": "Sipho", "last_name": "Dlamini", "psira_grade": "A", "wage_rate": 85.00},
-            {"first_name": "Themba", "last_name": "Nkosi", "psira_grade": "B", "wage_rate": 75.00},
-            {"first_name": "Mpho", "last_name": "Mabaso", "psira_grade": "A", "wage_rate": 85.00},
-            {"first_name": "Thandi", "last_name": "Zulu", "psira_grade": "C", "wage_rate": 65.00},
-            {"first_name": "Lucky", "last_name": "Khumalo", "psira_grade": "B", "wage_rate": 75.00},
-            {"first_name": "Nomsa", "last_name": "Radebe", "psira_grade": "A", "wage_rate": 85.00},
-            {"first_name": "Bongani", "last_name": "Sithole", "psira_grade": "C", "wage_rate": 65.00},
-            {"first_name": "Zanele", "last_name": "Mthembu", "psira_grade": "B", "wage_rate": 75.00},
-            {"first_name": "Mandla", "last_name": "Mokoena", "psira_grade": "A", "wage_rate": 85.00},
-            {"first_name": "Precious", "last_name": "Shabalala", "psira_grade": "C", "wage_rate": 65.00},
+            {"first_name": "Sipho", "last_name": "Dlamini", "psira_grade": "A", "hourly_rate": 85.00, "role": "armed"},
+            {"first_name": "Themba", "last_name": "Nkosi", "psira_grade": "B", "hourly_rate": 75.00, "role": "unarmed"},
+            {"first_name": "Mpho", "last_name": "Mabaso", "psira_grade": "A", "hourly_rate": 85.00, "role": "armed"},
+            {"first_name": "Thandi", "last_name": "Zulu", "psira_grade": "C", "hourly_rate": 65.00, "role": "unarmed"},
+            {"first_name": "Lucky", "last_name": "Khumalo", "psira_grade": "B", "hourly_rate": 75.00, "role": "unarmed"},
+            {"first_name": "Nomsa", "last_name": "Radebe", "psira_grade": "A", "hourly_rate": 85.00, "role": "armed"},
+            {"first_name": "Bongani", "last_name": "Sithole", "psira_grade": "C", "hourly_rate": 65.00, "role": "unarmed"},
+            {"first_name": "Zanele", "last_name": "Mthembu", "psira_grade": "B", "hourly_rate": 75.00, "role": "unarmed"},
+            {"first_name": "Mandla", "last_name": "Mokoena", "psira_grade": "A", "hourly_rate": 85.00, "role": "armed"},
+            {"first_name": "Precious", "last_name": "Shabalala", "psira_grade": "C", "hourly_rate": 65.00, "role": "unarmed"},
         ]
 
+        from app.models.employee import EmployeeRole, EmployeeStatus
+        from random import randint
+
         for i, emp_data in enumerate(employee_data, 1):
+            # Generate unique ID number
+            random_id = randint(10000000, 99999999)
             employee = Employee(
-                employee_code=f"EMP{str(i).zfill(3)}",
                 first_name=emp_data["first_name"],
                 last_name=emp_data["last_name"],
+                id_number=f"RSA{random_id}",  # Generate unique RSA ID
                 email=f"{emp_data['first_name'].lower()}.{emp_data['last_name'].lower()}@testsecurity.co.za",
                 phone=f"+2781000{str(i).zfill(4)}",
                 psira_grade=emp_data["psira_grade"],
-                wage_rate=emp_data["wage_rate"],
+                hourly_rate=emp_data["hourly_rate"],
+                role=EmployeeRole(emp_data["role"]),
                 status=EmployeeStatus.ACTIVE,
                 org_id=test_org.org_id,
-                home_address=f"{i} Test Street, Johannesburg"
+                address=f"{i} Test Street, Johannesburg",
+                province="Gauteng"
             )
             db.add(employee)
             employees.append(employee)
@@ -142,26 +162,35 @@ def create_sample_data():
         db.commit()
         print(f"   + Created {cert_count} certifications")
 
-        # 5. Create availability for all employees (available all week for testing)
+        # 5. Create availability for all employees (available for next 7 days for testing)
         print("\n5. Creating availability for employees...")
         avail_count = 0
+        from datetime import time
+        start_date = datetime.utcnow().date()
+
         for emp in employees:
-            # Make available Monday to Sunday, all shifts
-            for day_of_week in range(7):  # 0=Monday, 6=Sunday
-                availability = Availability(
+            # Make available for next 7 days, day and night shifts
+            for day in range(7):
+                current_date = start_date + timedelta(days=day)
+
+                # Day shift availability (6 AM - 6 PM)
+                availability_day = Availability(
                     employee_id=emp.employee_id,
-                    day_of_week=day_of_week,
-                    shift_type="day",
-                    is_available=True
+                    date=current_date,
+                    start_time=time(6, 0),
+                    end_time=time(18, 0),
+                    available=True
                 )
-                db.add(availability)
+                db.add(availability_day)
                 avail_count += 1
 
+                # Night shift availability (6 PM - 6 AM next day)
                 availability_night = Availability(
                     employee_id=emp.employee_id,
-                    day_of_week=day_of_week,
-                    shift_type="night",
-                    is_available=True
+                    date=current_date,
+                    start_time=time(18, 0),
+                    end_time=time(6, 0),  # Crosses midnight
+                    available=True
                 )
                 db.add(availability_night)
                 avail_count += 1
