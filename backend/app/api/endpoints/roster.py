@@ -19,6 +19,7 @@ from app.models.site import Site
 from app.models.client import Client
 from app.models.user import User
 from app.api.deps import get_current_user
+from app.auth.security import get_current_org_id
 
 router = APIRouter()
 
@@ -163,15 +164,31 @@ async def get_unfilled_shifts(
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
     site_id: Optional[int] = None,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Get list of shifts without assigned employees."""
+    """Get list of shifts without assigned employees (filtered by organization)."""
     if not start_date:
         start_date = datetime.now()
     if not end_date:
         end_date = start_date + timedelta(days=7)
 
-    site_ids = [site_id] if site_id else None
+    # Filter site_id to ensure it belongs to the organization if provided
+    if site_id:
+        site = db.query(Site).filter(Site.site_id == site_id, Site.org_id == org_id).first()
+        if not site:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Site with ID {site_id} not found in your organization"
+            )
+        site_ids = [site_id]
+    else:
+        # Get all sites for this organization
+        org_sites = db.query(Site.site_id).filter(Site.org_id == org_id).all()
+        site_ids = [s.site_id for s in org_sites] if org_sites else []
+
+    if not site_ids:
+        return []
 
     shifts = ShiftService.get_unassigned_shifts(
         db,
@@ -188,9 +205,10 @@ async def get_employee_hours(
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
     employee_id: Optional[int] = None,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Get hours breakdown per employee."""
+    """Get hours breakdown per employee (filtered by organization)."""
     if not start_date:
         start_date = datetime.now()
     if not end_date:
@@ -201,6 +219,7 @@ async def get_employee_hours(
         employee_id=employee_id,
         start_date=start_date,
         end_date=end_date,
+        org_id=org_id,
         limit=1000
     )
 
@@ -226,9 +245,10 @@ async def get_budget_summary(
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
     site_id: Optional[int] = None,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Get budget summary for a roster period."""
+    """Get budget summary for a roster period (filtered by organization)."""
     if not start_date:
         start_date = datetime.now()
     if not end_date:
@@ -239,6 +259,7 @@ async def get_budget_summary(
         site_id=site_id,
         start_date=start_date,
         end_date=end_date,
+        org_id=org_id,
         limit=1000
     )
 
@@ -269,10 +290,11 @@ async def generate_roster_for_client(
     start_date: datetime,
     end_date: datetime,
     algorithm: Optional[str] = Query("production", description="Algorithm: 'production', 'hungarian', 'milp', 'auto'"),
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
     """
-    Generate optimized roster for a specific client's sites.
+    Generate optimized roster for a specific client's sites (filtered by organization).
 
     **Client-Specific Roster Generation**
 
@@ -284,19 +306,23 @@ async def generate_roster_for_client(
         start_date: Start date for roster period
         end_date: End date for roster period
         algorithm: Algorithm selection (default: 'production')
+        org_id: Organization ID (from current user)
         db: Database session
 
     Returns:
         Roster assignments with summary, costs, fairness metrics, and diagnostics
     """
     try:
-        # Verify client exists
-        client = db.query(Client).filter(Client.client_id == client_id).first()
+        # Verify client exists and belongs to organization
+        client = db.query(Client).filter(
+            Client.client_id == client_id,
+            Client.org_id == org_id
+        ).first()
 
         if not client:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Client with ID {client_id} not found"
+                detail=f"Client with ID {client_id} not found in your organization"
             )
 
         # Get all sites for this client

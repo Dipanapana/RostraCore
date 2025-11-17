@@ -8,6 +8,7 @@ from app.database import get_db
 from app.models.schemas import ShiftCreate, ShiftUpdate, ShiftResponse, ShiftAssignmentCreate, ShiftAssignmentResponse
 from app.models.shift_assignment import ShiftAssignment, AssignmentStatus
 from app.services.shift_service import ShiftService
+from app.auth.security import get_current_org_id
 
 router = APIRouter()
 
@@ -21,9 +22,10 @@ async def get_shifts(
     status_filter: Optional[str] = None,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Get all shifts with optional filters."""
+    """Get all shifts with optional filters (filtered by organization)."""
     shifts = ShiftService.get_all(
         db,
         skip=skip,
@@ -32,7 +34,8 @@ async def get_shifts(
         employee_id=employee_id,
         status=status_filter,
         start_date=start_date,
-        end_date=end_date
+        end_date=end_date,
+        org_id=org_id
     )
     return shifts
 
@@ -40,10 +43,11 @@ async def get_shifts(
 @router.get("/{shift_id}", response_model=ShiftResponse)
 async def get_shift(
     shift_id: int,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Get shift by ID."""
-    shift = ShiftService.get_by_id(db, shift_id)
+    """Get shift by ID (filtered by organization)."""
+    shift = ShiftService.get_by_id(db, shift_id, org_id=org_id)
     if not shift:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -55,10 +59,11 @@ async def get_shift(
 @router.post("/", response_model=ShiftResponse, status_code=status.HTTP_201_CREATED)
 async def create_shift(
     shift_data: ShiftCreate,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Create new shift."""
-    shift = ShiftService.create(db, shift_data)
+    """Create new shift (automatically assigned to user's organization)."""
+    shift = ShiftService.create(db, shift_data, org_id=org_id)
     return shift
 
 
@@ -66,10 +71,11 @@ async def create_shift(
 async def update_shift(
     shift_id: int,
     shift_data: ShiftUpdate,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Update shift."""
-    shift = ShiftService.update(db, shift_id, shift_data)
+    """Update shift (filtered by organization)."""
+    shift = ShiftService.update(db, shift_id, shift_data, org_id=org_id)
     if not shift:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -81,10 +87,11 @@ async def update_shift(
 @router.delete("/{shift_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_shift(
     shift_id: int,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Delete shift."""
-    success = ShiftService.delete(db, shift_id)
+    """Delete shift (filtered by organization)."""
+    success = ShiftService.delete(db, shift_id, org_id=org_id)
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -96,12 +103,16 @@ async def delete_shift(
 @router.get("/{shift_id}/assignments", response_model=List[ShiftAssignmentResponse])
 async def get_shift_assignments(
     shift_id: int,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Get all guard assignments for a shift."""
+    """Get all guard assignments for a shift (filtered by organization)."""
     from app.models.shift import Shift
 
-    shift = db.query(Shift).filter(Shift.shift_id == shift_id).first()
+    shift = db.query(Shift).filter(
+        Shift.shift_id == shift_id,
+        Shift.org_id == org_id
+    ).first()
     if not shift:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -120,25 +131,32 @@ async def get_shift_assignments(
 async def assign_guard_to_shift(
     shift_id: int,
     employee_id: int,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
     """
-    Assign a guard to a shift (manual assignment).
+    Assign a guard to a shift (manual assignment, filtered by organization).
     Creates assignment with 'pending' status.
     """
     from app.models.shift import Shift
     from app.models.employee import Employee
 
-    # Verify shift exists
-    shift = db.query(Shift).filter(Shift.shift_id == shift_id).first()
+    # Verify shift exists and belongs to organization
+    shift = db.query(Shift).filter(
+        Shift.shift_id == shift_id,
+        Shift.org_id == org_id
+    ).first()
     if not shift:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Shift with ID {shift_id} not found"
         )
 
-    # Verify employee exists
-    employee = db.query(Employee).filter(Employee.employee_id == employee_id).first()
+    # Verify employee exists and belongs to organization
+    employee = db.query(Employee).filter(
+        Employee.employee_id == employee_id,
+        Employee.org_id == org_id
+    ).first()
     if not employee:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -192,12 +210,26 @@ async def assign_guard_to_shift(
 async def unassign_guard_from_shift(
     shift_id: int,
     employee_id: int,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
     """
-    Remove guard assignment from shift.
+    Remove guard assignment from shift (filtered by organization).
     Sets assignment status to 'cancelled'.
     """
+    from app.models.shift import Shift
+
+    # Verify shift belongs to organization
+    shift = db.query(Shift).filter(
+        Shift.shift_id == shift_id,
+        Shift.org_id == org_id
+    ).first()
+    if not shift:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Shift with ID {shift_id} not found"
+        )
+
     assignment = db.query(ShiftAssignment).filter(
         ShiftAssignment.shift_id == shift_id,
         ShiftAssignment.employee_id == employee_id,
@@ -220,12 +252,26 @@ async def unassign_guard_from_shift(
 async def confirm_shift_assignment(
     shift_id: int,
     assignment_id: int,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
     """
-    Confirm a pending shift assignment.
+    Confirm a pending shift assignment (filtered by organization).
     Changes status from 'pending' to 'confirmed'.
     """
+    from app.models.shift import Shift
+
+    # Verify shift belongs to organization
+    shift = db.query(Shift).filter(
+        Shift.shift_id == shift_id,
+        Shift.org_id == org_id
+    ).first()
+    if not shift:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Shift with ID {shift_id} not found"
+        )
+
     assignment = db.query(ShiftAssignment).filter(
         ShiftAssignment.assignment_id == assignment_id,
         ShiftAssignment.shift_id == shift_id
@@ -254,15 +300,16 @@ async def confirm_shift_assignment(
 @router.post("/bulk-delete", status_code=status.HTTP_200_OK)
 async def bulk_delete_shifts(
     shift_ids: List[int],
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Bulk delete shifts (for admin/owner to clean up history)."""
+    """Bulk delete shifts (for admin/owner to clean up history, filtered by organization)."""
     deleted_count = 0
     errors = []
 
     for shift_id in shift_ids:
         try:
-            success = ShiftService.delete(db, shift_id)
+            success = ShiftService.delete(db, shift_id, org_id=org_id)
             if success:
                 deleted_count += 1
             else:

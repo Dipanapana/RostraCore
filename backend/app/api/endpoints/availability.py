@@ -6,6 +6,8 @@ from typing import List, Optional, Any
 from datetime import date, time
 from app.database import get_db
 from app.models.availability import Availability
+from app.models.employee import Employee
+from app.auth.security import get_current_org_id
 from pydantic import BaseModel
 from pydantic.functional_serializers import field_serializer
 
@@ -49,10 +51,11 @@ class AvailabilityResponse(BaseModel):
 @router.get("/")
 async def get_availability(
     employee_id: Optional[int] = None,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Get availability records."""
-    query = db.query(Availability)
+    """Get availability records (filtered by organization via employee)."""
+    query = db.query(Availability).join(Employee).filter(Employee.org_id == org_id)
     if employee_id:
         query = query.filter(Availability.employee_id == employee_id)
     availabilities = query.all()
@@ -74,10 +77,14 @@ async def get_availability(
 @router.get("/{avail_id}", response_model=AvailabilityResponse)
 async def get_availability_by_id(
     avail_id: int,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Get specific availability record."""
-    availability = db.query(Availability).filter(Availability.avail_id == avail_id).first()
+    """Get specific availability record (filtered by organization via employee)."""
+    availability = db.query(Availability).join(Employee).filter(
+        Availability.avail_id == avail_id,
+        Employee.org_id == org_id
+    ).first()
     if not availability:
         raise HTTPException(status_code=404, detail="Availability record not found")
     return availability
@@ -86,9 +93,21 @@ async def get_availability_by_id(
 @router.post("/", response_model=AvailabilityResponse, status_code=status.HTTP_201_CREATED)
 async def create_availability(
     availability_data: AvailabilityCreate,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Create availability record."""
+    """Create availability record (employee must belong to organization)."""
+    # Verify employee belongs to organization
+    employee = db.query(Employee).filter(
+        Employee.employee_id == availability_data.employee_id,
+        Employee.org_id == org_id
+    ).first()
+    if not employee:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Employee with ID {availability_data.employee_id} not found in your organization"
+        )
+
     availability = Availability(**availability_data.model_dump())
     db.add(availability)
     db.commit()
@@ -100,10 +119,14 @@ async def create_availability(
 async def update_availability(
     avail_id: int,
     availability_data: AvailabilityUpdate,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Update availability record."""
-    availability = db.query(Availability).filter(Availability.avail_id == avail_id).first()
+    """Update availability record (filtered by organization via employee)."""
+    availability = db.query(Availability).join(Employee).filter(
+        Availability.avail_id == avail_id,
+        Employee.org_id == org_id
+    ).first()
     if not availability:
         raise HTTPException(status_code=404, detail="Availability record not found")
 
@@ -118,10 +141,14 @@ async def update_availability(
 @router.delete("/{avail_id}")
 async def delete_availability(
     avail_id: int,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Delete availability record."""
-    availability = db.query(Availability).filter(Availability.avail_id == avail_id).first()
+    """Delete availability record (filtered by organization via employee)."""
+    availability = db.query(Availability).join(Employee).filter(
+        Availability.avail_id == avail_id,
+        Employee.org_id == org_id
+    ).first()
     if not availability:
         raise HTTPException(status_code=404, detail="Availability record not found")
 

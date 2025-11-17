@@ -19,11 +19,14 @@ class ShiftService:
         employee_id: Optional[int] = None,
         status: Optional[str] = None,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
+        org_id: Optional[int] = None
     ) -> List[Shift]:
         """Get all shifts with optional filtering."""
         query = db.query(Shift)
 
+        if org_id is not None:
+            query = query.filter(Shift.org_id == org_id)
         if site_id:
             query = query.filter(Shift.site_id == site_id)
         if employee_id:
@@ -38,23 +41,29 @@ class ShiftService:
         return query.offset(skip).limit(limit).all()
 
     @staticmethod
-    def get_by_id(db: Session, shift_id: int) -> Optional[Shift]:
-        """Get shift by ID."""
-        return db.query(Shift).filter(Shift.shift_id == shift_id).first()
+    def get_by_id(db: Session, shift_id: int, org_id: Optional[int] = None) -> Optional[Shift]:
+        """Get shift by ID (optionally filtered by organization)."""
+        query = db.query(Shift).filter(Shift.shift_id == shift_id)
+        if org_id is not None:
+            query = query.filter(Shift.org_id == org_id)
+        return query.first()
 
     @staticmethod
-    def create(db: Session, shift_data: ShiftCreate) -> Shift:
+    def create(db: Session, shift_data: ShiftCreate, org_id: Optional[int] = None) -> Shift:
         """Create new shift."""
-        db_shift = Shift(**shift_data.model_dump())
+        shift_dict = shift_data.model_dump()
+        if org_id is not None:
+            shift_dict['org_id'] = org_id
+        db_shift = Shift(**shift_dict)
         db.add(db_shift)
         db.commit()
         db.refresh(db_shift)
         return db_shift
 
     @staticmethod
-    def update(db: Session, shift_id: int, shift_data: ShiftUpdate) -> Optional[Shift]:
-        """Update shift."""
-        db_shift = ShiftService.get_by_id(db, shift_id)
+    def update(db: Session, shift_id: int, shift_data: ShiftUpdate, org_id: Optional[int] = None) -> Optional[Shift]:
+        """Update shift (optionally filtered by organization)."""
+        db_shift = ShiftService.get_by_id(db, shift_id, org_id=org_id)
         if not db_shift:
             return None
 
@@ -67,9 +76,9 @@ class ShiftService:
         return db_shift
 
     @staticmethod
-    def delete(db: Session, shift_id: int) -> bool:
-        """Delete shift."""
-        db_shift = ShiftService.get_by_id(db, shift_id)
+    def delete(db: Session, shift_id: int, org_id: Optional[int] = None) -> bool:
+        """Delete shift (optionally filtered by organization)."""
+        db_shift = ShiftService.get_by_id(db, shift_id, org_id=org_id)
         if not db_shift:
             return False
 

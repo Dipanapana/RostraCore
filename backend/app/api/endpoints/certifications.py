@@ -7,6 +7,8 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from app.database import get_db
 from app.models.certification import Certification
+from app.models.employee import Employee
+from app.auth.security import get_current_org_id
 
 router = APIRouter()
 
@@ -46,10 +48,11 @@ class CertificationResponse(CertificationBase):
 @router.get("/", response_model=List[CertificationResponse])
 async def get_certifications(
     employee_id: Optional[int] = None,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Get all certifications, optionally filtered by employee_id."""
-    query = db.query(Certification)
+    """Get all certifications (filtered by organization via employee)."""
+    query = db.query(Certification).join(Employee).filter(Employee.org_id == org_id)
 
     if employee_id is not None:
         query = query.filter(Certification.employee_id == employee_id)
@@ -61,13 +64,15 @@ async def get_certifications(
 @router.get("/expiring", response_model=List[CertificationResponse])
 async def get_expiring_certifications(
     days: int = 30,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Get certifications expiring within specified days."""
+    """Get certifications expiring within specified days (filtered by organization via employee)."""
     today = date.today()
     expiry_threshold = today + timedelta(days=days)
 
-    certifications = db.query(Certification).filter(
+    certifications = db.query(Certification).join(Employee).filter(
+        Employee.org_id == org_id,
         Certification.expiry_date <= expiry_threshold,
         Certification.expiry_date >= today
     ).all()
@@ -78,11 +83,13 @@ async def get_expiring_certifications(
 @router.get("/{cert_id}", response_model=CertificationResponse)
 async def get_certification(
     cert_id: int,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Get a specific certification by ID."""
-    certification = db.query(Certification).filter(
-        Certification.cert_id == cert_id
+    """Get a specific certification by ID (filtered by organization via employee)."""
+    certification = db.query(Certification).join(Employee).filter(
+        Certification.cert_id == cert_id,
+        Employee.org_id == org_id
     ).first()
 
     if not certification:
@@ -94,9 +101,21 @@ async def get_certification(
 @router.post("/", response_model=CertificationResponse, status_code=201)
 async def create_certification(
     certification_data: CertificationCreate,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Create a new certification."""
+    """Create a new certification (employee must belong to organization)."""
+    # Verify employee belongs to organization
+    employee = db.query(Employee).filter(
+        Employee.employee_id == certification_data.employee_id,
+        Employee.org_id == org_id
+    ).first()
+    if not employee:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Employee with ID {certification_data.employee_id} not found in your organization"
+        )
+
     # Validate dates
     if certification_data.expiry_date <= certification_data.issue_date:
         raise HTTPException(
@@ -116,11 +135,13 @@ async def create_certification(
 async def update_certification(
     cert_id: int,
     certification_data: CertificationUpdate,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Update an existing certification."""
-    certification = db.query(Certification).filter(
-        Certification.cert_id == cert_id
+    """Update an existing certification (filtered by organization via employee)."""
+    certification = db.query(Certification).join(Employee).filter(
+        Certification.cert_id == cert_id,
+        Employee.org_id == org_id
     ).first()
 
     if not certification:
@@ -151,11 +172,13 @@ async def update_certification(
 @router.delete("/{cert_id}")
 async def delete_certification(
     cert_id: int,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Delete a certification."""
-    certification = db.query(Certification).filter(
-        Certification.cert_id == cert_id
+    """Delete a certification (filtered by organization via employee)."""
+    certification = db.query(Certification).join(Employee).filter(
+        Certification.cert_id == cert_id,
+        Employee.org_id == org_id
     ).first()
 
     if not certification:
