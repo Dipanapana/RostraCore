@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -28,29 +29,39 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div className="max-w-md w-full mx-4">
-        {/* Login Card */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 shadow-2xl">
-          {/* Logo/Title */}
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-white mb-2">GuardianOS</h1>
-            <p className="text-gray-300">Sign in to your account</p>
-          </div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
+      <div className="max-w-md w-full">
+        {/* Logo & Header */}
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 bg-primary-500 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-2xl">R</span>
+            </div>
+            <span className="text-3xl font-bold text-gray-900">RostraCore</span>
+          </Link>
+          <h1 className="text-2xl font-bold text-gray-900 mt-6 mb-2">
+            Sign in to your account
+          </h1>
+          <p className="text-gray-600">
+            Welcome back! Please enter your details.
+          </p>
+        </div>
 
+        {/* Login Card */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
           {/* Error Message */}
           {error && (
-            <div className="mb-6 bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg">
+            <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
               {error}
             </div>
           )}
 
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Username Field */}
+            {/* Username/Email Field */}
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">
-                Username or Email
+              <label htmlFor="username" className="block text-sm font-semibold text-gray-900 mb-2">
+                Email or Username
               </label>
               <input
                 id="username"
@@ -58,24 +69,29 @@ export default function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
-                className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="Enter your username"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                placeholder="Enter your email or username"
                 disabled={loading}
               />
             </div>
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
-                Password
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="password" className="block text-sm font-semibold text-gray-900">
+                  Password
+                </label>
+                <a href="/forgot-password" className="text-sm font-medium text-primary-500 hover:text-primary-600">
+                  Forgot password?
+                </a>
+              </div>
               <input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                 placeholder="Enter your password"
                 disabled={loading}
               />
@@ -85,7 +101,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-600/50 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center"
+              className="w-full bg-primary-500 hover:bg-primary-600 disabled:bg-primary-300 text-white font-semibold py-3 px-4 rounded-lg transition-all hover:shadow-md flex items-center justify-center"
             >
               {loading ? (
                 <>
@@ -117,36 +133,28 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Demo Credentials Info */}
-          <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-            <p className="text-sm text-blue-200 font-semibold mb-2">🔑 Demo Credentials:</p>
-            <p className="text-xs text-blue-300 font-mono">
-              Username: <span className="font-bold">admin</span>
-            </p>
-            <p className="text-xs text-blue-300 font-mono">
-              Password: <span className="font-bold">admin123</span>
-            </p>
-            <p className="text-xs text-gray-400 mt-2">
-              (Run create_admin.py first if you haven&apos;t)
-            </p>
-          </div>
-
-          {/* Back to Home Link */}
+          {/* Sign Up Link */}
           <div className="mt-6 text-center">
-            <button
-              onClick={() => router.push("/")}
-              className="text-gray-300 hover:text-white text-sm transition"
-            >
-              ← Back to Home
-            </button>
+            <p className="text-sm text-gray-600">
+              Don't have an account?{' '}
+              <Link href="/register" className="font-semibold text-primary-500 hover:text-primary-600">
+                Start 14-day free trial
+              </Link>
+            </p>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="mt-8 text-center">
-          <p className="text-gray-400 text-sm">
-            GuardianOS v1.0 • AI-Powered Security Management
-          </p>
+        {/* Back to Home */}
+        <div className="mt-6 text-center">
+          <Link
+            href="/"
+            className="text-sm text-gray-600 hover:text-gray-900 transition-colors inline-flex items-center gap-1"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to home
+          </Link>
         </div>
       </div>
     </div>
