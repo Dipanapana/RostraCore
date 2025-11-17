@@ -1,8 +1,9 @@
 # RostraCore MVP Plan - FINAL
 
-**Date:** November 14, 2025
+**Date:** November 17, 2025
 **Status:** 🟢 **APPROVED - Ready for Implementation**
 **Business Model:** SaaS Platform for Security Companies
+**Updated:** All 11 clarification questions answered and incorporated
 
 ---
 
@@ -104,6 +105,175 @@
 
 ---
 
+## 🔍 Additional Clarifications (11 Questions Answered)
+
+After the initial planning session, 11 critical gaps were identified and clarified:
+
+### 1. Payroll Calculation Method
+**Decision:** **A - Pay Based on Assigned Shifts**
+- Calculate hours from assigned shifts (start_time to end_time)
+- No attendance tracking needed for MVP
+- Simpler implementation, prevents payroll complexity
+- **Result:** Remove `attendance` table (confirmed)
+
+### 2. Shift Templates for Recurring Shifts
+**Decision:** **A - KEEP Shift Templates**
+- Essential for recurring shifts (e.g., Mon-Fri 6am-2pm every week)
+- Auto-generate shifts from templates
+- Reduces manual work significantly
+- **Result:** **KEEP** `shift_templates` table (moved from "remove" to "keep")
+
+### 3. Guard Limit Enforcement
+**Decision:**
+- **When:** Check limit when creating new employee
+- **Count:** Include inactive employees in the count
+- **Action:** Hard block (cannot exceed plan limit)
+
+**Enforcement Rules:**
+- Basic Plan (50 guards) = Can have max 50 total employees (active + inactive)
+- When trying to create 51st employee → Show error: "Upgrade plan to add more guards"
+- No grace period, no soft warnings
+- Forces upgrade to add more employees
+
+### 4. Organization Registration Workflow
+**Decision:** **C - Trial Period (14 Days)**
+
+**Registration Flow:**
+1. Security company fills registration form
+2. Account created with status = "Trial"
+3. Immediately active - can use all features
+4. Trial expires after 14 days
+5. Must subscribe to continue OR get SuperAdmin approval for extension
+6. If no subscription → Account suspended (read-only mode)
+
+**Trial Benefits:**
+- Organizations can test the system
+- Full access to evaluate features
+- No payment required upfront
+- SuperAdmin can monitor trial signups
+
+### 5. Client (Municipality) Name Verification
+**Decision:** **Allow Duplicates**
+
+**Policy:**
+- Multiple organizations CAN add clients with the same name
+- Example: Two different security companies can both have "City of Johannesburg" as a client
+- Each org manages their own client records independently
+- No verification or "claiming" process
+- Simplest approach for MVP
+
+**Rationale:** Each security company might service different divisions/departments of the same municipality.
+
+### 6. User Roles Within Organizations
+**Decision:** **Single Admin Role for MVP**
+
+**MVP Roles:**
+- **SuperAdmin** - Platform owner (you)
+- **OrgAdmin** - Organization administrator (full access within their org)
+
+**Future Roles (Post-MVP):**
+- Scheduler (shifts only)
+- Finance (payroll, billing)
+- Viewer (read-only)
+
+**Rationale:** Most small-medium security companies have 1-2 admins. Complex role systems can be added later.
+
+### 7. Shift Assignment Status Workflow
+**Decision:** **Pending Review (Not Immediately Confirmed)**
+
+**Workflow:**
+1. **Roster generates** → Assigns guards to shifts → Status = **"Pending"**
+2. **Org admin reviews** → Checks assignments → Approves or modifies
+3. **Admin confirms** → Status changes to **"Confirmed"**
+4. **Shift starts** → Guards expected to show up
+
+**Shift Assignment Statuses:**
+- `pending` - Auto-assigned by roster, awaiting confirmation
+- `confirmed` - Reviewed and approved by admin
+- `cancelled` - Assignment removed (guard no longer assigned)
+- `completed` - Shift finished
+
+**Benefits:** Admin oversight before finalizing roster. Prevents auto-roster mistakes.
+
+### 8. Certification Requirements for Shifts
+**Decision:** **Soft Preference (Warn Admin)**
+
+**Matching Logic:**
+- Shifts CAN specify required certification (e.g., PSIRA Grade A)
+- Roster generator PREFERS guards with matching certification
+- If no matching guards available → Assigns anyone, shows WARNING
+- Admin reviews warnings during roster confirmation
+
+**Warning Messages:**
+- ⚠️ "Guard John Mabena assigned to shift requiring Grade A cert, but has Grade B"
+- ⚠️ "Guard Peter Smith's PSIRA cert expires in 5 days"
+
+**Benefits:** Flexibility for emergencies while maintaining compliance awareness.
+
+### 9. Billable Hours Tracking (Client Invoicing)
+**Decision:** **YES - Track Billable Hours**
+
+**Implementation:**
+- System calculates total hours worked per client per period
+- Generate billable hours report for org admin
+- Org creates invoice manually in external system
+- NO payment processing in RostraCore (handled externally)
+
+**Report Format:**
+```
+Client: City of Johannesburg Municipality
+Period: November 2025
+Total Hours: 520 hours
+Rate: R150/hour (from site.billing_rate)
+Billable Amount: R78,000
+```
+
+**Benefits:** Orgs know exactly what to bill clients. Essential business feature.
+
+### 10. Data Retention & Subscription Cancellation
+**Decision:** **90-Day Retention + Data Export**
+
+**Cancellation Policy:**
+1. **Org cancels subscription** → Status changes to "Cancelled"
+2. **Read-only access for 90 days:**
+   - Can view all data (employees, shifts, clients, etc.)
+   - Can export data (CSV, Excel)
+   - Cannot create, edit, or delete anything
+   - Cannot generate new rosters
+3. **After 90 days:**
+   - Data soft-deleted (marked as deleted, not physically removed)
+   - Account fully disabled
+4. **Reactivation within 90 days:**
+   - Can re-subscribe
+   - Full access restored immediately
+
+**Data Export Features:**
+- Export employees list
+- Export shift history
+- Export payroll records
+- Export client/site data
+- All exports in CSV format
+
+### 11. SuperAdmin User Creation
+**Decision:** **Special Registration (Secret Token)**
+
+**Bootstrap Method:**
+1. **Special registration URL:** `/superadmin/register?token=SECRET_TOKEN`
+2. **Secret token** stored in `.env` file: `SUPERADMIN_REGISTRATION_TOKEN=xyz123`
+3. **Only you know the token** → Secure superadmin creation
+4. **First superadmin created** via special URL
+5. **Subsequent superadmins** created by existing superadmin
+
+**Security:**
+- Token not exposed in code
+- Token required to access registration page
+- Invalid token → 403 Forbidden
+- After first superadmin created, URL can be disabled
+
+**Alternative for Production:** After first superadmin created, disable special registration endpoint entirely.
+
+---
+
 ## 🏗️ Entity Relationship Diagram
 
 ```
@@ -167,25 +337,26 @@
 
 ## 📊 Database Tables - KEEP vs REMOVE
 
-### ✅ TABLES TO KEEP (13 Core Tables)
+### ✅ TABLES TO KEEP (14 Core Tables)
 
 | # | Table | Purpose | Key Fields |
 |---|-------|---------|------------|
 | 1 | `users` | Authentication accounts | user_id, username, email, org_id, role |
-| 2 | `organizations` | Security companies (tenants) | org_id, org_name, contact_email |
-| 3 | `employees` | Security guards | employee_id, org_id, assigned_client_id |
+| 2 | `organizations` | Security companies (tenants) | org_id, org_name, contact_email, status (trial/active/cancelled) |
+| 3 | `employees` | Security guards | employee_id, org_id, assigned_client_id, status (active/inactive) |
 | 4 | `certifications` | PSIRA certifications | cert_id, employee_id, cert_type, expiry_date |
 | 5 | `clients` | Municipalities | client_id, org_id, client_name |
-| 6 | `sites` | Guard posts/locations | site_id, client_id, address, gps |
-| 7 | `shifts` | Work shifts | shift_id, site_id, start_time, end_time, **required_staff** |
-| 8 | `shift_assignments` | Guards assigned to shifts | assignment_id, shift_id, employee_id, status |
-| 9 | `availability` | Guard availability blocks | avail_id, employee_id, date, start_time, end_time, available=FALSE |
-| 10 | `payroll` | Basic payroll calculations | payroll_id, employee_id, period, total_hours, gross_pay |
-| 11 | `subscription_plans` | Pricing tiers | plan_id, plan_name, max_guards, price_monthly |
-| 12 | `subscriptions` | Org subscriptions | subscription_id, org_id, plan_id, status, payment_status |
-| 13 | `alembic_version` | Migration tracking | version_num |
+| 6 | `sites` | Guard posts/locations | site_id, client_id, address, gps, billing_rate |
+| 7 | `shifts` | Work shifts | shift_id, site_id, start_time, end_time, **required_staff**, status |
+| 8 | `shift_assignments` | Guards assigned to shifts | assignment_id, shift_id, employee_id, status (pending/confirmed/cancelled) |
+| 9 | `shift_templates` | Recurring shift patterns | template_id, site_id, day_of_week, start_time, end_time, required_staff |
+| 10 | `availability` | Guard availability blocks | avail_id, employee_id, date, start_time, end_time, available=FALSE |
+| 11 | `payroll` | Basic payroll calculations | payroll_id, employee_id, period, total_hours, gross_pay |
+| 12 | `subscription_plans` | Pricing tiers | plan_id, plan_name, max_guards, price_monthly |
+| 13 | `subscriptions` | Org subscriptions | subscription_id, org_id, plan_id, status, payment_status |
+| 14 | `alembic_version` | Migration tracking | version_num |
 
-**Total: 13 tables**
+**Total: 14 tables** (added `shift_templates` based on clarification #2)
 
 ### 🗑️ TABLES TO REMOVE
 
@@ -199,7 +370,7 @@
 - ❌ `marketplace_settings` - Marketplace config
 
 **Advanced Features (Add Later):**
-- ❌ `attendance` - Clock in/out tracking
+- ❌ `attendance` - Clock in/out tracking (Clarification #1: Using shift-based payroll instead)
 - ❌ `incident_reports` - Incident logging
 - ❌ `daily_occurrence_book` - OB book
 - ❌ `ob_entries` - OB entries
@@ -207,14 +378,13 @@
 - ❌ `expenses` - Expense tracking
 - ❌ `analytics` - Advanced analytics
 
-**Possibly Unused/Duplicate:**
-- ❌ `shift_groups` - (Check if used)
-- ❌ `shift_templates` - (Check if used)
-- ❌ `skills_matrix` - (Check if used)
-- ❌ `rules_config` - (Check if used)
-- ❌ `superadmin_users` - (May be duplicate of users table)
+**Unused/Duplicate Tables:**
+- ❌ `shift_groups` - Not needed (using shift_templates instead)
+- ❌ `skills_matrix` - Not needed for MVP
+- ❌ `rules_config` - Not needed for MVP
+- ❌ `superadmin_users` - Duplicate (using users table with role field)
 
-**Total: ~22 tables to remove**
+**Total: ~21 tables to remove** (shift_templates moved to KEEP list)
 
 ---
 
@@ -299,9 +469,10 @@
 
 **Payroll:**
 - `GET /payroll/` (basic calculations)
-- `POST /payroll/calculate` (for period)
+- `POST /payroll/calculate` (for period, based on assigned shifts)
 - `GET /payroll/{id}`
 - `GET /payroll/employee/{employee_id}`
+- `GET /payroll/billable-hours/{client_id}` (billable hours report - NEW)
 
 **Subscriptions (Org Admin):**
 - `GET /subscriptions/current` (org's subscription)
@@ -419,6 +590,58 @@ landing/ (if duplicate)
 
 ---
 
+## 📐 Key Business Rules (From Clarifications)
+
+### Subscription & Guard Limits
+- **Guard limit enforcement:** Check when creating new employee
+- **Count:** Active + inactive employees (all employees count)
+- **Action:** Hard block (cannot create employee if over limit)
+- **Error message:** "Upgrade your plan to add more guards. Current plan allows X guards."
+- **No grace period** - strict enforcement
+
+### Organization Lifecycle
+- **Registration:** Immediate activation with 14-day trial
+- **Trial status:** Full access to all features
+- **Post-trial:** Must subscribe or get SuperAdmin extension
+- **Cancellation:** 90-day read-only period + data export
+- **After 90 days:** Account disabled, data soft-deleted
+
+### Client Management
+- **Duplicate names allowed:** Multiple orgs can have same client name
+- **No verification:** Organizations self-manage clients
+- **Reason:** Same municipality may have different divisions serviced by different companies
+
+### Shift Assignment Workflow
+- **Roster generation:** Creates assignments with status = "pending"
+- **Admin review:** Reviews and modifies assignments
+- **Confirmation:** Changes status to "confirmed"
+- **Cannot skip review:** Admin must explicitly confirm roster
+
+### Certification Matching
+- **Soft preference:** Roster prefers guards with matching certs
+- **Flexibility:** Can assign guards without matching cert if needed
+- **Warnings:** Show warnings for cert mismatches and expirations
+- **Admin decides:** Admin reviews warnings and confirms or modifies
+
+### Payroll Calculation
+- **Method:** Based on assigned shifts (start_time to end_time)
+- **No attendance tracking:** Assumes guard worked full shift
+- **Hours:** Sum of shift durations for the period
+- **Payment:** Calculated but not processed (manual payment by org)
+
+### Billable Hours
+- **Calculation:** Total hours per client per period
+- **Rate source:** Site's billing_rate field
+- **Report format:** Client name, period, hours, rate, total amount
+- **Invoicing:** Org creates invoice externally (not in system)
+
+### User Roles (MVP)
+- **SuperAdmin:** Platform owner (you) - full access to everything
+- **OrgAdmin:** Organization administrator - full access within their org
+- **Future:** Scheduler, Finance, Viewer roles (post-MVP)
+
+---
+
 ## 🔧 Key Implementation Changes Needed
 
 ### 1. Shift Assignment Redesign (CRITICAL)
@@ -487,9 +710,124 @@ shift_assignments table:
 - Subscription management interface
 - Revenue tracking
 
-### 5. Database Cleanup
+### 5. Guard Limit Enforcement (NEW)
 
-**Remove unused tables** (22 tables)
+**Implementation:**
+```python
+# In employee creation endpoint
+async def create_employee(...):
+    # 1. Get current org's subscription
+    subscription = db.query(Subscription).filter(
+        Subscription.org_id == current_user.org_id
+    ).first()
+
+    # 2. Get subscription plan limits
+    plan = subscription.plan
+    max_guards = plan.max_guards  # e.g., 50 for Basic plan
+
+    # 3. Count current employees (active + inactive)
+    current_count = db.query(Employee).filter(
+        Employee.org_id == current_user.org_id
+    ).count()
+
+    # 4. Check limit
+    if current_count >= max_guards:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Upgrade your plan to add more guards. Current plan allows {max_guards} guards."
+        )
+
+    # 5. Create employee if within limit
+    ...
+```
+
+### 6. Billable Hours Tracking (NEW)
+
+**Implementation:**
+```python
+# New endpoint: GET /payroll/billable-hours/{client_id}?period=2025-11
+async def get_billable_hours(client_id: int, period: str):
+    # 1. Get all sites for this client
+    sites = db.query(Site).filter(Site.client_id == client_id).all()
+
+    # 2. Get all shifts for these sites in the period
+    shifts = db.query(Shift).join(ShiftAssignment).filter(
+        Shift.site_id.in_([s.site_id for s in sites]),
+        Shift.start_time.between(period_start, period_end),
+        ShiftAssignment.status == 'confirmed'
+    ).all()
+
+    # 3. Calculate total hours
+    total_hours = sum([
+        (shift.end_time - shift.start_time).total_seconds() / 3600
+        for shift in shifts
+    ])
+
+    # 4. Get billing rate from sites (weighted average or per-site)
+    # 5. Return report
+    return {
+        "client_name": client.client_name,
+        "period": period,
+        "total_hours": total_hours,
+        "billing_rate": avg_rate,
+        "total_amount": total_hours * avg_rate,
+        "breakdown_by_site": [...]
+    }
+```
+
+### 7. Trial Period & Data Retention (NEW)
+
+**Organizations Table Updates:**
+```sql
+ALTER TABLE organizations ADD COLUMN status VARCHAR(20);  -- 'trial', 'active', 'cancelled'
+ALTER TABLE organizations ADD COLUMN trial_expires_at TIMESTAMP;
+ALTER TABLE organizations ADD COLUMN cancelled_at TIMESTAMP;
+```
+
+**Trial Period Logic:**
+- On registration: `status='trial'`, `trial_expires_at = now() + 14 days`
+- Daily cron job checks for expired trials
+- If expired and no subscription → `status='read_only'`
+- After 90 days → `status='disabled'`
+
+**Data Export Feature:**
+```python
+# New endpoint: GET /organizations/export-data
+async def export_organization_data():
+    # Export all org data to CSV/Excel
+    - Employees
+    - Shifts & assignments
+    - Clients & sites
+    - Payroll records
+    - Certifications
+```
+
+### 8. SuperAdmin Registration (NEW)
+
+**Special Registration Endpoint:**
+```python
+# POST /superadmin/register?token=<SECRET>
+@router.post("/superadmin/register")
+async def register_superadmin(
+    token: str,
+    user_data: UserCreate,
+    settings: Settings = Depends(get_settings)
+):
+    # 1. Verify secret token
+    if token != settings.SUPERADMIN_REGISTRATION_TOKEN:
+        raise HTTPException(status_code=403, detail="Invalid token")
+
+    # 2. Create user with role='superadmin'
+    user = User(**user_data.dict(), role='superadmin', org_id=None)
+    db.add(user)
+    db.commit()
+
+    return {"message": "SuperAdmin created successfully"}
+```
+
+### 9. Database Cleanup
+
+**Remove unused tables** (21 tables)
 **Remove unused models** (matching files)
 **Create down migrations**
 
@@ -502,16 +840,18 @@ shift_assignments table:
 
 **Tasks:**
 1. ✅ Complete planning session (DONE)
-2. Create backup branch: `archive/removed-features`
-3. Remove backend files (19 endpoint files, 22 model files)
-4. Update `main.py` and `__init__.py` imports
-5. Remove frontend pages (22 pages)
-6. Update navigation menus
-7. Create database down migrations for 22 tables
-8. Test core features still work
-9. Commit: "chore: Remove marketplace and advanced features"
+2. ✅ Answer 11 clarification questions (DONE)
+3. Create backup branch: `archive/removed-features`
+4. Remove backend files (18 endpoint files, 21 model files)
+5. Update `main.py` and `__init__.py` imports
+6. Remove frontend pages (22 pages)
+7. Update navigation menus
+8. Create database down migrations for 21 tables
+9. **KEEP** shift_templates (moved from remove list)
+10. Test core features still work
+11. Commit: "chore: Remove marketplace and advanced features"
 
-**Deliverable:** Clean, minimal MVP codebase
+**Deliverable:** Clean, minimal MVP codebase (14 core tables)
 
 ### Phase 2: Shift Assignment Redesign (Week 2)
 **Goal:** Support multiple guards per shift
@@ -546,48 +886,114 @@ shift_assignments table:
 **Deliverable:** Organizations fully isolated
 
 ### Phase 4: Subscription System (Week 3-4)
-**Goal:** Organizations can subscribe and pay
+**Goal:** Organizations can subscribe and pay, with trials and limits
 
 **Tasks:**
-1. Finalize subscription_plans table
-2. Create subscription signup flow (frontend)
-3. Integrate PayFast payment gateway
-4. Create webhook endpoint for PayFast
-5. Implement subscription status checks
-6. Enforce guard limits based on plan
-7. Create upgrade/downgrade flows
-8. Test payment flow end-to-end
-9. Commit: "feat: Add PayFast subscription system"
+1. **Organization Lifecycle:**
+   - Add status, trial_expires_at, cancelled_at to organizations table
+   - Implement trial period (14 days on registration)
+   - Create daily cron job for trial expiration checks
+   - Implement read-only mode for cancelled subscriptions
+   - Create data export endpoint
 
-**Deliverable:** Working subscription payments
+2. **Subscription Plans:**
+   - Finalize subscription_plans table (with max_guards field)
+   - Seed default plans: Free (10), Basic (50), Pro (200), Enterprise (unlimited)
+   - Create subscription signup flow (frontend)
+
+3. **PayFast Integration:**
+   - Integrate PayFast payment gateway
+   - Create webhook endpoint for PayFast payment notifications
+   - Implement subscription status updates based on payments
+   - Test payment flow end-to-end
+
+4. **Guard Limit Enforcement:**
+   - Add limit check to employee creation endpoint
+   - Count all employees (active + inactive)
+   - Hard block with error message when limit exceeded
+   - Create upgrade prompts in UI
+
+5. **Subscription Management:**
+   - Create upgrade/downgrade flows
+   - Handle subscription changes (immediate vs next billing cycle)
+   - Implement downgrade grace period if needed
+   - Test all subscription state transitions
+
+6. Commit: "feat: Add PayFast subscriptions with trials and guard limits"
+
+**Deliverable:** Full subscription lifecycle working
 
 ### Phase 5: SuperAdmin Portal (Week 4-5)
 **Goal:** Platform owner can manage everything
 
 **Tasks:**
-1. Create superadmin authentication
-2. Build organization management dashboard
-3. Build subscription management interface
-4. Create platform analytics dashboard
-5. Add organization approval workflow
-6. Add revenue tracking
-7. Test superadmin workflows
-8. Commit: "feat: Add SuperAdmin portal"
+1. **SuperAdmin Authentication:**
+   - Create special registration endpoint with secret token
+   - Add SUPERADMIN_REGISTRATION_TOKEN to .env
+   - Implement role-based access control (superadmin vs orgadmin)
+   - Create superadmin login flow
+
+2. **Organization Management:**
+   - Build organization list dashboard (all orgs)
+   - View organization details (guards, clients, sites, usage)
+   - Approve/suspend organizations
+   - Extend trial periods manually
+   - Force subscription changes if needed
+
+3. **Subscription Management:**
+   - View all subscriptions (active, trial, cancelled, overdue)
+   - See payment status and history
+   - Manually update subscription status (for support)
+   - Handle failed payments
+   - Generate subscription reports
+
+4. **Platform Analytics:**
+   - Total revenue (monthly, yearly)
+   - Number of active organizations
+   - Platform-wide statistics (total guards, shifts, sites)
+   - Growth metrics (new signups, churn rate)
+   - Trial conversion rates
+
+5. **Frontend:**
+   - Build SuperAdmin dashboard UI
+   - Organization management interface
+   - Subscription management interface
+   - Analytics charts and graphs
+
+6. Test superadmin workflows
+7. Commit: "feat: Add SuperAdmin portal with special registration"
 
 **Deliverable:** SuperAdmin can oversee platform
 
-### Phase 6: Basic Payroll (Week 5)
-**Goal:** Calculate guard pay for periods
+### Phase 6: Basic Payroll & Billing (Week 5)
+**Goal:** Calculate guard pay and client billable hours
 
 **Tasks:**
-1. Create payroll calculation service
-2. Build payroll report generation
-3. Add payroll endpoints
-4. Create payroll UI (view reports)
-5. Test payroll calculations
-6. Commit: "feat: Add basic payroll calculations"
+1. **Payroll Calculation (Guard Pay):**
+   - Create payroll calculation service (based on assigned shifts)
+   - Calculate hours from shift start_time to end_time
+   - Multiply hours by employee hourly_rate
+   - Generate payroll report per employee per period
+   - Add payroll endpoints (GET /payroll/calculate)
+   - Create payroll UI (view reports, export CSV)
 
-**Deliverable:** Payroll reports generated
+2. **Billable Hours Tracking (Client Invoicing):**
+   - Create billable hours calculation service
+   - Calculate total hours per client per period
+   - Use site.billing_rate for calculations
+   - Generate billable hours report with breakdown by site
+   - Add billable hours endpoint (GET /payroll/billable-hours/{client_id})
+   - Create billing report UI (view and export)
+
+3. **Testing:**
+   - Test payroll calculations with various shift scenarios
+   - Test billable hours with multiple sites per client
+   - Verify calculations match expected results
+   - Test export functionality
+
+4. Commit: "feat: Add payroll calculations and billable hours tracking"
+
+**Deliverable:** Payroll reports + billable hours reports generated
 
 ### Phase 7: Polish & Testing (Week 6)
 **Goal:** Production-ready MVP
@@ -611,33 +1017,51 @@ shift_assignments table:
 ### MVP is complete when:
 
 **Core Features:**
-- [x] Organizations can register
-- [x] Organizations can subscribe (PayFast)
-- [x] Org admins can manage employees
-- [x] Org admins can manage clients
-- [x] Org admins can manage sites
-- [x] Org admins can create shifts (with required_staff)
-- [x] System can assign multiple guards to one shift
-- [x] Guards can mark unavailable times
-- [x] Roster generator works with multi-tenancy
-- [x] Certifications tracked with expiry warnings
-- [x] Basic payroll calculations work
-- [x] Dashboard shows org-specific metrics
+- [ ] Organizations can register with 14-day trial
+- [ ] Organizations can subscribe via PayFast
+- [ ] Org admins can manage employees (within plan limits)
+- [ ] Org admins can manage clients (duplicate names allowed)
+- [ ] Org admins can manage sites (with billing_rate)
+- [ ] Org admins can create shifts (with required_staff)
+- [ ] Org admins can create shift templates (recurring shifts)
+- [ ] System can assign multiple guards to one shift
+- [ ] Shift assignments have pending/confirmed workflow
+- [ ] Guards can mark unavailable times
+- [ ] Roster generator works with multi-tenancy and cert preferences
+- [ ] Certifications tracked with expiry warnings
+- [ ] Basic payroll calculations work (shift-based, no attendance)
+- [ ] Billable hours tracking per client per period
+- [ ] Dashboard shows org-specific metrics
+
+**Subscription Features:**
+- [ ] Trial period (14 days) on registration
+- [ ] Guard limits enforced (check on employee creation)
+- [ ] Hard block when limit exceeded with upgrade prompt
+- [ ] Inactive employees counted toward limit
+- [ ] PayFast payment integration working
+- [ ] Subscription status updates from payments
+- [ ] Upgrade/downgrade flows functional
+- [ ] 90-day read-only period after cancellation
+- [ ] Data export feature available
 
 **SuperAdmin Features:**
-- [x] SuperAdmin can view all organizations
-- [x] SuperAdmin can approve/suspend organizations
-- [x] SuperAdmin can view all subscriptions
-- [x] SuperAdmin can see platform analytics
-- [x] SuperAdmin can see revenue metrics
+- [ ] SuperAdmin registration via special token
+- [ ] SuperAdmin can view all organizations
+- [ ] SuperAdmin can approve/suspend organizations
+- [ ] SuperAdmin can extend trial periods
+- [ ] SuperAdmin can view all subscriptions
+- [ ] SuperAdmin can see platform analytics
+- [ ] SuperAdmin can see revenue metrics
+- [ ] SuperAdmin can manually update subscriptions
 
 **Technical:**
-- [x] All data isolated by org_id
-- [x] No security vulnerabilities
-- [x] Fast page loads (<2 seconds)
-- [x] Mobile responsive
-- [x] PayFast payments working
-- [x] Guard limits enforced per plan
+- [ ] All data isolated by org_id
+- [ ] Role-based access (superadmin vs orgadmin)
+- [ ] No security vulnerabilities
+- [ ] Fast page loads (<2 seconds)
+- [ ] Mobile responsive
+- [ ] Certification soft matching with warnings
+- [ ] Daily cron job for trial expirations
 
 ---
 
@@ -677,21 +1101,32 @@ shift_assignments table:
 ## 📦 Database Schema Summary
 
 ```
-Core Entities (13 tables):
-├── users (authentication)
-├── organizations (tenants)
-├── subscription_plans (pricing tiers)
-├── subscriptions (org subscriptions)
-├── employees (org_id, optional assigned_client_id)
-├── certifications (employee certs)
-├── clients (org_id)
-├── sites (client_id)
-├── shifts (site_id, required_staff)
-├── shift_assignments (shift_id, employee_id) ← NEW
-├── availability (employee blocks)
-├── payroll (basic calculations)
+Core Entities (14 tables):
+├── users (authentication, role: superadmin/orgadmin)
+├── organizations (tenants, status: trial/active/cancelled, trial_expires_at, cancelled_at)
+├── subscription_plans (pricing tiers, max_guards limit)
+├── subscriptions (org subscriptions, payment_status)
+├── employees (org_id required, optional assigned_client_id, status: active/inactive)
+├── certifications (employee certs, expiry tracking)
+├── clients (org_id, duplicate names allowed)
+├── sites (client_id, billing_rate for invoicing)
+├── shifts (site_id, required_staff, status)
+├── shift_assignments (shift_id, employee_id, status: pending/confirmed/cancelled) ← NEW
+├── shift_templates (recurring shift patterns) ← KEPT
+├── availability (employee unavailable times, available=FALSE)
+├── payroll (shift-based calculations, no attendance tracking)
 └── alembic_version (migrations)
 ```
+
+**Key Relationships:**
+- Organization → has many → Employees, Clients, Users
+- Organization → has one → Subscription
+- Client → has many → Sites
+- Site → has many → Shifts, Shift Templates
+- Shift → has many → Shift Assignments (employees)
+- Employee → has many → Certifications, Availability records
+- Employee → optionally assigned to → Client
+- Subscription → belongs to → Subscription Plan (enforces max_guards limit)
 
 ---
 
