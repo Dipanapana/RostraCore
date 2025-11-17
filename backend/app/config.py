@@ -126,6 +126,9 @@ class Settings(BaseSettings):
     RATE_LIMIT_PER_MINUTE: int = 60
     RATE_LIMIT_PER_HOUR: int = 1000
 
+    # SuperAdmin Settings (Phase 5)
+    SUPERADMIN_SECRET_TOKEN: Optional[str] = None  # Set in .env for superadmin registration
+
     class Config:
         env_file = ".env"
         case_sensitive = True

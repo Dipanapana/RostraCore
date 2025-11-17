@@ -8,8 +8,7 @@ from decimal import Decimal
 from app.database import get_db
 from app.models.subscription_plan import SubscriptionPlan
 from app.models.user import User
-# TODO Phase 5: Implement SuperAdmin authentication
-# from app.api.endpoints.superadmin_auth import get_current_superadmin
+from app.api.endpoints.superadmin_auth import get_current_superadmin
 
 router = APIRouter()
 
@@ -86,16 +85,14 @@ def check_superadmin_permission(superadmin: User, permission: str):
 @router.get("/plans", response_model=List[PlanResponse])
 async def list_subscription_plans(
     include_inactive: bool = False,
-    db: Session = Depends(get_db)
-    # TODO Phase 5: Add superadmin authentication
-    # current_superadmin: User = Depends(get_current_superadmin)
+    db: Session = Depends(get_db),
+    current_superadmin: User = Depends(get_current_superadmin)
 ):
     """
     List all subscription plans.
 
-    TODO Phase 5: Add superadmin-only access control
+    Superadmin only.
     """
-    # check_superadmin_permission(current_superadmin, "view_analytics")  # TODO Phase 5
 
     query = db.query(SubscriptionPlan)
 
@@ -142,10 +139,9 @@ async def list_subscription_plans(
 async def get_subscription_plan(
     plan_id: int,
     db: Session = Depends(get_db),
-    # current_superadmin: User = Depends(get_current_superadmin)  # TODO Phase 5
+    current_superadmin: User = Depends(get_current_superadmin)
 ):
-    """Get a specific subscription plan by ID."""
-    # check_superadmin_permission(current_superadmin,  # TODO Phase 5 "view_analytics")
+    """Get a specific subscription plan by ID. Superadmin only."""
 
     plan = db.query(SubscriptionPlan).filter(
         SubscriptionPlan.plan_id == plan_id
@@ -190,14 +186,13 @@ async def get_subscription_plan(
 async def create_subscription_plan(
     plan_data: PlanCreate,
     db: Session = Depends(get_db),
-    # current_superadmin: User = Depends(get_current_superadmin)  # TODO Phase 5
+    current_superadmin: User = Depends(get_current_superadmin)
 ):
     """
     Create a new subscription plan.
 
-    Superadmin only. Requires 'manage_plans' permission.
+    Superadmin only.
     """
-    # check_superadmin_permission(current_superadmin,  # TODO Phase 5 "manage_plans")
 
     # Check if plan name already exists
     existing_plan = db.query(SubscriptionPlan).filter(
@@ -259,14 +254,13 @@ async def update_subscription_plan(
     plan_id: int,
     plan_data: PlanUpdate,
     db: Session = Depends(get_db),
-    # current_superadmin: User = Depends(get_current_superadmin)  # TODO Phase 5
+    current_superadmin: User = Depends(get_current_superadmin)
 ):
     """
     Update an existing subscription plan.
 
-    Superadmin only. Requires 'manage_plans' permission.
+    Superadmin only.
     """
-    # check_superadmin_permission(current_superadmin,  # TODO Phase 5 "manage_plans")
 
     plan = db.query(SubscriptionPlan).filter(
         SubscriptionPlan.plan_id == plan_id
@@ -323,14 +317,13 @@ async def update_subscription_plan(
 async def delete_subscription_plan(
     plan_id: int,
     db: Session = Depends(get_db),
-    # current_superadmin: User = Depends(get_current_superadmin)  # TODO Phase 5
+    current_superadmin: User = Depends(get_current_superadmin)
 ):
     """
     Delete a subscription plan.
 
     Superadmin only. Can only delete if no organizations are using it.
     """
-    # check_superadmin_permission(current_superadmin,  # TODO Phase 5 "manage_plans")
 
     plan = db.query(SubscriptionPlan).filter(
         SubscriptionPlan.plan_id == plan_id
@@ -368,10 +361,9 @@ async def delete_subscription_plan(
 async def toggle_plan_active_status(
     plan_id: int,
     db: Session = Depends(get_db),
-    # current_superadmin: User = Depends(get_current_superadmin)  # TODO Phase 5
+    current_superadmin: User = Depends(get_current_superadmin)
 ):
-    """Toggle plan active/inactive status."""
-    # check_superadmin_permission(current_superadmin,  # TODO Phase 5 "manage_plans")
+    """Toggle plan active/inactive status. Superadmin only."""
 
     plan = db.query(SubscriptionPlan).filter(
         SubscriptionPlan.plan_id == plan_id

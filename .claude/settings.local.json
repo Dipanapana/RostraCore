@@ -43,7 +43,9 @@
       "Bash(alembic upgrade:*)",
       "Bash(alembic stamp:*)",
       "Bash(\"C:\\Program Files\\PostgreSQL\\14\\bin\\psql.exe\" -U postgres -d rostracore_db -c \"DROP TABLE IF EXISTS guard_applicants, job_applications, cv_purchases, generated_cvs, guard_ratings, incident_reports, leave_requests, marketplace_commissions, marketplace_settings, attendance, expenses, daily_occurrence_book, skills_matrix, employee_permissions, notification_preferences, bulk_hiring_packages, premium_job_postings, shift_groups, ob_entry, job_postings, cv_generations CASCADE;\")",
-      "Bash(\"C:\\Program Files\\PostgreSQL\\14\\bin\\psql.exe\" -U postgres -d rostracore_db -c \"SELECT table_name, column_name FROM information_schema.columns WHERE column_name = ''org_id'' AND table_name IN (''employees'', ''clients'', ''sites'', ''shifts'', ''rosters'') ORDER BY table_name;\")"
+      "Bash(\"C:\\Program Files\\PostgreSQL\\14\\bin\\psql.exe\" -U postgres -d rostracore_db -c \"SELECT table_name, column_name FROM information_schema.columns WHERE column_name = ''org_id'' AND table_name IN (''employees'', ''clients'', ''sites'', ''shifts'', ''rosters'') ORDER BY table_name;\")",
+      "Bash(python:*)",
+      "Bash(timeout 5 echo:*)"
     ],
     "deny": [],
     "ask": []
