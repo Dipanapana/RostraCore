@@ -112,6 +112,13 @@ class Settings(BaseSettings):
     MVP_MONTHLY_RATE_PER_GUARD: float = 45.00
     MVP_CURRENCY: str = "ZAR"
 
+    # PayFast Payment Gateway (South African)
+    PAYFAST_MERCHANT_ID: str = ""  # Set in .env
+    PAYFAST_MERCHANT_KEY: str = ""  # Set in .env
+    PAYFAST_PASSPHRASE: str = ""  # Set in .env (optional but recommended)
+    PAYFAST_SANDBOX: bool = True  # True for testing, False for production
+    BACKEND_URL: str = "http://localhost:8000"  # For PayFast webhooks
+
     # Security Settings
     PASSWORD_MIN_LENGTH: int = 12
     MAX_LOGIN_ATTEMPTS: int = 5
