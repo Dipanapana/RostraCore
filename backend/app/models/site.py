@@ -11,6 +11,10 @@ class Site(Base):
     __tablename__ = "sites"
 
     site_id = Column(Integer, primary_key=True, index=True)
+
+    # Multi-tenancy: Site belongs to an organization (via client)
+    org_id = Column(Integer, ForeignKey("organizations.org_id", ondelete="CASCADE"), nullable=False, index=True)
+
     client_id = Column(Integer, ForeignKey("clients.client_id", ondelete="SET NULL"), nullable=True, index=True)
     client_name = Column(String(200), nullable=False)  # Kept for backward compatibility
     site_name = Column(String(200), nullable=True)  # Specific site name (e.g., "Main Gate", "Building A")
@@ -38,15 +42,12 @@ class Site(Base):
     # Supervisor
     supervisor_id = Column(Integer, ForeignKey("employees.employee_id", ondelete="SET NULL"), nullable=True)
 
-    # Relationships
+    # Relationships (MVP core only)
+    organization = relationship("Organization", back_populates="sites")
     client = relationship("Client", back_populates="sites")
     supervisor = relationship("Employee", foreign_keys=[supervisor_id])
     shifts = relationship("Shift", back_populates="site")
-    expenses = relationship("Expense", back_populates="site")
     shift_templates = relationship("ShiftTemplate", back_populates="site")
-    incident_reports = relationship("IncidentReport", back_populates="site")
-    daily_reports = relationship("DailyOccurrenceBook", back_populates="site")
-    ob_entries = relationship("OBEntry", back_populates="site")
 
     def __repr__(self):
         return f"<Site {self.site_id}: {self.client_name}>"

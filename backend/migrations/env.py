@@ -11,11 +11,11 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from app.database import Base
+# Import only MVP core models
 from app.models import (
-    employee, site, shift, availability, certification,
-    expense, attendance, payroll, rules_config,
-    shift_template, skills_matrix, organization, shift_group,
-    roster, shift_assignment
+    User, Employee, Site, Shift, Availability, Certification,
+    PayrollSummary, ShiftTemplate, Roster, ShiftAssignment,
+    Organization, Client, SubscriptionPlan
 )
 
 # this is the Alembic Config object

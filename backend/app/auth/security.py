@@ -248,3 +248,27 @@ def require_roles(allowed_roles: list[UserRole]):
 def is_admin(current_user: User = Depends(get_current_user)) -> User:
     """Require admin role."""
     return require_role(UserRole.ADMIN)(current_user)
+
+
+def get_current_org_id(current_user: User = Depends(get_current_user)) -> int:
+    """
+    Get the org_id of the current authenticated user.
+
+    This is used for multi-tenancy data isolation - ensures users can only access
+    data from their own organization.
+
+    Args:
+        current_user: Current authenticated user
+
+    Returns:
+        Organization ID
+
+    Raises:
+        HTTPException: If user has no organization assigned
+    """
+    if current_user.org_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User has no organization assigned. Please contact administrator."
+        )
+    return current_user.org_id

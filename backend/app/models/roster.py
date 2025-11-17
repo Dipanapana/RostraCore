@@ -15,6 +15,10 @@ class Roster(Base):
     __tablename__ = "rosters"
 
     roster_id = Column(Integer, primary_key=True, index=True)
+
+    # Multi-tenancy: Roster belongs to an organization
+    org_id = Column(Integer, ForeignKey("organizations.org_id", ondelete="CASCADE"), nullable=False, index=True)
+
     roster_code = Column(String(50), unique=True, nullable=False, index=True)  # e.g., "R2025-11-W1"
     start_date = Column(DateTime, nullable=False)
     end_date = Column(DateTime, nullable=False)
@@ -69,6 +73,7 @@ class Roster(Base):
     notes = Column(Text, nullable=True)
 
     # Relationships
+    organization = relationship("Organization", back_populates="rosters")
     shift_assignments = relationship("ShiftAssignment", back_populates="roster", cascade="all, delete-orphan")
     creator = relationship("User", foreign_keys=[created_by])
     publisher = relationship("User", foreign_keys=[published_by])

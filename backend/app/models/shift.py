@@ -20,6 +20,10 @@ class Shift(Base):
     __tablename__ = "shifts"
 
     shift_id = Column(Integer, primary_key=True, index=True)
+
+    # Multi-tenancy: Shift belongs to an organization (via site)
+    org_id = Column(Integer, ForeignKey("organizations.org_id", ondelete="CASCADE"), nullable=False, index=True)
+
     site_id = Column(Integer, ForeignKey("sites.site_id"), nullable=False, index=True)
     start_time = Column(DateTime, nullable=False, index=True)
     end_time = Column(DateTime, nullable=False)
@@ -36,6 +40,7 @@ class Shift(Base):
     meal_break_duration_minutes = Column(Integer, default=60)  # Default 60 min unpaid break
 
     # Relationships
+    organization = relationship("Organization", back_populates="shifts")
     site = relationship("Site", back_populates="shifts")
     shift_assignments = relationship("ShiftAssignment", back_populates="shift", cascade="all, delete-orphan")
 

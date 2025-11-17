@@ -62,27 +62,12 @@ class Employee(Base):
     is_supervisor = Column(Boolean, default=False)  # Whether employee is a supervisor
     province = Column(String(50), nullable=True)  # North West, Northern Cape, Gauteng, etc.
 
-    # Marketplace/Rating fields
-    average_rating = Column(Numeric(3, 2), nullable=True)  # Average rating from guard_ratings
-    total_ratings = Column(Integer, default=0)  # Total number of ratings received
-    hired_from_marketplace = Column(Boolean, default=False)  # Was this employee hired via job marketplace?
-    marketplace_applicant_id = Column(Integer, ForeignKey("guard_applicants.applicant_id", ondelete="SET NULL"), nullable=True)
-
-    # Relationships
+    # Relationships (MVP core only)
     organization = relationship("Organization", back_populates="employees")
     assigned_client = relationship("Client", foreign_keys=[assigned_client_id], backref="assigned_employees")
-    shifts = relationship("Shift", back_populates="employee")
     certifications = relationship("Certification", back_populates="employee")
     availability = relationship("Availability", back_populates="employee")
-    expenses = relationship("Expense", back_populates="employee")
-    attendance = relationship("Attendance", back_populates="employee")
     payroll_summary = relationship("PayrollSummary", back_populates="employee")
-    skills = relationship("SkillsMatrix", back_populates="employee")
-    leave_requests = relationship("LeaveRequest", back_populates="employee")
-    incident_reports = relationship("IncidentReport", foreign_keys="[IncidentReport.employee_id]", back_populates="employee")
-    daily_reports = relationship("DailyOccurrenceBook", foreign_keys="[DailyOccurrenceBook.employee_id]", back_populates="employee")
-    ratings = relationship("GuardRating", foreign_keys="[GuardRating.employee_id]", back_populates="employee")
-    ob_entries = relationship("OBEntry", foreign_keys="[OBEntry.employee_id]", back_populates="employee")
 
     def __repr__(self):
         return f"<Employee {self.employee_id}: {self.first_name} {self.last_name}>"
