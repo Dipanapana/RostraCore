@@ -488,7 +488,7 @@ export default function LandingPage() {
               {/* Price */}
               <div className="mb-6">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-5xl font-extrabold text-gray-900">R499</span>
+                  <span className="text-5xl font-extrabold text-gray-900">R1,499</span>
                   <span className="text-xl text-gray-600">/month</span>
                 </div>
                 <p className="text-sm text-gray-500 mt-1">(excl. VAT)</p>
@@ -556,7 +556,7 @@ export default function LandingPage() {
               {/* Price */}
               <div className="mb-6">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-5xl font-extrabold text-gray-900">R999</span>
+                  <span className="text-5xl font-extrabold text-gray-900">R3,499</span>
                   <span className="text-xl text-gray-600">/month</span>
                 </div>
                 <p className="text-sm text-gray-500 mt-1">(excl. VAT)</p>
@@ -617,7 +617,7 @@ export default function LandingPage() {
               {/* Price */}
               <div className="mb-6">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-5xl font-extrabold text-gray-900">R2,499</span>
+                  <span className="text-5xl font-extrabold text-gray-900">R7,999</span>
                   <span className="text-xl text-gray-600">/month</span>
                 </div>
                 <p className="text-sm text-gray-500 mt-1">(excl. VAT)</p>
