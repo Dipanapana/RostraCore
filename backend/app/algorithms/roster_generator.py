@@ -33,6 +33,7 @@ class RosterGenerator:
         self,
         start_date: datetime,
         end_date: datetime,
+        org_id: int,
         site_ids: Optional[List[int]] = None
     ) -> Dict:
         """
@@ -41,16 +42,17 @@ class RosterGenerator:
         Args:
             start_date: Start of roster period
             end_date: End of roster period
+            org_id: Organization ID for multi-tenancy isolation
             site_ids: Optional list of site IDs to include
 
         Returns:
             Dict with roster assignments and metadata
         """
         # Step 1: Get unassigned shifts for the period
-        shifts = self._get_unassigned_shifts(start_date, end_date, site_ids)
+        shifts = self._get_unassigned_shifts(start_date, end_date, org_id, site_ids)
 
         # Step 2: Get available employees
-        employees = self._get_available_employees()
+        employees = self._get_available_employees(org_id)
 
         # Step 3: Generate feasible assignments
         feasible_pairs = self._generate_feasible_pairs(shifts, employees)
@@ -75,11 +77,13 @@ class RosterGenerator:
         self,
         start_date: datetime,
         end_date: datetime,
+        org_id: int,
         site_ids: Optional[List[int]] = None
     ) -> List[Dict]:
         """
         Get all shifts that need more guards assigned.
         Multi-guard support: A shift needs assignment if current assignments < required_staff.
+        Multi-tenancy: Only returns shifts for the specified organization.
         """
         from app.models.shift import Shift
         from app.models.shift_assignment import ShiftAssignment, AssignmentStatus
@@ -87,7 +91,8 @@ class RosterGenerator:
 
         query = self.db.query(Shift).filter(
             Shift.start_time >= start_date,
-            Shift.start_time < end_date
+            Shift.start_time < end_date,
+            Shift.org_id == org_id  # Multi-tenancy filter
         )
 
         if site_ids:
@@ -125,12 +130,16 @@ class RosterGenerator:
 
         return shifts_needing_guards
 
-    def _get_available_employees(self) -> List[Dict]:
-        """Get all active employees."""
+    def _get_available_employees(self, org_id: int) -> List[Dict]:
+        """
+        Get all active employees for the specified organization.
+        Multi-tenancy: Only returns employees belonging to the organization.
+        """
         from app.models.employee import Employee, EmployeeStatus
 
         employees = self.db.query(Employee).filter(
-            Employee.status == EmployeeStatus.ACTIVE
+            Employee.status == EmployeeStatus.ACTIVE,
+            Employee.org_id == org_id  # Multi-tenancy filter
         ).all()
 
         return [
