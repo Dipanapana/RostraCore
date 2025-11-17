@@ -106,13 +106,14 @@ def create_sample_data():
         from random import randint
 
         for i, emp_data in enumerate(employee_data, 1):
-            # Generate unique ID number
+            # Generate unique ID number and email
             random_id = randint(10000000, 99999999)
+            random_email_suffix = randint(1000, 9999)
             employee = Employee(
                 first_name=emp_data["first_name"],
                 last_name=emp_data["last_name"],
                 id_number=f"RSA{random_id}",  # Generate unique RSA ID
-                email=f"{emp_data['first_name'].lower()}.{emp_data['last_name'].lower()}@testsecurity.co.za",
+                email=f"{emp_data['first_name'].lower()}.{emp_data['last_name'].lower()}{random_email_suffix}@testsecurity.co.za",
                 phone=f"+2781000{str(i).zfill(4)}",
                 psira_grade=emp_data["psira_grade"],
                 hourly_rate=emp_data["hourly_rate"],
@@ -326,8 +327,8 @@ def create_sample_data():
                     start_time=day_shift_start,
                     end_time=day_shift_end,
                     required_staff=site.min_staff,
-                    shift_type="day",
-                    hourly_rate=site.min_staff * 75.00  # Base rate
+                    required_skill=site.required_skill,
+                    status="planned"
                 )
                 db.add(day_shift)
                 shift_count += 1
@@ -342,8 +343,8 @@ def create_sample_data():
                     start_time=night_shift_start,
                     end_time=night_shift_end,
                     required_staff=site.min_staff,
-                    shift_type="night",
-                    hourly_rate=site.min_staff * 85.00  # Higher rate for night
+                    required_skill=site.required_skill,
+                    status="planned"
                 )
                 db.add(night_shift)
                 shift_count += 1
