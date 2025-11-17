@@ -59,6 +59,7 @@ export default function RegisterPage() {
             password: formData.password,
             full_name: formData.full_name,
             phone: formData.phone || null,
+            company_name: formData.company_name,
             role: "admin", // First user is admin
           }),
         }
@@ -256,7 +257,7 @@ export default function RegisterPage() {
                 htmlFor="company_name"
                 className="block text-sm font-semibold text-gray-900 mb-2"
               >
-                Company Name (Optional)
+                Company Name *
               </label>
               <input
                 id="company_name"
@@ -264,12 +265,13 @@ export default function RegisterPage() {
                 type="text"
                 value={formData.company_name}
                 onChange={handleChange}
+                required
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                 placeholder="Your Security Company Name"
                 disabled={loading}
               />
               <p className="text-xs text-gray-500 mt-2">
-                You can set this up later in organization settings
+                This will be displayed on your dashboard and PDF reports
               </p>
             </div>
 
