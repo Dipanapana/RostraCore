@@ -15,7 +15,6 @@ from app.models.employee import Employee
 from app.models.shift import Shift
 from app.models.site import Site
 from app.models.payroll import PayrollSummary
-from app.models.attendance import Attendance
 from app.models.organization import Organization
 from app.models.availability import Availability
 from app.services.cache_service import CacheService

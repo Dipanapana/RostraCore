@@ -24,7 +24,12 @@
       "Bash(\"C:\\Program Files\\PostgreSQL\\14\\bin\\psql.exe\" -U postgres -d rostracore_db -c \"SELECT COUNT(*) as total_shifts FROM shifts WHERE start_time >= CURRENT_DATE;\")",
       "Bash(timeout 120 python:*)",
       "Bash(timeout 15 echo:*)",
-      "Bash(timeout 20 echo:*)"
+      "Bash(timeout 20 echo:*)",
+      "Bash(git checkout:*)",
+      "Bash(alembic revision:*)",
+      "Bash(timeout 20 python:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nchore: Remove marketplace and advanced features (Phase 1 MVP Cleanup)\n\nThis commit removes all non-MVP features to create a clean, focused codebase for the SaaS platform.\n\nBackend Changes:\n- Removed 17 endpoint files (marketplace, analytics, attendance, expenses, incidents, etc.)\n- Removed 18 model files (guard_applicants, job_postings, CV generation, etc.)\n- Updated main.py to remove deleted endpoint imports\n- Updated models __init__.py to only include MVP core models\n- Cleaned up schemas.py (removed Expense, Attendance schemas)\n- Simplified payroll.py (removed expense and commission tracking)\n- Stubbed payments.py for future subscription integration (Phase 4)\n- Stubbed superadmin_auth.py for Phase 5 implementation\n- Updated superadmin_analytics_service.py for SaaS model\n- Fixed subscription_plans.py to remove marketplace dependencies\n\nFrontend Changes:\n- Removed marketplace pages\n- Removed employee portal pages\n- Removed specialized dashboards (executive, financial, operations, people)\n- Removed admin advanced features (analytics-debug, data-insights, employee-permissions, leave-approvals)\n- Removed attendance and expenses pages\n- Updated Sidebar navigation to show only MVP features\n\nDatabase:\n- Created migration to drop 21 unused tables\n- Tables removed: marketplace features, advanced features, analytics tables, unused/duplicate tables\n- Kept 14 core tables for MVP\n\nMVP Core Features Remaining:\n- Organizations (multi-tenancy)\n- Employees (guards)\n- Clients (municipalities)\n- Sites (guard posts)\n- Shifts\n- Shift assignments\n- Certifications\n- Availability\n- Roster generation\n- Basic payroll\n- Subscription plans (stub for Phase 4)\n\nNext: Phase 2 - Redesign shift assignment structure for multiple guards per shift\n\nGenerated with Claude Code\nhttps://claude.com/claude-code\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": [],
     "ask": []

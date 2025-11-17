@@ -1,13 +1,10 @@
-"""Payment webhook endpoints - PayFast integration."""
+"""Payment webhook endpoints - PayFast integration for subscriptions."""
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import datetime
 from app.database import get_db
-from app.models.cv_generation import CVPurchase, PaymentStatus
-from app.models.guard_applicant import GuardApplicant
-from app.services.payment_service import PaymentService
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -15,11 +12,13 @@ router = APIRouter()
 
 # Schemas
 class PaymentInitiateRequest(BaseModel):
-    applicant_id: int
-    purchase_id: int
+    """Request to initiate a subscription payment."""
+    organization_id: int
+    subscription_plan_id: int
 
 
 class PaymentInitiateResponse(BaseModel):
+    """Response with payment gateway details."""
     gateway: str = "payfast"
     payment_url: str
     payment_data: dict
@@ -31,144 +30,48 @@ async def initiate_payment(
     db: Session = Depends(get_db)
 ):
     """
-    Initiate PayFast payment for CV purchase.
+    Initiate PayFast payment for subscription.
 
     South African payments only via PayFast.
+
+    TODO: Implement in Phase 4 (Subscription System)
     """
-
-    # Get purchase
-    purchase = db.query(CVPurchase).filter(
-        CVPurchase.purchase_id == payment_request.purchase_id
-    ).first()
-
-    if not purchase:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Purchase not found"
-        )
-
-    # Get applicant
-    applicant = db.query(GuardApplicant).filter(
-        GuardApplicant.applicant_id == payment_request.applicant_id
-    ).first()
-
-    if not applicant:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Applicant not found"
-        )
-
-    # Create PayFast payment
-    payment_service = PaymentService(db)
-
-    try:
-        payment_details = payment_service.create_cv_payment(
-            applicant_id=payment_request.applicant_id,
-            purchase_id=payment_request.purchase_id,
-            buyer_email=applicant.email,
-            buyer_name=applicant.full_name
-        )
-
-        return PaymentInitiateResponse(
-            gateway="payfast",
-            payment_url=payment_details['payment_url'],
-            payment_data=payment_details['payment_data']
-        )
-
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Payment initiation failed: {str(e)}"
-        )
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail="PayFast integration coming in Phase 4"
+    )
 
 
-@router.post("/payfast/webhook")
-async def payfast_webhook(request: Request, db: Session = Depends(get_db)):
-    """
-    PayFast IPN (Instant Payment Notification) webhook.
-
-    Called by PayFast when payment status changes.
-    """
-
-    # Get POST data
-    form_data = await request.form()
-    post_data = dict(form_data)
-
-    # Initialize payment service
-    payment_service = PaymentService(db)
-
-    # Verify payment
-    if not payment_service.payfast.verify_payment(post_data):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid payment verification"
-        )
-
-    # Extract payment details
-    payment_status = post_data.get('payment_status')
-    m_payment_id = post_data.get('m_payment_id')  # Our purchase_id
-    amount_gross = float(post_data.get('amount_gross', 0))
-
-    # Get purchase
-    purchase = db.query(CVPurchase).filter(
-        CVPurchase.purchase_id == int(m_payment_id)
-    ).first()
-
-    if not purchase:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Purchase not found"
-        )
-
-    # Update purchase based on payment status
-    if payment_status == "COMPLETE":
-        purchase.payment_status = PaymentStatus.COMPLETED
-        purchase.paid_at = datetime.utcnow()
-        purchase.payment_reference = post_data.get('pf_payment_id')
-
-        # Update applicant
-        applicant = db.query(GuardApplicant).filter(
-            GuardApplicant.applicant_id == purchase.applicant_id
-        ).first()
-        if applicant:
-            applicant.cv_purchase_id = purchase.purchase_id
-
-    elif payment_status == "FAILED":
-        purchase.payment_status = PaymentStatus.FAILED
-
-    elif payment_status == "CANCELLED":
-        purchase.payment_status = PaymentStatus.CANCELLED
-
-    db.commit()
-
-    return {"status": "success"}
-
-
-@router.get("/status/{purchase_id}")
-async def get_payment_status(
-    purchase_id: int,
+@router.post("/webhook/payfast")
+async def payfast_webhook(
+    request: Request,
     db: Session = Depends(get_db)
 ):
     """
-    Get payment status for a purchase.
+    Handle PayFast payment webhook notifications.
+
+    TODO: Implement in Phase 4 (Subscription System)
+    - Verify payment signature
+    - Update subscription status
+    - Send confirmation email
     """
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail="PayFast webhook coming in Phase 4"
+    )
 
-    purchase = db.query(CVPurchase).filter(
-        CVPurchase.purchase_id == purchase_id
-    ).first()
 
-    if not purchase:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Purchase not found"
-        )
+@router.get("/status/{payment_id}")
+async def get_payment_status(
+    payment_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Get payment status for a subscription payment.
 
-    return {
-        "purchase_id": purchase.purchase_id,
-        "amount": float(purchase.amount),
-        "payment_method": purchase.payment_method,
-        "payment_status": purchase.payment_status,
-        "paid_at": purchase.paid_at,
-        "payment_reference": purchase.payment_reference,
-        "created_at": purchase.created_at
-    }
+    TODO: Implement in Phase 4 (Subscription System)
+    """
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail="Payment status coming in Phase 4"
+    )

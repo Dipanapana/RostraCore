@@ -1,11 +1,10 @@
-"""Pydantic schemas for API request/response validation."""
+"""Pydantic schemas for API request/response validation - MVP Core Only."""
 
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime, date, time
 from app.models.employee import EmployeeRole, EmployeeStatus
 from app.models.shift import ShiftStatus
-from app.models.expense import ExpenseType
 
 
 # Employee Schemas
@@ -202,66 +201,6 @@ class CertificationUpdate(BaseModel):
 
 class CertificationResponse(CertificationBase):
     cert_id: int
-
-    class Config:
-        from_attributes = True
-
-
-# Expense Schemas
-class ExpenseBase(BaseModel):
-    employee_id: Optional[int] = None
-    site_id: Optional[int] = None
-    type: ExpenseType
-    amount: float = Field(..., gt=0)
-    date_incurred: date
-    approved: bool = False
-    description: Optional[str] = None
-    receipt_url: Optional[str] = None
-
-
-class ExpenseCreate(ExpenseBase):
-    pass
-
-
-class ExpenseUpdate(BaseModel):
-    type: Optional[ExpenseType] = None
-    amount: Optional[float] = None
-    date_incurred: Optional[date] = None
-    approved: Optional[bool] = None
-    description: Optional[str] = None
-    receipt_url: Optional[str] = None
-
-
-class ExpenseResponse(ExpenseBase):
-    expense_id: int
-
-    class Config:
-        from_attributes = True
-
-
-# Attendance Schemas
-class AttendanceBase(BaseModel):
-    shift_id: int
-    employee_id: int
-    clock_in: Optional[datetime] = None
-    clock_out: Optional[datetime] = None
-    variance_minutes: int = 0
-    notes: Optional[str] = None
-
-
-class AttendanceCreate(AttendanceBase):
-    pass
-
-
-class AttendanceUpdate(BaseModel):
-    clock_in: Optional[datetime] = None
-    clock_out: Optional[datetime] = None
-    variance_minutes: Optional[int] = None
-    notes: Optional[str] = None
-
-
-class AttendanceResponse(AttendanceBase):
-    attend_id: int
 
     class Config:
         from_attributes = True

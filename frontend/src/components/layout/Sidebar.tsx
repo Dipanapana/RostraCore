@@ -62,34 +62,19 @@ const menuItems: NavItem[] = [
     icon: ClipboardList,
   },
   {
-    name: "Attendance",
-    href: "/attendance",
-    icon: Clock,
-  },
-  {
     name: "Certifications",
     href: "/certifications",
     icon: Award,
   },
   {
-    name: "Analytics",
-    href: "/analytics",
-    icon: BarChart3,
+    name: "Availability",
+    href: "/availability",
+    icon: Clock,
   },
   {
     name: "Payroll",
     href: "/payroll",
     icon: DollarSign,
-  },
-  {
-    name: "Expenses",
-    href: "/expenses",
-    icon: Receipt,
-  },
-  {
-    name: "Leave Approval",
-    href: "/admin/leave-approvals",
-    icon: FileCheck,
   },
 ];
 

@@ -11,7 +11,6 @@ from app.database import get_db
 from app.models.payroll import PayrollSummary
 from app.models.shift import Shift
 from app.models.employee import Employee
-from app.models.expense import Expense
 
 router = APIRouter()
 
@@ -133,33 +132,9 @@ async def generate_payroll(
     regular_hours = total_hours - overtime_hours
     gross_pay = (regular_hours * hourly_rate) + (overtime_hours * hourly_rate * 1.5)
 
-    # Get expenses for period
-    expenses = db.query(Expense).filter(
-        and_(
-            Expense.employee_id == payroll_data.employee_id,
-            Expense.date_incurred >= payroll_data.period_start,
-            Expense.date_incurred <= payroll_data.period_end,
-            Expense.approved == True
-        )
-    ).all()
-
-    expenses_total = sum(e.amount for e in expenses)
-
-    # Process marketplace commission deduction (if applicable)
-    from app.services.commission_deduction_service import CommissionDeductionService
-
-    commission_deduction_result = CommissionDeductionService.process_commission_deductions(
-        db=db,
-        employee_id=payroll_data.employee_id,
-        payroll_period_end=payroll_data.period_end,
-        gross_pay=gross_pay
-    )
-
-    commission_deduction = commission_deduction_result.get('deduction_amount', 0.0)
-    commission_notes = commission_deduction_result.get('notes', '')
-
-    # Calculate net pay (gross + expenses - commission)
-    net_pay = gross_pay + expenses_total - commission_deduction
+    # MVP: No expenses or commission tracking
+    expenses_total = 0.0
+    net_pay = gross_pay
 
     # Create or update payroll record
     existing = db.query(PayrollSummary).filter(
