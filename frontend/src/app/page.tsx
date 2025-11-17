@@ -475,61 +475,55 @@ export default function LandingPage() {
           </div>
 
           {/* Pricing Cards */}
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
             {/* Basic Plan */}
-            <div className="bg-white rounded-2xl p-8 border-2 border-gray-200 hover:border-primary-500 hover:shadow-xl transition-all">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+            <div className="bg-white rounded-2xl p-6 border-2 border-gray-200 hover:border-primary-500 hover:shadow-xl transition-all">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
                 Basic
               </h3>
-              <p className="text-gray-600 mb-6">
-                Perfect for small security companies
+              <p className="text-gray-600 mb-4 text-sm">
+                Perfect for small teams
               </p>
 
               {/* Price */}
-              <div className="mb-6">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-5xl font-extrabold text-gray-900">R1,499</span>
-                  <span className="text-xl text-gray-600">/month</span>
+              <div className="mb-4">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-extrabold text-gray-900">R1,499</span>
+                  <span className="text-lg text-gray-600">/mo</span>
                 </div>
-                <p className="text-sm text-gray-500 mt-1">(excl. VAT)</p>
+                <p className="text-xs text-gray-500 mt-1">(excl. VAT)</p>
               </div>
 
               {/* CTA */}
               <Link
                 href="/register"
-                className="block w-full bg-white hover:bg-primary-50 text-primary-500 border-2 border-primary-500 text-center px-6 py-3 rounded-lg font-semibold transition-all mb-6"
+                className="block w-full bg-white hover:bg-primary-50 text-primary-500 border-2 border-primary-500 text-center px-4 py-2.5 rounded-lg font-semibold transition-all mb-4 text-sm"
               >
                 Start Free Trial
               </Link>
 
               {/* Features */}
-              <ul className="space-y-3">
-                <li className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  <span className="text-gray-700">Up to 50 security guards</span>
+                  <span className="text-gray-700">Up to 50 guards</span>
                 </li>
-                <li className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <li className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  <span className="text-gray-700">Automated roster generation</span>
+                  <span className="text-gray-700">Roster generation</span>
                 </li>
-                <li className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <li className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  <span className="text-gray-700">PSIRA certification tracking</span>
+                  <span className="text-gray-700">PSIRA tracking</span>
                 </li>
-                <li className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span className="text-gray-700">Basic payroll calculations</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <li className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                   <span className="text-gray-700">Email support</span>
@@ -537,128 +531,171 @@ export default function LandingPage() {
               </ul>
             </div>
 
-            {/* Pro Plan - POPULAR */}
-            <div className="bg-white rounded-2xl p-8 border-2 border-primary-500 shadow-xl relative transform scale-105">
+            {/* Professional Plan - POPULAR */}
+            <div className="bg-white rounded-2xl p-6 border-2 border-primary-500 shadow-xl relative lg:scale-105">
               {/* Popular Badge */}
-              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                <div className="bg-primary-500 text-white px-4 py-1 rounded-full text-sm font-bold shadow-lg">
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                <div className="bg-primary-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
                   Most Popular
                 </div>
               </div>
 
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
                 Professional
               </h3>
-              <p className="text-gray-600 mb-6">
-                For growing security companies
+              <p className="text-gray-600 mb-4 text-sm">
+                For growing companies
               </p>
 
               {/* Price */}
-              <div className="mb-6">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-5xl font-extrabold text-gray-900">R3,499</span>
-                  <span className="text-xl text-gray-600">/month</span>
+              <div className="mb-4">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-extrabold text-gray-900">R3,499</span>
+                  <span className="text-lg text-gray-600">/mo</span>
                 </div>
-                <p className="text-sm text-gray-500 mt-1">(excl. VAT)</p>
+                <p className="text-xs text-gray-500 mt-1">(excl. VAT)</p>
               </div>
 
               {/* CTA */}
               <Link
                 href="/register"
-                className="block w-full bg-primary-500 hover:bg-primary-600 text-white text-center px-6 py-3 rounded-lg font-semibold transition-all mb-6 shadow-md"
+                className="block w-full bg-primary-500 hover:bg-primary-600 text-white text-center px-4 py-2.5 rounded-lg font-semibold transition-all mb-4 shadow-md text-sm"
               >
                 Start Free Trial
               </Link>
 
               {/* Features */}
-              <ul className="space-y-3">
-                <li className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  <span className="text-gray-700">Up to 200 security guards</span>
+                  <span className="text-gray-700">Up to 200 guards</span>
                 </li>
-                <li className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <li className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                   <span className="text-gray-700">Everything in Basic</span>
                 </li>
-                <li className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <li className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  <span className="text-gray-700">Billable hours tracking</span>
+                  <span className="text-gray-700">Billable hours</span>
                 </li>
-                <li className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <li className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  <span className="text-gray-700">Priority email support</span>
+                  <span className="text-gray-700">Priority support</span>
                 </li>
-                <li className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              </ul>
+            </div>
+
+            {/* Business Plan */}
+            <div className="bg-white rounded-2xl p-6 border-2 border-gray-200 hover:border-primary-500 hover:shadow-xl transition-all">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                Business
+              </h3>
+              <p className="text-gray-600 mb-4 text-sm">
+                For established firms
+              </p>
+
+              {/* Price */}
+              <div className="mb-4">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-extrabold text-gray-900">R7,999</span>
+                  <span className="text-lg text-gray-600">/mo</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">(excl. VAT)</p>
+              </div>
+
+              {/* CTA */}
+              <Link
+                href="/register"
+                className="block w-full bg-white hover:bg-primary-50 text-primary-500 border-2 border-primary-500 text-center px-4 py-2.5 rounded-lg font-semibold transition-all mb-4 text-sm"
+              >
+                Start Free Trial
+              </Link>
+
+              {/* Features */}
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  <span className="text-gray-700">Data export (CSV)</span>
+                  <span className="text-gray-700">Up to 400 guards</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-700">Everything in Pro</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-700">Advanced analytics</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-700">Phone support</span>
                 </li>
               </ul>
             </div>
 
             {/* Enterprise Plan */}
-            <div className="bg-white rounded-2xl p-8 border-2 border-gray-200 hover:border-primary-500 hover:shadow-xl transition-all">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+            <div className="bg-white rounded-2xl p-6 border-2 border-gray-200 hover:border-primary-500 hover:shadow-xl transition-all">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
                 Enterprise
               </h3>
-              <p className="text-gray-600 mb-6">
-                For large security operations
+              <p className="text-gray-600 mb-4 text-sm">
+                For large operations
               </p>
 
               {/* Price */}
-              <div className="mb-6">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-5xl font-extrabold text-gray-900">R7,999</span>
-                  <span className="text-xl text-gray-600">/month</span>
+              <div className="mb-4">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-extrabold text-gray-900">R17,999</span>
+                  <span className="text-lg text-gray-600">/mo</span>
                 </div>
-                <p className="text-sm text-gray-500 mt-1">(excl. VAT)</p>
+                <p className="text-xs text-gray-500 mt-1">(excl. VAT)</p>
               </div>
 
               {/* CTA */}
               <Link
                 href="/register"
-                className="block w-full bg-white hover:bg-primary-50 text-primary-500 border-2 border-primary-500 text-center px-6 py-3 rounded-lg font-semibold transition-all mb-6"
+                className="block w-full bg-white hover:bg-primary-50 text-primary-500 border-2 border-primary-500 text-center px-4 py-2.5 rounded-lg font-semibold transition-all mb-4 text-sm"
               >
                 Start Free Trial
               </Link>
 
               {/* Features */}
-              <ul className="space-y-3">
-                <li className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  <span className="text-gray-700">Unlimited security guards</span>
+                  <span className="text-gray-700">Unlimited guards</span>
                 </li>
-                <li className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <li className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  <span className="text-gray-700">Everything in Professional</span>
+                  <span className="text-gray-700">Everything in Business</span>
                 </li>
-                <li className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <li className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  <span className="text-gray-700">Dedicated account manager</span>
+                  <span className="text-gray-700">Account manager</span>
                 </li>
-                <li className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span className="text-gray-700">Phone support</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <li className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                   <span className="text-gray-700">Custom integrations</span>
