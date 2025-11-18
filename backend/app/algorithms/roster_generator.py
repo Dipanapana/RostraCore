@@ -33,6 +33,7 @@ class RosterGenerator:
         self,
         start_date: datetime,
         end_date: datetime,
+        org_id: int,
         site_ids: Optional[List[int]] = None
     ) -> Dict:
         """
@@ -41,16 +42,17 @@ class RosterGenerator:
         Args:
             start_date: Start of roster period
             end_date: End of roster period
+            org_id: Organization ID for multi-tenancy isolation
             site_ids: Optional list of site IDs to include
 
         Returns:
             Dict with roster assignments and metadata
         """
         # Step 1: Get unassigned shifts for the period
-        shifts = self._get_unassigned_shifts(start_date, end_date, site_ids)
+        shifts = self._get_unassigned_shifts(start_date, end_date, org_id, site_ids)
 
         # Step 2: Get available employees
-        employees = self._get_available_employees()
+        employees = self._get_available_employees(org_id)
 
         # Step 3: Generate feasible assignments
         feasible_pairs = self._generate_feasible_pairs(shifts, employees)
@@ -75,45 +77,69 @@ class RosterGenerator:
         self,
         start_date: datetime,
         end_date: datetime,
+        org_id: int,
         site_ids: Optional[List[int]] = None
     ) -> List[Dict]:
-        """Get all unassigned shifts in the period."""
+        """
+        Get all shifts that need more guards assigned.
+        Multi-guard support: A shift needs assignment if current assignments < required_staff.
+        Multi-tenancy: Only returns shifts for the specified organization.
+        """
         from app.models.shift import Shift
+        from app.models.shift_assignment import ShiftAssignment, AssignmentStatus
+        from sqlalchemy import func
 
         query = self.db.query(Shift).filter(
             Shift.start_time >= start_date,
             Shift.start_time < end_date,
-            Shift.assigned_employee_id == None
+            Shift.org_id == org_id  # Multi-tenancy filter
         )
 
         if site_ids:
             query = query.filter(Shift.site_id.in_(site_ids))
 
-        shifts = query.all()
+        all_shifts = query.all()
 
-        return [
-            {
-                "shift_id": s.shift_id,
-                "site_id": s.site_id,
-                "start_time": s.start_time,
-                "end_time": s.end_time,
-                # FIXED: Use effective_required_skill to inherit from site if not set
-                "required_skill": s.effective_required_skill,
-                "site": {
-                    "site_id": s.site.site_id,
-                    "gps_lat": s.site.gps_lat,
-                    "gps_lng": s.site.gps_lng
-                } if s.site else None
-            }
-            for s in shifts
-        ]
+        # Filter shifts that need more guards
+        shifts_needing_guards = []
+        for s in all_shifts:
+            # Count current non-cancelled assignments
+            current_assignments = self.db.query(func.count(ShiftAssignment.assignment_id)).filter(
+                ShiftAssignment.shift_id == s.shift_id,
+                ShiftAssignment.status.in_([AssignmentStatus.PENDING, AssignmentStatus.CONFIRMED])
+            ).scalar() or 0
 
-    def _get_available_employees(self) -> List[Dict]:
-        """Get all active employees."""
+            # If shift needs more guards, add it (with slots remaining)
+            slots_remaining = s.required_staff - current_assignments
+            if slots_remaining > 0:
+                shifts_needing_guards.append({
+                    "shift_id": s.shift_id,
+                    "site_id": s.site_id,
+                    "start_time": s.start_time,
+                    "end_time": s.end_time,
+                    "required_skill": s.effective_required_skill,
+                    "required_staff": s.required_staff,
+                    "current_assignments": current_assignments,
+                    "slots_remaining": slots_remaining,
+                    "site": {
+                        "site_id": s.site.site_id,
+                        "gps_lat": s.site.gps_lat,
+                        "gps_lng": s.site.gps_lng
+                    } if s.site else None
+                })
+
+        return shifts_needing_guards
+
+    def _get_available_employees(self, org_id: int) -> List[Dict]:
+        """
+        Get all active employees for the specified organization.
+        Multi-tenancy: Only returns employees belonging to the organization.
+        """
         from app.models.employee import Employee, EmployeeStatus
 
         employees = self.db.query(Employee).filter(
-            Employee.status == EmployeeStatus.ACTIVE
+            Employee.status == EmployeeStatus.ACTIVE,
+            Employee.org_id == org_id  # Multi-tenancy filter
         ).all()
 
         return [

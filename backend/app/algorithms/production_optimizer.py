@@ -87,6 +87,7 @@ class ProductionRosterOptimizer:
         # Decision variables
         self.assignment_vars = {}  # (employee_id, shift_id) -> BoolVar
         self.works_on_date_vars = {}  # (employee_id, date) -> BoolVar
+        self.works_night_on_date_vars = {}  # (employee_id, date) -> BoolVar for consecutive nights tracking
         self.weekly_hours_vars = {}  # (employee_id, week_num) -> IntVar
         self.night_shift_count_vars = {}  # employee_id -> IntVar
         self.weekend_shift_count_vars = {}  # employee_id -> IntVar
@@ -153,6 +154,7 @@ class ProductionRosterOptimizer:
             self._add_weekly_hours_constraints()
             self._add_rest_period_constraints()
             self._add_consecutive_days_constraints()
+            self._add_consecutive_nights_constraints()
             self._add_fairness_constraints()
 
             # Step 5: Define objective
@@ -425,6 +427,13 @@ class ProductionRosterOptimizer:
                 var_name = f"works_e{emp.employee_id}_d{shift_date}"
                 self.works_on_date_vars[key] = self.model.NewBoolVar(var_name)
 
+        # Works-night-on-date variables: tracks if employee works a night shift on a specific date
+        for emp in self.employees:
+            for shift_date in self.shifts_by_date.keys():
+                key = (emp.employee_id, shift_date)
+                var_name = f"works_night_e{emp.employee_id}_d{shift_date}"
+                self.works_night_on_date_vars[key] = self.model.NewBoolVar(var_name)
+
         # Weekly hours variables
         for emp in self.employees:
             for week_num in self.weeks:
@@ -576,6 +585,56 @@ class ProductionRosterOptimizer:
                 if window_vars:
                     # Max 6 days worked in any 7-day window
                     self.model.Add(sum(window_vars) <= MAX_CONSECUTIVE_DAYS)
+
+    def _add_consecutive_nights_constraints(self):
+        """Limit consecutive night shifts to 3 (safety and BCEA compliance)"""
+        logger.info("Adding consecutive nights constraints...")
+
+        MAX_CONSECUTIVE_NIGHTS = 3
+
+        # Define what constitutes a night shift (18:00-06:00)
+        def is_night_shift(shift):
+            return shift.start_time.hour >= 18 or shift.start_time.hour < 6
+
+        for emp in self.employees:
+            # Link assignment variables to works-night-on-date variables
+            for shift_date, date_shifts in self.shifts_by_date.items():
+                key = (emp.employee_id, shift_date)
+
+                # Find all NIGHT shifts for this employee on this date
+                night_vars = []
+                for shift in date_shifts:
+                    if is_night_shift(shift):
+                        assign_key = (emp.employee_id, shift.shift_id)
+                        if assign_key in self.assignment_vars:
+                            night_vars.append(self.assignment_vars[assign_key])
+
+                if night_vars:
+                    # works_night_on_date = 1 if any night shift worked that day
+                    self.model.AddMaxEquality(self.works_night_on_date_vars[key], night_vars)
+                else:
+                    # No night shifts available on this date, set to 0
+                    self.model.Add(self.works_night_on_date_vars[key] == 0)
+
+            # Check for consecutive nights across all dates
+            sorted_dates = sorted(self.shifts_by_date.keys())
+
+            # Sliding window approach: check every sequence of N consecutive dates
+            for i in range(len(sorted_dates) - (MAX_CONSECUTIVE_NIGHTS)):
+                window_dates = sorted_dates[i:i + MAX_CONSECUTIVE_NIGHTS + 1]
+                night_window_vars = []
+
+                for d in window_dates:
+                    key = (emp.employee_id, d)
+                    if key in self.works_night_on_date_vars:
+                        night_window_vars.append(self.works_night_on_date_vars[key])
+
+                if night_window_vars:
+                    # Cannot work more than MAX_CONSECUTIVE_NIGHTS in sequence
+                    # If window has 4 dates and max is 3, can't have all 4 = 1
+                    self.model.Add(sum(night_window_vars) <= MAX_CONSECUTIVE_NIGHTS)
+
+        logger.info(f"Added consecutive nights limit: max {MAX_CONSECUTIVE_NIGHTS} nights")
 
     def _add_fairness_constraints(self):
         """Balance workload fairly across employees"""

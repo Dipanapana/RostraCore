@@ -1,11 +1,10 @@
-"""Pydantic schemas for API request/response validation."""
+"""Pydantic schemas for API request/response validation - MVP Core Only."""
 
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime, date, time
-from app.models.employee import EmployeeRole, EmployeeStatus
+from app.models.employee import EmployeeRole, EmployeeStatus, Gender
 from app.models.shift import ShiftStatus
-from app.models.expense import ExpenseType
 
 
 # Employee Schemas
@@ -21,6 +20,7 @@ class EmployeeBase(BaseModel):
     home_gps_lat: Optional[float] = None
     home_gps_lng: Optional[float] = None
     status: EmployeeStatus = EmployeeStatus.ACTIVE
+    gender: Optional[Gender] = None
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
 
@@ -41,6 +41,7 @@ class EmployeeUpdate(BaseModel):
     home_gps_lat: Optional[float] = None
     home_gps_lng: Optional[float] = None
     status: Optional[EmployeeStatus] = None
+    gender: Optional[Gender] = None
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
     assigned_client_id: Optional[int] = None  # Allow updating client assignment
@@ -127,7 +128,7 @@ class ShiftBase(BaseModel):
     start_time: datetime
     end_time: datetime
     required_skill: Optional[str] = None
-    assigned_employee_id: Optional[int] = None
+    required_staff: int = 1  # Number of guards needed for this shift
     status: ShiftStatus = ShiftStatus.PLANNED
     created_by: Optional[str] = None
     is_overtime: bool = False
@@ -143,7 +144,7 @@ class ShiftUpdate(BaseModel):
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
     required_skill: Optional[str] = None
-    assigned_employee_id: Optional[int] = None
+    required_staff: Optional[int] = None
     status: Optional[ShiftStatus] = None
     is_overtime: Optional[bool] = None
     notes: Optional[str] = None
@@ -151,6 +152,26 @@ class ShiftUpdate(BaseModel):
 
 class ShiftResponse(ShiftBase):
     shift_id: int
+
+    class Config:
+        from_attributes = True
+
+
+# Shift Assignment Schemas
+class ShiftAssignmentBase(BaseModel):
+    shift_id: int
+    employee_id: int
+    status: str = "pending"
+
+
+class ShiftAssignmentCreate(ShiftAssignmentBase):
+    pass
+
+
+class ShiftAssignmentResponse(ShiftAssignmentBase):
+    assignment_id: int
+    assigned_at: datetime
+    total_cost: float = 0.0
 
     class Config:
         from_attributes = True
@@ -202,66 +223,6 @@ class CertificationUpdate(BaseModel):
 
 class CertificationResponse(CertificationBase):
     cert_id: int
-
-    class Config:
-        from_attributes = True
-
-
-# Expense Schemas
-class ExpenseBase(BaseModel):
-    employee_id: Optional[int] = None
-    site_id: Optional[int] = None
-    type: ExpenseType
-    amount: float = Field(..., gt=0)
-    date_incurred: date
-    approved: bool = False
-    description: Optional[str] = None
-    receipt_url: Optional[str] = None
-
-
-class ExpenseCreate(ExpenseBase):
-    pass
-
-
-class ExpenseUpdate(BaseModel):
-    type: Optional[ExpenseType] = None
-    amount: Optional[float] = None
-    date_incurred: Optional[date] = None
-    approved: Optional[bool] = None
-    description: Optional[str] = None
-    receipt_url: Optional[str] = None
-
-
-class ExpenseResponse(ExpenseBase):
-    expense_id: int
-
-    class Config:
-        from_attributes = True
-
-
-# Attendance Schemas
-class AttendanceBase(BaseModel):
-    shift_id: int
-    employee_id: int
-    clock_in: Optional[datetime] = None
-    clock_out: Optional[datetime] = None
-    variance_minutes: int = 0
-    notes: Optional[str] = None
-
-
-class AttendanceCreate(AttendanceBase):
-    pass
-
-
-class AttendanceUpdate(BaseModel):
-    clock_in: Optional[datetime] = None
-    clock_out: Optional[datetime] = None
-    variance_minutes: Optional[int] = None
-    notes: Optional[str] = None
-
-
-class AttendanceResponse(AttendanceBase):
-    attend_id: int
 
     class Config:
         from_attributes = True

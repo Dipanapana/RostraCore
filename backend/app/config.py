@@ -41,9 +41,11 @@ class Settings(BaseSettings):
             return [origin.strip() for origin in v.split(',')]
         return v
 
-    # Rostering Constraints
+    # Rostering Constraints (BCEA Compliance)
     MAX_HOURS_WEEK: int = 60  # Relaxed from 48 for testing (BCEA: 48)
     MIN_REST_HOURS: int = 6   # Relaxed from 8 for testing (BCEA: 8)
+    MAX_CONSECUTIVE_DAYS: int = 6  # Maximum consecutive working days (BCEA)
+    MAX_CONSECUTIVE_NIGHTS: int = 3  # Maximum consecutive night shifts (safety & fatigue management)
     OT_MULTIPLIER: float = 1.5
     MAX_DISTANCE_KM: float = 100.0  # Relaxed from 50km for testing
 
@@ -52,16 +54,11 @@ class Settings(BaseSettings):
     FAIRNESS_WEIGHT: float = 0.15  # Relaxed from 0.2 to prioritize fill rate
     MILP_TIME_LIMIT: int = 180  # Maximum solver time in seconds
 
-    # Testing Mode - Relaxed Constraints
+    # Testing Mode - Relaxed Constraints for Development
     TESTING_MODE: bool = True  # Set to False for production BCEA-compliant mode
     SKIP_CERTIFICATION_CHECK: bool = True  # Skip PSIRA cert validation for testing
     SKIP_SKILL_MATCHING: bool = False  # Still match skills but more flexible
     SKIP_AVAILABILITY_CHECK: bool = True  # Skip availability checks for testing (allows all shifts)
-
-    # Testing Mode Settings
-    TESTING_MODE: bool = True  # Enable relaxed constraints for testing
-    SKIP_CERTIFICATION_CHECK: bool = True  # Skip certification validation in testing
-    SKIP_AVAILABILITY_CHECK: bool = True  # Skip availability check in testing
 
     # Pagination
     DEFAULT_PAGE_SIZE: int = 50
@@ -112,12 +109,22 @@ class Settings(BaseSettings):
     MVP_MONTHLY_RATE_PER_GUARD: float = 45.00
     MVP_CURRENCY: str = "ZAR"
 
+    # PayFast Payment Gateway (South African)
+    PAYFAST_MERCHANT_ID: str = ""  # Set in .env
+    PAYFAST_MERCHANT_KEY: str = ""  # Set in .env
+    PAYFAST_PASSPHRASE: str = ""  # Set in .env (optional but recommended)
+    PAYFAST_SANDBOX: bool = True  # True for testing, False for production
+    BACKEND_URL: str = "http://localhost:8000"  # For PayFast webhooks
+
     # Security Settings
     PASSWORD_MIN_LENGTH: int = 12
     MAX_LOGIN_ATTEMPTS: int = 5
     ACCOUNT_LOCKOUT_DURATION_MINUTES: int = 30
     RATE_LIMIT_PER_MINUTE: int = 60
     RATE_LIMIT_PER_HOUR: int = 1000
+
+    # SuperAdmin Settings (Phase 5)
+    SUPERADMIN_SECRET_TOKEN: Optional[str] = None  # Set in .env for superadmin registration
 
     class Config:
         env_file = ".env"

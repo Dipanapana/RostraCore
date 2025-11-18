@@ -11,7 +11,7 @@ from app.database import get_db
 from app.models.payroll import PayrollSummary
 from app.models.shift import Shift
 from app.models.employee import Employee
-from app.models.expense import Expense
+from app.auth.security import get_current_org_id
 
 router = APIRouter()
 
@@ -28,10 +28,11 @@ async def get_payroll(
     employee_id: Optional[int] = None,
     skip: int = 0,
     limit: int = 100,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Get payroll records with optional filters."""
-    query = db.query(PayrollSummary)
+    """Get payroll records with optional filters (filtered by organization via employee)."""
+    query = db.query(PayrollSummary).join(Employee).filter(Employee.org_id == org_id)
 
     if employee_id:
         query = query.filter(PayrollSummary.employee_id == employee_id)
@@ -60,9 +61,10 @@ async def get_payroll(
 
 @router.get("/current-period")
 async def get_current_period_payroll(
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Get payroll for current pay period (current month)."""
+    """Get payroll for current pay period (current month, filtered by organization via employee)."""
     today = date.today()
     period_start = today.replace(day=1)
 
@@ -72,11 +74,10 @@ async def get_current_period_payroll(
     else:
         period_end = (today.replace(month=today.month + 1, day=1) - timedelta(days=1))
 
-    payrolls = db.query(PayrollSummary).filter(
-        and_(
-            PayrollSummary.period_start >= period_start,
-            PayrollSummary.period_end <= period_end
-        )
+    payrolls = db.query(PayrollSummary).join(Employee).filter(
+        Employee.org_id == org_id,
+        PayrollSummary.period_start >= period_start,
+        PayrollSummary.period_end <= period_end
     ).all()
 
     # Calculate totals
@@ -99,13 +100,17 @@ async def get_current_period_payroll(
 @router.post("/generate")
 async def generate_payroll(
     payroll_data: PayrollCreate,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Generate payroll for an employee and period."""
-    # Get employee
-    employee = db.query(Employee).filter(Employee.employee_id == payroll_data.employee_id).first()
+    """Generate payroll for an employee and period (employee must belong to organization)."""
+    # Get employee and verify it belongs to organization
+    employee = db.query(Employee).filter(
+        Employee.employee_id == payroll_data.employee_id,
+        Employee.org_id == org_id
+    ).first()
     if not employee:
-        raise HTTPException(status_code=404, detail="Employee not found")
+        raise HTTPException(status_code=404, detail="Employee not found in your organization")
 
     # Get all shifts for employee in period
     shifts = db.query(Shift).filter(
@@ -133,33 +138,9 @@ async def generate_payroll(
     regular_hours = total_hours - overtime_hours
     gross_pay = (regular_hours * hourly_rate) + (overtime_hours * hourly_rate * 1.5)
 
-    # Get expenses for period
-    expenses = db.query(Expense).filter(
-        and_(
-            Expense.employee_id == payroll_data.employee_id,
-            Expense.date_incurred >= payroll_data.period_start,
-            Expense.date_incurred <= payroll_data.period_end,
-            Expense.approved == True
-        )
-    ).all()
-
-    expenses_total = sum(e.amount for e in expenses)
-
-    # Process marketplace commission deduction (if applicable)
-    from app.services.commission_deduction_service import CommissionDeductionService
-
-    commission_deduction_result = CommissionDeductionService.process_commission_deductions(
-        db=db,
-        employee_id=payroll_data.employee_id,
-        payroll_period_end=payroll_data.period_end,
-        gross_pay=gross_pay
-    )
-
-    commission_deduction = commission_deduction_result.get('deduction_amount', 0.0)
-    commission_notes = commission_deduction_result.get('notes', '')
-
-    # Calculate net pay (gross + expenses - commission)
-    net_pay = gross_pay + expenses_total - commission_deduction
+    # MVP: No expenses or commission tracking
+    expenses_total = 0.0
+    net_pay = gross_pay
 
     # Create or update payroll record
     existing = db.query(PayrollSummary).filter(
@@ -212,10 +193,14 @@ async def generate_payroll(
 @router.get("/{payroll_id}")
 async def get_payroll_detail(
     payroll_id: int,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Get detailed payroll record."""
-    payroll = db.query(PayrollSummary).filter(PayrollSummary.payroll_id == payroll_id).first()
+    """Get detailed payroll record (filtered by organization via employee)."""
+    payroll = db.query(PayrollSummary).join(Employee).filter(
+        PayrollSummary.payroll_id == payroll_id,
+        Employee.org_id == org_id
+    ).first()
 
     if not payroll:
         raise HTTPException(status_code=404, detail="Payroll record not found")
@@ -242,10 +227,14 @@ async def get_payroll_detail(
 @router.delete("/{payroll_id}")
 async def delete_payroll(
     payroll_id: int,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Delete payroll record."""
-    payroll = db.query(PayrollSummary).filter(PayrollSummary.payroll_id == payroll_id).first()
+    """Delete payroll record (filtered by organization via employee)."""
+    payroll = db.query(PayrollSummary).join(Employee).filter(
+        PayrollSummary.payroll_id == payroll_id,
+        Employee.org_id == org_id
+    ).first()
 
     if not payroll:
         raise HTTPException(status_code=404, detail="Payroll record not found")

@@ -2,28 +2,43 @@
 ShiftAssignment model - tracks individual shift assignments with cost breakdown
 """
 
-from sqlalchemy import Column, Integer, Float, DateTime, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, Float, DateTime, Boolean, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 from app.database import Base
 from datetime import datetime
+import enum
+
+
+class AssignmentStatus(str, enum.Enum):
+    """Assignment status workflow enum."""
+    PENDING = "pending"          # Auto-assigned by roster, awaiting confirmation
+    CONFIRMED = "confirmed"      # Reviewed and approved by admin
+    CANCELLED = "cancelled"      # Assignment removed
+    COMPLETED = "completed"      # Shift finished
+
 
 class ShiftAssignment(Base):
     """
     ShiftAssignment entity representing the assignment of an employee to a shift.
     Tracks detailed cost breakdown, confirmation status, and attendance.
+    Supports multiple guards per shift.
     """
     __tablename__ = "shift_assignments"
+    __table_args__ = (
+        UniqueConstraint('shift_id', 'employee_id', name='uq_shift_employee_assignment'),
+    )
 
     assignment_id = Column(Integer, primary_key=True, index=True)
 
     # Foreign keys
     shift_id = Column(Integer, ForeignKey("shifts.shift_id"), nullable=False, index=True)
     employee_id = Column(Integer, ForeignKey("employees.employee_id"), nullable=False, index=True)
-    roster_id = Column(Integer, ForeignKey("rosters.roster_id"), nullable=False, index=True)
+    roster_id = Column(Integer, ForeignKey("rosters.roster_id"), nullable=True, index=True)
 
     # Assignment metadata
     assigned_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     assigned_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
+    status = Column(String(20), nullable=False, default=AssignmentStatus.PENDING.value)
 
     # Hours breakdown
     regular_hours = Column(Float, nullable=False, default=0.0)
@@ -48,7 +63,7 @@ class ShiftAssignment(Base):
     check_out_time = Column(DateTime, nullable=True)
 
     # Relationships
-    shift = relationship("Shift", back_populates="shift_assignment")
+    shift = relationship("Shift", back_populates="shift_assignments")
     employee = relationship("Employee")
     roster = relationship("Roster", back_populates="shift_assignments")
     assigner = relationship("User", foreign_keys=[assigned_by])

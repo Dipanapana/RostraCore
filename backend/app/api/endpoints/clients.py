@@ -9,6 +9,7 @@ from datetime import date, datetime
 from app.database import get_db
 from app.models.client import Client
 from app.models.site import Site
+from app.auth.security import get_current_org_id
 
 router = APIRouter()
 
@@ -28,7 +29,7 @@ class ClientBase(BaseModel):
 
 
 class ClientCreate(ClientBase):
-    org_id: int
+    pass
 
 
 class ClientUpdate(ClientBase):
@@ -52,24 +53,16 @@ class ClientWithSites(ClientResponse):
 # Endpoints
 @router.get("/", response_model=List[ClientWithSites])
 async def list_clients(
-    org_id: Optional[int] = None,
     status: Optional[str] = None,
     limit: int = 100,
     offset: int = 0,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
     """
-    List all clients with optional filtering.
-
-    NOTE: This endpoint does NOT require authentication to allow
-    public access for marketplace/directory features.
-    If you want to restrict to authenticated users only, add:
-    current_user: User = Depends(get_current_user)
+    List all clients with optional filtering (filtered by organization).
     """
-    query = db.query(Client)
-
-    if org_id:
-        query = query.filter(Client.org_id == org_id)
+    query = db.query(Client).filter(Client.org_id == org_id)
 
     if status:
         query = query.filter(Client.status == status)
@@ -103,10 +96,14 @@ async def list_clients(
 
 
 @router.post("/", response_model=ClientResponse, status_code=status.HTTP_201_CREATED)
-async def create_client(client_data: ClientCreate, db: Session = Depends(get_db)):
-    """Create a new client."""
+async def create_client(
+    client_data: ClientCreate,
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db)
+):
+    """Create a new client (automatically assigned to user's organization)."""
     client = Client(
-        org_id=client_data.org_id,
+        org_id=org_id,
         client_name=client_data.client_name,
         contact_person=client_data.contact_person,
         contact_email=client_data.contact_email,
@@ -127,9 +124,16 @@ async def create_client(client_data: ClientCreate, db: Session = Depends(get_db)
 
 
 @router.get("/{client_id}", response_model=ClientResponse)
-async def get_client(client_id: int, db: Session = Depends(get_db)):
-    """Get a specific client by ID."""
-    client = db.query(Client).filter(Client.client_id == client_id).first()
+async def get_client(
+    client_id: int,
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db)
+):
+    """Get a specific client by ID (filtered by organization)."""
+    client = db.query(Client).filter(
+        Client.client_id == client_id,
+        Client.org_id == org_id
+    ).first()
 
     if not client:
         raise HTTPException(
@@ -144,10 +148,14 @@ async def get_client(client_id: int, db: Session = Depends(get_db)):
 async def update_client(
     client_id: int,
     client_data: ClientUpdate,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Update a client."""
-    client = db.query(Client).filter(Client.client_id == client_id).first()
+    """Update a client (filtered by organization)."""
+    client = db.query(Client).filter(
+        Client.client_id == client_id,
+        Client.org_id == org_id
+    ).first()
 
     if not client:
         raise HTTPException(
@@ -167,9 +175,16 @@ async def update_client(
 
 
 @router.delete("/{client_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_client(client_id: int, db: Session = Depends(get_db)):
-    """Delete a client."""
-    client = db.query(Client).filter(Client.client_id == client_id).first()
+async def delete_client(
+    client_id: int,
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db)
+):
+    """Delete a client (filtered by organization)."""
+    client = db.query(Client).filter(
+        Client.client_id == client_id,
+        Client.org_id == org_id
+    ).first()
 
     if not client:
         raise HTTPException(
@@ -192,9 +207,16 @@ async def delete_client(client_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/{client_id}/sites")
-async def get_client_sites(client_id: int, db: Session = Depends(get_db)):
-    """Get all sites for a specific client."""
-    client = db.query(Client).filter(Client.client_id == client_id).first()
+async def get_client_sites(
+    client_id: int,
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db)
+):
+    """Get all sites for a specific client (filtered by organization)."""
+    client = db.query(Client).filter(
+        Client.client_id == client_id,
+        Client.org_id == org_id
+    ).first()
 
     if not client:
         raise HTTPException(

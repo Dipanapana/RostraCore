@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api.endpoints import employees, sites, shifts, availability, certifications, expenses, attendance, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, organization_approval, organization_users, shift_groups, analytics, jobs, dashboards, predictions, clients, leave_requests, employee_portal, incident_reports, daily_reports, marketplace_guards, marketplace_jobs, marketplace_applications, guard_ratings, cv_generator, payments, marketplace_revenue, marketplace_settings, superadmin_analytics, subscriptions
+from app.api.endpoints import employees, sites, shifts, availability, certifications, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, organization_approval, organization_users, clients, payments, superadmin_analytics, subscriptions, subscription_plans, dashboards, superadmin_auth
 from app.middleware import RateLimitMiddleware
 
 # Initialize Sentry for error tracking and performance monitoring
@@ -83,43 +83,33 @@ async def health_check():
 
 
 # Include routers
-app.include_router(employees.router, prefix=f"{settings.API_V1_PREFIX}/employees", tags=["employees"])
-app.include_router(sites.router, prefix=f"{settings.API_V1_PREFIX}/sites", tags=["sites"])
-app.include_router(shifts.router, prefix=f"{settings.API_V1_PREFIX}/shifts", tags=["shifts"])
-app.include_router(availability.router, prefix=f"{settings.API_V1_PREFIX}/availability", tags=["availability"])
-app.include_router(certifications.router, prefix=f"{settings.API_V1_PREFIX}/certifications", tags=["certifications"])
-app.include_router(expenses.router, prefix=f"{settings.API_V1_PREFIX}/expenses", tags=["expenses"])
-app.include_router(attendance.router, prefix=f"{settings.API_V1_PREFIX}/attendance", tags=["attendance"])
-app.include_router(payroll.router, prefix=f"{settings.API_V1_PREFIX}/payroll", tags=["payroll"])
-app.include_router(roster.router, prefix=f"{settings.API_V1_PREFIX}/roster", tags=["roster"])
-app.include_router(dashboard.router, prefix=settings.API_V1_PREFIX, tags=["dashboard"])
+# Core Features
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX, tags=["auth"])
-app.include_router(exports.router, prefix=settings.API_V1_PREFIX, tags=["exports"])
-app.include_router(settings_endpoint.router, prefix=f"{settings.API_V1_PREFIX}/settings", tags=["settings"])
 app.include_router(organizations.router, prefix=f"{settings.API_V1_PREFIX}/organizations", tags=["organizations"])
 app.include_router(organization_approval.router, prefix=f"{settings.API_V1_PREFIX}/organizations", tags=["organization-approval"])
 app.include_router(organization_users.router, prefix=f"{settings.API_V1_PREFIX}/organizations", tags=["organization-users"])
-app.include_router(shift_groups.router, prefix=f"{settings.API_V1_PREFIX}/shift-groups", tags=["shift-groups"])
-app.include_router(analytics.router, tags=["analytics"])
-app.include_router(jobs.router, tags=["jobs"])
-app.include_router(dashboards.router, tags=["dashboards"])
-app.include_router(predictions.router, tags=["predictions"])
+app.include_router(employees.router, prefix=f"{settings.API_V1_PREFIX}/employees", tags=["employees"])
+app.include_router(certifications.router, prefix=f"{settings.API_V1_PREFIX}/certifications", tags=["certifications"])
 app.include_router(clients.router, prefix=f"{settings.API_V1_PREFIX}/clients", tags=["clients"])
-app.include_router(leave_requests.router, prefix=f"{settings.API_V1_PREFIX}/leave-requests", tags=["leave-requests"])
-app.include_router(employee_portal.router, prefix=f"{settings.API_V1_PREFIX}/employee-portal", tags=["employee-portal"])
-app.include_router(incident_reports.router, prefix=f"{settings.API_V1_PREFIX}/incident-reports", tags=["incident-reports"])
-app.include_router(daily_reports.router, prefix=f"{settings.API_V1_PREFIX}/daily-reports", tags=["daily-reports"])
+app.include_router(sites.router, prefix=f"{settings.API_V1_PREFIX}/sites", tags=["sites"])
+app.include_router(shifts.router, prefix=f"{settings.API_V1_PREFIX}/shifts", tags=["shifts"])
+app.include_router(availability.router, prefix=f"{settings.API_V1_PREFIX}/availability", tags=["availability"])
+app.include_router(roster.router, prefix=f"{settings.API_V1_PREFIX}/roster", tags=["roster"])
+app.include_router(payroll.router, prefix=f"{settings.API_V1_PREFIX}/payroll", tags=["payroll"])
 
-# Job Marketplace routes
-app.include_router(marketplace_guards.router, prefix=f"{settings.API_V1_PREFIX}/marketplace/guards", tags=["marketplace-guards"])
-app.include_router(marketplace_jobs.router, prefix=f"{settings.API_V1_PREFIX}/marketplace/jobs", tags=["marketplace-jobs"])
-app.include_router(marketplace_applications.router, prefix=f"{settings.API_V1_PREFIX}/marketplace/applications", tags=["marketplace-applications"])
-app.include_router(guard_ratings.router, prefix=f"{settings.API_V1_PREFIX}/guard-ratings", tags=["guard-ratings"])
-app.include_router(cv_generator.router, prefix=f"{settings.API_V1_PREFIX}/cv-generator", tags=["cv-generator"])
-app.include_router(payments.router, prefix=f"{settings.API_V1_PREFIX}/payments", tags=["payments"])
+# Dashboard & Settings
+app.include_router(dashboard.router, prefix=settings.API_V1_PREFIX, tags=["dashboard"])
+app.include_router(dashboards.router, tags=["dashboards"])
+app.include_router(settings_endpoint.router, prefix=f"{settings.API_V1_PREFIX}/settings", tags=["settings"])
+app.include_router(exports.router, prefix=settings.API_V1_PREFIX, tags=["exports"])
+
+# Subscriptions & Payments
 app.include_router(subscriptions.router, prefix=f"{settings.API_V1_PREFIX}/subscriptions", tags=["subscriptions"])
-app.include_router(marketplace_revenue.router, prefix=f"{settings.API_V1_PREFIX}/marketplace/revenue", tags=["marketplace-revenue"])
-app.include_router(marketplace_settings.router, prefix=f"{settings.API_V1_PREFIX}/marketplace/settings", tags=["marketplace-settings"])
+app.include_router(subscription_plans.router, prefix=f"{settings.API_V1_PREFIX}/subscription-plans", tags=["subscription-plans"])
+app.include_router(payments.router, prefix=f"{settings.API_V1_PREFIX}/payments", tags=["payments"])
+
+# SuperAdmin
+app.include_router(superadmin_auth.router, prefix=f"{settings.API_V1_PREFIX}/superadmin", tags=["superadmin-auth"])
 app.include_router(superadmin_analytics.router, prefix=f"{settings.API_V1_PREFIX}/superadmin/analytics", tags=["superadmin-analytics"])
 
 

@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from datetime import datetime
 from app.database import get_db
 from app.models.schemas import EmployeeCreate, EmployeeUpdate, EmployeeResponse
 from app.services.employee_service import EmployeeService
@@ -59,6 +60,23 @@ async def create_employee(
 ):
     """Create new employee (automatically assigned to user's organization)."""
     org_id = current_user.org_id or 1
+
+    # Check subscription limits (guard limit enforcement)
+    from app.models.organization import Organization
+    organization = db.query(Organization).filter(Organization.org_id == org_id).first()
+    if organization:
+        current_employee_count = db.query(Employee).filter(
+            Employee.org_id == org_id,
+            Employee.status == EmployeeStatus.ACTIVE
+        ).count()
+
+        # Check if adding a new employee would exceed the limit
+        allowed, message = organization.check_limit('employees', current_employee_count)
+        if not allowed:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Employee limit reached. {message}. Upgrade your subscription to add more guards."
+            )
 
     # Check if ID number already exists in this organization
     existing = EmployeeService.get_by_id_number(db, employee_data.id_number, org_id=org_id)
@@ -170,3 +188,67 @@ async def download_employee_template():
             "Content-Disposition": "attachment; filename=employee_import_template.xlsx"
         }
     )
+
+
+@router.get("/{employee_id}/shifts", response_model=List[dict])
+async def get_employee_shifts(
+    employee_id: int,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    status_filter: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Get all shift assignments for an employee.
+    Returns shifts with assignment details.
+    """
+    from app.models.shift_assignment import ShiftAssignment, AssignmentStatus
+    from app.models.shift import Shift
+    from app.models.employee import Employee
+    
+    # Verify employee exists
+    employee = db.query(Employee).filter(Employee.employee_id == employee_id).first()
+    if not employee:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Employee with ID {employee_id} not found"
+        )
+    
+    # Build query
+    query = db.query(ShiftAssignment).join(Shift).filter(
+        ShiftAssignment.employee_id == employee_id
+    )
+    
+    # Apply filters
+    if status_filter:
+        query = query.filter(ShiftAssignment.status == status_filter)
+    
+    if start_date:
+        query = query.filter(Shift.start_time >= start_date)
+    
+    if end_date:
+        query = query.filter(Shift.end_time <= end_date)
+    
+    assignments = query.order_by(Shift.start_time).all()
+    
+    # Return assignments with shift details
+    result = []
+    for assignment in assignments:
+        result.append({
+            "assignment_id": assignment.assignment_id,
+            "shift_id": assignment.shift_id,
+            "shift": {
+                "shift_id": assignment.shift.shift_id,
+                "site_id": assignment.shift.site_id,
+                "start_time": assignment.shift.start_time.isoformat(),
+                "end_time": assignment.shift.end_time.isoformat(),
+                "status": assignment.shift.status.value,
+            },
+            "status": assignment.status,
+            "assigned_at": assignment.assigned_at.isoformat(),
+            "total_cost": assignment.total_cost,
+            "is_confirmed": assignment.is_confirmed
+        })
+    
+    return result
+

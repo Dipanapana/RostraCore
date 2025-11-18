@@ -79,13 +79,13 @@ class Organization(Base):
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
 
-    # Relationships
+    # Relationships (MVP core only)
     users = relationship("User", back_populates="organization")
     employees = relationship("Employee", back_populates="organization")
     clients = relationship("Client", back_populates="organization")
-    marketplace_commissions = relationship("MarketplaceCommission", back_populates="organization")
-    bulk_packages = relationship("BulkHiringPackage", back_populates="organization")
-    premium_jobs = relationship("PremiumJobPosting", back_populates="organization")
+    sites = relationship("Site", back_populates="organization")
+    shifts = relationship("Shift", back_populates="organization")
+    rosters = relationship("Roster", back_populates="organization")
 
     def __repr__(self):
         return f"<Organization(org_id={self.org_id}, company_name='{self.company_name}', tier='{self.subscription_tier}')>"
