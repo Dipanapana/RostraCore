@@ -17,7 +17,7 @@ Date: November 2025
 from ortools.sat.python import cp_model
 from typing import List, Dict, Tuple, Optional, Set
 from datetime import datetime, timedelta, date
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.models.employee import Employee, EmployeeStatus, EmployeeRole
 from app.models.shift import Shift, ShiftStatus
 from app.models.site import Site
@@ -99,6 +99,10 @@ class ProductionRosterOptimizer:
         self.feasibility_matrix = {}
         self.shifts_by_date = defaultdict(list)
         self.weeks = []
+
+        # Cached data for N+1 query prevention
+        self.employee_certifications = {}  # employee_id -> List[Certification]
+        self.employee_availabilities = {}  # (employee_id, date) -> Availability
 
         # Results
         self.solution_status = None
@@ -216,8 +220,12 @@ class ProductionRosterOptimizer:
             current_date += timedelta(days=1)
 
         # Load active employees (filtered by organization if multi-tenancy is enabled)
+        # Use joinedload to eagerly load certifications and availability (prevents N+1 queries)
         employee_query = self.db.query(Employee).filter(
             Employee.status == EmployeeStatus.ACTIVE
+        ).options(
+            joinedload(Employee.certifications),
+            joinedload(Employee.availability)
         )
 
         if self.org_id is not None:
@@ -225,7 +233,20 @@ class ProductionRosterOptimizer:
             logger.info(f"Filtering employees by organization ID: {self.org_id}")
 
         self.employees = employee_query.all()
-        logger.info(f"Loaded {len(self.employees)} active employees")
+        logger.info(f"Loaded {len(self.employees)} active employees with eager-loaded relationships")
+
+        # Build cached lookup dictionaries (prevents N+1 queries in feasibility checks)
+        for emp in self.employees:
+            # Cache certifications
+            self.employee_certifications[emp.employee_id] = emp.certifications
+
+            # Cache availability by (employee_id, date)
+            for avail in emp.availability:
+                key = (emp.employee_id, avail.date)
+                self.employee_availabilities[key] = avail
+
+        logger.info(f"Cached {sum(len(certs) for certs in self.employee_certifications.values())} certifications")
+        logger.info(f"Cached {len(self.employee_availabilities)} availability records")
 
         # Load sites
         site_id_set = set(s.site_id for s in self.shifts)
@@ -312,11 +333,8 @@ class ProductionRosterOptimizer:
         if settings.TESTING_MODE and settings.SKIP_CERTIFICATION_CHECK:
             return True
 
-        # Get all certifications for employee
-        certs = self.db.query(Certification).filter(
-            Certification.employee_id == emp.employee_id,
-            Certification.verified == True
-        ).all()
+        # Get cached certifications for employee (prevents N+1 query)
+        certs = self.employee_certifications.get(emp.employee_id, [])
 
         if not certs:
             logger.warning(f"Employee {emp.employee_id} has no certifications")
@@ -326,7 +344,7 @@ class ProductionRosterOptimizer:
         shift_date = shift.start_time.date()
 
         for cert in certs:
-            if cert.expiry_date and cert.expiry_date >= shift_date:
+            if cert.verified and cert.expiry_date and cert.expiry_date >= shift_date:
                 return True
 
         return False
@@ -342,11 +360,9 @@ class ProductionRosterOptimizer:
         shift_start_time = shift.start_time.time()
         shift_end_time = shift.end_time.time()
 
-        # Query availability for this date
-        avail = self.db.query(Availability).filter(
-            Availability.employee_id == emp.employee_id,
-            Availability.date == shift_date
-        ).first()
+        # Get cached availability for this date (prevents N+1 query)
+        key = (emp.employee_id, shift_date)
+        avail = self.employee_availabilities.get(key)
 
         # If no availability record, assume available (default behavior)
         if not avail:

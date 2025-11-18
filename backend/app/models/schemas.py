@@ -5,6 +5,7 @@ from typing import Optional
 from datetime import datetime, date, time
 from app.models.employee import EmployeeRole, EmployeeStatus, Gender
 from app.models.shift import ShiftStatus
+from app.models.certification import PSIRAGrade, FirearmCompetencyType
 
 
 # Employee Schemas
@@ -206,6 +207,9 @@ class CertificationBase(BaseModel):
     verified: bool = False
     cert_number: Optional[str] = None
     issuing_authority: Optional[str] = None
+    # PSIRA-specific fields
+    psira_grade: Optional[PSIRAGrade] = None
+    firearm_competency: Optional[FirearmCompetencyType] = None
 
 
 class CertificationCreate(CertificationBase):
@@ -219,6 +223,8 @@ class CertificationUpdate(BaseModel):
     verified: Optional[bool] = None
     cert_number: Optional[str] = None
     issuing_authority: Optional[str] = None
+    psira_grade: Optional[PSIRAGrade] = None
+    firearm_competency: Optional[FirearmCompetencyType] = None
 
 
 class CertificationResponse(CertificationBase):

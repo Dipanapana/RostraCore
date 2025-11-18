@@ -9,7 +9,6 @@ import logging
 logger = logging.getLogger(__name__)
 from app.database import get_db
 from app.models.schemas import RosterGenerateRequest, RosterGenerateResponse, ShiftResponse
-from app.algorithms.roster_generator import RosterGenerator
 from app.algorithms.milp_roster_generator import MILPRosterGenerator
 from app.algorithms.production_optimizer import ProductionRosterOptimizer, OptimizationConfig
 from app.services.shift_service import ShiftService
@@ -27,7 +26,7 @@ router = APIRouter()
 @router.post("/generate", response_model=RosterGenerateResponse)
 async def generate_roster(
     request: RosterGenerateRequest,
-    algorithm: Optional[str] = Query("production", description="Algorithm: 'production', 'hungarian', 'milp', 'auto'"),
+    algorithm: Optional[str] = Query("production", description="Algorithm: 'production', 'milp', 'auto'"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -39,8 +38,7 @@ async def generate_roster(
     Algorithms:
     - production (default): Production-grade CP-SAT with full BCEA compliance, fairness, diagnostics
     - milp: Original MILP implementation (legacy)
-    - hungarian: Fast Hungarian algorithm for simple scenarios
-    - auto: Automatically selects based on problem complexity
+    - auto: Automatically selects production optimizer (recommended)
 
     Args:
         request: Roster generation request with dates and site IDs
@@ -62,13 +60,9 @@ async def generate_roster(
 
         # Auto-select based on roster period and complexity
         if selected_algorithm == "auto":
-            period_days = (end_datetime - start_datetime).days
-            # Use production optimizer for all non-trivial cases
-            if period_days > 3:
-                selected_algorithm = "production"
-            else:
-                selected_algorithm = "hungarian"
-            logger.info(f"Auto-selected {selected_algorithm} based on {period_days} days")
+            # Always use production optimizer (most robust)
+            selected_algorithm = "production"
+            logger.info(f"Auto-selected {selected_algorithm}")
 
         # Initialize appropriate optimizer
         if selected_algorithm == "production":
@@ -96,15 +90,21 @@ async def generate_roster(
             )
             result["algorithm_used"] = "milp"
 
-        else:  # hungarian
-            logger.info("Using Hungarian Algorithm")
-            generator = RosterGenerator(db)
-            result = generator.generate_roster(
+        else:
+            # Unknown algorithm, default to production
+            logger.warning(f"Unknown algorithm '{selected_algorithm}', defaulting to production")
+            optimizer = ProductionRosterOptimizer(
+                db,
+                config=OptimizationConfig(
+                    time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 120),
+                    fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2)
+                )
+            )
+            result = optimizer.optimize(
                 start_date=start_datetime,
                 end_date=end_datetime,
                 site_ids=request.site_ids
             )
-            result["algorithm_used"] = "hungarian"
 
         logger.info(f"Roster generation complete: {result.get('status', 'unknown')}, {len(result.get('assignments', []))} assignments")
 
@@ -289,7 +289,7 @@ async def generate_roster_for_client(
     client_id: int,
     start_date: datetime,
     end_date: datetime,
-    algorithm: Optional[str] = Query("production", description="Algorithm: 'production', 'hungarian', 'milp', 'auto'"),
+    algorithm: Optional[str] = Query("production", description="Algorithm: 'production', 'milp', 'auto'"),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
@@ -358,12 +358,9 @@ async def generate_roster_for_client(
 
         # Auto-select based on roster period and complexity
         if selected_algorithm == "auto":
-            period_days = (end_datetime - start_datetime).days
-            if period_days > 3:
-                selected_algorithm = "production"
-            else:
-                selected_algorithm = "hungarian"
-            logger.info(f"Auto-selected {selected_algorithm} based on {period_days} days")
+            # Always use production optimizer (most robust)
+            selected_algorithm = "production"
+            logger.info(f"Auto-selected {selected_algorithm}")
 
         # Initialize appropriate optimizer
         if selected_algorithm == "production":
@@ -391,15 +388,21 @@ async def generate_roster_for_client(
             )
             result["algorithm_used"] = "milp"
 
-        else:  # hungarian
-            logger.info("Using Hungarian Algorithm")
-            generator = RosterGenerator(db)
-            result = generator.generate_roster(
+        else:
+            # Unknown algorithm, default to production
+            logger.warning(f"Unknown algorithm '{selected_algorithm}', defaulting to production")
+            optimizer = ProductionRosterOptimizer(
+                db,
+                config=OptimizationConfig(
+                    time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 120),
+                    fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2)
+                )
+            )
+            result = optimizer.optimize(
                 start_date=start_datetime,
                 end_date=end_datetime,
                 site_ids=site_ids
             )
-            result["algorithm_used"] = "hungarian"
 
         # Add client information to result
         result["client"] = {

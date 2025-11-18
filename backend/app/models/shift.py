@@ -3,6 +3,7 @@
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from app.database import Base
+from app.models.certification import PSIRAGrade, FirearmCompetencyType
 import enum
 
 
@@ -33,6 +34,11 @@ class Shift(Base):
     created_by = Column(String(100))
     is_overtime = Column(Boolean, default=False)
     notes = Column(String(500))
+
+    # PSIRA Compliance fields
+    required_psira_grade = Column(SQLEnum(PSIRAGrade), nullable=True, index=True)  # Minimum PSIRA grade required
+    requires_firearm = Column(Boolean, default=False)  # Whether shift requires armed guard
+    required_firearm_type = Column(SQLEnum(FirearmCompetencyType), nullable=True)  # Specific firearm type needed
 
     # BCEA Compliance - Meal Breaks
     # BCEA requires meal break after 5 hours of continuous work
