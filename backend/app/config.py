@@ -41,9 +41,11 @@ class Settings(BaseSettings):
             return [origin.strip() for origin in v.split(',')]
         return v
 
-    # Rostering Constraints
+    # Rostering Constraints (BCEA Compliance)
     MAX_HOURS_WEEK: int = 60  # Relaxed from 48 for testing (BCEA: 48)
     MIN_REST_HOURS: int = 6   # Relaxed from 8 for testing (BCEA: 8)
+    MAX_CONSECUTIVE_DAYS: int = 6  # Maximum consecutive working days (BCEA)
+    MAX_CONSECUTIVE_NIGHTS: int = 3  # Maximum consecutive night shifts (safety & fatigue management)
     OT_MULTIPLIER: float = 1.5
     MAX_DISTANCE_KM: float = 100.0  # Relaxed from 50km for testing
 
@@ -52,16 +54,11 @@ class Settings(BaseSettings):
     FAIRNESS_WEIGHT: float = 0.15  # Relaxed from 0.2 to prioritize fill rate
     MILP_TIME_LIMIT: int = 180  # Maximum solver time in seconds
 
-    # Testing Mode - Relaxed Constraints
+    # Testing Mode - Relaxed Constraints for Development
     TESTING_MODE: bool = True  # Set to False for production BCEA-compliant mode
     SKIP_CERTIFICATION_CHECK: bool = True  # Skip PSIRA cert validation for testing
     SKIP_SKILL_MATCHING: bool = False  # Still match skills but more flexible
     SKIP_AVAILABILITY_CHECK: bool = True  # Skip availability checks for testing (allows all shifts)
-
-    # Testing Mode Settings
-    TESTING_MODE: bool = True  # Enable relaxed constraints for testing
-    SKIP_CERTIFICATION_CHECK: bool = True  # Skip certification validation in testing
-    SKIP_AVAILABILITY_CHECK: bool = True  # Skip availability check in testing
 
     # Pagination
     DEFAULT_PAGE_SIZE: int = 50

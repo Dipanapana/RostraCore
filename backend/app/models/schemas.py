@@ -3,7 +3,7 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime, date, time
-from app.models.employee import EmployeeRole, EmployeeStatus
+from app.models.employee import EmployeeRole, EmployeeStatus, Gender
 from app.models.shift import ShiftStatus
 
 
@@ -20,6 +20,7 @@ class EmployeeBase(BaseModel):
     home_gps_lat: Optional[float] = None
     home_gps_lng: Optional[float] = None
     status: EmployeeStatus = EmployeeStatus.ACTIVE
+    gender: Optional[Gender] = None
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
 
@@ -40,6 +41,7 @@ class EmployeeUpdate(BaseModel):
     home_gps_lat: Optional[float] = None
     home_gps_lng: Optional[float] = None
     status: Optional[EmployeeStatus] = None
+    gender: Optional[Gender] = None
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
     assigned_client_id: Optional[int] = None  # Allow updating client assignment

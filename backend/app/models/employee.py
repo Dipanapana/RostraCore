@@ -19,6 +19,14 @@ class EmployeeStatus(str, enum.Enum):
     INACTIVE = "inactive"
 
 
+class Gender(str, enum.Enum):
+    """Gender enum for employee demographics."""
+    MALE = "male"
+    FEMALE = "female"
+    OTHER = "other"
+    PREFER_NOT_TO_SAY = "prefer_not_to_say"
+
+
 class Employee(Base):
     """Employee (guard/staff) model."""
 
@@ -40,6 +48,7 @@ class Employee(Base):
     home_gps_lat = Column(Float)
     home_gps_lng = Column(Float)
     status = Column(SQLEnum(EmployeeStatus), default=EmployeeStatus.ACTIVE)
+    gender = Column(SQLEnum(Gender), nullable=True)  # For shift preference matching
     email = Column(String(255), unique=True, index=True)
     phone = Column(String(20))
 
