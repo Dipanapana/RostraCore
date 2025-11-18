@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.models.employee import Employee, EmployeeStatus, EmployeeRole
 from app.models.shift import Shift, ShiftStatus
 from app.models.site import Site
-from app.models.certification import Certification
+from app.models.certification import Certification, PSIRAGrade, FirearmCompetencyType
 from app.models.availability import Availability
 from app.config import settings
 import logging
@@ -327,7 +327,14 @@ class ProductionRosterOptimizer:
         return False
 
     def _check_certifications(self, emp: Employee, shift: Shift) -> bool:
-        """Check if employee has valid certifications for shift date"""
+        """
+        Check if employee has valid certifications for shift date.
+
+        PSIRA Compliance:
+        - Validates PSIRA grade hierarchy (higher grades can work lower grade shifts)
+        - Validates firearm competency for armed shifts
+        - Checks certification expiry dates
+        """
 
         # Skip check in testing mode
         if settings.TESTING_MODE and settings.SKIP_CERTIFICATION_CHECK:
@@ -340,14 +347,60 @@ class ProductionRosterOptimizer:
             logger.warning(f"Employee {emp.employee_id} has no certifications")
             return False
 
-        # Check if any certification is valid for shift date
         shift_date = shift.start_time.date()
 
-        for cert in certs:
-            if cert.verified and cert.expiry_date and cert.expiry_date >= shift_date:
-                return True
+        # Find valid (verified and not expired) certifications
+        valid_certs = [
+            cert for cert in certs
+            if cert.verified and cert.expiry_date and cert.expiry_date >= shift_date
+        ]
 
-        return False
+        if not valid_certs:
+            return False
+
+        # PSIRA Grade Check: If shift requires a specific PSIRA grade
+        if shift.required_psira_grade:
+            # Find employee's highest PSIRA grade from valid certifications
+            guard_grades = [cert.psira_grade for cert in valid_certs if cert.psira_grade]
+
+            if not guard_grades:
+                logger.info(f"Employee {emp.employee_id} has no PSIRA grade, shift requires {shift.required_psira_grade.value}")
+                return False
+
+            # Get highest grade (A=5, B=4, C=3, D=2, E=1)
+            highest_grade = max(guard_grades, key=lambda g: PSIRAGrade.get_hierarchy_value(g))
+
+            # Check if guard's grade is sufficient for shift requirement
+            if not PSIRAGrade.can_work_grade(highest_grade, shift.required_psira_grade):
+                logger.info(
+                    f"Employee {emp.employee_id} grade {highest_grade.value} "
+                    f"insufficient for shift requiring {shift.required_psira_grade.value}"
+                )
+                return False
+
+        # Firearm Competency Check: If shift requires firearm
+        if shift.requires_firearm:
+            firearm_certs = [cert for cert in valid_certs if cert.firearm_competency]
+
+            if not firearm_certs:
+                logger.info(f"Employee {emp.employee_id} has no firearm competency, shift requires armed guard")
+                return False
+
+            # If shift requires specific firearm type, check for exact match
+            if shift.required_firearm_type:
+                has_required_firearm = any(
+                    cert.firearm_competency == shift.required_firearm_type
+                    for cert in firearm_certs
+                )
+
+                if not has_required_firearm:
+                    logger.info(
+                        f"Employee {emp.employee_id} lacks required firearm competency: "
+                        f"{shift.required_firearm_type.value}"
+                    )
+                    return False
+
+        return True
 
     def _check_availability(self, emp: Employee, shift: Shift) -> bool:
         """Check if employee is available during shift time"""
