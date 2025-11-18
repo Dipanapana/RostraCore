@@ -48,9 +48,14 @@ class ShiftAssignment(Base):
     regular_pay = Column(Float, nullable=False, default=0.0)
     overtime_pay = Column(Float, nullable=False, default=0.0)
     night_premium = Column(Float, nullable=False, default=0.0)  # Extra pay for night shifts
-    weekend_premium = Column(Float, nullable=False, default=0.0)  # Extra pay for weekend shifts
+    weekend_premium = Column(Float, nullable=False, default=0.0)  # Extra pay for weekend shifts (deprecated - use sunday_premium)
+    sunday_premium = Column(Float, nullable=False, default=0.0)  # BCEA Sunday premium (1.5x base)
+    holiday_premium = Column(Float, nullable=False, default=0.0)  # BCEA Public holiday premium (2.0x base)
     travel_reimbursement = Column(Float, nullable=False, default=0.0)
     total_cost = Column(Float, nullable=False, default=0.0)
+
+    # Premium metadata
+    premium_type = Column(String(50), nullable=True)  # 'regular', 'sunday', 'holiday:Holiday Name'
 
     # Confirmation status
     is_confirmed = Column(Boolean, nullable=False, default=False)
@@ -100,46 +105,75 @@ class ShiftAssignment(Base):
 
     def calculate_cost(self, shift, employee):
         """
-        Calculate cost breakdown for this assignment.
+        Calculate BCEA-compliant cost breakdown for this assignment.
+
+        Uses PremiumRateCalculator for:
+        - Public holiday work: 2.0x base rate (BCEA compliance)
+        - Sunday work: 1.5x base rate (BCEA compliance)
+        - Regular days: 1.0x base rate
 
         Args:
             shift: Shift object
             employee: Employee object
         """
-        duration_hours = (shift.end_time - shift.start_time).total_seconds() / 3600
+        from app.utils.holidays import PremiumRateCalculator
+
+        # Use paid_hours (meal break adjusted) for calculations
+        duration_hours = shift.paid_hours
+        shift_date = shift.start_time.date()
+
+        # Calculate BCEA-compliant premium rates
+        total_base_cost, premium_amount, premium_type = PremiumRateCalculator.calculate_shift_cost(
+            base_hourly_rate=employee.hourly_rate,
+            hours=duration_hours,
+            shift_date=shift_date,
+            include_premiums=True
+        )
+
+        # Store premium type for reporting
+        self.premium_type = premium_type
 
         # Determine regular vs overtime hours
-        # For simplicity, first 45h/week is regular, 46-48h is overtime
-        # This would need weekly context in real implementation
         if shift.is_overtime:
             self.overtime_hours = duration_hours
             self.regular_hours = 0
-            self.overtime_pay = duration_hours * employee.hourly_rate * 1.5
+            self.overtime_pay = total_base_cost
             self.regular_pay = 0
         else:
             self.regular_hours = duration_hours
             self.overtime_hours = 0
-            self.regular_pay = duration_hours * employee.hourly_rate
+            self.regular_pay = total_base_cost
             self.overtime_pay = 0
 
-        # Night premium (10% extra for shifts starting between 18:00-06:00)
-        if 18 <= shift.start_time.hour or shift.start_time.hour < 6:
-            self.night_premium = self.regular_pay * 0.1
+        # Set BCEA premium fields based on type
+        if premium_type.startswith('holiday:'):
+            self.holiday_premium = premium_amount
+            self.sunday_premium = 0
+            self.weekend_premium = 0  # Deprecated
+        elif premium_type == 'sunday':
+            self.sunday_premium = premium_amount
+            self.holiday_premium = 0
+            self.weekend_premium = premium_amount  # Backwards compatibility
+        else:
+            self.holiday_premium = 0
+            self.sunday_premium = 0
+            self.weekend_premium = 0
 
-        # Weekend premium (15% extra for Sat/Sun)
-        if shift.start_time.weekday() >= 5:  # 5=Saturday, 6=Sunday
-            self.weekend_premium = (self.regular_pay + self.overtime_pay) * 0.15
+        # Night premium (additional to BCEA premiums)
+        if 18 <= shift.start_time.hour or shift.start_time.hour < 6:
+            self.night_premium = employee.hourly_rate * duration_hours * 0.1
+        else:
+            self.night_premium = 0
 
         # Travel reimbursement (simplified - would use actual distance in real implementation)
         # Assume R2/km, average 20km distance
         self.travel_reimbursement = 40.0
 
-        # Total cost
+        # Total cost (BCEA premiums already included in regular_pay/overtime_pay)
         self.total_cost = (
             self.regular_pay +
             self.overtime_pay +
             self.night_premium +
-            self.weekend_premium +
             self.travel_reimbursement
         )
 
@@ -157,7 +191,10 @@ class ShiftAssignment(Base):
             "regular_pay": self.regular_pay,
             "overtime_pay": self.overtime_pay,
             "night_premium": self.night_premium,
-            "weekend_premium": self.weekend_premium,
+            "weekend_premium": self.weekend_premium,  # Deprecated - use sunday_premium
+            "sunday_premium": self.sunday_premium,  # BCEA Sunday premium (1.5x)
+            "holiday_premium": self.holiday_premium,  # BCEA Holiday premium (2.0x)
+            "premium_type": self.premium_type,  # 'regular', 'sunday', 'holiday:Name'
             "travel_reimbursement": self.travel_reimbursement,
             "total_cost": self.total_cost,
             "is_confirmed": self.is_confirmed,
