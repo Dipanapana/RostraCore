@@ -23,6 +23,7 @@ from app.models.shift import Shift, ShiftStatus
 from app.models.site import Site
 from app.models.certification import Certification, PSIRAGrade, FirearmCompetencyType
 from app.models.availability import Availability
+from app.utils.holidays import PremiumRateCalculator, SouthAfricanHolidays
 from app.config import settings
 import logging
 from dataclasses import dataclass
@@ -91,6 +92,8 @@ class ProductionRosterOptimizer:
         self.weekly_hours_vars = {}  # (employee_id, week_num) -> IntVar
         self.night_shift_count_vars = {}  # employee_id -> IntVar
         self.weekend_shift_count_vars = {}  # employee_id -> IntVar
+        self.holiday_shift_count_vars = {}  # employee_id -> IntVar for holiday fairness
+        self.sunday_shift_count_vars = {}  # employee_id -> IntVar for Sunday fairness
 
         # Data structures
         self.employees = []
@@ -455,23 +458,34 @@ class ProductionRosterOptimizer:
         return km
 
     def _calculate_assignment_cost(self, emp: Employee, shift: Shift) -> float:
-        """Calculate total cost for an assignment"""
+        """
+        Calculate total cost for an assignment including BCEA premium rates.
 
-        # Base labor cost
-        hours = (shift.end_time - shift.start_time).total_seconds() / 3600
-        base_cost = emp.hourly_rate * hours
+        Uses PremiumRateCalculator for:
+        - Public holiday work: 2.0x base rate (BCEA compliance)
+        - Sunday work: 1.5x base rate (BCEA compliance)
+        - Regular days: 1.0x base rate
 
-        # Night premium
+        Public holidays take precedence over Sunday premiums.
+        """
+        hours = shift.paid_hours  # Uses meal break adjusted hours
+        shift_date = shift.start_time.date()
+
+        # Calculate cost with BCEA-compliant premium rates
+        total_cost, premium_amount, premium_type = PremiumRateCalculator.calculate_shift_cost(
+            base_hourly_rate=emp.hourly_rate,
+            hours=hours,
+            shift_date=shift_date,
+            include_premiums=True
+        )
+
+        # Add night shift premium (additional to BCEA premiums)
         if shift.start_time.hour >= 18 or shift.start_time.hour < 6:
-            base_cost += self.config.night_premium_per_hour * hours
-
-        # Weekend premium
-        if shift.start_time.weekday() >= 5:  # Saturday=5, Sunday=6
-            base_cost += self.config.weekend_premium_per_hour * hours
+            total_cost += self.config.night_premium_per_hour * hours
 
         # NOTE: Travel cost removed - distance no longer affects cost
 
-        return base_cost
+        return total_cost
 
     def _create_variables(self):
         """Create all CP-SAT decision variables"""
@@ -522,6 +536,20 @@ class ProductionRosterOptimizer:
         for emp in self.employees:
             var_name = f"weekends_e{emp.employee_id}"
             self.weekend_shift_count_vars[emp.employee_id] = self.model.NewIntVar(0, len(weekend_shifts), var_name)
+
+        # Holiday shift count variables (for premium shift fairness)
+        holiday_shifts = [s for s in self.shifts if SouthAfricanHolidays.is_public_holiday(s.start_time.date())]
+        for emp in self.employees:
+            var_name = f"holidays_e{emp.employee_id}"
+            self.holiday_shift_count_vars[emp.employee_id] = self.model.NewIntVar(0, len(holiday_shifts) if holiday_shifts else 1, var_name)
+
+        # Sunday shift count variables (for premium shift fairness - separate from holidays)
+        sunday_shifts = [s for s in self.shifts
+                        if SouthAfricanHolidays.is_sunday(s.start_time.date())
+                        and not SouthAfricanHolidays.is_public_holiday(s.start_time.date())]
+        for emp in self.employees:
+            var_name = f"sundays_e{emp.employee_id}"
+            self.sunday_shift_count_vars[emp.employee_id] = self.model.NewIntVar(0, len(sunday_shifts) if sunday_shifts else 1, var_name)
 
         logger.info("All variables created")
 
@@ -736,6 +764,62 @@ class ProductionRosterOptimizer:
                 self.model.Add(
                     self.weekend_shift_count_vars[emp.employee_id] == sum(weekend_terms)
                 )
+
+        # 3. Count public holiday shifts per employee (premium shift fairness)
+        holiday_shifts = [s for s in self.shifts if SouthAfricanHolidays.is_public_holiday(s.start_time.date())]
+        for emp in self.employees:
+            holiday_terms = []
+            for shift in holiday_shifts:
+                key = (emp.employee_id, shift.shift_id)
+                if key in self.assignment_vars:
+                    holiday_terms.append(self.assignment_vars[key])
+
+            if holiday_terms:
+                self.model.Add(
+                    self.holiday_shift_count_vars[emp.employee_id] == sum(holiday_terms)
+                )
+
+        # Fairness constraint: max_holidays - min_holidays <= 2
+        if len(self.employees) > 1 and holiday_shifts:
+            max_holidays = self.model.NewIntVar(0, len(holiday_shifts), "max_holiday_shifts")
+            min_holidays = self.model.NewIntVar(0, len(holiday_shifts), "min_holiday_shifts")
+
+            holiday_counts = [self.holiday_shift_count_vars[emp.employee_id] for emp in self.employees]
+            self.model.AddMaxEquality(max_holidays, holiday_counts)
+            self.model.AddMinEquality(min_holidays, holiday_counts)
+
+            # Ensure fair distribution of premium-paying holiday shifts
+            self.model.Add(max_holidays - min_holidays <= 2)
+            logger.info(f"Holiday fairness constraint added: {len(holiday_shifts)} holiday shifts")
+
+        # 4. Count Sunday shifts per employee (premium shift fairness - separate from holidays)
+        sunday_shifts = [s for s in self.shifts
+                        if SouthAfricanHolidays.is_sunday(s.start_time.date())
+                        and not SouthAfricanHolidays.is_public_holiday(s.start_time.date())]
+        for emp in self.employees:
+            sunday_terms = []
+            for shift in sunday_shifts:
+                key = (emp.employee_id, shift.shift_id)
+                if key in self.assignment_vars:
+                    sunday_terms.append(self.assignment_vars[key])
+
+            if sunday_terms:
+                self.model.Add(
+                    self.sunday_shift_count_vars[emp.employee_id] == sum(sunday_terms)
+                )
+
+        # Fairness constraint: max_sundays - min_sundays <= 2
+        if len(self.employees) > 1 and sunday_shifts:
+            max_sundays = self.model.NewIntVar(0, len(sunday_shifts), "max_sunday_shifts")
+            min_sundays = self.model.NewIntVar(0, len(sunday_shifts), "min_sunday_shifts")
+
+            sunday_counts = [self.sunday_shift_count_vars[emp.employee_id] for emp in self.employees]
+            self.model.AddMaxEquality(max_sundays, sunday_counts)
+            self.model.AddMinEquality(min_sundays, sunday_counts)
+
+            # Ensure fair distribution of premium-paying Sunday shifts
+            self.model.Add(max_sundays - min_sundays <= 2)
+            logger.info(f"Sunday fairness constraint added: {len(sunday_shifts)} Sunday shifts")
 
     def _define_objective(self):
         """Define multi-objective optimization function"""
