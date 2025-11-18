@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     MAX_DISTANCE_KM: float = 100.0  # Relaxed from 50km for testing
 
     # Rostering Algorithm Settings
-    ROSTER_ALGORITHM: str = "auto"  # Options: "hungarian", "milp", "auto"
+    ROSTER_ALGORITHM: str = "production"  # Options: "production", "milp", "auto"
     FAIRNESS_WEIGHT: float = 0.15  # Relaxed from 0.2 to prioritize fill rate
     MILP_TIME_LIMIT: int = 180  # Maximum solver time in seconds
 

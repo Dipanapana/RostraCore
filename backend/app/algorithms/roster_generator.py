@@ -1,9 +1,15 @@
 """
-Roster generation algorithm.
+Roster generation algorithm (Hungarian Algorithm).
 
-This module implements the deterministic algorithmic approach for auto-rostering
-as specified in the RostraCore spec. It uses constraint logic and optimization
-without AI.
+⚠️ DEPRECATED: This Hungarian algorithm implementation is deprecated and no longer used.
+Use ProductionRosterOptimizer (Google OR-Tools CP-SAT) instead for all roster generation.
+
+Reason for deprecation:
+- O(n³) complexity unsuitable for 500+ guards
+- Limited constraint support compared to CP-SAT
+- Production optimizer provides better results with full BCEA compliance
+
+This module is kept for legacy reference only.
 """
 
 from datetime import datetime, timedelta
