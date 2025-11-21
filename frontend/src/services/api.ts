@@ -9,6 +9,22 @@ export const api = axios.create({
   },
 })
 
+// Add interceptor to attach token from localStorage to every request
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token')
+    console.log('[API INTERCEPTOR] Token from localStorage:', token ? `${token.substring(0, 20)}...` : 'No token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+      console.log('[API INTERCEPTOR] Added Authorization header')
+    }
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
+
 // API endpoints
 export const employeesApi = {
   getAll: () => api.get('/api/v1/employees'),

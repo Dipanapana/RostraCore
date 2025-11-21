@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from datetime import datetime, timedelta
 from typing import Optional, List
 import io
@@ -19,6 +19,7 @@ from app.models.employee import Employee
 from app.models.shift import Shift
 from app.models.site import Site
 from app.models.certification import Certification
+from app.models.shift_assignment import ShiftAssignment
 
 router = APIRouter(prefix="/exports", tags=["Exports"])
 
@@ -55,8 +56,11 @@ async def export_roster_pdf(
         else:
             end_dt = start_dt + timedelta(days=7)
 
-        # Query shifts
-        query = db.query(Shift).filter(
+        # Query shifts with eager-loaded relationships
+        query = db.query(Shift).options(
+            joinedload(Shift.site),
+            joinedload(Shift.shift_assignments).joinedload(ShiftAssignment.employee)
+        ).filter(
             Shift.start_time >= start_dt,
             Shift.start_time <= end_dt
         )
@@ -102,16 +106,22 @@ async def export_roster_pdf(
 
         # Calculate summary statistics
         total_shifts = len(shifts)
-        assigned_shifts = len([s for s in shifts if s.assigned_employee_id])
+        # Count shifts that have at least one active assignment
+        assigned_shifts = len([s for s in shifts if any(
+            a.status in ['pending', 'confirmed', 'completed'] for a in s.shift_assignments
+        )])
         total_cost = 0
         total_hours = 0
 
         for shift in shifts:
-            if shift.employee:
-                duration = (shift.end_time - shift.start_time).total_seconds() / 3600
-                cost = duration * shift.employee.hourly_rate
-                total_cost += cost
-                total_hours += duration
+            # Get active assignments for this shift
+            active_assignments = [a for a in shift.shift_assignments if a.status in ['pending', 'confirmed', 'completed']]
+            for assignment in active_assignments:
+                if assignment.employee:
+                    duration = (shift.end_time - shift.start_time).total_seconds() / 3600
+                    cost = duration * assignment.employee.hourly_rate
+                    total_cost += cost
+                    total_hours += duration
 
         # Summary Table
         summary_data = [
@@ -148,26 +158,44 @@ async def export_roster_pdf(
         elements.append(Spacer(1, 0.2*inch))
 
         if shifts:
-            shift_data = [['ID', 'Site', 'Start', 'End', 'Employee', 'Hours', 'Cost (ZAR)']]
+            shift_data = [['ID', 'Site', 'Start', 'End', 'Employee(s)', 'Hours', 'Cost (ZAR)']]
 
             for shift in shifts:
                 site_name = shift.site.client_name if shift.site else "N/A"
-                employee_name = f"{shift.employee.first_name} {shift.employee.last_name}" if shift.employee else "Unassigned"
                 start_time = shift.start_time.strftime('%d/%m %H:%M')
                 end_time = shift.end_time.strftime('%d/%m %H:%M')
-
                 duration = (shift.end_time - shift.start_time).total_seconds() / 3600
-                cost = duration * shift.employee.hourly_rate if shift.employee else 0
 
-                shift_data.append([
-                    str(shift.shift_id),
-                    site_name[:20],  # Truncate long names
-                    start_time,
-                    end_time,
-                    employee_name[:25],
-                    f"{duration:.1f}",
-                    f"R {cost:,.2f}"
-                ])
+                # Get active assignments for this shift (including pending)
+                active_assignments = [a for a in shift.shift_assignments if a.status in ['pending', 'confirmed', 'completed']]
+
+                if active_assignments:
+                    # Show each assignment as a row
+                    for assignment in active_assignments:
+                        employee = assignment.employee
+                        employee_name = f"{employee.first_name} {employee.last_name}" if employee else "Unknown"
+                        cost = duration * employee.hourly_rate if employee else 0
+
+                        shift_data.append([
+                            str(shift.shift_id),
+                            site_name[:20],
+                            start_time,
+                            end_time,
+                            employee_name[:25],
+                            f"{duration:.1f}",
+                            f"R {cost:,.2f}"
+                        ])
+                else:
+                    # Unassigned shift
+                    shift_data.append([
+                        str(shift.shift_id),
+                        site_name[:20],
+                        start_time,
+                        end_time,
+                        "Unassigned",
+                        f"{duration:.1f}",
+                        "R 0.00"
+                    ])
 
             shift_table = Table(shift_data, colWidths=[0.6*inch, 1.8*inch, 1.1*inch, 1.1*inch, 1.8*inch, 0.8*inch, 1.2*inch])
             shift_table.setStyle(TableStyle([

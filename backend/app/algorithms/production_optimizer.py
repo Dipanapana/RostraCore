@@ -7,10 +7,10 @@ This is a comprehensive, production-ready rostering optimizer that:
 - Enforces all BCEA labor law constraints
 - Implements PSIRA compliance checking
 - Provides fairness and workload balancing
-- Supports emergency re-optimization
+- Supports emergency re-optimization 
 - Scales to 100+ employees and 500+ shifts
 
-Author: RostraCore Team
+Author: RostraCore Team 
 Date: November 2025
 """
 
@@ -110,6 +110,10 @@ class LazyFeasibilityMatrix:
     def values(self):
         """Return all cached values (for compatibility)"""
         return self._cache.values()
+
+    def __len__(self):
+        """Return total number of possible pairs (employees × shifts)"""
+        return len(self.optimizer.employees) * len(self.optimizer.shifts)
 
     def get_stats(self) -> Dict:
         """Get cache statistics for diagnostics"""
@@ -308,13 +312,42 @@ class ProductionRosterOptimizer:
     ):
         """Load all required data from database"""
 
-        # Load unassigned shifts
-        query = self.db.query(Shift).filter(
-            Shift.start_time >= start_date,
-            Shift.start_time < end_date,
-            Shift.assigned_employee_id == None,
-            Shift.status != ShiftStatus.CANCELLED
+        # Load shifts that need staff (have unfilled positions)
+        # Phase 2: Shifts no longer have assigned_employee_id, use shift_assignments instead
+        from app.models.shift_assignment import ShiftAssignment, AssignmentStatus
+        from sqlalchemy import func, and_
+        from sqlalchemy.orm import aliased
+
+        # Subquery: count confirmed/completed assignments per shift
+        assignment_counts = (
+            self.db.query(
+                ShiftAssignment.shift_id,
+                func.count(ShiftAssignment.assignment_id).label('assignment_count')
+            )
+            .filter(ShiftAssignment.status.in_([AssignmentStatus.CONFIRMED, AssignmentStatus.COMPLETED]))
+            .group_by(ShiftAssignment.shift_id)
+            .subquery()
         )
+
+        # Load shifts that are not cancelled and not fully staffed
+        # A shift needs staff if: (no assignments) OR (assignment_count < required_staff)
+        query = (
+            self.db.query(Shift)
+            .outerjoin(assignment_counts, Shift.shift_id == assignment_counts.c.shift_id)
+            .filter(
+                Shift.start_time >= start_date,
+                Shift.start_time < end_date,
+                Shift.status != ShiftStatus.CANCELLED,
+                # Either no assignments or assignment count is less than required
+                (assignment_counts.c.assignment_count == None) |
+                (assignment_counts.c.assignment_count < Shift.required_staff)
+            )
+        )
+
+        # Filter by organization if specified (multi-tenancy)
+        if self.org_id is not None:
+            query = query.filter(Shift.org_id == self.org_id)
+            logger.info(f"Filtering shifts by organization ID: {self.org_id}")
 
         if site_ids:
             query = query.filter(Shift.site_id.in_(site_ids))

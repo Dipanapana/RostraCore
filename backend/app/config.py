@@ -55,10 +55,10 @@ class Settings(BaseSettings):
     MILP_TIME_LIMIT: int = 180  # Maximum solver time in seconds
 
     # Testing Mode - Relaxed Constraints for Development
-    TESTING_MODE: bool = True  # Set to False for production BCEA-compliant mode
-    SKIP_CERTIFICATION_CHECK: bool = True  # Skip PSIRA cert validation for testing
+    TESTING_MODE: bool = False  # Set to False for production BCEA-compliant mode
+    SKIP_CERTIFICATION_CHECK: bool = False  # Skip PSIRA cert validation for testing
     SKIP_SKILL_MATCHING: bool = False  # Still match skills but more flexible
-    SKIP_AVAILABILITY_CHECK: bool = True  # Skip availability checks for testing (allows all shifts)
+    SKIP_AVAILABILITY_CHECK: bool = False  # Skip availability checks for testing (allows all shifts)
 
     # Pagination
     DEFAULT_PAGE_SIZE: int = 50

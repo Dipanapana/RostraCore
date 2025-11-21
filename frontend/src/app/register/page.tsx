@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
+import { User, Mail, Phone, Lock, Building2, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -87,36 +89,48 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
-      <div className="max-w-2xl w-full mx-auto">
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-slate-50 py-12 px-4">
+      {/* Background Effects */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl pointer-events-none">
+        <div className="absolute top-40 left-20 w-96 h-96 bg-blue-500/10 rounded-full blur-[100px] animate-pulse-glow" />
+        <div className="absolute bottom-40 right-20 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px] animate-pulse-glow delay-300" />
+      </div>
+
+      <div className="w-full max-w-2xl mx-auto relative z-10">
         {/* Logo & Header */}
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 bg-primary-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-2xl">R</span>
-            </div>
-            <span className="text-3xl font-bold text-gray-900">RostraCore</span>
+        <div className="text-center mb-8 animate-slide-up">
+          <Link href="/" className="inline-flex justify-center mb-8 hover:scale-105 transition-transform duration-300">
+            <Image
+              src="/rostracore-logo.svg"
+              alt="RostraCore"
+              width={240}
+              height={70}
+              className="w-64 h-auto drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]"
+              priority
+            />
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900 mt-6 mb-2">
+          <h1 className="text-3xl font-bold text-slate-900 mb-3">
             Start Your 14-Day Free Trial
           </h1>
-          <p className="text-gray-600">
+          <p className="text-slate-600">
             No credit card required • Cancel anytime
           </p>
         </div>
 
         {/* Register Card */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+        <div className="bg-white p-8 md:p-10 rounded-2xl shadow-2xl animate-slide-up delay-100 border border-slate-200">
           {/* Error Message */}
           {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+            <div className="mb-6 bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
               {error}
             </div>
           )}
 
           {/* Success Message */}
           {success && (
-            <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
+            <div className="mb-6 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5" />
               {success}
             </div>
           )}
@@ -126,151 +140,165 @@ export default function RegisterPage() {
             {/* Two-column layout for larger screens */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Username Field */}
-              <div>
-                <label
-                  htmlFor="username"
-                  className="block text-sm font-semibold text-gray-900 mb-2"
-                >
+              <div className="space-y-2">
+                <label htmlFor="username" className="block text-sm font-medium text-slate-700">
                   Username *
                 </label>
-                <input
-                  id="username"
-                  name="username"
-                  type="text"
-                  value={formData.username}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                  placeholder="Choose a username"
-                  disabled={loading}
-                />
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <User className="h-5 w-5 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
+                  </div>
+                  <input
+                    id="username"
+                    name="username"
+                    type="text"
+                    value={formData.username}
+                    onChange={handleChange}
+                    required
+                    className="block w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-slate-400"
+                    placeholder="Choose a username"
+                    disabled={loading}
+                  />
+                </div>
               </div>
 
               {/* Email Field */}
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-semibold text-gray-900 mb-2"
-                >
+              <div className="space-y-2">
+                <label htmlFor="email" className="block text-sm font-medium text-slate-700">
                   Email *
                 </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                  placeholder="your@email.com"
-                  disabled={loading}
-                />
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Mail className="h-5 w-5 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
+                  </div>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    className="block w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-slate-400"
+                    placeholder="your@email.com"
+                    disabled={loading}
+                  />
+                </div>
               </div>
 
               {/* Full Name Field */}
-              <div>
-                <label
-                  htmlFor="full_name"
-                  className="block text-sm font-semibold text-gray-900 mb-2"
-                >
+              <div className="space-y-2">
+                <label htmlFor="full_name" className="block text-sm font-medium text-slate-700">
                   Full Name *
                 </label>
-                <input
-                  id="full_name"
-                  name="full_name"
-                  type="text"
-                  value={formData.full_name}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                  placeholder="John Doe"
-                  disabled={loading}
-                />
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <User className="h-5 w-5 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
+                  </div>
+                  <input
+                    id="full_name"
+                    name="full_name"
+                    type="text"
+                    value={formData.full_name}
+                    onChange={handleChange}
+                    required
+                    className="block w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-slate-400"
+                    placeholder="John Doe"
+                    disabled={loading}
+                  />
+                </div>
               </div>
 
               {/* Phone Field (Optional) */}
-              <div>
-                <label
-                  htmlFor="phone"
-                  className="block text-sm font-semibold text-gray-900 mb-2"
-                >
+              <div className="space-y-2">
+                <label htmlFor="phone" className="block text-sm font-medium text-slate-700">
                   Phone (Optional)
                 </label>
-                <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                  placeholder="+27 12 345 6789"
-                  disabled={loading}
-                />
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Phone className="h-5 w-5 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
+                  </div>
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="block w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-slate-400"
+                    placeholder="+27 12 345 6789"
+                    disabled={loading}
+                  />
+                </div>
               </div>
 
               {/* Password Field */}
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-semibold text-gray-900 mb-2"
-                >
+              <div className="space-y-2">
+                <label htmlFor="password" className="block text-sm font-medium text-slate-700">
                   Password *
                 </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                  placeholder="Minimum 8 characters"
-                  disabled={loading}
-                />
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
+                  </div>
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    className="block w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-slate-400"
+                    placeholder="Min 8 characters"
+                    disabled={loading}
+                  />
+                </div>
               </div>
 
               {/* Confirm Password Field */}
-              <div>
-                <label
-                  htmlFor="confirmPassword"
-                  className="block text-sm font-semibold text-gray-900 mb-2"
-                >
+              <div className="space-y-2">
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700">
                   Confirm Password *
                 </label>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                  placeholder="Re-enter password"
-                  disabled={loading}
-                />
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
+                  </div>
+                  <input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    required
+                    className="block w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-slate-400"
+                    placeholder="Re-enter password"
+                    disabled={loading}
+                  />
+                </div>
               </div>
             </div>
 
             {/* Company Name Field (Full Width) */}
-            <div>
-              <label
-                htmlFor="company_name"
-                className="block text-sm font-semibold text-gray-900 mb-2"
-              >
+            <div className="space-y-2">
+              <label htmlFor="company_name" className="block text-sm font-medium text-slate-700">
                 Company Name *
               </label>
-              <input
-                id="company_name"
-                name="company_name"
-                type="text"
-                value={formData.company_name}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                placeholder="Your Security Company Name"
-                disabled={loading}
-              />
-              <p className="text-xs text-gray-500 mt-2">
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Building2 className="h-5 w-5 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
+                </div>
+                <input
+                  id="company_name"
+                  name="company_name"
+                  type="text"
+                  value={formData.company_name}
+                  onChange={handleChange}
+                  required
+                  className="block w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-slate-400"
+                  placeholder="Your Security Company Name"
+                  disabled={loading}
+                />
+              </div>
+              <p className="text-xs text-slate-600 mt-1">
                 This will be displayed on your dashboard and PDF reports
               </p>
             </div>
@@ -281,16 +309,16 @@ export default function RegisterPage() {
                 id="terms"
                 type="checkbox"
                 required
-                className="mt-1 h-4 w-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+                className="mt-1 h-4 w-4 rounded border-white/10 bg-white/5 text-blue-600 focus:ring-blue-500 focus:ring-offset-slate-900"
                 disabled={loading}
               />
-              <label htmlFor="terms" className="ml-2 text-sm text-gray-600">
+              <label htmlFor="terms" className="ml-2 text-sm text-slate-600">
                 I agree to the{" "}
-                <a href="/terms" className="text-primary-500 hover:text-primary-600 font-medium">
+                <a href="/terms" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
                   Terms of Service
                 </a>{" "}
                 and{" "}
-                <a href="/privacy" className="text-primary-500 hover:text-primary-600 font-medium">
+                <a href="/privacy" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
                   Privacy Policy
                 </a>
               </label>
@@ -300,47 +328,34 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading || !!success}
-              className="w-full bg-primary-500 hover:bg-primary-600 disabled:bg-primary-300 text-white font-semibold py-3 px-4 rounded-lg transition-all hover:shadow-md flex items-center justify-center"
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3.5 px-4 rounded-xl transition-all hover:shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               {loading ? (
                 <>
-                  <svg
-                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
+                  <Loader2 className="w-5 h-5 animate-spin" />
                   Creating account...
                 </>
               ) : success ? (
-                "Redirecting to login..."
+                <>
+                  <CheckCircle2 className="w-5 h-5" />
+                  Redirecting to login...
+                </>
               ) : (
-                "Start 14-Day Free Trial"
+                <>
+                  Start 14-Day Free Trial
+                  <ArrowRight className="w-5 h-5" />
+                </>
               )}
             </button>
           </form>
 
           {/* Login Link */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+          <div className="mt-8 text-center">
+            <p className="text-slate-600">
               Already have an account?{" "}
               <Link
                 href="/login"
-                className="text-primary-500 hover:text-primary-600 font-semibold"
+                className="text-slate-900 font-bold hover:text-blue-600 transition-colors"
               >
                 Sign In
               </Link>
@@ -349,14 +364,12 @@ export default function RegisterPage() {
         </div>
 
         {/* Back to Home Link */}
-        <div className="mt-6 text-center">
+        <div className="mt-8 text-center animate-slide-up delay-200">
           <Link
             href="/"
-            className="text-sm text-gray-600 hover:text-gray-900 transition-colors inline-flex items-center gap-1"
+            className="text-sm text-slate-500 hover:text-slate-900 transition-colors inline-flex items-center gap-2 group"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            <ArrowRight className="w-4 h-4 rotate-180 group-hover:-translate-x-1 transition-transform" />
             Back to home
           </Link>
         </div>

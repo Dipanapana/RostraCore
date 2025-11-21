@@ -68,6 +68,18 @@ class ShiftService:
             return None
 
         update_data = shift_data.model_dump(exclude_unset=True)
+        
+        # Handle assignment separately to ensure ShiftAssignment is created
+        if 'assigned_employee_id' in update_data:
+            employee_id = update_data.pop('assigned_employee_id')
+            if employee_id is not None:
+                ShiftService.assign_employee(db, shift_id, employee_id)
+            else:
+                # Handle unassignment if needed (optional)
+                db_shift.assigned_employee_id = None
+                # Also cancel active assignments?
+                # For now just clear the legacy field
+        
         for field, value in update_data.items():
             setattr(db_shift, field, value)
 

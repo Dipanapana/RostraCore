@@ -13,6 +13,7 @@ from app.models.shift_assignment import ShiftAssignment
 from app.models.organization import Organization
 from app.models.client import Client
 from app.models.subscription_plan import SubscriptionPlan
+from app.models.client_invoice import ClientInvoice, InvoiceLineItem
 
 __all__ = [
     "User",
@@ -27,5 +28,7 @@ __all__ = [
     "ShiftAssignment",
     "Organization",
     "Client",
-    "SubscriptionPlan"
+    "SubscriptionPlan",
+    "ClientInvoice",
+    "InvoiceLineItem"
 ]

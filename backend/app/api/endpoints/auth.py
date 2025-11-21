@@ -119,7 +119,7 @@ def login(
     # Create access token
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.user_id, "username": user.username, "role": user.role.value},
+        data={"sub": str(user.user_id), "username": user.username, "role": user.role.value},
         expires_delta=access_token_expires
     )
 
@@ -164,7 +164,7 @@ def login_json(
     # Create access token
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.user_id, "username": user.username, "role": user.role.value},
+        data={"sub": str(user.user_id), "username": user.username, "role": user.role.value},
         expires_delta=access_token_expires
     )
 

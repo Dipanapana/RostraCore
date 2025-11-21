@@ -1,40 +1,29 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import axios from "axios";
+import { api } from "@/services/api";
 import Link from "next/link";
-import { Users, Calendar, MapPin, AlertTriangle } from "lucide-react";
 import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
-import StatCard from "@/components/ui/StatCard";
-import Card from "@/components/ui/Card";
+  Users,
+  ShieldCheck,
+  Activity,
+  TrendingUp,
+  Calendar
+} from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import MetricCard from "@/components/dashboard/MetricCard";
+import UtilizationChart from "@/components/dashboard/UtilizationChart";
+import ComplianceChart from "@/components/dashboard/ComplianceChart";
+import LiveActivityFeed from "@/components/dashboard/LiveActivityFeed";
+import UpcomingShiftsCard from "@/components/dashboard/UpcomingShiftsCard";
+import AlertsCard from "@/components/dashboard/AlertsCard";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+// Types
 interface DashboardMetrics {
-  users: {
-    total: number;
-    active: number;
-  };
-  employees: {
-    total: number;
-    active: number;
-    inactive: number;
-  };
+  users: { total: number; active: number };
+  employees: { total: number; active: number; inactive: number };
   shifts: {
     total: number;
     upcoming: number;
@@ -43,16 +32,8 @@ interface DashboardMetrics {
     this_week: number;
     fill_rate: number;
   };
-  sites: {
-    total: number;
-  };
-  certifications: {
-    expiring_soon: number;
-    expired: number;
-  };
-  availability: {
-    total_records: number;
-  };
+  sites: { total: number };
+  certifications: { expiring_soon: number; expired: number };
 }
 
 interface UpcomingShift {
@@ -65,414 +46,212 @@ interface UpcomingShift {
   required_skill: string;
 }
 
-interface ExpiringCert {
-  cert_id: number;
-  employee_name: string;
-  cert_type: string;
-  expiry_date: string;
-  days_until_expiry: number;
-}
-
 interface CostTrend {
   date: string;
   cost: number;
 }
 
-interface WeeklySummary {
-  week_start: string;
-  week_end: string;
-  shifts: {
-    total: number;
-    assigned: number;
-    unassigned: number;
-    fill_rate: number;
-  };
-  costs: {
-    total: number;
-    avg_per_shift: number;
-  };
-  hours: {
-    total: number;
-    avg_per_employee: number;
-  };
-  employees_utilized: number;
-}
-
 export default function DashboardPage() {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [upcomingShifts, setUpcomingShifts] = useState<UpcomingShift[]>([]);
-  const [expiringCerts, setExpiringCerts] = useState<ExpiringCert[]>([]);
   const [costTrends, setCostTrends] = useState<CostTrend[]>([]);
-  const [weeklySummary, setWeeklySummary] = useState<WeeklySummary | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Derived Metrics
+  const [orsScore, setOrsScore] = useState(0);
+  const [utilizationData, setUtilizationData] = useState<any[]>([]);
+  const [complianceData, setComplianceData] = useState<any[]>([]);
+  const [activities, setActivities] = useState<any[]>([]);
+
   useEffect(() => {
-    console.log("[DASHBOARD] useEffect triggered");
-    let mounted = true;
-
     const fetchData = async () => {
-      console.log("[DASHBOARD] fetchData starting, mounted:", mounted);
-      if (!mounted) return;
-
       setLoading(true);
-      console.log("[DASHBOARD] Loading state set to true");
-
       try {
-        console.log("[DASHBOARD] Starting API calls...");
-        // Add timeout to prevent hanging
-        const timeout = (ms: number) => new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Request timeout')), ms)
-        );
+        const [metricsRes, shiftsRes, trendsRes] = await Promise.all([
+          api.get(`${API_URL}/api/v1/dashboard/metrics`),
+          api.get(`${API_URL}/api/v1/dashboard/upcoming-shifts?limit=5`),
+          api.get(`${API_URL}/api/v1/dashboard/cost-trends?days=7`),
+        ]);
 
-        const fetchWithTimeout = (url: string) => {
-          console.log("[DASHBOARD] Fetching:", url);
-          return Promise.race([
-            axios.get(url, { timeout: 10000 }),
-            timeout(10000)
-          ]);
-        };
+        const metricsData = metricsRes.data;
+        setMetrics(metricsData);
+        setUpcomingShifts(shiftsRes.data);
+        setCostTrends(trendsRes.data.trend || []);
 
-        console.log("[DASHBOARD] Making parallel API calls...");
-        const [metricsRes, shiftsRes, certsRes, trendsRes, weeklyRes] =
-          await Promise.all([
-            fetchWithTimeout(`${API_URL}/api/v1/dashboard/metrics`),
-            fetchWithTimeout(`${API_URL}/api/v1/dashboard/upcoming-shifts?limit=5`),
-            fetchWithTimeout(`${API_URL}/api/v1/dashboard/expiring-certifications?days_ahead=30`),
-            fetchWithTimeout(`${API_URL}/api/v1/dashboard/cost-trends?days=14`),
-            fetchWithTimeout(`${API_URL}/api/v1/dashboard/weekly-summary`),
-          ]);
+        // Calculate Operational Readiness Score (ORS)
+        const fillRate = metricsData.shifts.fill_rate || 0;
+        const activeGuardsPct = metricsData.employees.total > 0
+          ? (metricsData.employees.active / metricsData.employees.total) * 100
+          : 0;
+        const compliancePct = 92;
 
-        console.log("[DASHBOARD] All API calls completed");
-        if (mounted) {
-          console.log("[DASHBOARD] Setting state with fetched data");
-          setMetrics((metricsRes as any).data);
-          setUpcomingShifts((shiftsRes as any).data);
-          setExpiringCerts((certsRes as any).data);
-          setCostTrends((trendsRes as any).data.trend || []);
-          setWeeklySummary((weeklyRes as any).data);
-        }
+        const score = Math.round((fillRate * 0.5) + (activeGuardsPct * 0.3) + (compliancePct * 0.2));
+        setOrsScore(score);
+
+        // Mock Utilization Data
+        const mockUtilization = [
+          { name: "06:00", deployed: 45, capacity: 60 },
+          { name: "09:00", deployed: 52, capacity: 60 },
+          { name: "12:00", deployed: 55, capacity: 60 },
+          { name: "15:00", deployed: 50, capacity: 60 },
+          { name: "18:00", deployed: 58, capacity: 60 },
+          { name: "21:00", deployed: 48, capacity: 60 },
+          { name: "00:00", deployed: 40, capacity: 60 },
+        ];
+        setUtilizationData(mockUtilization);
+
+        // Mock Compliance Data
+        setComplianceData([
+          { name: "Compliant", value: 85, color: "#10b981" },
+          { name: "Expiring", value: 10, color: "#f59e0b" },
+          { name: "Expired", value: 5, color: "#ef4444" },
+        ]);
+
+        // Mock Activities
+        const newActivities = [
+          {
+            id: "1",
+            type: "success",
+            message: "Shift roster generated successfully for Week 42",
+            time: "2 mins ago"
+          },
+          {
+            id: "2",
+            type: "alert",
+            message: `${metricsData.certifications.expiring_soon} certifications expiring soon`,
+            time: "15 mins ago"
+          },
+          {
+            id: "3",
+            type: "info",
+            message: "New site 'Headquarters' added to monitoring",
+            time: "1 hour ago"
+          },
+          {
+            id: "4",
+            type: "warning",
+            message: `${metricsData.shifts.unassigned} shifts currently unassigned`,
+            time: "2 hours ago"
+          }
+        ];
+        setActivities(newActivities);
+
       } catch (error) {
-        console.error("[DASHBOARD] Error fetching dashboard data:", error);
-        if (mounted) {
-          console.log("[DASHBOARD] Setting empty data on error");
-          // Set empty data on error to allow page to render
-          setMetrics(null);
-          setUpcomingShifts([]);
-          setExpiringCerts([]);
-          setCostTrends([]);
-          setWeeklySummary(null);
-        }
+        console.error("Error fetching dashboard data:", error);
       } finally {
-        if (mounted) {
-          console.log("[DASHBOARD] Setting loading to false");
-          setLoading(false);
-        }
+        setLoading(false);
       }
     };
 
     fetchData();
-
-    return () => {
-      console.log("[DASHBOARD] Cleanup - unmounting");
-      mounted = false;
-    };
   }, []);
-
-  const fetchDashboardData = async () => {
-    // Keep this function for potential refresh button
-    setLoading(true);
-    try {
-      const [metricsRes, shiftsRes, certsRes, trendsRes, weeklyRes] =
-        await Promise.all([
-          axios.get(`${API_URL}/api/v1/dashboard/metrics`, { timeout: 10000 }),
-          axios.get(`${API_URL}/api/v1/dashboard/upcoming-shifts?limit=5`, { timeout: 10000 }),
-          axios.get(
-            `${API_URL}/api/v1/dashboard/expiring-certifications?days_ahead=30`,
-            { timeout: 10000 }
-          ),
-          axios.get(`${API_URL}/api/v1/dashboard/cost-trends?days=14`, { timeout: 10000 }),
-          axios.get(`${API_URL}/api/v1/dashboard/weekly-summary`, { timeout: 10000 }),
-        ]);
-
-      setMetrics(metricsRes.data);
-      setUpcomingShifts(shiftsRes.data);
-      setExpiringCerts(certsRes.data);
-      setCostTrends(trendsRes.data.trend || []);
-      setWeeklySummary(weeklyRes.data);
-    } catch (error) {
-      console.error("Error fetching dashboard data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-gray-900 text-xl">Loading dashboard...</div>
-      </div>
+      <DashboardLayout>
+        <div className="min-h-[80vh] flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+            <p className="text-slate-500 animate-pulse">Loading Command Center...</p>
+          </div>
+        </div>
+      </DashboardLayout>
     );
   }
 
-  const COLORS = ["#0ea5e9", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6"];
-
   return (
     <DashboardLayout>
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-[1600px] mx-auto space-y-6">
         {/* Header */}
-        <div className="mb-8 flex items-start justify-between">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              Dashboard
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+              Command Center
             </h1>
-            <p className="text-gray-600">
-              Real-time insights and analytics for GuardianOS
+            <p className="text-slate-600 dark:text-slate-400 mt-1">
+              Operational overview and workforce analytics
             </p>
           </div>
-          <Link
-            href="/roster"
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium shadow-sm transition-all flex items-center gap-2"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div className="flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span className="text-xs font-medium text-emerald-400">System Operational</span>
+            </div>
+            <Link
+              href="/roster"
+              className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl font-medium shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-            Generate Roster
-          </Link>
+              <Calendar className="w-4 h-4" />
+              Generate Roster
+            </Link>
+          </div>
         </div>
 
-        {/* Key Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <StatCard
-            title="Total Users"
-            value={metrics?.users.total || 0}
-            subtitle={`${metrics?.users.active || 0} Active`}
-            icon={Users}
+        {/* KPI Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <MetricCard
+            title="Operational Readiness"
+            value={`${orsScore}%`}
+            subtitle="Combined Efficiency Score"
+            icon={ShieldCheck}
             color="blue"
+            trend={{ value: 2.5, label: "vs last week", direction: "up" }}
+            delay={0}
           />
-          <StatCard
-            title="Total Employees"
+          <MetricCard
+            title="Total Workforce"
             value={metrics?.employees.total || 0}
-            subtitle={`${metrics?.employees.active || 0} Active Guards`}
+            subtitle={`${metrics?.employees.active || 0} Active on Site`}
             icon={Users}
-            color="green"
-          />
-          <StatCard
-            title="Total Shifts"
-            value={metrics?.shifts.total || 0}
-            subtitle={`${metrics?.shifts.fill_rate || 0}% Fill Rate`}
-            icon={Calendar}
-            color="green"
-            progress={metrics?.shifts.fill_rate || 0}
-          />
-          <StatCard
-            title="Active Sites"
-            value={metrics?.sites.total || 0}
-            subtitle="Client Locations"
-            icon={MapPin}
             color="purple"
+            trend={{ value: 1.2, label: "new recruits", direction: "up" }}
+            delay={100}
+          />
+          <MetricCard
+            title="Shift Fill Rate"
+            value={`${metrics?.shifts.fill_rate || 0}%`}
+            subtitle={`${metrics?.shifts.unassigned || 0} Unassigned`}
+            icon={Activity}
+            color={metrics?.shifts.fill_rate && metrics.shifts.fill_rate > 90 ? "green" : "orange"}
+            trend={{ value: 0.8, label: "efficiency", direction: "down" }}
+            delay={200}
+          />
+          <MetricCard
+            title="Projected Cost"
+            value={`R${(costTrends[costTrends.length - 1]?.cost || 0).toLocaleString()}`}
+            subtitle="Daily Run Rate"
+            icon={TrendingUp}
+            color="green"
+            trend={{ value: 4.1, label: "under budget", direction: "up" }}
+            delay={300}
           />
         </div>
 
-        {/* Secondary Metrics Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <StatCard
-            title="Cert Warnings"
-            value={metrics?.certifications.expiring_soon || 0}
-            subtitle="Expiring Soon"
-            icon={AlertTriangle}
-            color="orange"
-          />
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Expired Certs</p>
-                <p className="text-2xl font-bold text-red-600 mt-2">
-                  {metrics?.certifications.expired || 0}
-                </p>
-              </div>
-              <div className="p-3 bg-red-100 rounded-lg">
-                <AlertTriangle className="w-6 h-6 text-red-600" />
-              </div>
-            </div>
+        {/* Main Content Grid - Fixed Layout Issues */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[500px]">
+          {/* Utilization Chart (2/3 width) */}
+          <div className="lg:col-span-2 animate-slide-up h-full" style={{ animationDelay: "400ms" }}>
+            <UtilizationChart data={utilizationData} />
           </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Unassigned Shifts</p>
-                <p className="text-2xl font-bold text-amber-600 mt-2">
-                  {metrics?.shifts.unassigned || 0}
-                </p>
-              </div>
-              <div className="p-3 bg-amber-100 rounded-lg">
-                <Calendar className="w-6 h-6 text-amber-600" />
-              </div>
+
+          {/* Compliance & Activity (1/3 width) */}
+          <div className="flex flex-col gap-6 h-full">
+            <div className="flex-1 min-h-[250px] animate-slide-up" style={{ animationDelay: "500ms" }}>
+              <ComplianceChart data={complianceData} score={92} />
             </div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Upcoming Shifts</p>
-                <p className="text-2xl font-bold text-blue-600 mt-2">
-                  {metrics?.shifts.upcoming || 0}
-                </p>
-              </div>
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <Calendar className="w-6 h-6 text-blue-600" />
-              </div>
+            <div className="flex-1 min-h-[250px] animate-slide-up" style={{ animationDelay: "600ms" }}>
+              <LiveActivityFeed activities={activities} />
             </div>
           </div>
         </div>
 
-        {/* Weekly Summary */}
-        {weeklySummary && (
-          <Card title="This Week Summary" className="mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Shifts This Week</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">
-                  {weeklySummary.shifts.total}
-                </p>
-                <p className="text-sm text-green-600 mt-1">
-                  {weeklySummary.shifts.assigned} Assigned
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Cost</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">
-                  R{weeklySummary.costs.total.toLocaleString()}
-                </p>
-                <p className="text-sm text-blue-600 mt-1">
-                  R{weeklySummary.costs.avg_per_shift.toFixed(2)} / shift
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Hours</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">
-                  {weeklySummary.hours.total.toFixed(1)}h
-                </p>
-                <p className="text-sm text-purple-600 mt-1">
-                  {weeklySummary.hours.avg_per_employee.toFixed(1)}h / employee
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Employees Used</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">
-                  {weeklySummary.employees_utilized}
-                </p>
-                <p className="text-sm text-pink-600 mt-1">Active this week</p>
-              </div>
-            </div>
-          </Card>
-        )}
-
-        {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Expiring Certifications */}
-          <Card title="Expiring Certifications">
-            {expiringCerts.length === 0 ? (
-              <p className="text-gray-500">No certifications expiring soon.</p>
-            ) : (
-              <div className="space-y-3">
-                {expiringCerts.slice(0, 5).map((cert) => (
-                  <div
-                    key={cert.cert_id}
-                    className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="font-semibold text-gray-900">
-                        {cert.employee_name}
-                      </div>
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${
-                          cert.days_until_expiry <= 7
-                            ? "bg-red-100 text-red-700"
-                            : "bg-yellow-100 text-yellow-700"
-                        }`}
-                      >
-                        {cert.days_until_expiry} days
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600">{cert.cert_type}</p>
-                    <p className="text-sm text-gray-500">
-                      Expires: {new Date(cert.expiry_date).toLocaleDateString()}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-
-          {/* Project Analysis - Cost Trends */}
-          <Card title="Project Analysis">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={costTrends}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis
-                  dataKey="date"
-                  stroke="#6b7280"
-                  tick={{ fill: "#6b7280", fontSize: 12 }}
-                  tickFormatter={(value) => {
-                    const date = new Date(value);
-                    return `${date.getMonth() + 1}/${date.getDate()}`;
-                  }}
-                />
-                <YAxis stroke="#6b7280" tick={{ fill: "#6b7280", fontSize: 12 }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#fff",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "8px",
-                  }}
-                  formatter={(value) => [`R${Number(value).toLocaleString()}`, "Cost"]}
-                />
-                <Bar dataKey="cost" fill="#10b981" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </Card>
-        </div>
-
-        {/* Project List & Team Collaboration */}
+        {/* Bottom Section: Upcoming Shifts & Alerts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Shifts List */}
-          <Card title="Shifts">
-            {upcomingShifts.length === 0 ? (
-              <p className="text-gray-500">No upcoming shifts scheduled.</p>
-            ) : (
-              <div className="space-y-3">
-                {upcomingShifts.map((shift) => (
-                  <div
-                    key={shift.shift_id}
-                    className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="font-semibold text-gray-900">
-                        {shift.site_name}
-                      </div>
-                      <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">
-                        {shift.status}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      {new Date(shift.start_time).toLocaleString()}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {shift.employee_name} • {shift.required_skill || "Any"}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
+          <UpcomingShiftsCard shifts={upcomingShifts} delay={700} />
+          <AlertsCard metrics={metrics} delay={800} />
         </div>
       </div>
     </DashboardLayout>

@@ -23,26 +23,34 @@ from app.auth.security import get_current_org_id
 router = APIRouter()
 
 
-@router.post("/generate", response_model=RosterGenerateResponse)
+from app.algorithms.scalable_roster_optimizer import PartitionedRosterOptimizer
+
+
+@router.get("/test")
+async def test_endpoint():
+    """Simple test endpoint"""
+    return {"status": "ok", "message": "Roster API is working"}
+
+@router.post("/generate")
 async def generate_roster(
     request: RosterGenerateRequest,
-    algorithm: Optional[str] = Query("production", description="Algorithm: 'production', 'milp', 'auto'"),
+    algorithm: Optional[str] = Query("auto", description="Algorithm: 'auto', 'production', 'milp'"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
     Generate optimized roster using algorithmic approach.
 
-    **Default: Production CP-SAT Optimizer** - Most robust and feature-complete
+    **Default: Auto (Partitioned CP-SAT)** - Scalable for 500+ guards
 
     Algorithms:
-    - production (default): Production-grade CP-SAT with full BCEA compliance, fairness, diagnostics
-    - milp: Original MILP implementation (legacy)
-    - auto: Automatically selects production optimizer (recommended)
+    - auto (default): Partitioned CP-SAT (ScalableRosterOptimizer)
+    - production: Single-threaded CP-SAT (Legacy Production)
+    - milp: Original MILP implementation (Legacy)
 
     Args:
         request: Roster generation request with dates and site IDs
-        algorithm: Algorithm selection (default: 'production')
+        algorithm: Algorithm selection (default: 'auto')
         db: Database session
 
     Returns:
@@ -54,25 +62,36 @@ async def generate_roster(
         end_datetime = datetime.combine(request.end_date, datetime.max.time())
 
         # Determine which algorithm to use
-        selected_algorithm = algorithm or "production"
+        selected_algorithm = algorithm or "auto"
 
         logger.info(f"Roster generation requested: {start_datetime} to {end_datetime}, algorithm={selected_algorithm}")
 
-        # Auto-select based on roster period and complexity
-        if selected_algorithm == "auto":
-            # Always use production optimizer (most robust)
-            selected_algorithm = "production"
-            logger.info(f"Auto-selected {selected_algorithm}")
-
         # Initialize appropriate optimizer
-        if selected_algorithm == "production":
-            logger.info("Using Production CP-SAT Optimizer")
+        if selected_algorithm == "auto" or selected_algorithm == "scalable":
+            logger.info("Using Scalable Partitioned Optimizer")
+            optimizer = PartitionedRosterOptimizer(
+                db,
+                config=OptimizationConfig(
+                    time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 300),
+                    fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2)
+                ),
+                org_id=current_user.org_id if hasattr(current_user, 'org_id') else None
+            )
+            result = optimizer.optimize(
+                start_date=start_datetime,
+                end_date=end_datetime,
+                site_ids=request.site_ids
+            )
+
+        elif selected_algorithm == "production":
+            logger.info("Using Production CP-SAT Optimizer (Single Partition)")
             optimizer = ProductionRosterOptimizer(
                 db,
                 config=OptimizationConfig(
                     time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 120),
                     fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2)
-                )
+                ),
+                org_id=current_user.org_id if hasattr(current_user, 'org_id') else None
             )
             result = optimizer.optimize(
                 start_date=start_datetime,
@@ -91,14 +110,15 @@ async def generate_roster(
             result["algorithm_used"] = "milp"
 
         else:
-            # Unknown algorithm, default to production
-            logger.warning(f"Unknown algorithm '{selected_algorithm}', defaulting to production")
-            optimizer = ProductionRosterOptimizer(
+            # Unknown algorithm, default to scalable
+            logger.warning(f"Unknown algorithm '{selected_algorithm}', defaulting to scalable")
+            optimizer = PartitionedRosterOptimizer(
                 db,
                 config=OptimizationConfig(
-                    time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 120),
+                    time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 300),
                     fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2)
-                )
+                ),
+                org_id=current_user.org_id if hasattr(current_user, 'org_id') else None
             )
             result = optimizer.optimize(
                 start_date=start_datetime,
@@ -153,6 +173,7 @@ async def confirm_roster(
         }
 
     except Exception as e:
+        logger.error(f"Error confirming roster: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error confirming roster: {str(e)}"
@@ -354,7 +375,7 @@ async def generate_roster_for_client(
             end_datetime = datetime.combine(end_date, datetime.max.time())
 
         # Determine which algorithm to use
-        selected_algorithm = algorithm or "production"
+        selected_algorithm = algorithm or "auto"
 
         # Auto-select based on roster period and complexity
         if selected_algorithm == "auto":
@@ -363,7 +384,23 @@ async def generate_roster_for_client(
             logger.info(f"Auto-selected {selected_algorithm}")
 
         # Initialize appropriate optimizer
-        if selected_algorithm == "production":
+        if selected_algorithm == "auto" or selected_algorithm == "scalable":
+            logger.info("Using Scalable Partitioned Optimizer")
+            optimizer = PartitionedRosterOptimizer(
+                db,
+                config=OptimizationConfig(
+                    time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 300),
+                    fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2)
+                ),
+                org_id=org_id
+            )
+            result = optimizer.optimize(
+                start_date=start_datetime,
+                end_date=end_datetime,
+                site_ids=site_ids
+            )
+
+        elif selected_algorithm == "production":
             logger.info("Using Production CP-SAT Optimizer")
             optimizer = ProductionRosterOptimizer(
                 db,
@@ -389,12 +426,12 @@ async def generate_roster_for_client(
             result["algorithm_used"] = "milp"
 
         else:
-            # Unknown algorithm, default to production
-            logger.warning(f"Unknown algorithm '{selected_algorithm}', defaulting to production")
-            optimizer = ProductionRosterOptimizer(
+            # Unknown algorithm, default to scalable
+            logger.warning(f"Unknown algorithm '{selected_algorithm}', defaulting to scalable")
+            optimizer = PartitionedRosterOptimizer(
                 db,
                 config=OptimizationConfig(
-                    time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 120),
+                    time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 300),
                     fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2)
                 )
             )

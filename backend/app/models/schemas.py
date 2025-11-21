@@ -134,6 +134,7 @@ class ShiftBase(BaseModel):
     created_by: Optional[str] = None
     is_overtime: bool = False
     notes: Optional[str] = None
+    assigned_employee_id: Optional[int] = None
 
 
 class ShiftCreate(ShiftBase):
@@ -149,6 +150,7 @@ class ShiftUpdate(BaseModel):
     status: Optional[ShiftStatus] = None
     is_overtime: Optional[bool] = None
     notes: Optional[str] = None
+    assigned_employee_id: Optional[int] = None
 
 
 class ShiftResponse(ShiftBase):

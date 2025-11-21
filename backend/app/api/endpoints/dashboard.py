@@ -9,6 +9,7 @@ from typing import Dict, List
 from app.database import get_db
 from app.models.employee import Employee, EmployeeStatus
 from app.models.shift import Shift, ShiftStatus
+from app.models.shift_assignment import ShiftAssignment, AssignmentStatus
 from app.models.site import Site
 from app.models.certification import Certification
 from app.models.availability import Availability
@@ -60,10 +61,10 @@ def get_dashboard_metrics(
     ).count()
     inactive_employees = total_employees - active_employees
 
-    # Shift Metrics - filtered by organization through sites
-    # Get all sites belonging to clients in this organization
-    org_site_ids = db.query(Site.site_id).join(Client).filter(
-        Client.org_id == org_id
+    # Shift Metrics - filtered by organization
+    # Get all sites belonging to this organization (directly or via clients)
+    org_site_ids = db.query(Site.site_id).filter(
+        Site.org_id == org_id
     ).subquery()
 
     total_shifts = db.query(Shift).filter(
@@ -75,15 +76,18 @@ def get_dashboard_metrics(
         Shift.start_time > datetime.now()
     ).count()
 
+    # Count assigned shifts (shifts with at least one confirmed assignment)
+    assigned_shift_ids = db.query(ShiftAssignment.shift_id).filter(
+        ShiftAssignment.status.in_([AssignmentStatus.CONFIRMED, AssignmentStatus.COMPLETED])
+    ).distinct().subquery()
+
     assigned_shifts = db.query(Shift).filter(
         Shift.site_id.in_(org_site_ids),
-        Shift.assigned_employee_id != None
+        Shift.shift_id.in_(assigned_shift_ids)
     ).count()
 
-    unassigned_shifts = db.query(Shift).filter(
-        Shift.site_id.in_(org_site_ids),
-        Shift.assigned_employee_id == None
-    ).count()
+    # Unassigned shifts = total shifts - assigned shifts
+    unassigned_shifts = total_shifts - assigned_shifts
 
     # This Week's Shifts
     today = datetime.now()
@@ -98,8 +102,8 @@ def get_dashboard_metrics(
     ).count()
 
     # Site Metrics - filtered by organization
-    total_sites = db.query(Site).join(Client).filter(
-        Client.org_id == org_id
+    total_sites = db.query(Site).filter(
+        Site.org_id == org_id
     ).count()
 
     # Certification Expiry Warnings - filtered by organization through employees
@@ -196,18 +200,31 @@ def get_upcoming_shifts(
         Shift.start_time > datetime.now()
     ).order_by(Shift.start_time).limit(limit).all()
 
-    result = [
-        {
+    result = []
+    for s in shifts:
+        # Get confirmed assignments for this shift
+        assignments = db.query(ShiftAssignment).filter(
+            ShiftAssignment.shift_id == s.shift_id,
+            ShiftAssignment.status.in_([AssignmentStatus.CONFIRMED, AssignmentStatus.COMPLETED])
+        ).all()
+
+        # Get employee names (multiple employees can be assigned)
+        employee_names = []
+        for assignment in assignments:
+            if assignment.employee:
+                employee_names.append(f"{assignment.employee.first_name} {assignment.employee.last_name}")
+
+        employee_name = ", ".join(employee_names) if employee_names else "Unassigned"
+
+        result.append({
             "shift_id": s.shift_id,
             "start_time": s.start_time,
             "end_time": s.end_time,
             "site_name": s.site.client_name if s.site else "Unknown",
-            "employee_name": f"{s.employee.first_name} {s.employee.last_name}" if s.employee else "Unassigned",
+            "employee_name": employee_name,
             "status": s.status.value,
             "required_skill": s.required_skill
-        }
-        for s in shifts
-    ]
+        })
 
     # Cache for 2 minutes (120 seconds)
     CacheService.set(cache_key, result, ttl=120)
@@ -280,21 +297,20 @@ def get_cost_trends(
         Client.org_id == org_id
     ).subquery()
 
-    # Query shifts in the period
-    shifts = db.query(Shift).filter(
+    # Query shift assignments in the period (confirmed/completed only)
+    assignments = db.query(ShiftAssignment).join(Shift).filter(
         Shift.site_id.in_(org_site_ids),
         Shift.start_time >= start_date,
-        Shift.assigned_employee_id != None
+        ShiftAssignment.status.in_([AssignmentStatus.CONFIRMED, AssignmentStatus.COMPLETED])
     ).all()
 
     # Calculate daily costs
     daily_costs = {}
-    for shift in shifts:
-        date_key = shift.start_time.date().isoformat()
-        duration = (shift.end_time - shift.start_time).total_seconds() / 3600
-
-        if shift.employee:
-            cost = shift.employee.hourly_rate * duration
+    for assignment in assignments:
+        if assignment.shift and assignment.employee:
+            date_key = assignment.shift.start_time.date().isoformat()
+            duration = (assignment.shift.end_time - assignment.shift.start_time).total_seconds() / 3600
+            cost = assignment.employee.hourly_rate * duration
             daily_costs[date_key] = daily_costs.get(date_key, 0) + cost
 
     # Prepare trend data
@@ -352,22 +368,24 @@ def get_employee_utilization(
     utilization_data = []
 
     for emp in employees:
-        # Count shifts for this employee
-        shifts = db.query(Shift).filter(
-            Shift.assigned_employee_id == emp.employee_id,
+        # Count shift assignments for this employee (confirmed/completed)
+        assignments = db.query(ShiftAssignment).join(Shift).filter(
+            ShiftAssignment.employee_id == emp.employee_id,
+            ShiftAssignment.status.in_([AssignmentStatus.CONFIRMED, AssignmentStatus.COMPLETED]),
             Shift.start_time >= start_date
         ).all()
 
         total_hours = 0.0
-        for shift in shifts:
-            duration = (shift.end_time - shift.start_time).total_seconds() / 3600
-            total_hours += duration
+        for assignment in assignments:
+            if assignment.shift:
+                duration = (assignment.shift.end_time - assignment.shift.start_time).total_seconds() / 3600
+                total_hours += duration
 
         utilization_data.append({
             "employee_id": emp.employee_id,
             "name": f"{emp.first_name} {emp.last_name}",
             "role": emp.role.value,
-            "shifts_assigned": len(shifts),
+            "shifts_assigned": len(assignments),
             "total_hours": round(total_hours, 2),
             "avg_hours_per_week": round(total_hours / (days / 7), 2) if days > 0 else 0,
             "utilization_rate": round((total_hours / (days * 24)) * 100, 2)
@@ -408,10 +426,12 @@ def get_site_coverage(
             Shift.site_id == site.site_id
         ).count()
 
-        assigned_shifts = db.query(Shift).filter(
+        # Count shifts with at least one confirmed assignment
+        assigned_shift_ids = db.query(ShiftAssignment.shift_id).join(Shift).filter(
             Shift.site_id == site.site_id,
-            Shift.assigned_employee_id != None
-        ).count()
+            ShiftAssignment.status.in_([AssignmentStatus.CONFIRMED, AssignmentStatus.COMPLETED])
+        ).distinct().all()
+        assigned_shifts = len(assigned_shift_ids)
 
         upcoming_shifts = db.query(Shift).filter(
             Shift.site_id == site.site_id,
@@ -471,25 +491,32 @@ def get_weekly_summary(
     ).all()
 
     total_shifts = len(shifts_this_week)
-    assigned_shifts = len([s for s in shifts_this_week if s.assigned_employee_id])
+
+    # Get all confirmed assignments for shifts this week
+    shift_ids_this_week = [s.shift_id for s in shifts_this_week]
+    assignments_this_week = db.query(ShiftAssignment).filter(
+        ShiftAssignment.shift_id.in_(shift_ids_this_week),
+        ShiftAssignment.status.in_([AssignmentStatus.CONFIRMED, AssignmentStatus.COMPLETED])
+    ).all()
+
+    # Count assigned shifts (shifts with at least one assignment)
+    assigned_shift_ids = set(a.shift_id for a in assignments_this_week)
+    assigned_shifts = len(assigned_shift_ids)
     unassigned_shifts = total_shifts - assigned_shifts
 
     # Calculate costs
     total_cost = 0.0
     total_hours = 0.0
 
-    for shift in shifts_this_week:
-        if shift.employee:
-            duration = (shift.end_time - shift.start_time).total_seconds() / 3600
-            cost = shift.employee.hourly_rate * duration
+    for assignment in assignments_this_week:
+        if assignment.shift and assignment.employee:
+            duration = (assignment.shift.end_time - assignment.shift.start_time).total_seconds() / 3600
+            cost = assignment.employee.hourly_rate * duration
             total_cost += cost
             total_hours += duration
 
     # Employees working this week
-    employees_this_week = len(set(
-        s.assigned_employee_id for s in shifts_this_week
-        if s.assigned_employee_id
-    ))
+    employees_this_week = len(set(a.employee_id for a in assignments_this_week))
 
     return {
         "week_start": start_of_week.date().isoformat(),

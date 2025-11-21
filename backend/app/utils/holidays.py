@@ -8,7 +8,7 @@ This module provides utilities for:
 - BCEA compliance for premium pay
 """
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Optional
 
 
@@ -82,18 +82,18 @@ class SouthAfricanHolidays:
 
             # If holiday falls on Sunday, Monday is also a public holiday
             if holiday_date.weekday() == 6:  # Sunday
-                monday_date = date(year, month, day + 1) if day < 28 else date(year, month + 1, 1)
+                monday_date = holiday_date + timedelta(days=1)
                 holidays[monday_date] = f"{name} (observed)"
 
         # Add Easter-based holidays
         easter = cls.get_easter_sunday(year)
 
         # Good Friday (2 days before Easter)
-        good_friday = date(easter.year, easter.month, easter.day - 2)
+        good_friday = easter - timedelta(days=2)
         holidays[good_friday] = "Good Friday"
 
         # Family Day (Monday after Easter)
-        family_day = date(easter.year, easter.month, easter.day + 1)
+        family_day = easter + timedelta(days=1)
         holidays[family_day] = "Family Day"
 
         return holidays

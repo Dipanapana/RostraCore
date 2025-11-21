@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
+import { Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -29,29 +31,40 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-slate-50">
+      {/* Background Effects */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl pointer-events-none">
+        <div className="absolute top-20 left-10 w-96 h-96 bg-blue-500/10 rounded-full blur-[100px] animate-pulse-glow" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px] animate-pulse-glow delay-300" />
+      </div>
+
+      <div className="w-full max-w-md px-4 relative z-10">
         {/* Logo & Header */}
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 bg-primary-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-2xl">R</span>
-            </div>
-            <span className="text-3xl font-bold text-gray-900">RostraCore</span>
+        <div className="text-center mb-8 animate-slide-up">
+          <Link href="/" className="inline-flex justify-center mb-8 hover:scale-105 transition-transform duration-300">
+            <Image
+              src="/rostracore-logo.svg"
+              alt="RostraCore"
+              width={240}
+              height={70}
+              className="w-64 h-auto drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]"
+              priority
+            />
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900 mt-6 mb-2">
-            Sign in to your account
+          <h1 className="text-3xl font-bold text-slate-900 mb-3">
+            Welcome Back
           </h1>
-          <p className="text-gray-600">
-            Welcome back! Please enter your details.
+          <p className="text-slate-600">
+            Sign in to access your security dashboard
           </p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+        <div className="bg-white p-8 rounded-2xl shadow-2xl animate-slide-up delay-100 border border-slate-200">
           {/* Error Message */}
           {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+            <div className="mb-6 bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
               {error}
             </div>
           )}
@@ -59,85 +72,82 @@ export default function LoginPage() {
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Username/Email Field */}
-            <div>
-              <label htmlFor="username" className="block text-sm font-semibold text-gray-900 mb-2">
+            <div className="space-y-2">
+              <label htmlFor="username" className="block text-sm font-medium text-slate-700">
                 Email or Username
               </label>
-              <input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                placeholder="Enter your email or username"
-                disabled={loading}
-              />
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
+                </div>
+                <input
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                  className="block w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-slate-400"
+                  placeholder="Enter your email"
+                  disabled={loading}
+                />
+              </div>
             </div>
 
             {/* Password Field */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label htmlFor="password" className="block text-sm font-semibold text-gray-900">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label htmlFor="password" className="block text-sm font-medium text-slate-700">
                   Password
                 </label>
-                <a href="/forgot-password" className="text-sm font-medium text-primary-500 hover:text-primary-600">
+                <Link
+                  href="/forgot-password"
+                  className="text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors"
+                >
                   Forgot password?
-                </a>
+                </Link>
               </div>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                placeholder="Enter your password"
-                disabled={loading}
-              />
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
+                </div>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="block w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-slate-400"
+                  placeholder="Enter your password"
+                  disabled={loading}
+                />
+              </div>
             </div>
 
             {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary-500 hover:bg-primary-600 disabled:bg-primary-300 text-white font-semibold py-3 px-4 rounded-lg transition-all hover:shadow-md flex items-center justify-center"
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3.5 px-4 rounded-xl transition-all hover:shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               {loading ? (
                 <>
-                  <svg
-                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
+                  <Loader2 className="w-5 h-5 animate-spin" />
                   Signing in...
                 </>
               ) : (
-                "Sign In"
+                <>
+                  Sign In
+                  <ArrowRight className="w-5 h-5" />
+                </>
               )}
             </button>
           </form>
 
           {/* Sign Up Link */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+          <div className="mt-8 text-center">
+            <p className="text-slate-600">
               Don't have an account?{' '}
-              <Link href="/register" className="font-semibold text-primary-500 hover:text-primary-600">
+              <Link href="/register" className="font-bold text-slate-900 hover:text-blue-600 transition-colors">
                 Start 14-day free trial
               </Link>
             </p>
@@ -145,14 +155,12 @@ export default function LoginPage() {
         </div>
 
         {/* Back to Home */}
-        <div className="mt-6 text-center">
+        <div className="mt-8 text-center animate-slide-up delay-200">
           <Link
             href="/"
-            className="text-sm text-gray-600 hover:text-gray-900 transition-colors inline-flex items-center gap-1"
+            className="text-sm text-slate-500 hover:text-slate-900 transition-colors inline-flex items-center gap-2 group"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            <ArrowRight className="w-4 h-4 rotate-180 group-hover:-translate-x-1 transition-transform" />
             Back to home
           </Link>
         </div>

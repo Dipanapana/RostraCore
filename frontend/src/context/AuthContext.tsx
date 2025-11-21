@@ -1,8 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import axios from "axios";
 import { useRouter } from "next/navigation";
+import { api } from "@/services/api";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -43,19 +43,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Configure axios defaults
-  useEffect(() => {
-    if (token) {
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    } else {
-      delete axios.defaults.headers.common["Authorization"];
-    }
-  }, [token]);
-
   const fetchUserInfo = async (authToken: string) => {
     try {
       console.log("[AUTH] Fetching user info from API...");
-      const response = await axios.get(`${API_URL}/api/v1/auth/me`, {
+      const response = await api.get("/api/v1/auth/me", {
         headers: { Authorization: `Bearer ${authToken}` },
       });
       console.log("[AUTH] User info received:", response.data);
@@ -74,9 +65,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (username: string, password: string) => {
     try {
       console.log("[AUTH] 1. Starting login process...");
-      const response = await axios.post(`${API_URL}/api/v1/auth/login-json`, {
-        username,
-        password,
+      console.log("[AUTH] API_URL:", API_URL);
+
+      // Use URLSearchParams for OAuth2 password flow
+      const params = new URLSearchParams();
+      params.append('username', username);
+      params.append('password', password);
+
+      const response = await api.post("/api/v1/auth/login", params, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
       });
 
       console.log("[AUTH] 2. Login successful, received token");

@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from app.database import get_db
 from app.models.payroll import PayrollSummary
 from app.models.shift import Shift
+from app.models.shift_assignment import ShiftAssignment
 from app.models.employee import Employee
 from app.auth.security import get_current_org_id
 
@@ -112,34 +113,33 @@ async def generate_payroll(
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found in your organization")
 
-    # Get all shifts for employee in period
-    shifts = db.query(Shift).filter(
+    # Get all shift assignments for employee in period
+    # Using ShiftAssignment instead of Shift.assigned_employee_id (which was removed in Phase 2)
+    assignments = db.query(ShiftAssignment).join(Shift).filter(
         and_(
-            Shift.assigned_employee_id == payroll_data.employee_id,
+            ShiftAssignment.employee_id == payroll_data.employee_id,
             Shift.start_time >= datetime.combine(payroll_data.period_start, datetime.min.time()),
             Shift.end_time <= datetime.combine(payroll_data.period_end, datetime.max.time())
         )
     ).all()
 
-    # Calculate hours
-    total_hours = 0.0
-    overtime_hours = 0.0
+    # Calculate totals from shift assignments
+    # ShiftAssignment already has cost breakdown calculated
+    total_regular_hours = sum(a.regular_hours for a in assignments)
+    total_overtime_hours = sum(a.overtime_hours for a in assignments)
+    total_hours = total_regular_hours + total_overtime_hours
 
-    for shift in shifts:
-        duration = (shift.end_time - shift.start_time).total_seconds() / 3600
-        total_hours += duration
+    # Sum up all pay components
+    regular_pay = sum(a.regular_pay for a in assignments)
+    overtime_pay = sum(a.overtime_pay for a in assignments)
+    night_premium = sum(a.night_premium for a in assignments)
+    weekend_premium = sum(a.weekend_premium for a in assignments)
+    travel_reimbursement = sum(a.travel_reimbursement for a in assignments)
 
-        # Overtime if > 48 hours per week (simplified)
-        if total_hours > 48:
-            overtime_hours += (total_hours - 48)
+    gross_pay = regular_pay + overtime_pay + night_premium + weekend_premium + travel_reimbursement
 
-    # Calculate pay
-    hourly_rate = employee.hourly_rate or 150.0
-    regular_hours = total_hours - overtime_hours
-    gross_pay = (regular_hours * hourly_rate) + (overtime_hours * hourly_rate * 1.5)
-
-    # MVP: No expenses or commission tracking
-    expenses_total = 0.0
+    # MVP: No additional expenses or deductions
+    expenses_total = travel_reimbursement  # Travel is part of total cost
     net_pay = gross_pay
 
     # Create or update payroll record
@@ -153,7 +153,7 @@ async def generate_payroll(
 
     if existing:
         existing.total_hours = total_hours
-        existing.overtime_hours = overtime_hours
+        existing.overtime_hours = total_overtime_hours
         existing.gross_pay = gross_pay
         existing.expenses_total = expenses_total
         existing.net_pay = net_pay
@@ -166,7 +166,7 @@ async def generate_payroll(
             period_start=payroll_data.period_start,
             period_end=payroll_data.period_end,
             total_hours=total_hours,
-            overtime_hours=overtime_hours,
+            overtime_hours=total_overtime_hours,
             gross_pay=gross_pay,
             expenses_total=expenses_total,
             net_pay=net_pay
@@ -181,12 +181,17 @@ async def generate_payroll(
         "period_start": payroll.period_start.isoformat(),
         "period_end": payroll.period_end.isoformat(),
         "total_hours": payroll.total_hours,
+        "regular_hours": total_regular_hours,
         "overtime_hours": payroll.overtime_hours,
+        "regular_pay": regular_pay,
+        "overtime_pay": overtime_pay,
+        "night_premium": night_premium,
+        "weekend_premium": weekend_premium,
+        "travel_reimbursement": travel_reimbursement,
         "gross_pay": payroll.gross_pay,
         "expenses_total": payroll.expenses_total,
-        "marketplace_commission_deduction": commission_deduction,
-        "commission_notes": commission_notes,
-        "net_pay": payroll.net_pay
+        "net_pay": payroll.net_pay,
+        "shift_count": len(assignments)
     }
 
 
