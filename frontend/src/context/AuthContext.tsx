@@ -17,9 +17,8 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   login: (username: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
   isLoading: boolean;
 }
@@ -28,34 +27,22 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  // Load token from localStorage on mount
+  // Check if user is authenticated on mount by fetching user info
   useEffect(() => {
-    const savedToken = localStorage.getItem("token");
-    if (savedToken) {
-      setToken(savedToken);
-      fetchUserInfo(savedToken);
-    } else {
-      setIsLoading(false);
-    }
+    fetchUserInfo();
   }, []);
 
-  const fetchUserInfo = async (authToken: string) => {
+  const fetchUserInfo = async () => {
     try {
       console.log("[AUTH] Fetching user info from API...");
-      const response = await api.get("/api/v1/auth/me", {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
+      const response = await api.get("/api/v1/auth/me");
       console.log("[AUTH] User info received:", response.data);
       setUser(response.data);
     } catch (error) {
-      console.error("[AUTH] Failed to fetch user info:", error);
-      // Token invalid, clear it
-      localStorage.removeItem("token");
-      setToken(null);
+      console.error("[AUTH] Not authenticated or session expired");
       setUser(null);
     } finally {
       setIsLoading(false);
@@ -78,19 +65,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
       });
 
-      console.log("[AUTH] 2. Login successful, received token");
-      const { access_token } = response.data;
-      setToken(access_token);
-      localStorage.setItem("token", access_token);
+      console.log("[AUTH] 2. Login successful, cookie set by server");
+      console.log("[AUTH] Response:", response.data);
 
-      // Fetch user info
-      console.log("[AUTH] 3. Fetching user info...");
-      await fetchUserInfo(access_token);
+      // Set user from response
+      if (response.data.user) {
+        setUser(response.data.user);
+      } else {
+        // Fetch user info if not in response
+        await fetchUserInfo();
+      }
 
       // Redirect to dashboard
-      console.log("[AUTH] 4. Redirecting to dashboard...");
+      console.log("[AUTH] 3. Redirecting to dashboard...");
       router.push("/dashboard");
-      console.log("[AUTH] 5. Push completed");
+      console.log("[AUTH] 4. Push completed");
     } catch (error: any) {
       console.error("Login failed:", error);
       throw new Error(
@@ -99,21 +88,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = () => {
-    setToken(null);
-    setUser(null);
-    localStorage.removeItem("token");
-    router.push("/login");
+  const logout = async () => {
+    try {
+      // Call logout endpoint to clear the httpOnly cookie
+      await api.post("/api/v1/auth/logout");
+    } catch (error) {
+      console.error("Logout API call failed:", error);
+    } finally {
+      // Clear user state regardless of API call success
+      setUser(null);
+      router.push("/login");
+    }
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        token,
         login,
         logout,
-        isAuthenticated: !!token && !!user,
+        isAuthenticated: !!user,
         isLoading,
       }}
     >

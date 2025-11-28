@@ -1,7 +1,8 @@
 """Authentication endpoints."""
 
 from datetime import datetime, timedelta
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Cookie
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -23,11 +24,27 @@ from app.auth.security import (
     get_password_hash,
     verify_password,
     is_admin,
+    create_refresh_token,
+    validate_refresh_token,
+    revoke_refresh_token,
+    revoke_all_user_tokens,
 )
+from app.auth.password_validator import validate_password_strength, get_password_requirements
 from app.services.verification_service import VerificationService
 from app.config import settings
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+
+@router.get("/password-requirements")
+def get_password_requirements_endpoint():
+    """
+    Get password requirements for validation.
+
+    Returns:
+        Dictionary of password requirements
+    """
+    return get_password_requirements()
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -43,8 +60,16 @@ def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
         Created user
 
     Raises:
-        HTTPException: If username or email already exists
+        HTTPException: If username or email already exists or password is weak
     """
+    # Validate password strength
+    is_valid, error_message = validate_password_strength(user_data.password)
+    if not is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=error_message
+        )
+
     # Check if username exists
     existing_user = db.query(User).filter(User.username == user_data.username).first()
     if existing_user:
@@ -78,20 +103,23 @@ def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
     return new_user
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login")
 def login(
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
     """
     Login with username/email and password.
+    Sets httpOnly cookies for secure token storage.
 
     Args:
+        response: FastAPI Response object
         form_data: OAuth2 form with username and password
         db: Database session
 
     Returns:
-        Access token
+        Success message with user info
 
     Raises:
         HTTPException: If credentials are invalid
@@ -116,30 +144,69 @@ def login(
     user.last_login = datetime.utcnow()
     db.commit()
 
-    # Create access token
+    # Create access token (30 minutes)
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": str(user.user_id), "username": user.username, "role": user.role.value},
         expires_delta=access_token_expires
     )
 
-    return {"access_token": access_token, "token_type": "bearer"}
+    # Create refresh token (7 days)
+    refresh_token = create_refresh_token(
+        user_id=user.user_id,
+        db=db
+    )
+
+    # Set access token httpOnly cookie (XSS protection)
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,  # JavaScript cannot access
+        secure=False,    # Set to True in production with HTTPS
+        samesite="lax",  # CSRF protection
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # seconds
+        path="/"
+    )
+
+    # Set refresh token httpOnly cookie (7 days)
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        max_age=7 * 24 * 60 * 60,  # 7 days in seconds
+        path="/"
+    )
+
+    return {
+        "message": "Logged in successfully",
+        "user": {
+            "user_id": user.user_id,
+            "username": user.username,
+            "email": user.email,
+            "role": user.role.value
+        }
+    }
 
 
-@router.post("/login-json", response_model=Token)
+@router.post("/login-json")
 def login_json(
+    response: Response,
     credentials: UserLogin,
     db: Session = Depends(get_db)
 ):
     """
     Login with JSON body (alternative to form data).
+    Sets httpOnly cookies for secure token storage.
 
     Args:
+        response: FastAPI Response object
         credentials: Login credentials
         db: Database session
 
     Returns:
-        Access token
+        Success message with user info
     """
     user = authenticate_user(db, credentials.username, credentials.password)
 
@@ -161,14 +228,155 @@ def login_json(
     user.last_login = datetime.utcnow()
     db.commit()
 
-    # Create access token
+    # Create access token (30 minutes)
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": str(user.user_id), "username": user.username, "role": user.role.value},
         expires_delta=access_token_expires
     )
 
-    return {"access_token": access_token, "token_type": "bearer"}
+    # Create refresh token (7 days)
+    refresh_token = create_refresh_token(
+        user_id=user.user_id,
+        db=db
+    )
+
+    # Set access token httpOnly cookie (XSS protection)
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,  # JavaScript cannot access
+        secure=False,    # Set to True in production with HTTPS
+        samesite="lax",  # CSRF protection
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # seconds
+        path="/"
+    )
+
+    # Set refresh token httpOnly cookie (7 days)
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        max_age=7 * 24 * 60 * 60,  # 7 days in seconds
+        path="/"
+    )
+
+    return {
+        "message": "Logged in successfully",
+        "user": {
+            "user_id": user.user_id,
+            "username": user.username,
+            "email": user.email,
+            "role": user.role.value
+        }
+    }
+
+
+@router.post("/logout")
+def logout(
+    response: Response,
+    refresh_token: Optional[str] = Cookie(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Logout user by clearing cookies and revoking refresh token.
+
+    Args:
+        response: FastAPI Response object
+        refresh_token: Refresh token from cookie
+        db: Database session
+
+    Returns:
+        Success message
+    """
+    # Revoke refresh token if present
+    if refresh_token:
+        revoke_refresh_token(refresh_token, db)
+
+    # Clear access token cookie
+    response.set_cookie(
+        key="access_token",
+        value="",
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        max_age=0,
+        path="/"
+    )
+
+    # Clear refresh token cookie
+    response.set_cookie(
+        key="refresh_token",
+        value="",
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        max_age=0,
+        path="/"
+    )
+
+    return {"message": "Logged out successfully"}
+
+
+@router.post("/refresh")
+def refresh_access_token(
+    response: Response,
+    refresh_token: Optional[str] = Cookie(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Refresh access token using refresh token.
+
+    This endpoint allows users to get a new access token without re-authenticating,
+    as long as their refresh token is valid (7 days).
+
+    Args:
+        response: FastAPI Response object
+        refresh_token: Refresh token from cookie
+        db: Database session
+
+    Returns:
+        Success message
+
+    Raises:
+        HTTPException: If refresh token is invalid or expired
+    """
+    if not refresh_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No refresh token provided",
+        )
+
+    # Validate refresh token and get user
+    user = validate_refresh_token(refresh_token, db)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
+        )
+
+    # Create new access token
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": str(user.user_id), "username": user.username, "role": user.role.value},
+        expires_delta=access_token_expires
+    )
+
+    # Set new access token cookie
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        path="/"
+    )
+
+    return {"message": "Access token refreshed successfully"}
 
 
 @router.get("/me", response_model=UserResponse)
@@ -253,6 +461,14 @@ def change_password(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Current password is incorrect"
+        )
+
+    # Validate new password strength
+    is_valid, error_message = validate_password_strength(password_data.new_password)
+    if not is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=error_message
         )
 
     # Update password
@@ -500,11 +716,12 @@ def reset_password(
     Returns:
         Success message
     """
-    # Validate password strength (basic check)
-    if len(new_password) < 8:
+    # Validate password strength
+    is_valid, error_message = validate_password_strength(new_password)
+    if not is_valid:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password must be at least 8 characters long"
+            detail=error_message
         )
 
     result = VerificationService.reset_password(token, new_password, db)
