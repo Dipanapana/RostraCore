@@ -25,6 +25,8 @@ from app.models.certification import Certification, PSIRAGrade, FirearmCompetenc
 from app.models.availability import Availability
 from app.utils.holidays import PremiumRateCalculator, SouthAfricanHolidays
 from app.config import settings
+from app.services.constraint_resolver import ConstraintResolver, ResolvedConstraints
+from app.models.roster_preferences import ConstraintLevel
 import logging
 from dataclasses import dataclass
 from collections import defaultdict
@@ -54,6 +56,7 @@ class FeasibilityCheck:
     """Result of feasibility checking"""
     is_feasible: bool
     reasons: List[str]
+    warnings: List[str]  # Non-blocking warnings (e.g., PSIRA compliance issues)
     cost: float = 0.0
 
 
@@ -94,7 +97,7 @@ class LazyFeasibilityMatrix:
 
         if not emp or not shift:
             # Invalid key - return infeasible
-            result = FeasibilityCheck(is_feasible=False, reasons=["Invalid employee or shift"], cost=0.0)
+            result = FeasibilityCheck(is_feasible=False, reasons=["Invalid employee or shift"], warnings=[], cost=0.0)
         else:
             # Compute feasibility on-demand
             result = self.optimizer._check_feasibility(emp, shift)
@@ -167,6 +170,10 @@ class ProductionRosterOptimizer:
         self.config = config or OptimizationConfig()
         self.org_id = org_id  # Organization ID for multi-tenancy filtering
 
+        # Constraint resolution
+        self.constraint_resolver = ConstraintResolver(db)
+        self.resolved_constraints_cache = {}  # (employee_id, shift_id) -> ResolvedConstraints
+
         # CP-SAT components
         self.model = cp_model.CpModel()
         self.solver = cp_model.CpSolver()
@@ -192,6 +199,7 @@ class ProductionRosterOptimizer:
         # Cached data for N+1 query prevention
         self.employee_certifications = {}  # employee_id -> List[Certification]
         self.employee_availabilities = {}  # (employee_id, date) -> Availability
+        self.existing_assignments = {}  # employee_id -> List[Shift] (confirmed/completed assignments)
 
         # Results
         self.solution_status = None
@@ -402,6 +410,35 @@ class ProductionRosterOptimizer:
         site_id_set = set(s.site_id for s in self.shifts)
         sites_list = self.db.query(Site).filter(Site.site_id.in_(site_id_set)).all()
         self.sites = {s.site_id: s for s in sites_list}
+
+        # Load existing confirmed/completed shift assignments within a lookback window
+        # This prevents assigning guards to shifts that violate rest periods with existing shifts
+        # Lookback: 7 days before start_date to catch any recent shifts
+        lookback_date = start_date - timedelta(days=7)
+        lookahead_date = end_date + timedelta(days=7)  # Also check 7 days ahead
+
+        existing_query = (
+            self.db.query(ShiftAssignment, Shift)
+            .join(Shift, ShiftAssignment.shift_id == Shift.shift_id)
+            .filter(
+                ShiftAssignment.status.in_([AssignmentStatus.CONFIRMED, AssignmentStatus.COMPLETED]),
+                Shift.start_time >= lookback_date,
+                Shift.start_time < lookahead_date,
+            )
+        )
+
+        if self.org_id is not None:
+            existing_query = existing_query.filter(Shift.org_id == self.org_id)
+
+        existing_results = existing_query.all()
+
+        # Group existing assignments by employee
+        for assignment, shift in existing_results:
+            if assignment.employee_id not in self.existing_assignments:
+                self.existing_assignments[assignment.employee_id] = []
+            self.existing_assignments[assignment.employee_id].append(shift)
+
+        logger.info(f"Loaded {len(existing_results)} existing shift assignments for {len(self.existing_assignments)} employees")
         logger.info(f"Loaded {len(self.sites)} sites")
 
     def _build_feasibility_matrix(self):
@@ -431,31 +468,93 @@ class ProductionRosterOptimizer:
 
             logger.info(f"Feasibility matrix complete: {len(self.feasibility_matrix)} pairs computed")
 
+    def _get_resolved_constraints(self, emp: Employee, shift: Shift) -> ResolvedConstraints:
+        """
+        Get resolved constraints for an employee-shift pair using hierarchical resolution.
+
+        Uses caching to avoid repeated database queries for the same employee-shift pair.
+
+        Args:
+            emp: Employee object
+            shift: Shift object
+
+        Returns:
+            ResolvedConstraints with final values after hierarchy resolution
+        """
+        cache_key = (emp.employee_id, shift.shift_id)
+
+        if cache_key not in self.resolved_constraints_cache:
+            # Resolve constraints using hierarchy: Employee > Site > Client > Org > System
+            # Get client_id through site relationship (Shift -> Site -> client_id)
+            client_id = shift.site.client_id if shift.site else None
+            constraints = self.constraint_resolver.resolve_constraints(
+                org_id=self.org_id or emp.org_id,
+                employee_id=emp.employee_id,
+                site_id=shift.site_id,
+                client_id=client_id,
+                emergency_mode=self.config.enable_emergency_mode
+            )
+            self.resolved_constraints_cache[cache_key] = constraints
+
+        return self.resolved_constraints_cache[cache_key]
+
     def _check_feasibility(self, emp: Employee, shift: Shift) -> FeasibilityCheck:
         """
         Comprehensive feasibility check for an employee-shift pair.
         Returns detailed diagnostics about why assignment may not be feasible.
+
+        Uses hierarchical constraint resolution to determine enforcement levels.
+
+        Warnings (non-blocking):
+        - PSIRA compliance issues (expired certs, grade mismatch, no firearm competency)
+
+        Blocking reasons:
+        - Skill mismatch (if enforcement level is HARD)
+        - Availability conflicts (if enforcement level is HARD)
+        - Client assignment conflicts (if enforcement level is HARD)
         """
         reasons = []
+        warnings = []
 
-        # 1. Check skill match (unless in flexible testing mode)
-        if not settings.SKIP_SKILL_MATCHING:
+        # Get resolved constraints for this employee-shift pair
+        constraints = self._get_resolved_constraints(emp, shift)
+
+        # 1. Check skill match (based on enforcement level)
+        if constraints.skill_matching_level == ConstraintLevel.HARD:
             if not self._check_skill_match(emp, shift):
                 reasons.append(f"Skill mismatch: employee has {emp.role.value}, shift needs {shift.required_skill}")
+        elif constraints.skill_matching_level == ConstraintLevel.WARNING:
+            if not self._check_skill_match(emp, shift):
+                warnings.append(f"⚠️ Skill mismatch: employee has {emp.role.value}, shift needs {shift.required_skill}")
 
-        # 2. Check certifications (skip if SKIP_CERTIFICATION_CHECK is enabled)
-        if not settings.SKIP_CERTIFICATION_CHECK:
-            if not self._check_certifications(emp, shift):
-                reasons.append("Invalid or expired certifications")
+        # 2. Check certifications (based on enforcement level)
+        if constraints.psira_compliance_level != ConstraintLevel.DISABLED:
+            cert_warnings = self._check_certifications_with_warnings(emp, shift)
+            if cert_warnings:
+                if constraints.psira_compliance_level == ConstraintLevel.HARD:
+                    reasons.extend(cert_warnings)
+                else:
+                    warnings.extend(cert_warnings)
 
-        # 3. Check availability (skip if SKIP_AVAILABILITY_CHECK is enabled)
-        if not settings.SKIP_AVAILABILITY_CHECK:
+        # 3. Check availability (based on enforcement level)
+        if constraints.availability_check_level == ConstraintLevel.HARD:
             if not self._check_availability(emp, shift):
                 reasons.append("Employee not available during shift time")
+        elif constraints.availability_check_level == ConstraintLevel.WARNING:
+            if not self._check_availability(emp, shift):
+                warnings.append("⚠️ Employee not available during shift time")
+
+        # 4. Check client assignment (based on enforcement level)
+        if constraints.client_assignment_level == ConstraintLevel.HARD:
+            if not self._check_client_assignment(emp, shift):
+                reasons.append(f"Employee assigned to different client (assigned to client {emp.assigned_client_id})")
+        elif constraints.client_assignment_level == ConstraintLevel.WARNING:
+            if not self._check_client_assignment(emp, shift):
+                warnings.append(f"⚠️ Employee assigned to different client (assigned to client {emp.assigned_client_id})")
 
         # NOTE: Distance checking removed - guards can be assigned regardless of distance
 
-        # Calculate cost if feasible
+        # Calculate cost (always calculate, even with warnings)
         cost = 0.0
         if not reasons:
             cost = self._calculate_assignment_cost(emp, shift)
@@ -463,6 +562,7 @@ class ProductionRosterOptimizer:
         return FeasibilityCheck(
             is_feasible=len(reasons) == 0,
             reasons=reasons,
+            warnings=warnings,
             cost=cost
         )
 
@@ -488,6 +588,88 @@ class ProductionRosterOptimizer:
             return True
 
         return False
+
+    def _check_certifications_with_warnings(self, emp: Employee, shift: Shift) -> List[str]:
+        """
+        Check employee certifications and return list of warnings (non-blocking).
+
+        This allows assignments to proceed even with PSIRA compliance issues,
+        but warns the organization about:
+        - Expired or missing certifications
+        - Insufficient PSIRA grade
+        - Missing firearm competency
+
+        Returns:
+            List of warning messages (empty if fully compliant)
+        """
+        from app.config import settings
+        warnings = []
+
+        # Skip check in testing mode
+        if settings.TESTING_MODE and settings.SKIP_CERTIFICATION_CHECK:
+            return warnings
+
+        # Get cached certifications for employee (prevents N+1 query)
+        certs = self.employee_certifications.get(emp.employee_id, [])
+
+        if not certs:
+            warnings.append(f"⚠️ No certifications on file")
+            return warnings
+
+        shift_date = shift.start_time.date()
+
+        # Find valid (verified and not expired) certifications
+        valid_certs = [
+            cert for cert in certs
+            if cert.verified and cert.expiry_date and cert.expiry_date >= shift_date
+        ]
+
+        # Find expired certifications
+        expired_certs = [
+            cert for cert in certs
+            if cert.verified and cert.expiry_date and cert.expiry_date < shift_date
+        ]
+
+        if not valid_certs:
+            if expired_certs:
+                warnings.append(f"⚠️ All certifications expired (latest: {max(c.expiry_date for c in expired_certs)})")
+            else:
+                warnings.append(f"⚠️ No valid certifications found")
+            return warnings
+
+        # PSIRA Grade Check: If shift requires a specific PSIRA grade
+        if shift.required_psira_grade:
+            # Find employee's highest PSIRA grade from valid certifications
+            guard_grades = [cert.psira_grade for cert in valid_certs if cert.psira_grade]
+
+            if not guard_grades:
+                warnings.append(f"⚠️ No PSIRA grade on file (shift requires {shift.required_psira_grade.value})")
+            else:
+                # Get highest grade (A=5, B=4, C=3, D=2, E=1)
+                highest_grade = max(guard_grades, key=lambda g: PSIRAGrade.get_hierarchy_value(g))
+
+                # Check if guard's grade is sufficient for shift requirement
+                if not PSIRAGrade.can_work_grade(highest_grade, shift.required_psira_grade):
+                    warnings.append(
+                        f"⚠️ PSIRA grade {highest_grade.value} insufficient for shift requiring {shift.required_psira_grade.value}"
+                    )
+
+        # Firearm Competency Check: If shift requires firearm
+        if shift.requires_firearm:
+            firearm_certs = [cert for cert in valid_certs if cert.firearm_competency]
+
+            if not firearm_certs:
+                warnings.append(f"⚠️ No firearm competency certification (armed shift)")
+            elif shift.required_firearm_type:
+                # Check for specific firearm type
+                has_required_firearm = any(
+                    cert.firearm_competency == shift.required_firearm_type
+                    for cert in firearm_certs
+                )
+                if not has_required_firearm:
+                    warnings.append(f"⚠️ Missing required firearm competency: {shift.required_firearm_type.value}")
+
+        return warnings
 
     def _check_certifications(self, emp: Employee, shift: Shift) -> bool:
         """
@@ -592,6 +774,34 @@ class ProductionRosterOptimizer:
         if avail.start_time <= shift_start_time and shift_end_time <= avail.end_time:
             return True
 
+        return False
+
+    def _check_client_assignment(self, emp: Employee, shift: Shift) -> bool:
+        """
+        Check if employee is assigned to work for the client that owns this shift's site.
+
+        Business Logic:
+        - If employee.assigned_client_id is NULL: Employee can work for any client
+        - If employee.assigned_client_id is set: Employee can only work for that specific client's shifts
+
+        Returns:
+            True if employee can work this shift, False otherwise
+        """
+        # If employee is not assigned to any specific client, they can work for any client
+        if emp.assigned_client_id is None:
+            return True
+
+        # Get the site for this shift to determine which client it belongs to
+        site = self.sites.get(shift.site_id)
+        if not site:
+            logger.warning(f"Site {shift.site_id} not found for shift {shift.shift_id}")
+            return False
+
+        # Check if employee is assigned to the client that owns this site
+        if site.client_id == emp.assigned_client_id:
+            return True
+
+        # Employee is assigned to a different client
         return False
 
     def _calculate_distance(self, emp: Employee, shift: Shift) -> float:
@@ -755,10 +965,39 @@ class ProductionRosterOptimizer:
         return (shift1.start_time < shift2.end_time and shift2.start_time < shift1.end_time)
 
     def _add_weekly_hours_constraints(self):
-        """Enforce weekly hours limit (configurable for testing)"""
-        logger.info(f"Adding weekly hours constraints (max {settings.MAX_HOURS_WEEK}h)...")
+        """
+        Enforce weekly hours limit using resolved constraints.
+
+        Uses hierarchical constraint resolution to determine max hours per employee.
+        Respects employee-level overrides (e.g., medical restrictions) and
+        site/client-specific requirements.
+        """
+        # Get a sample shift to resolve org-level constraints (if no specific shift context)
+        sample_shift = self.shifts[0] if self.shifts else None
+
+        # Log the constraint sources for transparency
+        if sample_shift and self.employees:
+            sample_emp = self.employees[0]
+            sample_constraints = self._get_resolved_constraints(sample_emp, sample_shift)
+            logger.info(
+                f"Adding weekly hours constraints (default max {sample_constraints.max_hours_week}h, "
+                f"level: {sample_constraints.max_hours_week_level.value})..."
+            )
 
         for emp in self.employees:
+            # Get employee-specific constraints (may vary by employee)
+            # Use first shift as representative for employee-level constraints
+            emp_constraints = None
+            for shift in self.shifts:
+                emp_constraints = self._get_resolved_constraints(emp, shift)
+                break
+
+            if not emp_constraints:
+                # Fallback to system defaults if no shifts
+                emp_constraints = ResolvedConstraints.from_system_defaults()
+
+            max_hours = emp_constraints.max_hours_week
+
             for week_num in self.weeks:
                 # Find all shifts in this week
                 week_shift_terms = []
@@ -776,17 +1015,50 @@ class ProductionRosterOptimizer:
                     week_key = (emp.employee_id, week_num)
                     self.model.Add(self.weekly_hours_vars[week_key] == sum(week_shift_terms))
 
-                    # Must not exceed weekly hours limit (configurable for testing)
-                    max_hours = min(emp.max_hours_week or settings.MAX_HOURS_WEEK, settings.MAX_HOURS_WEEK)
-                    self.model.Add(self.weekly_hours_vars[week_key] <= max_hours)
+                    # Must not exceed weekly hours limit (from resolved constraints)
+                    # Only enforce as HARD constraint if enforcement level is HARD
+                    if emp_constraints.max_hours_week_level == ConstraintLevel.HARD:
+                        self.model.Add(self.weekly_hours_vars[week_key] <= max_hours)
+                    elif emp_constraints.max_hours_week_level == ConstraintLevel.SOFT:
+                        # Soft constraints are handled in objective function
+                        # We don't add hard constraints here
+                        pass
+                    # WARNING and DISABLED levels: no hard constraint added
 
     def _add_rest_period_constraints(self):
-        """Enforce BCEA 8-hour minimum rest between shifts"""
-        logger.info("Adding rest period constraints...")
+        """
+        Enforce minimum rest between shifts using resolved constraints.
 
-        MIN_REST_HOURS = settings.MIN_REST_HOURS
+        Uses hierarchical constraint resolution to determine min rest hours per employee.
+        Respects employee-level overrides and emergency mode settings.
+        """
+        # Get a sample for logging
+        sample_shift = self.shifts[0] if self.shifts else None
+        if sample_shift and self.employees:
+            sample_emp = self.employees[0]
+            sample_constraints = self._get_resolved_constraints(sample_emp, sample_shift)
+            logger.info(
+                f"Adding rest period constraints (default min {sample_constraints.min_rest_hours}h, "
+                f"level: {sample_constraints.min_rest_hours_level.value})..."
+            )
 
+        # Part 1: Rest periods between NEW shifts (shift1 and shift2 are both being assigned now)
         for emp in self.employees:
+            # Get employee-specific min rest hours
+            emp_constraints = None
+            for shift in self.shifts:
+                emp_constraints = self._get_resolved_constraints(emp, shift)
+                break
+
+            if not emp_constraints:
+                emp_constraints = ResolvedConstraints.from_system_defaults()
+
+            min_rest_hours = emp_constraints.min_rest_hours
+
+            # Only enforce if level is HARD
+            if emp_constraints.min_rest_hours_level != ConstraintLevel.HARD:
+                continue
+
             for shift1 in self.shifts:
                 for shift2 in self.shifts:
                     if shift1.shift_id == shift2.shift_id:
@@ -796,7 +1068,7 @@ class ProductionRosterOptimizer:
                     time_between = (shift2.start_time - shift1.end_time).total_seconds() / 3600
 
                     # If insufficient rest period
-                    if 0 < time_between < MIN_REST_HOURS:
+                    if 0 < time_between < min_rest_hours:
                         key1 = (emp.employee_id, shift1.shift_id)
                         key2 = (emp.employee_id, shift2.shift_id)
 
@@ -806,13 +1078,80 @@ class ProductionRosterOptimizer:
                                 self.assignment_vars[key1] + self.assignment_vars[key2] <= 1
                             )
 
-    def _add_consecutive_days_constraints(self):
-        """Limit consecutive working days to 6 (BCEA compliance)"""
-        logger.info("Adding consecutive days constraints...")
+        # Part 2: Rest periods between EXISTING assignments and NEW shifts
+        existing_constraint_count = 0
+        for emp in self.employees:
+            if emp.employee_id not in self.existing_assignments:
+                continue
 
-        MAX_CONSECUTIVE_DAYS = 6
+            # Get employee-specific constraints
+            emp_constraints = None
+            for shift in self.shifts:
+                emp_constraints = self._get_resolved_constraints(emp, shift)
+                break
+
+            if not emp_constraints:
+                emp_constraints = ResolvedConstraints.from_system_defaults()
+
+            min_rest_hours = emp_constraints.min_rest_hours
+
+            # Only enforce if level is HARD
+            if emp_constraints.min_rest_hours_level != ConstraintLevel.HARD:
+                continue
+
+            existing_shifts = self.existing_assignments[emp.employee_id]
+
+            for existing_shift in existing_shifts:
+                for new_shift in self.shifts:
+                    # Check rest period in both directions
+                    # Case 1: Existing shift -> New shift
+                    time_after_existing = (new_shift.start_time - existing_shift.end_time).total_seconds() / 3600
+                    if 0 < time_after_existing < min_rest_hours:
+                        key = (emp.employee_id, new_shift.shift_id)
+                        if key in self.assignment_vars:
+                            # Employee can't work the new shift (too soon after existing shift)
+                            self.model.Add(self.assignment_vars[key] == 0)
+                            existing_constraint_count += 1
+
+                    # Case 2: New shift -> Existing shift
+                    time_before_existing = (existing_shift.start_time - new_shift.end_time).total_seconds() / 3600
+                    if 0 < time_before_existing < min_rest_hours:
+                        key = (emp.employee_id, new_shift.shift_id)
+                        if key in self.assignment_vars:
+                            # Employee can't work the new shift (too close before existing shift)
+                            self.model.Add(self.assignment_vars[key] == 0)
+                            existing_constraint_count += 1
+
+        logger.info(f"Added {existing_constraint_count} rest period constraints for existing assignments")
+
+    def _add_consecutive_days_constraints(self):
+        """
+        Limit consecutive working days using resolved constraints.
+
+        Uses hierarchical constraint resolution to determine max consecutive days.
+        """
+        # Get a sample for logging
+        sample_shift = self.shifts[0] if self.shifts else None
+        if sample_shift and self.employees:
+            sample_emp = self.employees[0]
+            sample_constraints = self._get_resolved_constraints(sample_emp, sample_shift)
+            logger.info(
+                f"Adding consecutive days constraints (default max {sample_constraints.max_consecutive_days} days, "
+                f"level: {sample_constraints.max_consecutive_days_level.value})..."
+            )
 
         for emp in self.employees:
+            # Get employee-specific constraints
+            emp_constraints = None
+            for shift in self.shifts:
+                emp_constraints = self._get_resolved_constraints(emp, shift)
+                break
+
+            if not emp_constraints:
+                emp_constraints = ResolvedConstraints.from_system_defaults()
+
+            max_consecutive_days = emp_constraints.max_consecutive_days
+
             # Link assignment variables to works-on-date variables
             for shift_date, date_shifts in self.shifts_by_date.items():
                 key = (emp.employee_id, shift_date)
@@ -828,6 +1167,10 @@ class ProductionRosterOptimizer:
                     # works_on_date = 1 if any shift worked that day
                     self.model.AddMaxEquality(self.works_on_date_vars[key], date_vars)
 
+            # Only enforce if level is HARD
+            if emp_constraints.max_consecutive_days_level != ConstraintLevel.HARD:
+                continue
+
             # Check 7-day windows
             sorted_dates = sorted(self.shifts_by_date.keys())
             for i in range(len(sorted_dates) - 6):
@@ -840,20 +1183,41 @@ class ProductionRosterOptimizer:
                         window_vars.append(self.works_on_date_vars[key])
 
                 if window_vars:
-                    # Max 6 days worked in any 7-day window
-                    self.model.Add(sum(window_vars) <= MAX_CONSECUTIVE_DAYS)
+                    # Max consecutive days worked in any 7-day window (from resolved constraints)
+                    self.model.Add(sum(window_vars) <= max_consecutive_days)
 
     def _add_consecutive_nights_constraints(self):
-        """Limit consecutive night shifts to 3 (safety and BCEA compliance)"""
-        logger.info("Adding consecutive nights constraints...")
+        """
+        Limit consecutive night shifts using resolved constraints.
 
-        MAX_CONSECUTIVE_NIGHTS = 3
+        Uses hierarchical constraint resolution to determine max consecutive nights.
+        """
+        # Get a sample for logging
+        sample_shift = self.shifts[0] if self.shifts else None
+        if sample_shift and self.employees:
+            sample_emp = self.employees[0]
+            sample_constraints = self._get_resolved_constraints(sample_emp, sample_shift)
+            logger.info(
+                f"Adding consecutive nights constraints (default max {sample_constraints.max_consecutive_nights} nights, "
+                f"level: {sample_constraints.max_consecutive_nights_level.value})..."
+            )
 
         # Define what constitutes a night shift (18:00-06:00)
         def is_night_shift(shift):
             return shift.start_time.hour >= 18 or shift.start_time.hour < 6
 
         for emp in self.employees:
+            # Get employee-specific constraints
+            emp_constraints = None
+            for shift in self.shifts:
+                emp_constraints = self._get_resolved_constraints(emp, shift)
+                break
+
+            if not emp_constraints:
+                emp_constraints = ResolvedConstraints.from_system_defaults()
+
+            max_consecutive_nights = emp_constraints.max_consecutive_nights
+
             # Link assignment variables to works-night-on-date variables
             for shift_date, date_shifts in self.shifts_by_date.items():
                 key = (emp.employee_id, shift_date)
@@ -873,12 +1237,16 @@ class ProductionRosterOptimizer:
                     # No night shifts available on this date, set to 0
                     self.model.Add(self.works_night_on_date_vars[key] == 0)
 
+            # Only enforce if level is HARD or SOFT (soft is still meaningful for safety)
+            if emp_constraints.max_consecutive_nights_level not in [ConstraintLevel.HARD, ConstraintLevel.SOFT]:
+                continue
+
             # Check for consecutive nights across all dates
             sorted_dates = sorted(self.shifts_by_date.keys())
 
             # Sliding window approach: check every sequence of N consecutive dates
-            for i in range(len(sorted_dates) - (MAX_CONSECUTIVE_NIGHTS)):
-                window_dates = sorted_dates[i:i + MAX_CONSECUTIVE_NIGHTS + 1]
+            for i in range(len(sorted_dates) - (max_consecutive_nights)):
+                window_dates = sorted_dates[i:i + max_consecutive_nights + 1]
                 night_window_vars = []
 
                 for d in window_dates:
@@ -887,11 +1255,10 @@ class ProductionRosterOptimizer:
                         night_window_vars.append(self.works_night_on_date_vars[key])
 
                 if night_window_vars:
-                    # Cannot work more than MAX_CONSECUTIVE_NIGHTS in sequence
-                    # If window has 4 dates and max is 3, can't have all 4 = 1
-                    self.model.Add(sum(night_window_vars) <= MAX_CONSECUTIVE_NIGHTS)
+                    # Cannot work more than max_consecutive_nights in sequence
+                    self.model.Add(sum(night_window_vars) <= max_consecutive_nights)
 
-        logger.info(f"Added consecutive nights limit: max {MAX_CONSECUTIVE_NIGHTS} nights")
+        logger.info(f"Consecutive nights constraints added (per-employee limits applied)")
 
     def _add_fairness_constraints(self):
         """Balance workload fairly across employees"""
@@ -1085,7 +1452,7 @@ class ProductionRosterOptimizer:
         logger.info(f"Total cost: R{self.total_cost:,.2f}")
 
     def _build_result(self) -> Dict:
-        """Build result dictionary"""
+        """Build result dictionary with constraint violation warnings"""
 
         assigned_shift_ids = set(a["shift_id"] for a in self.assignments)
         unfilled_shifts = [s for s in self.shifts if s.shift_id not in assigned_shift_ids]
@@ -1107,17 +1474,22 @@ class ProductionRosterOptimizer:
         # Calculate average cost per shift
         avg_cost = self.total_cost / len(self.assignments) if self.assignments else 0
 
+        # Collect constraint violation warnings
+        warnings = self._collect_constraint_warnings()
+
         return {
             "status": "optimal" if self.solution_status == cp_model.OPTIMAL else "feasible",
             "assignments": self.assignments,
             "unfilled_shifts": [self._shift_to_dict(s) for s in unfilled_shifts],
+            "warnings": warnings,  # Constraint violation warnings
             "summary": {
                 "total_cost": self.total_cost,
                 "total_shifts_filled": len(self.assignments),
                 "employee_hours": dict(hours_per_emp),
                 "average_cost_per_shift": avg_cost,
                 "fill_rate": (len(self.assignments) / len(self.shifts) * 100) if self.shifts else 0,
-                "employees_utilized": len(set(a["employee_id"] for a in self.assignments))
+                "employees_utilized": len(set(a["employee_id"] for a in self.assignments)),
+                "total_warnings": len(warnings)
             },
             "solver_info": {
                 "solve_time": self.solve_time,
@@ -1129,6 +1501,78 @@ class ProductionRosterOptimizer:
             "timing": self.timing,  # Phase 4.2: Performance profiling breakdown
             "algorithm_used": "production_cpsat"
         }
+
+    def _collect_constraint_warnings(self) -> List[Dict]:
+        """
+        Collect all constraint violation warnings from assignments.
+
+        Returns warnings for:
+        - PSIRA compliance issues (expired certs, grade mismatches, etc.)
+        - Skill mismatches (if set to WARNING level)
+        - Availability conflicts (if set to WARNING level)
+        - Client assignment conflicts (if set to WARNING level)
+        """
+        warnings = []
+
+        for assignment in self.assignments:
+            emp_id = assignment["employee_id"]
+            shift_id = assignment["shift_id"]
+
+            # Get employee and shift objects
+            emp = next((e for e in self.employees if e.employee_id == emp_id), None)
+            shift = next((s for s in self.shifts if s.shift_id == shift_id), None)
+
+            if not emp or not shift:
+                continue
+
+            # Get feasibility check results (includes warnings)
+            feasibility = self.feasibility_matrix[(emp_id, shift_id)]
+
+            if feasibility.warnings:
+                # Get employee name for better warning messages
+                emp_name = f"{emp.first_name} {emp.last_name}"
+
+                for warning in feasibility.warnings:
+                    warnings.append({
+                        "assignment_id": assignment.get("assignment_id"),
+                        "employee_id": emp_id,
+                        "employee_name": emp_name,
+                        "shift_id": shift_id,
+                        "shift_start": shift.start_time.isoformat(),
+                        "shift_end": shift.end_time.isoformat(),
+                        "site_id": shift.site_id,
+                        "warning_type": self._categorize_warning(warning),
+                        "message": warning,
+                        "severity": "warning"
+                    })
+
+        # Log warning summary
+        if warnings:
+            logger.warning(f"Roster generated with {len(warnings)} constraint warnings")
+            warning_types = defaultdict(int)
+            for w in warnings:
+                warning_types[w["warning_type"]] += 1
+            for wtype, count in warning_types.items():
+                logger.warning(f"  - {wtype}: {count} warnings")
+
+        return warnings
+
+    def _categorize_warning(self, warning_message: str) -> str:
+        """Categorize warning by type for filtering and reporting"""
+        msg_lower = warning_message.lower()
+
+        if "psira" in msg_lower or "certification" in msg_lower or "expired" in msg_lower:
+            return "psira_compliance"
+        elif "firearm" in msg_lower:
+            return "firearm_competency"
+        elif "skill" in msg_lower:
+            return "skill_mismatch"
+        elif "available" in msg_lower or "availability" in msg_lower:
+            return "availability_conflict"
+        elif "client" in msg_lower:
+            return "client_assignment"
+        else:
+            return "other"
 
     def _get_lazy_feasibility_stats(self) -> Optional[Dict]:
         """Get lazy feasibility matrix statistics (Phase 4 optimization)"""

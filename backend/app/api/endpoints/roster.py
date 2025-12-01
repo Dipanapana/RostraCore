@@ -15,6 +15,7 @@ from app.services.shift_service import ShiftService
 from app.services.cache_service import CacheInvalidator
 from app.config import settings
 from app.models.site import Site
+from app.models.shift import Shift
 from app.models.client import Client
 from app.models.user import User
 from app.api.deps import get_current_user
@@ -61,6 +62,23 @@ async def generate_roster(
         start_datetime = datetime.combine(request.start_date, datetime.min.time())
         end_datetime = datetime.combine(request.end_date, datetime.max.time())
 
+        # If client_ids are provided, fetch all sites for those clients
+        site_ids = request.site_ids
+        if request.client_ids:
+            client_sites = db.query(Site).filter(
+                Site.client_id.in_(request.client_ids),
+                Site.org_id == current_user.org_id
+            ).all()
+            client_site_ids = [site.site_id for site in client_sites]
+
+            # Combine with any manually specified site_ids
+            if site_ids:
+                site_ids = list(set(site_ids + client_site_ids))
+            else:
+                site_ids = client_site_ids
+
+            logger.info(f"Client-specific roster: {len(request.client_ids)} clients, {len(site_ids)} sites")
+
         # Determine which algorithm to use
         selected_algorithm = algorithm or "auto"
 
@@ -80,7 +98,7 @@ async def generate_roster(
             result = optimizer.optimize(
                 start_date=start_datetime,
                 end_date=end_datetime,
-                site_ids=request.site_ids
+                site_ids=site_ids
             )
 
         elif selected_algorithm == "production":
@@ -96,7 +114,7 @@ async def generate_roster(
             result = optimizer.optimize(
                 start_date=start_datetime,
                 end_date=end_datetime,
-                site_ids=request.site_ids
+                site_ids=site_ids
             )
 
         elif selected_algorithm == "milp":
@@ -105,7 +123,7 @@ async def generate_roster(
             result = generator.generate_roster(
                 start_date=start_datetime,
                 end_date=end_datetime,
-                site_ids=request.site_ids
+                site_ids=site_ids
             )
             result["algorithm_used"] = "milp"
 
@@ -123,7 +141,7 @@ async def generate_roster(
             result = optimizer.optimize(
                 start_date=start_datetime,
                 end_date=end_datetime,
-                site_ids=request.site_ids
+                site_ids=site_ids
             )
 
         logger.info(f"Roster generation complete: {result.get('status', 'unknown')}, {len(result.get('assignments', []))} assignments")
@@ -141,15 +159,20 @@ async def generate_roster(
 @router.post("/confirm")
 async def confirm_roster(
     assignments: List[dict],
-    db: Session = Depends(get_db)
+    generate_pdf: Optional[bool] = Query(True, description="Generate PDF after confirmation"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """
     Confirm and save generated roster assignments.
 
     **Cache Invalidation:** Clears dashboard and shift caches when roster is confirmed.
+    **PDF Generation:** Optionally generates a PDF report for the confirmed roster.
     """
     try:
         confirmed_count = 0
+        shift_ids = []
+
         for assignment in assignments:
             shift = ShiftService.assign_employee(
                 db,
@@ -158,19 +181,36 @@ async def confirm_roster(
             )
             if shift:
                 confirmed_count += 1
+                shift_ids.append(shift.shift_id)
 
-        # Invalidate caches after roster confirmation
-        CacheInvalidator.invalidate_dashboard()
-        CacheInvalidator.invalidate_roster()
-        CacheInvalidator.invalidate_shifts()
+        # Invalidate caches after roster confirmation (include org_id for proper multi-tenancy)
+        org_id = current_user.org_id if hasattr(current_user, 'org_id') else None
+        CacheInvalidator.invalidate_dashboard(org_id=org_id)
+        CacheInvalidator.invalidate_roster(org_id=org_id)
+        CacheInvalidator.invalidate_shifts(org_id=org_id)
 
         logger.info(f"Roster confirmed: {confirmed_count} shifts assigned, caches invalidated")
 
-        return {
+        response = {
             "success": True,
             "confirmed_shifts": confirmed_count,
             "total_assignments": len(assignments)
         }
+
+        # Generate PDF URL if requested
+        if generate_pdf and shift_ids:
+            # Get date range from confirmed shifts
+            shifts = db.query(Shift).filter(Shift.shift_id.in_(shift_ids)).all()
+            if shifts:
+                start_date = min(s.start_time for s in shifts).date().isoformat()
+                end_date = max(s.end_time for s in shifts).date().isoformat()
+
+                # Construct PDF URL
+                pdf_url = f"/api/v1/exports/roster/pdf?start_date={start_date}&end_date={end_date}"
+                response["pdf_url"] = pdf_url
+                logger.info(f"PDF URL generated: {pdf_url}")
+
+        return response
 
     except Exception as e:
         logger.error(f"Error confirming roster: {str(e)}", exc_info=True)
