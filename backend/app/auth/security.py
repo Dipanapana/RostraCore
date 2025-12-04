@@ -156,16 +156,19 @@ def authenticate_user(db: Session, username: str, password: str) -> Optional[Use
 
 
 def get_current_user(
+    request: Request,
     access_token: Optional[str] = Cookie(None),
     db: Session = Depends(get_db)
 ) -> User:
     """
-    Get current authenticated user from httpOnly cookie.
+    Get current authenticated user from Bearer token or httpOnly cookie.
 
-    Reads the JWT token from the httpOnly cookie instead of Authorization header
-    for enhanced security (XSS protection).
+    Supports both authentication methods:
+    1. Bearer token in Authorization header (for API clients)
+    2. httpOnly cookie (for browser-based XSS protection)
 
     Args:
+        request: FastAPI Request object
         access_token: JWT token from httpOnly cookie
         db: Database session
 
@@ -181,11 +184,21 @@ def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
 
+    # Try Bearer token from Authorization header first
+    token = None
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header[7:]  # Extract token after "Bearer "
+
+    # Fall back to httpOnly cookie if no Bearer token
+    if token is None:
+        token = access_token
+
     # Check if token exists
-    if access_token is None:
+    if token is None:
         raise credentials_exception
 
-    payload = decode_access_token(access_token)
+    payload = decode_access_token(token)
     user_id_str: str = payload.get("sub")
 
     if user_id_str is None:

@@ -76,9 +76,10 @@ def get_dashboard_metrics(
         Shift.start_time > datetime.now()
     ).count()
 
-    # Count assigned shifts (shifts with at least one confirmed assignment)
+    # Count assigned shifts (shifts with at least one assignment - including PENDING)
+    # PENDING means guard is assigned but not yet confirmed, still counts as filled
     assigned_shift_ids = db.query(ShiftAssignment.shift_id).filter(
-        ShiftAssignment.status.in_([AssignmentStatus.CONFIRMED, AssignmentStatus.COMPLETED])
+        ShiftAssignment.status.in_([AssignmentStatus.PENDING, AssignmentStatus.CONFIRMED, AssignmentStatus.COMPLETED])
     ).distinct().subquery()
 
     assigned_shifts = db.query(Shift).filter(
@@ -297,20 +298,20 @@ def get_cost_trends(
         Client.org_id == org_id
     ).subquery()
 
-    # Query shift assignments in the period (confirmed/completed only)
+    # Query shift assignments in the period (including pending for projected costs)
     assignments = db.query(ShiftAssignment).join(Shift).filter(
         Shift.site_id.in_(org_site_ids),
         Shift.start_time >= start_date,
-        ShiftAssignment.status.in_([AssignmentStatus.CONFIRMED, AssignmentStatus.COMPLETED])
+        ShiftAssignment.status.in_([AssignmentStatus.PENDING, AssignmentStatus.CONFIRMED, AssignmentStatus.COMPLETED])
     ).all()
 
-    # Calculate daily costs
+    # Calculate daily costs using BCEA-compliant assignment.total_cost
     daily_costs = {}
     for assignment in assignments:
-        if assignment.shift and assignment.employee:
+        if assignment.shift:
             date_key = assignment.shift.start_time.date().isoformat()
-            duration = (assignment.shift.end_time - assignment.shift.start_time).total_seconds() / 3600
-            cost = assignment.employee.hourly_rate * duration
+            # Use assignment.total_cost which includes BCEA premiums (Sunday 1.5x, Holiday 2.0x)
+            cost = assignment.total_cost or 0.0
             daily_costs[date_key] = daily_costs.get(date_key, 0) + cost
 
     # Prepare trend data
@@ -504,16 +505,17 @@ def get_weekly_summary(
     assigned_shifts = len(assigned_shift_ids)
     unassigned_shifts = total_shifts - assigned_shifts
 
-    # Calculate costs
+    # Calculate costs using BCEA-compliant assignment.total_cost
     total_cost = 0.0
     total_hours = 0.0
 
     for assignment in assignments_this_week:
-        if assignment.shift and assignment.employee:
-            duration = (assignment.shift.end_time - assignment.shift.start_time).total_seconds() / 3600
-            cost = assignment.employee.hourly_rate * duration
+        if assignment.shift:
+            # Use assignment.total_cost which includes BCEA premiums
+            cost = assignment.total_cost or 0.0
             total_cost += cost
-            total_hours += duration
+            # Use assignment.total_hours for accurate hours (includes regular + overtime)
+            total_hours += assignment.total_hours
 
     # Employees working this week
     employees_this_week = len(set(a.employee_id for a in assignments_this_week))

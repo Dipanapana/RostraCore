@@ -10,7 +10,7 @@ This is a comprehensive, production-ready rostering optimizer that:
 - Supports emergency re-optimization 
 - Scales to 100+ employees and 500+ shifts
 
-Author: RostraCore Team 
+Author: RostraCore Team (Sizwe Thato Khumalo)
 Date: November 2025
 """
 
@@ -200,7 +200,7 @@ class ProductionRosterOptimizer:
         self.employee_certifications = {}  # employee_id -> List[Certification]
         self.employee_availabilities = {}  # (employee_id, date) -> Availability
         self.existing_assignments = {}  # employee_id -> List[Shift] (confirmed/completed assignments)
-
+ 
         # Results
         self.solution_status = None
         self.assignments = []
@@ -924,10 +924,13 @@ class ProductionRosterOptimizer:
         logger.info("All variables created")
 
     def _add_shift_coverage_constraints(self):
-        """Ensure each shift has exactly 1 employee assigned"""
+        """Ensure each shift has the required number of employees assigned"""
         logger.info("Adding shift coverage constraints...")
 
         for shift in self.shifts:
+            # Get required staff count (default to 1 if not set)
+            required_staff = getattr(shift, 'required_staff', 1) or 1
+
             # Find all feasible employees for this shift
             feasible_vars = []
             for emp in self.employees:
@@ -936,8 +939,16 @@ class ProductionRosterOptimizer:
                     feasible_vars.append(self.assignment_vars[key])
 
             if feasible_vars:
-                # Exactly 1 employee per shift (MUST be filled)
-                self.model.Add(sum(feasible_vars) == 1)
+                if len(feasible_vars) >= required_staff:
+                    # Exactly required_staff employees per shift (MUST be filled)
+                    self.model.Add(sum(feasible_vars) == required_staff)
+                else:
+                    # Not enough feasible employees - assign as many as possible
+                    logger.warning(
+                        f"Shift {shift.shift_id} needs {required_staff} guards but only "
+                        f"{len(feasible_vars)} feasible employees available. Assigning all available."
+                    )
+                    self.model.Add(sum(feasible_vars) == len(feasible_vars))
             else:
                 logger.warning(f"Shift {shift.shift_id} has no feasible employees!")
 

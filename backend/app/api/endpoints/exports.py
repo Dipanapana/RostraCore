@@ -20,6 +20,7 @@ from app.models.shift import Shift
 from app.models.site import Site
 from app.models.certification import Certification
 from app.models.shift_assignment import ShiftAssignment
+from app.auth.security import get_current_org_id
 
 router = APIRouter(prefix="/exports", tags=["Exports"])
 
@@ -31,15 +32,17 @@ async def export_roster_pdf(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     site_id: Optional[int] = None,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
     """
-    Generate PDF report for roster with professional South African formatting.
+    Generate PDF report for roster with professional South African formatting (filtered by organization).
 
     Args:
         start_date: Start date (YYYY-MM-DD)
         end_date: End date (YYYY-MM-DD)
         site_id: Optional filter by site
+        org_id: Organization ID (from current user)
 
     Returns:
         PDF file download
@@ -56,11 +59,12 @@ async def export_roster_pdf(
         else:
             end_dt = start_dt + timedelta(days=7)
 
-        # Query shifts with eager-loaded relationships
+        # Query shifts with eager-loaded relationships (SECURITY: Filter by org_id)
         query = db.query(Shift).options(
             joinedload(Shift.site),
             joinedload(Shift.shift_assignments).joinedload(ShiftAssignment.employee)
         ).filter(
+            Shift.org_id == org_id,  # SECURITY FIX: Only show shifts from user's organization
             Shift.start_time >= start_dt,
             Shift.start_time <= end_dt
         )
@@ -250,10 +254,13 @@ async def export_roster_pdf(
 # ==================== CSV/EXCEL EXPORTS ====================
 
 @router.get("/employees/csv")
-async def export_employees_csv(db: Session = Depends(get_db)):
-    """Export all employees to CSV."""
+async def export_employees_csv(
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db)
+):
+    """Export all employees to CSV (filtered by organization)."""
     try:
-        employees = db.query(Employee).all()
+        employees = db.query(Employee).filter(Employee.org_id == org_id).all()
 
         data = []
         for emp in employees:
@@ -262,13 +269,17 @@ async def export_employees_csv(db: Session = Depends(get_db)):
                 'First Name': emp.first_name,
                 'Last Name': emp.last_name,
                 'ID Number': emp.id_number,
-                'Email': emp.email,
-                'Phone': emp.phone,
-                'Role': emp.role.value,
+                'Email': emp.email or '',
+                'Phone': emp.phone or '',
+                'Role': emp.role.value if emp.role else '',
+                'PSIRA Number': emp.psira_number or '',
+                'PSIRA Grade': emp.psira_grade or '',
                 'Hourly Rate (ZAR)': emp.hourly_rate,
-                'Status': emp.status.value,
-                'Skills': emp.skills or '',
-                'Created': emp.created_at.strftime('%Y-%m-%d %H:%M:%S') if emp.created_at else ''
+                'Max Hours/Week': emp.max_hours_week or 48,
+                'Status': emp.status.value if emp.status else '',
+                'Address': emp.address or '',
+                'Emergency Contact': emp.emergency_contact_name or '',
+                'Emergency Phone': emp.emergency_contact_phone or ''
             })
 
         df = pd.DataFrame(data)
@@ -286,10 +297,13 @@ async def export_employees_csv(db: Session = Depends(get_db)):
 
 
 @router.get("/employees/excel")
-async def export_employees_excel(db: Session = Depends(get_db)):
-    """Export all employees to Excel."""
+async def export_employees_excel(
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db)
+):
+    """Export all employees to Excel (filtered by organization)."""
     try:
-        employees = db.query(Employee).all()
+        employees = db.query(Employee).filter(Employee.org_id == org_id).all()
 
         data = []
         for emp in employees:
@@ -298,13 +312,17 @@ async def export_employees_excel(db: Session = Depends(get_db)):
                 'First Name': emp.first_name,
                 'Last Name': emp.last_name,
                 'ID Number': emp.id_number,
-                'Email': emp.email,
-                'Phone': emp.phone,
-                'Role': emp.role.value,
+                'Email': emp.email or '',
+                'Phone': emp.phone or '',
+                'Role': emp.role.value if emp.role else '',
+                'PSIRA Number': emp.psira_number or '',
+                'PSIRA Grade': emp.psira_grade or '',
                 'Hourly Rate (ZAR)': emp.hourly_rate,
-                'Status': emp.status.value,
-                'Skills': emp.skills or '',
-                'Created': emp.created_at.strftime('%Y-%m-%d %H:%M:%S') if emp.created_at else ''
+                'Max Hours/Week': emp.max_hours_week or 48,
+                'Status': emp.status.value if emp.status else '',
+                'Address': emp.address or '',
+                'Emergency Contact': emp.emergency_contact_name or '',
+                'Emergency Phone': emp.emergency_contact_phone or ''
             })
 
         df = pd.DataFrame(data)

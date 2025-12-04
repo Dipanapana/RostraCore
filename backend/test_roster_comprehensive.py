@@ -74,10 +74,8 @@ def show_employee_details(db):
         print(f"  Role: {emp.role}")
         print(f"  Hourly Rate: R {emp.hourly_rate:.2f}")
         print(f"  Status: {emp.status}")
-        if emp.skills:
-            skills_data = emp.skills[0] if emp.skills else None
-            if skills_data:
-                print(f"  Skills: Armed={skills_data.armed}, Supervisor={skills_data.is_supervisor}")
+        if emp.certifications:
+            print(f"  Certifications: {', '.join([cert.cert_type for cert in emp.certifications])}")
 
 
 def show_site_details(db):

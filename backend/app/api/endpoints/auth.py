@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.user import User, UserRole
+from app.models.organization import Organization, SubscriptionTier, SubscriptionStatus
 from app.models.auth_schemas import (
     Token,
     UserLogin,
@@ -32,6 +33,7 @@ from app.auth.security import (
 from app.auth.password_validator import validate_password_strength, get_password_requirements
 from app.services.verification_service import VerificationService
 from app.config import settings
+import secrets
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -50,7 +52,10 @@ def get_password_requirements_endpoint():
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
     """
-    Register a new user.
+    Register a new user and optionally create an organization.
+
+    If company_name is provided, creates a new organization with a 14-day trial
+    and sets the user as the owner with full access to all clients.
 
     Args:
         user_data: User registration data
@@ -86,6 +91,38 @@ def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
             detail="Email already registered"
         )
 
+    org_id = None
+    is_owner = False
+
+    # If company_name provided, create organization first
+    if user_data.company_name:
+        # Generate unique org code from company name
+        base_code = user_data.company_name.upper().replace(" ", "")[:6]
+        org_code = base_code + secrets.token_hex(3).upper()
+
+        # Set default limits for starter tier (trial)
+        trial_start = datetime.utcnow()
+        trial_end = trial_start + timedelta(days=14)
+
+        new_org = Organization(
+            org_code=org_code,
+            company_name=user_data.company_name,
+            subscription_tier=SubscriptionTier.STARTER,
+            subscription_status=SubscriptionStatus.TRIAL,
+            max_employees=30,
+            max_sites=5,
+            max_shifts_per_month=500,
+            billing_email=user_data.email,
+            trial_start_date=trial_start,
+            trial_end_date=trial_end,
+            client_management_mode='all',  # Default to all clients visible
+        )
+
+        db.add(new_org)
+        db.flush()  # Get the org_id without committing
+        org_id = new_org.org_id
+        is_owner = True  # User who creates org becomes owner
+
     # Create new user
     hashed_password = get_password_hash(user_data.password)
     new_user = User(
@@ -93,7 +130,11 @@ def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
         email=user_data.email,
         hashed_password=hashed_password,
         full_name=user_data.full_name,
-        role=user_data.role,
+        phone=user_data.phone,
+        role=user_data.role if user_data.role else UserRole.ADMIN,  # Default to admin if creating org
+        org_id=org_id,
+        is_owner=is_owner,
+        managed_client_ids=None,  # Owners get full access (NULL = all)
     )
 
     db.add(new_user)
@@ -181,6 +222,8 @@ def login(
 
     return {
         "message": "Logged in successfully",
+        "access_token": access_token,
+        "token_type": "bearer",
         "user": {
             "user_id": user.user_id,
             "username": user.username,

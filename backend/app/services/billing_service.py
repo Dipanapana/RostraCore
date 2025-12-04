@@ -1,4 +1,4 @@
-"""Billing service for per-guard subscription billing (R45/guard/month)."""
+"""Billing service for per-guard subscription billing."""
 import logging
 from datetime import datetime, timedelta
 from typing import Optional, Dict, List
@@ -16,12 +16,15 @@ class BillingService:
     """
     Manages per-guard billing for GuardianOS.
 
-    Pricing: R45 per active guard per month
+    Pricing: Configurable via settings.MVP_MONTHLY_RATE_PER_GUARD (default R29)
     Billing Cycle: Monthly, on the anniversary of subscription start
     Payment: Via PayFast recurring billing
     """
 
-    PRICE_PER_GUARD_PER_MONTH = 45.00  # R45
+    @staticmethod
+    def get_price_per_guard() -> float:
+        """Get current price per guard from settings."""
+        return float(settings.MVP_MONTHLY_RATE_PER_GUARD)
 
     @staticmethod
     def calculate_monthly_cost(db: Session, org_id: int) -> Dict:
@@ -53,7 +56,8 @@ class BillingService:
             ).count()
 
             # Calculate cost
-            monthly_cost = active_guards_count * BillingService.PRICE_PER_GUARD_PER_MONTH
+            price_per_guard = BillingService.get_price_per_guard()
+            monthly_cost = active_guards_count * price_per_guard
 
             # Update organization record
             org.active_guard_count = active_guards_count
@@ -65,14 +69,14 @@ class BillingService:
 
             logger.info(
                 f"Billing calculated for org {org_id} ({org.company_name}): "
-                f"{active_guards_count} guards × R{BillingService.PRICE_PER_GUARD_PER_MONTH} = R{monthly_cost}"
+                f"{active_guards_count} guards × R{price_per_guard} = R{monthly_cost}"
             )
 
             return {
                 "status": "success",
                 "organization": org.company_name,
                 "active_guards": active_guards_count,
-                "price_per_guard": BillingService.PRICE_PER_GUARD_PER_MONTH,
+                "price_per_guard": price_per_guard,
                 "monthly_cost": float(monthly_cost),
                 "billing_date": org.last_billing_calculation.isoformat()
             }

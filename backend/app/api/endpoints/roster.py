@@ -13,6 +13,7 @@ from app.algorithms.milp_roster_generator import MILPRosterGenerator
 from app.algorithms.production_optimizer import ProductionRosterOptimizer, OptimizationConfig
 from app.services.shift_service import ShiftService
 from app.services.cache_service import CacheInvalidator
+from app.services.client_filter_service import ClientFilterService
 from app.config import settings
 from app.models.site import Site
 from app.models.shift import Shift
@@ -64,20 +65,41 @@ async def generate_roster(
 
         # If client_ids are provided, fetch all sites for those clients
         site_ids = request.site_ids
+
+        # Get accessible clients for client filtering
+        accessible_clients = ClientFilterService.get_accessible_clients(db, current_user.org_id)
+
         if request.client_ids:
-            client_sites = db.query(Site).filter(
-                Site.client_id.in_(request.client_ids),
-                Site.org_id == current_user.org_id
+            # Filter requested client_ids to only accessible clients
+            filtered_client_ids = request.client_ids
+            if accessible_clients is not None:
+                filtered_client_ids = [cid for cid in request.client_ids if cid in accessible_clients]
+                if len(filtered_client_ids) < len(request.client_ids):
+                    logger.warning(f"Some requested client_ids are not accessible. Requested: {request.client_ids}, Accessible: {filtered_client_ids}")
+
+            if filtered_client_ids:
+                client_sites = db.query(Site).filter(
+                    Site.client_id.in_(filtered_client_ids),
+                    Site.org_id == current_user.org_id
+                ).all()
+                client_site_ids = [site.site_id for site in client_sites]
+
+                # Combine with any manually specified site_ids
+                if site_ids:
+                    site_ids = list(set(site_ids + client_site_ids))
+                else:
+                    site_ids = client_site_ids
+
+                logger.info(f"Client-specific roster: {len(filtered_client_ids)} clients, {len(site_ids)} sites")
+
+        # If no specific sites/clients requested, apply client filtering to auto-select accessible sites
+        if not site_ids and accessible_clients is not None:
+            accessible_sites = db.query(Site).filter(
+                Site.org_id == current_user.org_id,
+                Site.client_id.in_(accessible_clients)
             ).all()
-            client_site_ids = [site.site_id for site in client_sites]
-
-            # Combine with any manually specified site_ids
-            if site_ids:
-                site_ids = list(set(site_ids + client_site_ids))
-            else:
-                site_ids = client_site_ids
-
-            logger.info(f"Client-specific roster: {len(request.client_ids)} clients, {len(site_ids)} sites")
+            site_ids = [s.site_id for s in accessible_sites]
+            logger.info(f"Auto-filtered to {len(site_ids)} sites for accessible clients")
 
         # Determine which algorithm to use
         selected_algorithm = algorithm or "auto"
@@ -228,24 +250,34 @@ async def get_unfilled_shifts(
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Get list of shifts without assigned employees (filtered by organization)."""
+    """Get list of shifts without assigned employees (filtered by organization and accessible clients)."""
     if not start_date:
         start_date = datetime.now()
     if not end_date:
         end_date = start_date + timedelta(days=7)
 
+    # Get accessible clients for client filtering
+    accessible_clients = ClientFilterService.get_accessible_clients(db, org_id)
+
     # Filter site_id to ensure it belongs to the organization if provided
     if site_id:
-        site = db.query(Site).filter(Site.site_id == site_id, Site.org_id == org_id).first()
+        site_query = db.query(Site).filter(Site.site_id == site_id, Site.org_id == org_id)
+        # Also check if site's client is accessible
+        if accessible_clients is not None:
+            site_query = site_query.filter(Site.client_id.in_(accessible_clients))
+        site = site_query.first()
         if not site:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Site with ID {site_id} not found in your organization"
+                detail=f"Site with ID {site_id} not found or not accessible in your organization"
             )
         site_ids = [site_id]
     else:
-        # Get all sites for this organization
-        org_sites = db.query(Site.site_id).filter(Site.org_id == org_id).all()
+        # Get all sites for this organization (filtered by accessible clients)
+        site_query = db.query(Site.site_id).filter(Site.org_id == org_id)
+        if accessible_clients is not None:
+            site_query = site_query.filter(Site.client_id.in_(accessible_clients))
+        org_sites = site_query.all()
         site_ids = [s.site_id for s in org_sites] if org_sites else []
 
     if not site_ids:
@@ -384,6 +416,13 @@ async def generate_roster_for_client(
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Client with ID {client_id} not found in your organization"
+            )
+
+        # Check if client is accessible based on client management settings
+        if not ClientFilterService.is_client_accessible(db, org_id, client_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Client with ID {client_id} is not accessible based on your client management settings"
             )
 
         # Get all sites for this client

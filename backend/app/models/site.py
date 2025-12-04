@@ -48,6 +48,8 @@ class Site(Base):
     supervisor = relationship("Employee", foreign_keys=[supervisor_id])
     shifts = relationship("Shift", back_populates="site")
     shift_templates = relationship("ShiftTemplate", back_populates="site")
+    roster_preferences = relationship("RosterPreferences", back_populates="site", cascade="all, delete-orphan")
+    staffing_profiles = relationship("SiteStaffingProfile", back_populates="site", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Site {self.site_id}: {self.client_name}>"

@@ -2,7 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import { Site } from '@/types'
-import { sitesApi } from '@/services/api'
+import { sitesApi, clientsApi } from '@/services/api'
+
+interface Client {
+  client_id: number
+  client_name: string
+  contact_email?: string
+  contact_phone?: string
+  status: string  // 'active' or 'inactive'
+}
 
 interface SiteFormProps {
   site?: Site | null
@@ -26,6 +34,23 @@ export default function SiteForm({ site, onClose, onSuccess }: SiteFormProps) {
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [clients, setClients] = useState<Client[]>([])
+  const [loadingClients, setLoadingClients] = useState(true)
+
+  // Fetch clients on mount
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const response = await clientsApi.getAll()
+        setClients(response.data || [])
+      } catch (err) {
+        console.error('Failed to fetch clients:', err)
+      } finally {
+        setLoadingClients(false)
+      }
+    }
+    fetchClients()
+  }, [])
 
   useEffect(() => {
     if (site) {
@@ -124,17 +149,32 @@ export default function SiteForm({ site, onClose, onSuccess }: SiteFormProps) {
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Client Name <span className="text-red-500">*</span>
+                  Client <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  name="client_name"
-                  value={formData.client_name}
-                  onChange={handleChange}
-                  required
-                  placeholder="ABC Corporation"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                {loadingClients ? (
+                  <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+                    Loading clients...
+                  </div>
+                ) : clients.length === 0 ? (
+                  <div className="w-full px-3 py-2 border border-yellow-300 rounded-md bg-yellow-50 text-yellow-700">
+                    No clients found. Please add a client first.
+                  </div>
+                ) : (
+                  <select
+                    name="client_name"
+                    value={formData.client_name}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select a client</option>
+                    {clients.filter(c => c.status === 'active').map(client => (
+                      <option key={client.client_id} value={client.client_name}>
+                        {client.client_name}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div className="md:col-span-2">

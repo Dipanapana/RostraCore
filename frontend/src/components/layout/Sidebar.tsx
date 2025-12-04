@@ -10,15 +10,19 @@ import {
   Briefcase,
   MapPin,
   Calendar,
+  CalendarDays,
   ClipboardList,
   Award,
   Clock,
   DollarSign,
+  CreditCard,
   Settings,
   HelpCircle,
   LogOut,
   Menu,
+  Shield,
 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 interface NavItem {
   name: string;
@@ -34,12 +38,14 @@ const menuItems: NavItem[] = [
   { name: "Sites", href: "/sites", icon: MapPin },
   { name: "Shifts", href: "/shifts", icon: Calendar },
   { name: "Roster", href: "/roster", icon: ClipboardList },
+  { name: "Calendar View", href: "/calendar", icon: CalendarDays },
   { name: "Certifications", href: "/certifications", icon: Award },
   { name: "Availability", href: "/availability", icon: Clock },
   { name: "Payroll", href: "/payroll", icon: DollarSign },
 ];
 
 const generalItems: NavItem[] = [
+  { name: "Billing", href: "/billing", icon: CreditCard },
   { name: "Settings", href: "/settings", icon: Settings },
   { name: "Help", href: "/help", icon: HelpCircle },
 ];
@@ -47,6 +53,13 @@ const generalItems: NavItem[] = [
 export default function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
+  const { user } = useAuth();
+
+  // Check if user is superadmin (case-insensitive check)
+  const isSuperadmin = user?.role?.toLowerCase() === "superadmin";
+
+  // Debug logging for role
+  console.log("[Sidebar] User role:", user?.role, "isSuperadmin:", isSuperadmin);
 
   const isActive = (href: string) => {
     return pathname === href || pathname?.startsWith(href + "/");
@@ -139,17 +152,41 @@ export default function Sidebar() {
             </button>
           </div>
         </div>
+
+        {/* SUPERADMIN Section - Only visible to superadmins */}
+        {isSuperadmin && (
+          <div>
+            <p className="px-4 mb-4 text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+              Superadmin
+            </p>
+            <div className="space-y-1">
+              <NavLink item={{ name: "Manage Organizations", href: "/superadmin", icon: Shield }} />
+              <NavLink item={{ name: "Platform Settings", href: "/superadmin/settings", icon: Settings }} />
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* User Profile Mini */}
       <div className="p-4 border-t border-slate-200 dark:border-white/5">
         <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
-            <span className="text-white font-bold text-sm">AD</span>
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-lg ${
+            isSuperadmin
+              ? "bg-gradient-to-br from-amber-500 to-orange-600"
+              : "bg-gradient-to-br from-blue-500 to-indigo-600"
+          }`}>
+            <span className="text-white font-bold text-sm">
+              {user?.username?.substring(0, 2).toUpperCase() || "U"}
+            </span>
           </div>
           <div className="overflow-hidden">
-            <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">Admin User</p>
-            <p className="text-xs text-slate-600 dark:text-slate-400 truncate">admin@guardianos.co.za</p>
+            <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+              {user?.full_name || user?.username || "User"}
+            </p>
+            <p className="text-xs text-slate-600 dark:text-slate-400 truncate">
+              {user?.email || ""}
+              {isSuperadmin && <span className="ml-1 text-amber-500">(Superadmin)</span>}
+            </p>
           </div>
         </div>
       </div>

@@ -1,13 +1,41 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+
+interface PricingConfig {
+  monthly_rate_per_guard: number;
+  free_trial_days: number;
+  currency: string;
+  vat_percentage: number;
+  platform_name: string;
+}
 
 export default function PricingSection() {
   const [guardCount, setGuardCount] = useState(50);
+  const [pricePerGuard, setPricePerGuard] = useState(29); // Default fallback
 
-  const calculateMonthly = (guards: number) => guards * 45;
-  const calculateAnnual = (guards: number) => guards * 45 * 12;
+  // Fetch pricing from API on mount
+  useEffect(() => {
+    const fetchPricing = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8002';
+        const response = await fetch(`${apiUrl}/api/v1/system-settings/pricing`);
+        if (response.ok) {
+          const config: PricingConfig = await response.json();
+          setPricePerGuard(config.monthly_rate_per_guard);
+        }
+      } catch (error) {
+        // Keep using default value if API fails
+        console.error('Failed to fetch pricing config:', error);
+      }
+    };
+    fetchPricing();
+  }, []);
+
+  const calculateMonthly = (guards: number) => guards * pricePerGuard;
+  const calculateAnnual = (guards: number) => guards * pricePerGuard * 12;
+  const costPerDay = (pricePerGuard / 30).toFixed(2);
 
   return (
     <div className="relative z-10 px-6 py-20 border-t border-white/10">
@@ -36,7 +64,7 @@ export default function PricingSection() {
               <div className="text-center mb-8">
                 <div className="text-white/70 text-sm font-medium mb-2">Per Guard, Per Month</div>
                 <div className="flex items-center justify-center gap-2 mb-4">
-                  <span className="text-6xl md:text-7xl font-bold text-white">R45</span>
+                  <span className="text-6xl md:text-7xl font-bold text-white">R{pricePerGuard}</span>
                   <div className="text-left">
                     <div className="text-white/80 text-sm">per guard</div>
                     <div className="text-white/60 text-xs">per month</div>
@@ -79,7 +107,7 @@ export default function PricingSection() {
                 {/* Cost Breakdown */}
                 <div className="space-y-4">
                   <div className="flex justify-between items-center pb-3 border-b border-white/20">
-                    <span className="text-white/70">{guardCount} guards × R45/month</span>
+                    <span className="text-white/70">{guardCount} guards × R{pricePerGuard}/month</span>
                     <span className="text-2xl font-bold text-white" suppressHydrationWarning>
                       R{calculateMonthly(guardCount).toLocaleString()}
                     </span>
@@ -95,7 +123,7 @@ export default function PricingSection() {
                   <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-4 mt-4">
                     <div className="text-center">
                       <div className="text-xs text-green-300 mb-1">Cost Per Guard Per Day</div>
-                      <div className="text-2xl font-bold text-green-400">R1.50</div>
+                      <div className="text-2xl font-bold text-green-400">R{costPerDay}</div>
                       <div className="text-xs text-green-300/70 mt-1">Less than a cup of coffee!</div>
                     </div>
                   </div>
@@ -211,14 +239,14 @@ export default function PricingSection() {
             <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-xl p-6">
               <h4 className="text-white font-bold mb-2">How is billing calculated?</h4>
               <p className="text-white/70 text-sm">
-                We count your active guards at the end of each month and bill you R45 per guard. For example, if you have 50 active guards, your monthly bill is R2,250.
+                We count your active guards at the end of each month and bill you R{pricePerGuard} per guard. For example, if you have 50 active guards, your monthly bill is R{(50 * pricePerGuard).toLocaleString()}.
               </p>
             </div>
 
             <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-xl p-6">
               <h4 className="text-white font-bold mb-2">Are there any other fees?</h4>
               <p className="text-white/70 text-sm">
-                No. The R45 per guard per month includes everything - unlimited admin users, full feature access, email support, and all updates. No hidden fees.
+                No. The R{pricePerGuard} per guard per month includes everything - unlimited admin users, full feature access, email support, and all updates. No hidden fees.
               </p>
             </div>
 

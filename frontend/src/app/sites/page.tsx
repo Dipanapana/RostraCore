@@ -8,7 +8,8 @@ import ExportButtons from '@/components/ExportButtons'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import DataTable, { Column } from '@/components/ui/DataTable'
 import Modal from '@/components/ui/Modal'
-import { Plus, Pencil, Trash2, MapPin, Users, Clock } from 'lucide-react'
+import { Plus, Pencil, Trash2, MapPin, Users, Clock, Settings2 } from 'lucide-react'
+import SiteStaffingProfiles from '@/components/SiteStaffingProfiles'
 
 export default function SitesPage() {
   const [sites, setSites] = useState<Site[]>([])
@@ -16,6 +17,7 @@ export default function SitesPage() {
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [editingSite, setEditingSite] = useState<Site | null>(null)
+  const [staffingProfilesSite, setStaffingProfilesSite] = useState<Site | null>(null)
 
   useEffect(() => {
     fetchSites()
@@ -168,6 +170,16 @@ export default function SitesPage() {
               <button
                 onClick={(e) => {
                   e.stopPropagation()
+                  setStaffingProfilesSite(site)
+                }}
+                className="p-2 text-slate-400 dark:text-slate-300 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                title="Staffing Profiles"
+              >
+                <Settings2 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
                   handleEdit(site)
                 }}
                 className="p-2 text-slate-400 dark:text-slate-300 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
@@ -201,6 +213,22 @@ export default function SitesPage() {
             onClose={handleCloseForm}
             onSuccess={handleFormSuccess}
           />
+        </Modal>
+
+        {/* Staffing Profiles Modal */}
+        <Modal
+          isOpen={!!staffingProfilesSite}
+          onClose={() => setStaffingProfilesSite(null)}
+          title="Site Staffing Profiles"
+          maxWidth="2xl"
+        >
+          {staffingProfilesSite && (
+            <SiteStaffingProfiles
+              siteId={staffingProfilesSite.site_id}
+              siteName={staffingProfilesSite.site_name || staffingProfilesSite.client_name}
+              onClose={() => setStaffingProfilesSite(null)}
+            />
+          )}
         </Modal>
       </div>
     </DashboardLayout>

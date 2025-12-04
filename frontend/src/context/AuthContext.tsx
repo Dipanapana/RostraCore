@@ -17,6 +17,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
+  token: string | null;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
@@ -27,12 +28,19 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  // Check if user is authenticated on mount by fetching user info
+  // Check if user is authenticated on mount
   useEffect(() => {
-    fetchUserInfo();
+    const storedToken = localStorage.getItem('access_token');
+    if (storedToken) {
+      setToken(storedToken);
+      fetchUserInfo();
+    } else {
+      setIsLoading(false);
+    }
   }, []);
 
   const fetchUserInfo = async () => {
@@ -43,6 +51,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(response.data);
     } catch (error) {
       console.error("[AUTH] Not authenticated or session expired");
+      localStorage.removeItem('access_token');
+      setToken(null);
       setUser(null);
     } finally {
       setIsLoading(false);
@@ -65,21 +75,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
       });
 
-      console.log("[AUTH] 2. Login successful, cookie set by server");
+      console.log("[AUTH] 2. Login successful");
       console.log("[AUTH] Response:", response.data);
 
-      // Set user from response
-      if (response.data.user) {
-        setUser(response.data.user);
+      // Store token in localStorage and state
+      if (response.data.access_token) {
+        console.log('[AUTH] Storing token:', response.data.access_token.substring(0, 30) + '...');
+        localStorage.setItem('access_token', response.data.access_token);
+        setToken(response.data.access_token);
+        // Verify it was stored
+        const storedToken = localStorage.getItem('access_token');
+        console.log('[AUTH] Token verified in localStorage:', storedToken ? 'YES' : 'NO');
       } else {
-        // Fetch user info if not in response
-        await fetchUserInfo();
+        console.error('[AUTH] No access_token in response!', response.data);
       }
 
-      // Redirect to dashboard
-      console.log("[AUTH] 3. Redirecting to dashboard...");
-      router.push("/dashboard");
-      console.log("[AUTH] 4. Push completed");
+      // Set user from response and determine redirect
+      let userRole: string | undefined;
+      if (response.data.user) {
+        setUser(response.data.user);
+        userRole = response.data.user.role;
+      } else {
+        // Fetch user info if not in response
+        const userResponse = await api.get("/api/v1/auth/me");
+        setUser(userResponse.data);
+        userRole = userResponse.data.role;
+      }
+
+      // Redirect based on user role (use window.location for full page reload to reinitialize with token)
+      const redirectUrl = userRole?.toLowerCase() === 'superadmin' ? '/superadmin' : '/dashboard';
+      console.log(`[AUTH] 3. Redirecting to ${redirectUrl} (role: ${userRole})...`);
+      window.location.href = redirectUrl;
     } catch (error: any) {
       console.error("Login failed:", error);
       throw new Error(
@@ -90,12 +116,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      // Call logout endpoint to clear the httpOnly cookie
+      // Call logout endpoint
       await api.post("/api/v1/auth/logout");
     } catch (error) {
       console.error("Logout API call failed:", error);
     } finally {
-      // Clear user state regardless of API call success
+      // Clear token and user state
+      localStorage.removeItem('access_token');
+      setToken(null);
       setUser(null);
       router.push("/login");
     }
@@ -105,6 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
+        token,
         login,
         logout,
         isAuthenticated: !!user,

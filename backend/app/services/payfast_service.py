@@ -2,13 +2,23 @@
 
 PayFast is South Africa's leading payment gateway.
 Documentation: https://developers.payfast.co.za/
+
+Features:
+- Subscription checkout generation
+- ITN (Instant Transaction Notification) validation
+- Trial period management
+- Per-guard billing calculation
 """
 
 import hashlib
 import urllib.parse
+import logging
 from typing import Dict, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
+from decimal import Decimal
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class PayFastService:
@@ -193,3 +203,99 @@ class PayFastService:
         # PayFast requires manual cancellation or email to support@payfast.co.za
         # For now, we just mark it as cancelled in our system
         return False  # Indicates manual action needed
+
+    # ==================== Trial Management Methods ====================
+
+    @staticmethod
+    def calculate_trial_end_date(start_date: datetime = None) -> datetime:
+        """
+        Calculate trial end date from start date.
+
+        Args:
+            start_date: When trial started (defaults to now)
+
+        Returns:
+            DateTime when trial expires
+        """
+        if start_date is None:
+            start_date = datetime.utcnow()
+        return start_date + timedelta(days=settings.FREE_TRIAL_DAYS)
+
+    @staticmethod
+    def is_trial_expired(trial_ends_at: datetime) -> bool:
+        """
+        Check if trial period has expired.
+
+        Args:
+            trial_ends_at: Trial expiration date
+
+        Returns:
+            True if trial has expired
+        """
+        if trial_ends_at is None:
+            return True
+        return datetime.utcnow() > trial_ends_at
+
+    @staticmethod
+    def days_until_trial_expires(trial_ends_at: datetime) -> int:
+        """
+        Get number of days until trial expires.
+
+        Args:
+            trial_ends_at: Trial expiration date
+
+        Returns:
+            Days remaining (negative if expired)
+        """
+        if trial_ends_at is None:
+            return -1
+        delta = trial_ends_at - datetime.utcnow()
+        return delta.days
+
+    @staticmethod
+    def calculate_monthly_cost(active_guard_count: int) -> Decimal:
+        """
+        Calculate monthly subscription cost based on active guards.
+
+        Args:
+            active_guard_count: Number of active employees/guards
+
+        Returns:
+            Monthly cost in ZAR
+        """
+        rate = Decimal(str(settings.MVP_MONTHLY_RATE_PER_GUARD))
+        return rate * active_guard_count
+
+    def generate_subscription_data(
+        self,
+        org_id: int,
+        company_name: str,
+        email: str,
+        active_guard_count: int
+    ) -> Dict[str, str]:
+        """
+        Generate subscription checkout data for an organization.
+
+        Args:
+            org_id: Organization ID
+            company_name: Company name for reference
+            email: Billing email address
+            active_guard_count: Number of active guards (determines cost)
+
+        Returns:
+            PayFast form data ready for checkout
+        """
+        monthly_cost = float(self.calculate_monthly_cost(active_guard_count))
+
+        return self.generate_payment_data(
+            amount=monthly_cost,
+            item_name=f"GuardianOS Subscription - {company_name}",
+            item_description=f"Monthly subscription for {active_guard_count} guards @ R{settings.MVP_MONTHLY_RATE_PER_GUARD}/guard",
+            email_address=email,
+            org_id=org_id,
+            subscription_type="monthly"
+        )
+
+
+# Singleton instance for easy access
+payfast_service = PayFastService()

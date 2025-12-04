@@ -4,7 +4,9 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
 from app.models.shift import Shift
+from app.models.site import Site
 from app.models.schemas import ShiftCreate, ShiftUpdate
+from app.services.client_filter_service import ClientFilterService
 
 
 class ShiftService:
@@ -20,13 +22,23 @@ class ShiftService:
         status: Optional[str] = None,
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
-        org_id: Optional[int] = None
+        org_id: Optional[int] = None,
+        apply_client_filter: bool = True
     ) -> List[Shift]:
         """Get all shifts with optional filtering."""
         query = db.query(Shift)
 
         if org_id is not None:
             query = query.filter(Shift.org_id == org_id)
+
+            # Apply client management filtering via site's client_id
+            if apply_client_filter:
+                accessible_clients = ClientFilterService.get_accessible_clients(db, org_id)
+                if accessible_clients is not None:
+                    # Join with Site and filter by client_id
+                    query = query.join(Site, Shift.site_id == Site.site_id)
+                    query = query.filter(Site.client_id.in_(accessible_clients))
+
         if site_id:
             query = query.filter(Shift.site_id == site_id)
         if employee_id:

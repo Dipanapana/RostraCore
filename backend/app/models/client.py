@@ -30,6 +30,7 @@ class Client(Base):
     organization = relationship("Organization", back_populates="clients")
     sites = relationship("Site", back_populates="client")
     invoices = relationship("ClientInvoice", back_populates="client", cascade="all, delete-orphan")
+    roster_preferences = relationship("RosterPreferences", back_populates="client", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Client(client_id={self.client_id}, client_name='{self.client_name}', org_id={self.org_id})>"

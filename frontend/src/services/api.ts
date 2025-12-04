@@ -7,11 +7,26 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true,  // Important: Send cookies with requests
 })
 
-// No need for request interceptor - cookies are sent automatically
-// The httpOnly cookie is managed by the browser and cannot be accessed by JavaScript
+// Request interceptor to attach Bearer token from localStorage
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('access_token')
+    console.log('[API] Request to:', config.url)
+    console.log('[API] Token in localStorage:', token ? token.substring(0, 20) + '...' : 'NONE')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+      console.log('[API] Authorization header set')
+    } else {
+      console.log('[API] No token - request will be unauthenticated')
+    }
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
 
 // API endpoints
 export const employeesApi = {
@@ -109,6 +124,100 @@ export const rosterPreferencesApi = {
     const params = status ? `?status=${status}` : ''
     return api.get(`/api/v1/roster-preferences/emergency-shifts${params}`)
   },
+}
+
+export const billingApi = {
+  // Get subscription status
+  getSubscriptionStatus: () => api.get('/api/v1/payments/subscription/status'),
+
+  // Start subscription (returns PayFast checkout data)
+  subscribe: () => api.post('/api/v1/payments/subscribe'),
+
+  // Start trial
+  startTrial: () => api.post('/api/v1/payments/start-trial'),
+
+  // Extend trial (superadmin only)
+  extendTrial: (orgId?: number, days: number = 30) =>
+    api.post('/api/v1/payments/extend-trial', null, { params: { org_id: orgId, days } }),
+}
+
+export const superadminApi = {
+  // System stats
+  getStats: () => api.get('/api/v1/superadmin/stats'),
+
+  // Comprehensive Analytics (Data Scientist Dashboard)
+  getComprehensiveAnalytics: () => api.get('/api/v1/superadmin/analytics/comprehensive'),
+
+  // Organizations
+  getOrganizations: (params?: { status?: string; search?: string }) =>
+    api.get('/api/v1/superadmin/organizations', { params }),
+  getOrganization: (orgId: number) => api.get(`/api/v1/superadmin/organizations/${orgId}`),
+
+  // Organization actions
+  approveOrganization: (orgId: number) => api.post(`/api/v1/superadmin/organizations/${orgId}/approve`),
+  suspendOrganization: (orgId: number, reason?: string) =>
+    api.post(`/api/v1/superadmin/organizations/${orgId}/suspend`, null, { params: { reason } }),
+  activateOrganization: (orgId: number) => api.post(`/api/v1/superadmin/organizations/${orgId}/activate`),
+  extendTrial: (orgId: number, days: number = 30) =>
+    api.post(`/api/v1/superadmin/organizations/${orgId}/extend-trial`, null, { params: { days } }),
+  updateTier: (orgId: number, tier: string) =>
+    api.put(`/api/v1/superadmin/organizations/${orgId}/tier`, null, { params: { tier } }),
+}
+
+// Site Staffing Profiles API
+export const staffingProfilesApi = {
+  getForSite: (siteId: number, activeOnly: boolean = true) =>
+    api.get(`/api/v1/sites/${siteId}/staffing-profiles`, { params: { active_only: activeOnly } }),
+  create: (siteId: number, data: any) =>
+    api.post(`/api/v1/sites/${siteId}/staffing-profiles`, data),
+  createStandard: (siteId: number, config: {
+    weekday_day_staff: number
+    weekday_night_staff: number
+    weekend_day_staff: number
+    weekend_night_staff: number
+  }) => api.post(`/api/v1/sites/${siteId}/staffing-profiles/standard`, config),
+  update: (siteId: number, profileId: number, data: any) =>
+    api.put(`/api/v1/sites/${siteId}/staffing-profiles/${profileId}`, data),
+  delete: (siteId: number, profileId: number) =>
+    api.delete(`/api/v1/sites/${siteId}/staffing-profiles/${profileId}`),
+  preview: (siteId: number, startDate: string, endDate: string) =>
+    api.post(`/api/v1/sites/${siteId}/staffing-preview`, { start_date: startDate, end_date: endDate }),
+}
+
+// Employee Availability Patterns API
+export const availabilityPatternsApi = {
+  getForEmployee: (employeeId: number, activeOnly: boolean = true) =>
+    api.get(`/api/v1/employees/${employeeId}/availability-patterns`, { params: { active_only: activeOnly } }),
+  create: (employeeId: number, data: any) =>
+    api.post(`/api/v1/employees/${employeeId}/availability-patterns`, data),
+  createStandard: (employeeId: number, config: {
+    effective_from: string
+    effective_to?: string
+    weekday_start?: string
+    weekday_end?: string
+    include_saturday?: boolean
+    saturday_start?: string
+    saturday_end?: string
+  }) => api.post(`/api/v1/employees/${employeeId}/availability-patterns/standard`, config),
+  update: (employeeId: number, patternId: number, data: any) =>
+    api.put(`/api/v1/employees/${employeeId}/availability-patterns/${patternId}`, data),
+  delete: (employeeId: number, patternId: number) =>
+    api.delete(`/api/v1/employees/${employeeId}/availability-patterns/${patternId}`),
+  getCalendar: (employeeId: number, startDate: string, endDate: string) =>
+    api.post(`/api/v1/employees/${employeeId}/availability-calendar`, { start_date: startDate, end_date: endDate }),
+  checkAvailability: (employeeId: number, date: string, time?: string) => {
+    const params: any = { date }
+    if (time) params.time = time
+    return api.get(`/api/v1/employees/${employeeId}/check-availability`, { params })
+  },
+}
+
+// Organization Settings API (Client Management)
+export const organizationSettingsApi = {
+  getClientManagement: () => api.get('/api/v1/organization-settings/client-management'),
+  updateClientManagement: (data: { mode: 'all' | 'selected'; client_ids?: number[] }) =>
+    api.put('/api/v1/organization-settings/client-management', data),
+  getClientManagementMode: () => api.get('/api/v1/organization-settings/client-management/mode'),
 }
 
 export const exportsApi = {

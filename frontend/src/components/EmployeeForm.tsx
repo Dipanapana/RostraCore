@@ -199,16 +199,21 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Certification Level
+                  PSIRA Grade
                 </label>
-                <input
-                  type="text"
+                <select
                   name="cert_level"
                   value={formData.cert_level}
                   onChange={handleChange}
-                  placeholder="e.g., Grade A, Grade B"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                >
+                  <option value="">Select PSIRA Grade</option>
+                  <option value="A">Grade A - Security Manager / Armed Response</option>
+                  <option value="B">Grade B - Armed Security Officer</option>
+                  <option value="C">Grade C - Close Protection Officer</option>
+                  <option value="D">Grade D - Door Supervisor / Event Security</option>
+                  <option value="E">Grade E - Security Officer (Basic)</option>
+                </select>
               </div>
 
               <div>

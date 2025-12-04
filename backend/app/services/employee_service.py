@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.models.employee import Employee
 from app.models.schemas import EmployeeCreate, EmployeeUpdate
+from app.services.client_filter_service import ClientFilterService
 
 
 class EmployeeService:
@@ -15,14 +16,25 @@ class EmployeeService:
         skip: int = 0,
         limit: int = 100,
         status: Optional[str] = None,
-        org_id: Optional[int] = None
+        org_id: Optional[int] = None,
+        apply_client_filter: bool = True
     ) -> List[Employee]:
-        """Get all employees with optional filtering by organization."""
+        """Get all employees with optional filtering by organization and client access."""
         query = db.query(Employee)
 
         # Filter by organization if provided
         if org_id is not None:
             query = query.filter(Employee.org_id == org_id)
+
+            # Apply client management filtering
+            if apply_client_filter:
+                accessible_clients = ClientFilterService.get_accessible_clients(db, org_id)
+                if accessible_clients is not None:
+                    # Filter by assigned_client_id or include unassigned employees
+                    query = query.filter(
+                        (Employee.assigned_client_id.in_(accessible_clients)) |
+                        (Employee.assigned_client_id.is_(None))
+                    )
 
         if status:
             query = query.filter(Employee.status == status)
@@ -85,11 +97,24 @@ class EmployeeService:
         return True
 
     @staticmethod
-    def get_active_employees(db: Session, org_id: Optional[int] = None) -> List[Employee]:
-        """Get all active employees, optionally filtered by organization."""
+    def get_active_employees(
+        db: Session,
+        org_id: Optional[int] = None,
+        apply_client_filter: bool = True
+    ) -> List[Employee]:
+        """Get all active employees, optionally filtered by organization and client access."""
         query = db.query(Employee).filter(Employee.status == "active")
 
         if org_id is not None:
             query = query.filter(Employee.org_id == org_id)
+
+            # Apply client management filtering
+            if apply_client_filter:
+                accessible_clients = ClientFilterService.get_accessible_clients(db, org_id)
+                if accessible_clients is not None:
+                    query = query.filter(
+                        (Employee.assigned_client_id.in_(accessible_clients)) |
+                        (Employee.assigned_client_id.is_(None))
+                    )
 
         return query.all()

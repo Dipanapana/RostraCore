@@ -276,7 +276,8 @@ class CacheInvalidator:
     def invalidate_dashboard(org_id: Optional[int] = None):
         """Invalidate all dashboard caches"""
         if org_id:
-            CacheService.delete_pattern(f"dashboard:*:*{org_id}*")
+            # Match pattern: dashboard:metrics:org_1, dashboard:upcoming_shifts:org_1:10, etc.
+            CacheService.delete_pattern(f"dashboard:*:org_{org_id}*")
         else:
             CacheService.delete_pattern("dashboard:*")
 

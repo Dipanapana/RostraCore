@@ -1,376 +1,963 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/context/AuthContext'
+import { superadminApi } from '@/services/api'
+import Sidebar from '@/components/layout/Sidebar'
+import TopHeader from '@/components/layout/TopHeader'
+import {
+  TrendingUp,
+  TrendingDown,
+  Users,
+  Building2,
+  DollarSign,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Activity,
+  Target,
+  Shield,
+  Zap,
+  Calendar,
+  BarChart3,
+  PieChart,
+  ArrowUpRight,
+  ArrowDownRight,
+  RefreshCw,
+} from 'lucide-react'
 
-interface DashboardData {
-  overview: {
-    organizations: { total: number; active: number; inactive: number };
-    guards: { total: number; verified: number; available: number };
-    jobs: { total: number; active: number; premium: number };
-    activity: { total_applications: number; total_hires: number; marketplace_hires: number };
-  };
+interface Analytics {
+  generated_at: string
   revenue: {
-    total_revenue: number;
-    period_days: number;
-    revenue_streams: {
-      cv_generation: { revenue: number; count: number; average: number };
-      marketplace_commission: { revenue: number; count: number; average: number };
-      premium_jobs: { revenue: number; count: number; average: number };
-      bulk_packages: { revenue: number; count: number; average: number };
-    };
-  };
-  commissions: {
-    total_commissions: number;
-    pending: { amount: number; count: number };
-    in_progress: { amount: number; count: number };
-    paid: { amount: number; count: number };
-    waived_by_sponsorship: { amount: number; count: number };
-    collection_rate_percent: number;
-  };
-  cv_stats: {
-    total_purchases: number;
-    completed_purchases: number;
-    total_cvs_generated: number;
-    total_downloads: number;
-    template_popularity: Record<string, number>;
-    avg_cvs_per_purchase: number;
-  };
-  bulk_packages: {
-    active_packages_total: number;
-    starter: { count: number; total_quota: number; used: number; remaining: number; utilization_percent: number };
-    professional: { count: number; total_quota: number; used: number; remaining: number; utilization_percent: number };
-    enterprise: { count: number; total_quota: number; used: number; remaining: number; utilization_percent: number };
-  };
+    mrr: number
+    arr: number
+    arpu: number
+    arpg: number
+    revenue_per_shift: number
+    mrr_growth_rate: number
+    total_guards_billable: number
+    projected_next_month_mrr: number
+  }
+  operations: {
+    shift_fill_rate: number
+    guard_utilization_rate: number
+    avg_hours_per_guard_weekly: number
+    overtime_rate: number
+    certification_compliance_rate: number
+    expiring_certs_30_days: number
+    avg_shifts_per_site_weekly: number
+    unfilled_shifts_count: number
+    sites_with_coverage_gaps: number
+  }
+  customer_health: {
+    avg_engagement_score: number
+    at_risk_organizations: number
+    healthy_organizations: number
+    power_users: number
+    avg_days_since_last_roster: number
+    orgs_no_activity_7_days: number
+    orgs_no_activity_30_days: number
+    feature_adoption_rates: Record<string, number>
+  }
+  growth: {
+    trial_conversion_rate: number
+    avg_time_to_conversion_days: number
+    new_signups_this_week: number
+    new_signups_this_month: number
+    churn_rate_monthly: number
+    net_revenue_retention: number
+    logo_retention_rate: number
+    expansion_revenue: number
+  }
+  insights: {
+    total_guard_hours_this_month: number
+    total_shifts_this_month: number
+    busiest_day_of_week: string
+    peak_shift_hour: number
+    avg_guards_per_client: number
+    largest_organization: string
+    fastest_growing_org: string | null
+    highest_churn_risk_org: string | null
+    revenue_concentration_top3: number
+    guard_concentration_top3: number
+    week_over_week_guard_growth: number
+    month_over_month_shift_growth: number
+  }
+  top_organizations_by_revenue: Array<{
+    org_id: number
+    company_name: string
+    revenue: number
+    guards: number
+    subscription_status: string
+  }>
+  at_risk_organizations: Array<{
+    org_id: number
+    org_code: string
+    company_name: string
+    health_score: number
+    risk_level: string
+    risk_factors: string[]
+    recommended_actions: string[]
+    lifetime_value: number
+  }>
+  expansion_opportunities: Array<{
+    org_id: number
+    company_name: string
+    signals: string[]
+    current_guards: number
+    health_score: number
+  }>
+  daily_signups: Array<{ date: string; count: number }>
+  daily_shifts: Array<{ date: string; count: number }>
+  daily_revenue: Array<{ date: string; amount: number }>
 }
 
-export default function SuperadminDashboard() {
-  const router = useRouter();
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [periodDays, setPeriodDays] = useState(30);
+interface Organization {
+  org_id: number
+  org_code: string
+  company_name: string
+  subscription_status: string
+  subscription_tier: string
+  is_active: boolean
+  employee_count: number
+  active_employee_count: number
+  client_count: number
+  site_count: number
+  user_count: number
+  trial_end_date: string | null
+  trial_days_remaining: number | null
+  monthly_rate_per_guard: number
+  estimated_monthly_cost: number
+  payfast_active: boolean
+  created_at: string
+}
+
+export default function SuperadminPage() {
+  const router = useRouter()
+  const { user, isLoading: authLoading } = useAuth()
+  const [analytics, setAnalytics] = useState<Analytics | null>(null)
+  const [organizations, setOrganizations] = useState<Organization[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'overview' | 'organizations' | 'health' | 'growth'>('overview')
+  const [statusFilter, setStatusFilter] = useState<string>('')
+  const [searchTerm, setSearchTerm] = useState<string>('')
+  const [actionLoading, setActionLoading] = useState<number | null>(null)
 
   useEffect(() => {
-    fetchDashboardData();
-  }, [periodDays]);
-
-  const fetchDashboardData = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch(
-        `http://localhost:8000/api/v1/superadmin/analytics/dashboard?revenue_period_days=${periodDays}`
-      );
-      if (!response.ok) throw new Error("Failed to fetch dashboard data");
-      const dashboardData = await response.json();
-      setData(dashboardData);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+    if (!authLoading) {
+      if (!user) {
+        router.push('/login')
+        return
+      }
+      if (user.role?.toLowerCase() !== 'superadmin') {
+        router.push('/dashboard')
+        return
+      }
+      fetchData()
     }
-  };
+  }, [authLoading, user, router])
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 flex items-center justify-center">
-        <div className="text-white text-2xl">Loading platform data...</div>
-      </div>
-    );
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      const [analyticsRes, orgsRes] = await Promise.all([
+        superadminApi.getComprehensiveAnalytics(),
+        superadminApi.getOrganizations({ status: statusFilter || undefined, search: searchTerm || undefined })
+      ])
+      setAnalytics(analyticsRes.data)
+      setOrganizations(orgsRes.data)
+      setError(null)
+    } catch (err: any) {
+      console.error('Failed to fetch superadmin data:', err)
+      if (err.response?.status === 403) {
+        setError('Access denied. Superadmin privileges required.')
+      } else {
+        setError(err.response?.data?.detail || 'Failed to load data')
+      }
+    } finally {
+      setLoading(false)
+    }
   }
 
-  if (error || !data) {
+  useEffect(() => {
+    if (user?.role?.toLowerCase() === 'superadmin' && !authLoading && activeTab === 'organizations') {
+      const timer = setTimeout(() => fetchData(), 300)
+      return () => clearTimeout(timer)
+    }
+  }, [statusFilter, searchTerm])
+
+  const handleExtendTrial = async (orgId: number, orgName: string) => {
+    const days = prompt(`Extend trial for ${orgName} by how many days?`, '30')
+    if (!days) return
+    const daysNum = parseInt(days)
+    if (isNaN(daysNum) || daysNum <= 0) {
+      alert('Please enter a valid number of days')
+      return
+    }
+    try {
+      setActionLoading(orgId)
+      await superadminApi.extendTrial(orgId, daysNum)
+      alert(`Trial extended by ${daysNum} days for ${orgName}`)
+      fetchData()
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Failed to extend trial')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const handleSuspend = async (orgId: number, orgName: string) => {
+    const reason = prompt(`Reason for suspending ${orgName}:`)
+    if (reason === null) return
+    try {
+      setActionLoading(orgId)
+      await superadminApi.suspendOrganization(orgId, reason)
+      alert(`${orgName} has been suspended`)
+      fetchData()
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Failed to suspend organization')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const handleActivate = async (orgId: number, orgName: string) => {
+    if (!confirm(`Activate ${orgName}?`)) return
+    try {
+      setActionLoading(orgId)
+      await superadminApi.activateOrganization(orgId)
+      alert(`${orgName} has been activated`)
+      fetchData()
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Failed to activate organization')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount)
+  }
+
+  const formatPercent = (value: number) => `${value.toFixed(1)}%`
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return '-'
+    return new Date(dateString).toLocaleDateString('en-ZA')
+  }
+
+  const getStatusBadge = (status: string) => {
+    const colors: Record<string, string> = {
+      active: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+      trial: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+      suspended: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+      cancelled: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
+    }
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 flex items-center justify-center">
-        <div className="text-red-400 text-xl">Error: {error || "No data available"}</div>
+      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${colors[status] || colors.cancelled}`}>
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </span>
+    )
+  }
+
+  const getRiskBadge = (level: string) => {
+    const colors: Record<string, string> = {
+      low: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+      medium: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+      high: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
+      critical: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+    }
+    return (
+      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${colors[level] || colors.medium}`}>
+        {level.toUpperCase()}
+      </span>
+    )
+  }
+
+  if (authLoading || loading) {
+    return (
+      <div className="flex min-h-screen bg-gray-50 dark:bg-slate-900">
+        <Sidebar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400 text-lg">Loading Superadmin Analytics...</p>
+            <p className="text-gray-500 dark:text-gray-500 text-sm mt-2">Crunching the numbers...</p>
+          </div>
+        </div>
       </div>
-    );
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen bg-gray-50 dark:bg-slate-900">
+        <Sidebar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <p className="text-red-600 text-lg mb-4">{error}</p>
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Back to Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8 flex justify-between items-center">
-          <div>
-            <h1 className="text-5xl font-bold text-white mb-2">Superadmin Dashboard</h1>
-            <p className="text-blue-200">RostraCore Platform Analytics</p>
-          </div>
-          <button
-            onClick={() => router.push("/admin/marketplace-pricing")}
-            className="bg-purple-500 text-white px-6 py-3 rounded-lg hover:bg-purple-600 transition-all shadow-lg"
-          >
-            Manage Pricing
-          </button>
-        </div>
-
-        {/* Revenue Period Selector */}
-        <div className="mb-6 flex gap-2">
-          {[7, 30, 90, 365].map((days) => (
-            <button
-              key={days}
-              onClick={() => setPeriodDays(days)}
-              className={`px-4 py-2 rounded-lg transition-all ${
-                periodDays === days
-                  ? "bg-blue-500 text-white"
-                  : "bg-white/10 text-gray-300 hover:bg-white/20"
-              }`}
-            >
-              {days === 365 ? "1 Year" : `${days} Days`}
-            </button>
-          ))}
-        </div>
-
-        {/* Total Revenue Card */}
-        <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl p-8 mb-6 shadow-2xl">
-          <div className="flex items-center justify-between">
+    <div className="flex min-h-screen bg-gray-50 dark:bg-slate-900">
+      <Sidebar />
+      <div className="flex-1 flex flex-col min-h-screen">
+        <TopHeader />
+        <main className="flex-1 p-6 overflow-auto">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-white/80 text-xl mb-2">Total Platform Revenue</h2>
-              <div className="text-6xl font-bold text-white">
-                R{data.revenue.total_revenue.toLocaleString("en-ZA", { minimumFractionDigits: 2 })}
-              </div>
-              <p className="text-white/80 mt-2">Last {data.revenue.period_days} days</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                <Shield className="w-8 h-8 text-amber-500" />
+                Platform Command Center
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">
+                Real-time analytics and organization management
+              </p>
             </div>
-            <div className="text-white/80 text-right">
-              <div className="text-4xl">💰</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Platform Overview Stats */}
-        <div className="grid md:grid-cols-4 gap-6 mb-6">
-          {/* Organizations */}
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-            <div className="text-blue-300 text-sm mb-2">ORGANIZATIONS</div>
-            <div className="text-4xl font-bold text-white mb-2">{data.overview.organizations.total}</div>
-            <div className="text-sm text-gray-300">
-              <span className="text-green-400">{data.overview.organizations.active} active</span> /{" "}
-              <span className="text-gray-500">{data.overview.organizations.inactive} inactive</span>
-            </div>
+            <button
+              onClick={fetchData}
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Refresh Data
+            </button>
           </div>
 
-          {/* Guards */}
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-            <div className="text-purple-300 text-sm mb-2">GUARDS</div>
-            <div className="text-4xl font-bold text-white mb-2">{data.overview.guards.total}</div>
-            <div className="text-sm text-gray-300">
-              <span className="text-green-400">{data.overview.guards.verified} verified</span> /{" "}
-              <span className="text-yellow-400">{data.overview.guards.available} available</span>
-            </div>
+          {/* Tab Navigation */}
+          <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-slate-700">
+            {[
+              { id: 'overview', label: 'Overview', icon: BarChart3 },
+              { id: 'organizations', label: 'Organizations', icon: Building2 },
+              { id: 'health', label: 'Customer Health', icon: Activity },
+              { id: 'growth', label: 'Growth & Revenue', icon: TrendingUp },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-amber-500 text-amber-600 dark:text-amber-400'
+                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                <tab.icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            ))}
           </div>
 
-          {/* Jobs */}
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-            <div className="text-orange-300 text-sm mb-2">JOB POSTINGS</div>
-            <div className="text-4xl font-bold text-white mb-2">{data.overview.jobs.total}</div>
-            <div className="text-sm text-gray-300">
-              <span className="text-green-400">{data.overview.jobs.active} active</span> /{" "}
-              <span className="text-yellow-400">{data.overview.jobs.premium} premium</span>
-            </div>
-          </div>
-
-          {/* Marketplace Hires */}
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-            <div className="text-pink-300 text-sm mb-2">MARKETPLACE HIRES</div>
-            <div className="text-4xl font-bold text-white mb-2">{data.overview.activity.marketplace_hires}</div>
-            <div className="text-sm text-gray-300">
-              from {data.overview.activity.total_applications} applications
-            </div>
-          </div>
-        </div>
-
-        {/* Revenue Streams */}
-        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 mb-6 border border-white/20">
-          <h2 className="text-2xl font-bold text-white mb-6">Revenue Breakdown</h2>
-          <div className="grid md:grid-cols-4 gap-4">
-            {/* CV Generation */}
-            <div className="bg-blue-500/20 border border-blue-400 rounded-lg p-4">
-              <div className="text-blue-300 text-sm mb-2">CV GENERATION</div>
-              <div className="text-3xl font-bold text-white mb-2">
-                R{data.revenue.revenue_streams.cv_generation.revenue.toLocaleString()}
-              </div>
-              <div className="text-sm text-gray-300">
-                {data.revenue.revenue_streams.cv_generation.count} purchases
-              </div>
-              <div className="text-xs text-gray-400 mt-1">
-                Avg: R{data.revenue.revenue_streams.cv_generation.average.toFixed(2)}
-              </div>
-            </div>
-
-            {/* Marketplace Commission */}
-            <div className="bg-green-500/20 border border-green-400 rounded-lg p-4">
-              <div className="text-green-300 text-sm mb-2">COMMISSION (Guards)</div>
-              <div className="text-3xl font-bold text-white mb-2">
-                R{data.revenue.revenue_streams.marketplace_commission.revenue.toLocaleString()}
-              </div>
-              <div className="text-sm text-gray-300">
-                {data.revenue.revenue_streams.marketplace_commission.count} hires
-              </div>
-              <div className="text-xs text-gray-400 mt-1">
-                Avg: R{data.revenue.revenue_streams.marketplace_commission.average.toFixed(2)}
-              </div>
-            </div>
-
-            {/* Premium Jobs */}
-            <div className="bg-purple-500/20 border border-purple-400 rounded-lg p-4">
-              <div className="text-purple-300 text-sm mb-2">PREMIUM JOBS (Companies)</div>
-              <div className="text-3xl font-bold text-white mb-2">
-                R{data.revenue.revenue_streams.premium_jobs.revenue.toLocaleString()}
-              </div>
-              <div className="text-sm text-gray-300">
-                {data.revenue.revenue_streams.premium_jobs.count} upgrades
-              </div>
-              <div className="text-xs text-gray-400 mt-1">
-                Avg: R{data.revenue.revenue_streams.premium_jobs.average.toFixed(2)}
-              </div>
-            </div>
-
-            {/* Bulk Packages */}
-            <div className="bg-orange-500/20 border border-orange-400 rounded-lg p-4">
-              <div className="text-orange-300 text-sm mb-2">BULK PACKAGES (Companies)</div>
-              <div className="text-3xl font-bold text-white mb-2">
-                R{data.revenue.revenue_streams.bulk_packages.revenue.toLocaleString()}
-              </div>
-              <div className="text-sm text-gray-300">
-                {data.revenue.revenue_streams.bulk_packages.count} packages
-              </div>
-              <div className="text-xs text-gray-400 mt-1">
-                Avg: R{data.revenue.revenue_streams.bulk_packages.average.toFixed(2)}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Commission Collection */}
-        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 mb-6 border border-white/20">
-          <h2 className="text-2xl font-bold text-white mb-6">Commission Collection Status</h2>
-          <div className="grid md:grid-cols-5 gap-4 mb-6">
-            <div className="bg-gray-700 rounded-lg p-4 text-center">
-              <div className="text-gray-400 text-sm mb-2">TOTAL</div>
-              <div className="text-2xl font-bold text-white">
-                R{data.commissions.total_commissions.toLocaleString()}
-              </div>
-            </div>
-            <div className="bg-yellow-500/20 border border-yellow-400 rounded-lg p-4 text-center">
-              <div className="text-yellow-300 text-sm mb-2">PENDING</div>
-              <div className="text-2xl font-bold text-white">
-                R{data.commissions.pending.amount.toLocaleString()}
-              </div>
-              <div className="text-xs text-gray-400 mt-1">{data.commissions.pending.count} guards</div>
-            </div>
-            <div className="bg-blue-500/20 border border-blue-400 rounded-lg p-4 text-center">
-              <div className="text-blue-300 text-sm mb-2">IN PROGRESS</div>
-              <div className="text-2xl font-bold text-white">
-                R{data.commissions.in_progress.amount.toLocaleString()}
-              </div>
-              <div className="text-xs text-gray-400 mt-1">{data.commissions.in_progress.count} guards</div>
-            </div>
-            <div className="bg-green-500/20 border border-green-400 rounded-lg p-4 text-center">
-              <div className="text-green-300 text-sm mb-2">PAID</div>
-              <div className="text-2xl font-bold text-white">
-                R{data.commissions.paid.amount.toLocaleString()}
-              </div>
-              <div className="text-xs text-gray-400 mt-1">{data.commissions.paid.count} guards</div>
-            </div>
-            <div className="bg-purple-500/20 border border-purple-400 rounded-lg p-4 text-center">
-              <div className="text-purple-300 text-sm mb-2">WAIVED</div>
-              <div className="text-2xl font-bold text-white">
-                R{data.commissions.waived_by_sponsorship.amount.toLocaleString()}
-              </div>
-              <div className="text-xs text-gray-400 mt-1">{data.commissions.waived_by_sponsorship.count} sponsored</div>
-            </div>
-          </div>
-          <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 border border-green-400 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-white font-semibold">Collection Rate</span>
-              <span className="text-3xl font-bold text-green-400">
-                {data.commissions.collection_rate_percent}%
-              </span>
-            </div>
-            <div className="w-full bg-gray-700 rounded-full h-3 mt-3">
-              <div
-                className="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full"
-                style={{ width: `${data.commissions.collection_rate_percent}%` }}
-              ></div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* CV Generation Stats */}
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-            <h2 className="text-2xl font-bold text-white mb-6">CV Generation Stats</h2>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300">Total Purchases</span>
-                <span className="text-2xl font-bold text-white">{data.cv_stats.total_purchases}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300">CVs Generated</span>
-                <span className="text-2xl font-bold text-white">{data.cv_stats.total_cvs_generated}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300">Total Downloads</span>
-                <span className="text-2xl font-bold text-white">{data.cv_stats.total_downloads}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300">Avg CVs/Purchase</span>
-                <span className="text-2xl font-bold text-white">{data.cv_stats.avg_cvs_per_purchase}</span>
-              </div>
-              <div className="mt-4 pt-4 border-t border-white/20">
-                <div className="text-sm text-gray-400 mb-2">Template Popularity</div>
-                {Object.entries(data.cv_stats.template_popularity).map(([template, count]) => (
-                  <div key={template} className="flex justify-between items-center mb-2">
-                    <span className="text-gray-300 capitalize">{template}</span>
-                    <span className="text-white font-bold">{count}</span>
+          {analytics && activeTab === 'overview' && (
+            <>
+              {/* Key Metrics Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                {/* MRR Card */}
+                <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-5 text-white shadow-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <DollarSign className="w-8 h-8 opacity-80" />
+                    <span className={`flex items-center text-sm ${analytics.revenue.mrr_growth_rate >= 0 ? 'text-green-200' : 'text-red-200'}`}>
+                      {analytics.revenue.mrr_growth_rate >= 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                      {formatPercent(Math.abs(analytics.revenue.mrr_growth_rate))}
+                    </span>
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
+                  <p className="text-sm opacity-80">Monthly Recurring Revenue</p>
+                  <p className="text-3xl font-bold">{formatCurrency(analytics.revenue.mrr)}</p>
+                  <p className="text-xs opacity-70 mt-1">ARR: {formatCurrency(analytics.revenue.arr)}</p>
+                </div>
 
-          {/* Bulk Packages Utilization */}
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-            <h2 className="text-2xl font-bold text-white mb-6">Bulk Package Utilization</h2>
-            <div className="space-y-4">
-              {(["starter", "professional", "enterprise"] as const).map((pkg) => {
-                const pkgData = data.bulk_packages[pkg];
-                return (
-                  <div key={pkg} className="bg-gray-800 rounded-lg p-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-white font-bold capitalize">{pkg}</span>
-                      <span className="text-green-400">{pkgData.count} active</span>
+                {/* Total Guards */}
+                <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl p-5 text-white shadow-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <Users className="w-8 h-8 opacity-80" />
+                    <span className="text-sm text-blue-200">Billable</span>
+                  </div>
+                  <p className="text-sm opacity-80">Total Guards Managed</p>
+                  <p className="text-3xl font-bold">{analytics.revenue.total_guards_billable.toLocaleString()}</p>
+                  <p className="text-xs opacity-70 mt-1">ARPG: {formatCurrency(analytics.revenue.arpg)}</p>
+                </div>
+
+                {/* Organizations */}
+                <div className="bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl p-5 text-white shadow-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <Building2 className="w-8 h-8 opacity-80" />
+                    <span className="text-sm text-purple-200">{analytics.customer_health.healthy_organizations} Healthy</span>
+                  </div>
+                  <p className="text-sm opacity-80">Active Organizations</p>
+                  <p className="text-3xl font-bold">{analytics.customer_health.healthy_organizations + analytics.customer_health.at_risk_organizations}</p>
+                  <p className="text-xs opacity-70 mt-1">Power Users: {analytics.customer_health.power_users}</p>
+                </div>
+
+                {/* Shift Fill Rate */}
+                <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl p-5 text-white shadow-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <Target className="w-8 h-8 opacity-80" />
+                    <span className="text-sm text-amber-200">Operations</span>
+                  </div>
+                  <p className="text-sm opacity-80">Shift Fill Rate</p>
+                  <p className="text-3xl font-bold">{formatPercent(analytics.operations.shift_fill_rate)}</p>
+                  <p className="text-xs opacity-70 mt-1">{analytics.operations.unfilled_shifts_count} unfilled</p>
+                </div>
+              </div>
+
+              {/* Insights Section */}
+              <div className="grid md:grid-cols-3 gap-6 mb-6">
+                {/* Platform Insights */}
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-5">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-amber-500" />
+                    Platform Insights
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-slate-700">
+                      <span className="text-gray-600 dark:text-gray-400">Busiest Day</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{analytics.insights.busiest_day_of_week}</span>
                     </div>
-                    <div className="grid grid-cols-3 gap-2 text-sm mb-2">
-                      <div>
-                        <div className="text-gray-400">Quota</div>
-                        <div className="text-white font-bold">{pkgData.total_quota}</div>
-                      </div>
-                      <div>
-                        <div className="text-gray-400">Used</div>
-                        <div className="text-white font-bold">{pkgData.used}</div>
-                      </div>
-                      <div>
-                        <div className="text-gray-400">Remaining</div>
-                        <div className="text-white font-bold">{pkgData.remaining}</div>
-                      </div>
+                    <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-slate-700">
+                      <span className="text-gray-600 dark:text-gray-400">Peak Hour</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{analytics.insights.peak_shift_hour}:00</span>
                     </div>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
-                      <div
-                        className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full"
-                        style={{ width: `${pkgData.utilization_percent}%` }}
-                      ></div>
+                    <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-slate-700">
+                      <span className="text-gray-600 dark:text-gray-400">Largest Org</span>
+                      <span className="font-semibold text-gray-900 dark:text-white truncate max-w-[150px]">{analytics.insights.largest_organization}</span>
                     </div>
-                    <div className="text-xs text-gray-400 mt-1 text-right">
-                      {pkgData.utilization_percent}% utilized
+                    <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-slate-700">
+                      <span className="text-gray-600 dark:text-gray-400">Guards/Client</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{analytics.insights.avg_guards_per_client.toFixed(1)}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-gray-600 dark:text-gray-400">Monthly Shifts</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{analytics.insights.total_shifts_this_month.toLocaleString()}</span>
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+
+                {/* Concentration Risk */}
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-5">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <PieChart className="w-5 h-5 text-blue-500" />
+                    Concentration Risk
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Revenue (Top 3)</span>
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white">{formatPercent(analytics.insights.revenue_concentration_top3)}</span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-3">
+                        <div
+                          className={`h-3 rounded-full ${analytics.insights.revenue_concentration_top3 > 70 ? 'bg-red-500' : analytics.insights.revenue_concentration_top3 > 50 ? 'bg-yellow-500' : 'bg-green-500'}`}
+                          style={{ width: `${Math.min(analytics.insights.revenue_concentration_top3, 100)}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {analytics.insights.revenue_concentration_top3 > 70 ? 'High risk - diversify' : analytics.insights.revenue_concentration_top3 > 50 ? 'Moderate - monitor' : 'Healthy distribution'}
+                      </p>
+                    </div>
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Guards (Top 3)</span>
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white">{formatPercent(analytics.insights.guard_concentration_top3)}</span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-3">
+                        <div
+                          className={`h-3 rounded-full ${analytics.insights.guard_concentration_top3 > 70 ? 'bg-red-500' : analytics.insights.guard_concentration_top3 > 50 ? 'bg-yellow-500' : 'bg-green-500'}`}
+                          style={{ width: `${Math.min(analytics.insights.guard_concentration_top3, 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                    {analytics.insights.highest_churn_risk_org && (
+                      <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                        <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
+                          <AlertTriangle className="w-4 h-4" />
+                          Highest churn risk: <strong>{analytics.insights.highest_churn_risk_org}</strong>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Operations Health */}
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-5">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-green-500" />
+                    Operations Health
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-slate-700">
+                      <span className="text-gray-600 dark:text-gray-400">Guard Utilization</span>
+                      <span className={`font-semibold ${analytics.operations.guard_utilization_rate > 80 ? 'text-green-600' : analytics.operations.guard_utilization_rate > 50 ? 'text-yellow-600' : 'text-red-600'}`}>
+                        {formatPercent(analytics.operations.guard_utilization_rate)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-slate-700">
+                      <span className="text-gray-600 dark:text-gray-400">Cert Compliance</span>
+                      <span className={`font-semibold ${analytics.operations.certification_compliance_rate > 90 ? 'text-green-600' : 'text-yellow-600'}`}>
+                        {formatPercent(analytics.operations.certification_compliance_rate)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-slate-700">
+                      <span className="text-gray-600 dark:text-gray-400">Avg Hours/Guard</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{analytics.operations.avg_hours_per_guard_weekly.toFixed(1)}h/wk</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-slate-700">
+                      <span className="text-gray-600 dark:text-gray-400">Expiring Certs</span>
+                      <span className={`font-semibold ${analytics.operations.expiring_certs_30_days > 10 ? 'text-red-600' : 'text-gray-900 dark:text-white'}`}>
+                        {analytics.operations.expiring_certs_30_days} (30 days)
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-gray-600 dark:text-gray-400">Coverage Gaps</span>
+                      <span className={`font-semibold ${analytics.operations.sites_with_coverage_gaps > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        {analytics.operations.sites_with_coverage_gaps} sites
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* At Risk Organizations */}
+              {analytics.at_risk_organizations.length > 0 && (
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-5 mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-red-500" />
+                    At-Risk Organizations ({analytics.at_risk_organizations.length})
+                  </h3>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full">
+                      <thead>
+                        <tr className="text-left text-xs text-gray-500 dark:text-gray-400 uppercase">
+                          <th className="pb-3">Organization</th>
+                          <th className="pb-3">Risk Level</th>
+                          <th className="pb-3">Health Score</th>
+                          <th className="pb-3">LTV</th>
+                          <th className="pb-3">Risk Factors</th>
+                          <th className="pb-3">Recommended Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+                        {analytics.at_risk_organizations.map((org) => (
+                          <tr key={org.org_id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50">
+                            <td className="py-3">
+                              <p className="font-medium text-gray-900 dark:text-white">{org.company_name}</p>
+                              <p className="text-sm text-gray-500">{org.org_code}</p>
+                            </td>
+                            <td className="py-3">{getRiskBadge(org.risk_level)}</td>
+                            <td className="py-3">
+                              <div className="flex items-center gap-2">
+                                <div className="w-16 bg-gray-200 dark:bg-slate-700 rounded-full h-2">
+                                  <div
+                                    className={`h-2 rounded-full ${org.health_score > 70 ? 'bg-green-500' : org.health_score > 40 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                                    style={{ width: `${org.health_score}%` }}
+                                  />
+                                </div>
+                                <span className="text-sm text-gray-600 dark:text-gray-400">{org.health_score}</span>
+                              </div>
+                            </td>
+                            <td className="py-3 text-gray-900 dark:text-white">{formatCurrency(org.lifetime_value)}</td>
+                            <td className="py-3">
+                              <div className="flex flex-wrap gap-1">
+                                {org.risk_factors.slice(0, 2).map((factor, i) => (
+                                  <span key={i} className="text-xs px-2 py-1 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded">
+                                    {factor}
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="py-3">
+                              <div className="flex flex-wrap gap-1">
+                                {org.recommended_actions.slice(0, 2).map((action, i) => (
+                                  <span key={i} className="text-xs px-2 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded">
+                                    {action}
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Top Revenue Organizations */}
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-5">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-green-500" />
+                  Top Organizations by Revenue
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full">
+                    <thead>
+                      <tr className="text-left text-xs text-gray-500 dark:text-gray-400 uppercase">
+                        <th className="pb-3">#</th>
+                        <th className="pb-3">Organization</th>
+                        <th className="pb-3">Status</th>
+                        <th className="pb-3">Guards</th>
+                        <th className="pb-3">Monthly Revenue</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+                      {analytics.top_organizations_by_revenue.map((org, index) => (
+                        <tr key={org.org_id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50">
+                          <td className="py-3 text-gray-500 dark:text-gray-400">{index + 1}</td>
+                          <td className="py-3 font-medium text-gray-900 dark:text-white">{org.company_name}</td>
+                          <td className="py-3">{getStatusBadge(org.subscription_status)}</td>
+                          <td className="py-3 text-gray-900 dark:text-white">{org.guards}</td>
+                          <td className="py-3 font-semibold text-green-600">{formatCurrency(org.revenue)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+
+          {analytics && activeTab === 'health' && (
+            <>
+              {/* Customer Health Overview */}
+              <div className="grid md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-lg">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                      <CheckCircle className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Healthy</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{analytics.customer_health.healthy_organizations}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-lg">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                      <AlertTriangle className="w-6 h-6 text-red-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">At Risk</p>
+                      <p className="text-2xl font-bold text-red-600">{analytics.customer_health.at_risk_organizations}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-lg">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                      <Zap className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Power Users</p>
+                      <p className="text-2xl font-bold text-purple-600">{analytics.customer_health.power_users}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-lg">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                      <Activity className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Avg Engagement</p>
+                      <p className="text-2xl font-bold text-blue-600">{analytics.customer_health.avg_engagement_score.toFixed(0)}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Feature Adoption */}
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-5 mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Feature Adoption Rates</h3>
+                <div className="grid md:grid-cols-5 gap-4">
+                  {Object.entries(analytics.customer_health.feature_adoption_rates).map(([feature, rate]) => (
+                    <div key={feature} className="text-center">
+                      <div className="relative w-24 h-24 mx-auto mb-2">
+                        <svg className="w-24 h-24 transform -rotate-90">
+                          <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="none" className="text-gray-200 dark:text-slate-700" />
+                          <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="none" strokeDasharray={`${rate * 2.51} 251`} className="text-blue-500" />
+                        </svg>
+                        <span className="absolute inset-0 flex items-center justify-center text-lg font-bold text-gray-900 dark:text-white">
+                          {rate.toFixed(0)}%
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 capitalize">{feature.replace(/_/g, ' ')}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Activity Warnings */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-5">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-yellow-500" />
+                    Activity Warnings
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                      <p className="text-yellow-800 dark:text-yellow-200 font-medium">No activity in 7 days</p>
+                      <p className="text-2xl font-bold text-yellow-600">{analytics.customer_health.orgs_no_activity_7_days} organizations</p>
+                    </div>
+                    <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                      <p className="text-red-800 dark:text-red-200 font-medium">No activity in 30 days</p>
+                      <p className="text-2xl font-bold text-red-600">{analytics.customer_health.orgs_no_activity_30_days} organizations</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Expansion Opportunities */}
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-5">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-green-500" />
+                    Expansion Opportunities
+                  </h3>
+                  <div className="space-y-3">
+                    {analytics.expansion_opportunities.length > 0 ? (
+                      analytics.expansion_opportunities.map((org) => (
+                        <div key={org.org_id} className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                          <p className="font-medium text-gray-900 dark:text-white">{org.company_name}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Health: {org.health_score}/100</p>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {org.signals.map((signal, i) => (
+                              <span key={i} className="text-xs px-2 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded">
+                                {signal}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-gray-500 dark:text-gray-400">No expansion opportunities identified</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {analytics && activeTab === 'growth' && (
+            <>
+              {/* Growth Metrics */}
+              <div className="grid md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-lg">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Trial Conversion</p>
+                  <p className="text-3xl font-bold text-green-600">{formatPercent(analytics.growth.trial_conversion_rate)}</p>
+                  <p className="text-xs text-gray-500 mt-1">Avg {analytics.growth.avg_time_to_conversion_days} days to convert</p>
+                </div>
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-lg">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Monthly Churn</p>
+                  <p className="text-3xl font-bold text-red-600">{formatPercent(analytics.growth.churn_rate_monthly)}</p>
+                  <p className="text-xs text-gray-500 mt-1">Logo retention: {formatPercent(analytics.growth.logo_retention_rate)}</p>
+                </div>
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-lg">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Net Revenue Retention</p>
+                  <p className={`text-3xl font-bold ${analytics.growth.net_revenue_retention >= 100 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatPercent(analytics.growth.net_revenue_retention)}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Expansion: {formatCurrency(analytics.growth.expansion_revenue)}</p>
+                </div>
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-lg">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">New Signups</p>
+                  <p className="text-3xl font-bold text-blue-600">{analytics.growth.new_signups_this_month}</p>
+                  <p className="text-xs text-gray-500 mt-1">This week: {analytics.growth.new_signups_this_week}</p>
+                </div>
+              </div>
+
+              {/* Revenue Breakdown */}
+              <div className="grid md:grid-cols-2 gap-6 mb-6">
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-5">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Revenue Breakdown</h3>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-slate-700 rounded-lg">
+                      <span className="text-gray-600 dark:text-gray-400">ARPU (Per Org)</span>
+                      <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(analytics.revenue.arpu)}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-slate-700 rounded-lg">
+                      <span className="text-gray-600 dark:text-gray-400">ARPG (Per Guard)</span>
+                      <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(analytics.revenue.arpg)}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-slate-700 rounded-lg">
+                      <span className="text-gray-600 dark:text-gray-400">Revenue/Shift</span>
+                      <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(analytics.revenue.revenue_per_shift)}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                      <span className="text-green-600 dark:text-green-400">Projected MRR (Next Month)</span>
+                      <span className="font-bold text-green-600">{formatCurrency(analytics.revenue.projected_next_month_mrr)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-5">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Growth Trends</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700 rounded-lg">
+                      <span className="text-gray-600 dark:text-gray-400">MRR Growth (MoM)</span>
+                      <span className={`font-bold flex items-center gap-1 ${analytics.revenue.mrr_growth_rate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {analytics.revenue.mrr_growth_rate >= 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                        {formatPercent(Math.abs(analytics.revenue.mrr_growth_rate))}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700 rounded-lg">
+                      <span className="text-gray-600 dark:text-gray-400">Guard Growth (WoW)</span>
+                      <span className={`font-bold flex items-center gap-1 ${analytics.insights.week_over_week_guard_growth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {analytics.insights.week_over_week_guard_growth >= 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                        {formatPercent(Math.abs(analytics.insights.week_over_week_guard_growth))}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700 rounded-lg">
+                      <span className="text-gray-600 dark:text-gray-400">Shift Growth (MoM)</span>
+                      <span className={`font-bold flex items-center gap-1 ${analytics.insights.month_over_month_shift_growth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {analytics.insights.month_over_month_shift_growth >= 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                        {formatPercent(Math.abs(analytics.insights.month_over_month_shift_growth))}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {activeTab === 'organizations' && (
+            <>
+              {/* Filters */}
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 mb-6">
+                <div className="flex flex-wrap gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="px-3 py-2 border rounded-lg bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                    >
+                      <option value="">All</option>
+                      <option value="trial">Trial</option>
+                      <option value="active">Active</option>
+                      <option value="suspended">Suspended</option>
+                    </select>
+                  </div>
+                  <div className="flex-1 min-w-[200px]">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="Company name or code..."
+                      className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Organizations Table */}
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+                <div className="px-5 py-4 border-b dark:border-slate-700">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Organizations ({organizations.length})
+                  </h2>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+                    <thead className="bg-gray-50 dark:bg-slate-700">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Organization</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Trial</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Guards</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Revenue</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Created</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
+                      {organizations.map((org) => (
+                        <tr key={org.org_id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50">
+                          <td className="px-4 py-3">
+                            <p className="font-medium text-gray-900 dark:text-white">{org.company_name}</p>
+                            <p className="text-sm text-gray-500">{org.org_code}</p>
+                          </td>
+                          <td className="px-4 py-3">
+                            {getStatusBadge(org.subscription_status)}
+                            {org.payfast_active && <span className="ml-2 text-xs text-green-600">PayFast</span>}
+                          </td>
+                          <td className="px-4 py-3">
+                            {org.subscription_status === 'trial' && org.trial_days_remaining !== null ? (
+                              <span className={org.trial_days_remaining <= 5 ? 'text-orange-600 font-medium' : 'text-gray-900 dark:text-white'}>
+                                {org.trial_days_remaining} days left
+                              </span>
+                            ) : '-'}
+                          </td>
+                          <td className="px-4 py-3">
+                            <p className="text-gray-900 dark:text-white">{org.active_employee_count}</p>
+                            <p className="text-xs text-gray-500">of {org.employee_count}</p>
+                          </td>
+                          <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
+                            {formatCurrency(org.estimated_monthly_cost)}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-500">{formatDate(org.created_at)}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex gap-2">
+                              {org.subscription_status === 'trial' && (
+                                <button
+                                  onClick={() => handleExtendTrial(org.org_id, org.company_name)}
+                                  disabled={actionLoading === org.org_id}
+                                  className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 disabled:opacity-50"
+                                >
+                                  Extend
+                                </button>
+                              )}
+                              {org.subscription_status === 'suspended' ? (
+                                <button
+                                  onClick={() => handleActivate(org.org_id, org.company_name)}
+                                  disabled={actionLoading === org.org_id}
+                                  className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 disabled:opacity-50"
+                                >
+                                  Reactivate
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleSuspend(org.org_id, org.company_name)}
+                                  disabled={actionLoading === org.org_id}
+                                  className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 disabled:opacity-50"
+                                >
+                                  Suspend
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {organizations.length === 0 && (
+                        <tr>
+                          <td colSpan={7} className="px-4 py-8 text-center text-gray-500">No organizations found</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Footer */}
+          <div className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+            {analytics && (
+              <p>Data generated at {new Date(analytics.generated_at).toLocaleString('en-ZA')}</p>
+            )}
           </div>
-        </div>
+        </main>
       </div>
     </div>
-  );
+  )
 }

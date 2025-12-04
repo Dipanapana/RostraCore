@@ -146,6 +146,7 @@ class MILPRosterGenerator:
                 "hours": (s.end_time - s.start_time).total_seconds() / 3600,
                 "site": {
                     "site_id": s.site.site_id,
+                    "client_id": s.site.client_id,
                     "gps_lat": s.site.gps_lat,
                     "gps_lng": s.site.gps_lng
                 } if s.site else None
@@ -171,6 +172,7 @@ class MILPRosterGenerator:
                 "max_hours_week": e.max_hours_week,
                 "home_gps_lat": e.home_gps_lat,
                 "home_gps_lng": e.home_gps_lng,
+                "assigned_client_id": e.assigned_client_id,
                 "skills": [e.role.value],
                 "certifications": [
                     {
@@ -222,6 +224,13 @@ class MILPRosterGenerator:
                 ):
                     feasible = False
                     reasons.append("invalid_certification")
+
+                # 3. Client assignment check
+                if employee.get("assigned_client_id") is not None:
+                    shift_client_id = shift.get("site", {}).get("client_id") if shift.get("site") else None
+                    if shift_client_id and shift_client_id != employee["assigned_client_id"]:
+                        feasible = False
+                        reasons.append("client_assignment_mismatch")
 
                 # NOTE: Distance constraint removed - guards can work anywhere
 

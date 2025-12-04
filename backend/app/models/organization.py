@@ -1,6 +1,6 @@
 """Organization (tenant) model for multi-tenancy."""
 
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, JSON, Numeric
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, JSON, Numeric, ARRAY
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -19,6 +19,7 @@ class SubscriptionStatus(str, enum.Enum):
     """Subscription status enum."""
     ACTIVE = "active"
     TRIAL = "trial"
+    PAST_DUE = "past_due"  # Payment failed but still active (grace period)
     SUSPENDED = "suspended"
     CANCELLED = "cancelled"
 
@@ -61,19 +62,29 @@ class Organization(Base):
     # Billing
     billing_email = Column(String(255), nullable=True)
 
-    # Per-guard billing (MVP - R45/guard/month)
+    # Per-guard billing (MVP - R29/guard/month)
     active_guard_count = Column(Integer, default=0, nullable=False)  # Auto-calculated
-    monthly_rate_per_guard = Column(Numeric(10, 2), default=45.00, nullable=False)  # R45/month
+    monthly_rate_per_guard = Column(Numeric(10, 2), default=29.00, nullable=False)  # R29/month
     current_month_cost = Column(Numeric(10, 2), default=0.00, nullable=False)  # Auto-calculated
     last_billing_calculation = Column(DateTime, nullable=True)
 
-    # PayFast Subscription Integration
+    # PayFast Subscription Integration (Legacy/Backup)
     payfast_subscription_token = Column(String(100), nullable=True)  # PayFast subscription token
     payfast_subscription_status = Column(String(20), nullable=True)  # active, paused, cancelled
     subscription_started_at = Column(DateTime, nullable=True)
     subscription_next_billing_date = Column(DateTime, nullable=True)
     payment_method_last_four = Column(String(4), nullable=True)  # Last 4 digits of card
     payment_failures = Column(Integer, default=0, nullable=False)  # Track consecutive failures
+
+    # Yoco Payment Integration (Primary - monthly one-time payments)
+    yoco_last_checkout_id = Column(String(100), nullable=True)  # Last Yoco checkout ID
+    last_payment_date = Column(DateTime, nullable=True)  # When last payment was made
+    last_payment_amount = Column(Numeric(10, 2), nullable=True)  # Amount of last payment
+    last_payment_period = Column(String(10), nullable=True)  # e.g., "2024-01" for billing period
+
+    # Client Management Settings
+    client_management_mode = Column(String(20), default='all', nullable=False)  # 'all' or 'selected'
+    managed_client_ids = Column(ARRAY(Integer), nullable=True)  # Array of client IDs when mode='selected'
 
     # Metadata
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
@@ -86,6 +97,7 @@ class Organization(Base):
     sites = relationship("Site", back_populates="organization")
     shifts = relationship("Shift", back_populates="organization")
     rosters = relationship("Roster", back_populates="organization")
+    roster_preferences = relationship("RosterPreferences", back_populates="organization", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Organization(org_id={self.org_id}, company_name='{self.company_name}', tier='{self.subscription_tier}')>"
@@ -121,6 +133,18 @@ class Organization(Base):
         if not self.features_enabled:
             return False
         return self.features_enabled.get(feature_name, False)
+
+    def get_accessible_client_ids(self) -> list[int] | None:
+        """
+        Returns list of client IDs this org can access, or None for all clients.
+
+        Returns:
+            list[int]: List of accessible client IDs when mode='selected'
+            None: When mode='all', indicating access to all clients
+        """
+        if self.client_management_mode == 'all':
+            return None  # All clients accessible
+        return self.managed_client_ids or []
 
     @staticmethod
     def get_tier_limits(tier: str) -> dict:

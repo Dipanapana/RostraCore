@@ -141,7 +141,7 @@ async def import_employees_from_excel(
     Upload an Excel file (.xlsx) with employee data to bulk import.
 
     Required columns: first_name, last_name, id_number
-    Optional columns: email, phone, role_name, psira_number, hourly_rate,
+    Optional columns: email, phone, role (armed/unarmed), psira_number, hourly_rate,
                      home_address, emergency_contact, emergency_phone
 
     Returns detailed import results with success/error counts.
@@ -157,10 +157,11 @@ async def import_employees_from_excel(
     content = await file.read()
 
     # Import employees
+    org_id = current_user.org_id or 1
     result = ExcelImportService.import_employees(
         db=db,
         file_content=content,
-        organization_id=current_user.organization_id
+        organization_id=org_id
     )
 
     if result["status"] == "error":

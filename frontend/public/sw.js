@@ -1,220 +1,163 @@
-/**
- * Service Worker for RostraCore PWA
- *
- * Features:
- * - Offline dashboard metrics caching
- * - Static asset caching
- * - Network-first strategy for API calls
- * - Cache-first strategy for static assets
- * - Automatic cache cleanup
- */
-
+// Service Worker for RostraCore Desktop PWA
 const CACHE_VERSION = 'v1.0.0';
-const STATIC_CACHE = `rostracore-static-${CACHE_VERSION}`;
-const API_CACHE = `rostracore-api-${CACHE_VERSION}`;
-const IMAGE_CACHE = `rostracore-images-${CACHE_VERSION}`;
+const CACHE_NAME = `rostracore-${CACHE_VERSION}`;
+const API_CACHE_NAME = `rostracore-api-${CACHE_VERSION}`;
 
-// Static assets to cache on install
+// Assets to cache on install
 const STATIC_ASSETS = [
   '/',
   '/dashboard',
   '/employees',
-  '/sites',
   '/roster',
-  '/offline.html',
+  '/sites',
+  '/manifest.json',
 ];
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing service worker...');
+  console.log('[ServiceWorker] Installing...');
 
   event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => {
-      console.log('[SW] Caching static assets');
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log('[ServiceWorker] Caching static assets');
       return cache.addAll(STATIC_ASSETS);
+    }).then(() => {
+      console.log('[ServiceWorker] Skip waiting');
+      return self.skipWaiting();
     })
   );
-
-  // Force the waiting service worker to become the active service worker
-  self.skipWaiting();
 });
 
-// Activate event - cleanup old caches
+// Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating service worker...');
+  console.log('[ServiceWorker] Activating...');
 
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (
-            cacheName !== STATIC_CACHE &&
-            cacheName !== API_CACHE &&
-            cacheName !== IMAGE_CACHE
-          ) {
-            console.log('[SW] Deleting old cache:', cacheName);
+          if (cacheName !== CACHE_NAME && cacheName !== API_CACHE_NAME) {
+            console.log('[ServiceWorker] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
+    }).then(() => {
+      console.log('[ServiceWorker] Claiming clients');
+      return self.clients.claim();
     })
   );
-
-  // Take control of all pages immediately
-  self.clients.claim();
 });
 
-// Fetch event - intercept requests
+// Fetch event - network first, fallback to cache
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // API requests - Network first, cache fallback
+  // Skip non-GET requests
+  if (request.method !== 'GET') {
+    return;
+  }
+
+  // API requests - network first with cache fallback
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(networkFirstStrategy(request, API_CACHE));
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          // Clone the response
+          const responseToCache = response.clone();
+
+          // Cache successful responses
+          if (response.status === 200) {
+            caches.open(API_CACHE_NAME).then((cache) => {
+              cache.put(request, responseToCache);
+            });
+          }
+
+          return response;
+        })
+        .catch(() => {
+          // Network failed, try cache
+          return caches.match(request).then((cachedResponse) => {
+            if (cachedResponse) {
+              console.log('[ServiceWorker] Serving from cache:', request.url);
+              return cachedResponse;
+            }
+
+            // Return offline page or error
+            return new Response(
+              JSON.stringify({
+                error: 'Offline',
+                message: 'No cached data available'
+              }),
+              {
+                status: 503,
+                headers: { 'Content-Type': 'application/json' }
+              }
+            );
+          });
+        })
+    );
     return;
   }
 
-  // Images - Cache first, network fallback
-  if (request.destination === 'image') {
-    event.respondWith(cacheFirstStrategy(request, IMAGE_CACHE));
-    return;
-  }
-
-  // Static assets - Cache first, network fallback
-  if (
-    request.destination === 'script' ||
-    request.destination === 'style' ||
-    request.destination === 'font'
-  ) {
-    event.respondWith(cacheFirstStrategy(request, STATIC_CACHE));
-    return;
-  }
-
-  // HTML pages - Network first, cache fallback
-  if (request.destination === 'document') {
-    event.respondWith(networkFirstStrategy(request, STATIC_CACHE));
-    return;
-  }
-
-  // Default - network only
-  event.respondWith(fetch(request));
-});
-
-/**
- * Network First Strategy
- * Try network, fall back to cache, show offline page if both fail
- */
-async function networkFirstStrategy(request, cacheName) {
-  try {
-    // Try network first
-    const networkResponse = await fetch(request);
-
-    // Cache successful responses
-    if (networkResponse.ok) {
-      const cache = await caches.open(cacheName);
-      cache.put(request, networkResponse.clone());
-    }
-
-    return networkResponse;
-  } catch (error) {
-    console.log('[SW] Network failed, trying cache:', request.url);
-
-    // Try cache
-    const cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-      return cachedResponse;
-    }
-
-    // If HTML request fails, show offline page
-    if (request.destination === 'document') {
-      const offlinePage = await caches.match('/offline.html');
-      if (offlinePage) {
-        return offlinePage;
+  // Static assets - cache first with network fallback
+  event.respondWith(
+    caches.match(request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
       }
-    }
 
-    // Return error response
-    return new Response('Offline - No cached data available', {
-      status: 503,
-      statusText: 'Service Unavailable',
-      headers: new Headers({
-        'Content-Type': 'text/plain',
-      }),
-    });
-  }
-}
+      return fetch(request).then((response) => {
+        // Don't cache non-successful responses
+        if (!response || response.status !== 200) {
+          return response;
+        }
 
-/**
- * Cache First Strategy
- * Try cache, fall back to network, cache new responses
- */
-async function cacheFirstStrategy(request, cacheName) {
-  // Try cache first
-  const cachedResponse = await caches.match(request);
-  if (cachedResponse) {
-    return cachedResponse;
-  }
+        const responseToCache = response.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(request, responseToCache);
+        });
 
-  try {
-    // Try network
-    const networkResponse = await fetch(request);
-
-    // Cache successful responses
-    if (networkResponse.ok) {
-      const cache = await caches.open(cacheName);
-      cache.put(request, networkResponse.clone());
-    }
-
-    return networkResponse;
-  } catch (error) {
-    console.log('[SW] Failed to fetch:', request.url);
-    return new Response('Resource not available offline', {
-      status: 503,
-      statusText: 'Service Unavailable',
-    });
-  }
-}
-
-// Background sync for offline actions (future enhancement)
-self.addEventListener('sync', (event) => {
-  console.log('[SW] Background sync:', event.tag);
-
-  if (event.tag === 'sync-roster') {
-    event.waitUntil(syncRosterData());
-  }
-});
-
-async function syncRosterData() {
-  // Sync offline roster changes when connection restored
-  console.log('[SW] Syncing roster data...');
-  // Implementation depends on IndexedDB setup
-}
-
-// Push notifications (future enhancement)
-self.addEventListener('push', (event) => {
-  console.log('[SW] Push notification received');
-
-  const data = event.data ? event.data.json() : {};
-  const title = data.title || 'RostraCore Notification';
-  const options = {
-    body: data.body || 'You have a new notification',
-    icon: '/icon-192.png',
-    badge: '/badge-72.png',
-    vibrate: [200, 100, 200],
-    data: data.url || '/',
-  };
-
-  event.waitUntil(self.registration.showNotification(title, options));
-});
-
-// Notification click handler
-self.addEventListener('notificationclick', (event) => {
-  console.log('[SW] Notification clicked');
-
-  event.notification.close();
-
-  event.waitUntil(
-    clients.openWindow(event.notification.data || '/')
+        return response;
+      });
+    })
   );
 });
+
+// Handle messages from clients
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+
+  if (event.data && event.data.type === 'CACHE_URLS') {
+    event.waitUntil(
+      caches.open(CACHE_NAME).then((cache) => {
+        return cache.addAll(event.data.urls);
+      })
+    );
+  }
+
+  if (event.data && event.data.type === 'CLEAR_CACHE') {
+    event.waitUntil(
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => caches.delete(cacheName))
+        );
+      })
+    );
+  }
+});
+
+// Background sync for offline mutations (future enhancement)
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'sync-mutations') {
+    event.waitUntil(syncMutations());
+  }
+});
+
+async function syncMutations() {
+  // TODO: Implement offline mutation sync
+  console.log('[ServiceWorker] Syncing offline mutations');
+}

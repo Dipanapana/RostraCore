@@ -8,7 +8,8 @@ import ExportButtons from '@/components/ExportButtons'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import DataTable, { Column } from '@/components/ui/DataTable'
 import Modal from '@/components/ui/Modal'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, Upload, Download, Calendar } from 'lucide-react'
+import EmployeeAvailabilityPatterns from '@/components/EmployeeAvailabilityPatterns'
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([])
@@ -16,6 +17,11 @@ export default function EmployeesPage() {
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
+  const [showImportModal, setShowImportModal] = useState(false)
+  const [importFile, setImportFile] = useState<File | null>(null)
+  const [importing, setImporting] = useState(false)
+  const [importResult, setImportResult] = useState<any>(null)
+  const [availabilityEmployee, setAvailabilityEmployee] = useState<Employee | null>(null)
 
   useEffect(() => {
     fetchEmployees()
@@ -58,6 +64,55 @@ export default function EmployeesPage() {
   const handleFormSuccess = () => {
     fetchEmployees()
     handleCloseForm()
+  }
+
+  const handleDownloadTemplate = () => {
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+    window.open(`${API_URL}/api/v1/employees/download-template`, '_blank')
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+        alert('Please select an Excel file (.xlsx or .xls)')
+        return
+      }
+      setImportFile(file)
+      setImportResult(null)
+    }
+  }
+
+  const handleImport = async () => {
+    if (!importFile) return
+
+    try {
+      setImporting(true)
+      setError(null)
+
+      const formData = new FormData()
+      formData.append('file', importFile)
+
+      const response = await employeesApi.importFromExcel(formData)
+
+      setImportResult(response.data)
+
+      // Refresh employee list after successful import
+      if (response.data.imported_count > 0) {
+        await fetchEmployees()
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.detail || err.message || 'Failed to import employees')
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  const handleCloseImportModal = () => {
+    setShowImportModal(false)
+    setImportFile(null)
+    setImportResult(null)
+    setError(null)
   }
 
   const columns: Column<Employee>[] = [
@@ -143,6 +198,13 @@ export default function EmployeesPage() {
           <div className="flex items-center gap-3">
             <ExportButtons type="employees" />
             <button
+              onClick={() => setShowImportModal(true)}
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-green-500/20 transition-all hover:scale-105 active:scale-95"
+            >
+              <Upload className="w-5 h-5" />
+              Import Excel
+            </button>
+            <button
               onClick={() => setShowForm(true)}
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95"
             >
@@ -165,6 +227,16 @@ export default function EmployeesPage() {
           searchKeys={['first_name', 'last_name', 'id_number', 'role', 'status']}
           actions={(emp) => (
             <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setAvailabilityEmployee(emp)
+                }}
+                className="p-2 text-slate-400 dark:text-slate-300 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                title="Availability"
+              >
+                <Calendar className="w-4 h-4" />
+              </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation()
@@ -201,6 +273,175 @@ export default function EmployeesPage() {
             onClose={handleCloseForm}
             onSuccess={handleFormSuccess}
           />
+        </Modal>
+
+        {/* Import Modal */}
+        <Modal
+          isOpen={showImportModal}
+          onClose={handleCloseImportModal}
+          title="Import Employees from Excel"
+          maxWidth="2xl"
+        >
+          <div className="space-y-6">
+            {/* Instructions */}
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+              <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">
+                Import Instructions
+              </h3>
+              <ol className="list-decimal list-inside space-y-1 text-sm text-blue-800 dark:text-blue-300">
+                <li>Download the Excel template using the button below</li>
+                <li>Fill in employee data (first_name, last_name, id_number are required)</li>
+                <li>Upload the completed Excel file</li>
+                <li>Review the import results</li>
+              </ol>
+            </div>
+
+            {/* Download Template Button */}
+            <div className="flex justify-center">
+              <button
+                onClick={handleDownloadTemplate}
+                className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-6 py-3 rounded-xl font-medium border border-slate-300 dark:border-slate-600 transition-all hover:scale-105 active:scale-95"
+              >
+                <Download className="w-5 h-5" />
+                Download Excel Template
+              </button>
+            </div>
+
+            {/* File Upload */}
+            <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-8 text-center hover:border-blue-500 dark:hover:border-blue-400 transition-colors">
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileSelect}
+                className="hidden"
+                id="excel-upload"
+              />
+              <label htmlFor="excel-upload" className="cursor-pointer">
+                <Upload className="w-12 h-12 mx-auto text-slate-400 dark:text-slate-500 mb-3" />
+                {importFile ? (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-green-600 dark:text-green-400">
+                      Selected: {importFile.name}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Click to select a different file
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                      Click to select Excel file
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Supports .xlsx and .xls files
+                    </p>
+                  </div>
+                )}
+              </label>
+            </div>
+
+            {/* Import Results */}
+            {importResult && (
+              <div className="space-y-4">
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
+                  <h3 className="font-semibold text-green-900 dark:text-green-200 mb-2">
+                    Import Complete
+                  </h3>
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <p className="text-green-700 dark:text-green-300 font-medium">
+                        {importResult.imported_count} Imported
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-yellow-700 dark:text-yellow-300 font-medium">
+                        {importResult.skipped_count} Skipped
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-red-700 dark:text-red-300 font-medium">
+                        {importResult.error_count} Errors
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Show skipped rows */}
+                {importResult.skipped && importResult.skipped.length > 0 && (
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4">
+                    <h4 className="font-semibold text-yellow-900 dark:text-yellow-200 mb-2 text-sm">
+                      Skipped Rows
+                    </h4>
+                    <ul className="text-xs text-yellow-800 dark:text-yellow-300 space-y-1">
+                      {importResult.skipped.map((skip: any, idx: number) => (
+                        <li key={idx}>
+                          Row {skip.row}: {skip.reason} (ID: {skip.id_number})
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Show errors */}
+                {importResult.errors && importResult.errors.length > 0 && (
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
+                    <h4 className="font-semibold text-red-900 dark:text-red-200 mb-2 text-sm">
+                      Errors
+                    </h4>
+                    <ul className="text-xs text-red-800 dark:text-red-300 space-y-1">
+                      {importResult.errors.map((error: any, idx: number) => (
+                        <li key={idx}>
+                          Row {error.row}: {error.error}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+              <button
+                onClick={handleCloseImportModal}
+                className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg font-medium transition-colors"
+              >
+                {importResult ? 'Close' : 'Cancel'}
+              </button>
+              {!importResult && (
+                <button
+                  onClick={handleImport}
+                  disabled={!importFile || importing}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105 active:scale-95 disabled:hover:scale-100"
+                >
+                  {importing ? (
+                    <span className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Importing...
+                    </span>
+                  ) : (
+                    'Import Employees'
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+        </Modal>
+
+        {/* Availability Patterns Modal */}
+        <Modal
+          isOpen={!!availabilityEmployee}
+          onClose={() => setAvailabilityEmployee(null)}
+          title="Employee Availability"
+          maxWidth="2xl"
+        >
+          {availabilityEmployee && (
+            <EmployeeAvailabilityPatterns
+              employeeId={availabilityEmployee.employee_id}
+              employeeName={`${availabilityEmployee.first_name} ${availabilityEmployee.last_name}`}
+              onClose={() => setAvailabilityEmployee(null)}
+            />
+          )}
         </Modal>
       </div>
     </DashboardLayout>

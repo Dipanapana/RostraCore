@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { rosterApi } from '@/services/api'
+import { rosterApi, clientsApi } from '@/services/api'
 import ExportButtons from '@/components/ExportButtons'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import DatePicker from '@/components/DatePicker'
@@ -10,6 +10,10 @@ import DatePicker from '@/components/DatePicker'
 export default function RosterPage() {
   const [startDate, setStartDate] = useState<Date | null>(null)
   const [endDate, setEndDate] = useState<Date | null>(null)
+  const [selectedClients, setSelectedClients] = useState<number[]>([])
+  const [clients, setClients] = useState<any[]>([])
+  const [clientDropdownOpen, setClientDropdownOpen] = useState(false)
+  const clientDropdownRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(false)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [result, setResult] = useState<any>(null)
@@ -22,6 +26,30 @@ export default function RosterPage() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(10)
+
+  // Fetch clients on component mount
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const response = await clientsApi.getAll()
+        setClients(response.data)
+      } catch (error) {
+        console.error('Failed to fetch clients:', error)
+      }
+    }
+    fetchClients()
+  }, [])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (clientDropdownRef.current && !clientDropdownRef.current.contains(event.target as Node)) {
+        setClientDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   // Timer effect for elapsed seconds
   useEffect(() => {
@@ -69,7 +97,7 @@ export default function RosterPage() {
       setResult(null)
 
       // Call roster generation API directly (synchronous for now)
-      const token = localStorage.getItem('token')
+      const token = localStorage.getItem('access_token')
 
       // Format dates to YYYY-MM-DD
       const formatDate = (date: Date) => {
@@ -89,6 +117,7 @@ export default function RosterPage() {
           start_date: formatDate(startDate),
           end_date: formatDate(endDate),
           site_ids: [],
+          client_ids: selectedClients.length > 0 ? selectedClients : undefined,
         }),
       })
 
@@ -117,8 +146,24 @@ export default function RosterPage() {
 
     try {
       setLoading(true)
-      await rosterApi.confirm(result.assignments)
-      alert('Roster confirmed successfully!')
+      const response = await rosterApi.confirm(result.assignments)
+
+      // Auto-download PDF if URL is provided
+      if (response.data.pdf_url) {
+        const token = localStorage.getItem('access_token')
+        const pdfUrl = `${process.env.NEXT_PUBLIC_API_URL}${response.data.pdf_url}`
+
+        // Create a temporary link and trigger download
+        const link = document.createElement('a')
+        link.href = pdfUrl
+        link.target = '_blank'
+        link.download = `roster_${new Date().toISOString().split('T')[0]}.pdf`
+
+        // Add auth header by opening in new window with token
+        window.open(pdfUrl + `&token=${token}`, '_blank')
+      }
+
+      alert('Roster confirmed successfully! PDF report is downloading...')
       setResult(null)
     } catch (err: any) {
       alert('Failed to confirm roster: ' + err.message)
@@ -185,7 +230,7 @@ export default function RosterPage() {
           <div className="bg-white shadow-md rounded-lg p-6 mb-8">
             <h2 className="text-xl font-semibold mb-4">Generate Optimized Roster</h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
               <div>
                 <DatePicker
                   selected={startDate}
@@ -205,6 +250,76 @@ export default function RosterPage() {
                   disabled={loading}
                   label="End Date"
                 />
+              </div>
+
+              <div className="relative" ref={clientDropdownRef}>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Filter by Clients (Optional)
+                </label>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setClientDropdownOpen(!clientDropdownOpen)}
+                    disabled={loading}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                  >
+                    <span className="truncate">
+                      {selectedClients.length === 0
+                        ? 'All Clients'
+                        : selectedClients.length === 1
+                        ? clients.find(c => c.client_id === selectedClients[0])?.client_name || '1 client'
+                        : `${selectedClients.length} clients selected`}
+                    </span>
+                    <svg className={`w-5 h-5 text-gray-400 transition-transform ${clientDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {clientDropdownOpen && (
+                    <div className="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                      <div className="p-2 border-b border-gray-200 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedClients(clients.map(c => c.client_id))}
+                          className="text-xs text-blue-600 hover:text-blue-800"
+                        >
+                          Select All
+                        </button>
+                        <span className="text-gray-300">|</span>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedClients([])}
+                          className="text-xs text-blue-600 hover:text-blue-800"
+                        >
+                          Clear All
+                        </button>
+                      </div>
+                      {clients.map((client: any) => (
+                        <label
+                          key={client.client_id}
+                          className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedClients.includes(client.client_id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedClients([...selectedClients, client.client_id])
+                              } else {
+                                setSelectedClients(selectedClients.filter(id => id !== client.client_id))
+                              }
+                            }}
+                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                          <span className="ml-2 text-sm text-gray-700">{client.client_name}</span>
+                        </label>
+                      ))}
+                      {clients.length === 0 && (
+                        <div className="px-3 py-2 text-sm text-gray-500">No clients found</div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-end">
