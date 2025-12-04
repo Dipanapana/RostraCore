@@ -13,8 +13,10 @@ from app.algorithms.milp_roster_generator import MILPRosterGenerator
 from app.algorithms.production_optimizer import ProductionRosterOptimizer, OptimizationConfig
 from app.services.shift_service import ShiftService
 from app.services.cache_service import CacheInvalidator
+from app.services.client_filter_service import ClientFilterService
 from app.config import settings
 from app.models.site import Site
+from app.models.shift import Shift
 from app.models.client import Client
 from app.models.user import User
 from app.api.deps import get_current_user
@@ -23,26 +25,34 @@ from app.auth.security import get_current_org_id
 router = APIRouter()
 
 
-@router.post("/generate", response_model=RosterGenerateResponse)
+from app.algorithms.scalable_roster_optimizer import PartitionedRosterOptimizer
+
+
+@router.get("/test")
+async def test_endpoint():
+    """Simple test endpoint"""
+    return {"status": "ok", "message": "Roster API is working"}
+
+@router.post("/generate")
 async def generate_roster(
     request: RosterGenerateRequest,
-    algorithm: Optional[str] = Query("production", description="Algorithm: 'production', 'milp', 'auto'"),
+    algorithm: Optional[str] = Query("auto", description="Algorithm: 'auto', 'production', 'milp'"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
     Generate optimized roster using algorithmic approach.
 
-    **Default: Production CP-SAT Optimizer** - Most robust and feature-complete
+    **Default: Auto (Partitioned CP-SAT)** - Scalable for 500+ guards
 
     Algorithms:
-    - production (default): Production-grade CP-SAT with full BCEA compliance, fairness, diagnostics
-    - milp: Original MILP implementation (legacy)
-    - auto: Automatically selects production optimizer (recommended)
+    - auto (default): Partitioned CP-SAT (ScalableRosterOptimizer)
+    - production: Single-threaded CP-SAT (Legacy Production)
+    - milp: Original MILP implementation (Legacy)
 
     Args:
         request: Roster generation request with dates and site IDs
-        algorithm: Algorithm selection (default: 'production')
+        algorithm: Algorithm selection (default: 'auto')
         db: Database session
 
     Returns:
@@ -53,31 +63,80 @@ async def generate_roster(
         start_datetime = datetime.combine(request.start_date, datetime.min.time())
         end_datetime = datetime.combine(request.end_date, datetime.max.time())
 
+        # If client_ids are provided, fetch all sites for those clients
+        site_ids = request.site_ids
+
+        # Get accessible clients for client filtering
+        accessible_clients = ClientFilterService.get_accessible_clients(db, current_user.org_id)
+
+        if request.client_ids:
+            # Filter requested client_ids to only accessible clients
+            filtered_client_ids = request.client_ids
+            if accessible_clients is not None:
+                filtered_client_ids = [cid for cid in request.client_ids if cid in accessible_clients]
+                if len(filtered_client_ids) < len(request.client_ids):
+                    logger.warning(f"Some requested client_ids are not accessible. Requested: {request.client_ids}, Accessible: {filtered_client_ids}")
+
+            if filtered_client_ids:
+                client_sites = db.query(Site).filter(
+                    Site.client_id.in_(filtered_client_ids),
+                    Site.org_id == current_user.org_id
+                ).all()
+                client_site_ids = [site.site_id for site in client_sites]
+
+                # Combine with any manually specified site_ids
+                if site_ids:
+                    site_ids = list(set(site_ids + client_site_ids))
+                else:
+                    site_ids = client_site_ids
+
+                logger.info(f"Client-specific roster: {len(filtered_client_ids)} clients, {len(site_ids)} sites")
+
+        # If no specific sites/clients requested, apply client filtering to auto-select accessible sites
+        if not site_ids and accessible_clients is not None:
+            accessible_sites = db.query(Site).filter(
+                Site.org_id == current_user.org_id,
+                Site.client_id.in_(accessible_clients)
+            ).all()
+            site_ids = [s.site_id for s in accessible_sites]
+            logger.info(f"Auto-filtered to {len(site_ids)} sites for accessible clients")
+
         # Determine which algorithm to use
-        selected_algorithm = algorithm or "production"
+        selected_algorithm = algorithm or "auto"
 
         logger.info(f"Roster generation requested: {start_datetime} to {end_datetime}, algorithm={selected_algorithm}")
 
-        # Auto-select based on roster period and complexity
-        if selected_algorithm == "auto":
-            # Always use production optimizer (most robust)
-            selected_algorithm = "production"
-            logger.info(f"Auto-selected {selected_algorithm}")
-
         # Initialize appropriate optimizer
-        if selected_algorithm == "production":
-            logger.info("Using Production CP-SAT Optimizer")
+        if selected_algorithm == "auto" or selected_algorithm == "scalable":
+            logger.info("Using Scalable Partitioned Optimizer")
+            optimizer = PartitionedRosterOptimizer(
+                db,
+                config=OptimizationConfig(
+                    time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 300),
+                    fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2)
+                ),
+                org_id=current_user.org_id if hasattr(current_user, 'org_id') else None
+            )
+            result = optimizer.optimize(
+                start_date=start_datetime,
+                end_date=end_datetime,
+                site_ids=site_ids
+            )
+
+        elif selected_algorithm == "production":
+            logger.info("Using Production CP-SAT Optimizer (Single Partition)")
             optimizer = ProductionRosterOptimizer(
                 db,
                 config=OptimizationConfig(
                     time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 120),
                     fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2)
-                )
+                ),
+                org_id=current_user.org_id if hasattr(current_user, 'org_id') else None
             )
             result = optimizer.optimize(
                 start_date=start_datetime,
                 end_date=end_datetime,
-                site_ids=request.site_ids
+                site_ids=site_ids
             )
 
         elif selected_algorithm == "milp":
@@ -86,24 +145,25 @@ async def generate_roster(
             result = generator.generate_roster(
                 start_date=start_datetime,
                 end_date=end_datetime,
-                site_ids=request.site_ids
+                site_ids=site_ids
             )
             result["algorithm_used"] = "milp"
 
         else:
-            # Unknown algorithm, default to production
-            logger.warning(f"Unknown algorithm '{selected_algorithm}', defaulting to production")
-            optimizer = ProductionRosterOptimizer(
+            # Unknown algorithm, default to scalable
+            logger.warning(f"Unknown algorithm '{selected_algorithm}', defaulting to scalable")
+            optimizer = PartitionedRosterOptimizer(
                 db,
                 config=OptimizationConfig(
-                    time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 120),
+                    time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 300),
                     fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2)
-                )
+                ),
+                org_id=current_user.org_id if hasattr(current_user, 'org_id') else None
             )
             result = optimizer.optimize(
                 start_date=start_datetime,
                 end_date=end_datetime,
-                site_ids=request.site_ids
+                site_ids=site_ids
             )
 
         logger.info(f"Roster generation complete: {result.get('status', 'unknown')}, {len(result.get('assignments', []))} assignments")
@@ -121,15 +181,20 @@ async def generate_roster(
 @router.post("/confirm")
 async def confirm_roster(
     assignments: List[dict],
-    db: Session = Depends(get_db)
+    generate_pdf: Optional[bool] = Query(True, description="Generate PDF after confirmation"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """
     Confirm and save generated roster assignments.
 
     **Cache Invalidation:** Clears dashboard and shift caches when roster is confirmed.
+    **PDF Generation:** Optionally generates a PDF report for the confirmed roster.
     """
     try:
         confirmed_count = 0
+        shift_ids = []
+
         for assignment in assignments:
             shift = ShiftService.assign_employee(
                 db,
@@ -138,21 +203,39 @@ async def confirm_roster(
             )
             if shift:
                 confirmed_count += 1
+                shift_ids.append(shift.shift_id)
 
-        # Invalidate caches after roster confirmation
-        CacheInvalidator.invalidate_dashboard()
-        CacheInvalidator.invalidate_roster()
-        CacheInvalidator.invalidate_shifts()
+        # Invalidate caches after roster confirmation (include org_id for proper multi-tenancy)
+        org_id = current_user.org_id if hasattr(current_user, 'org_id') else None
+        CacheInvalidator.invalidate_dashboard(org_id=org_id)
+        CacheInvalidator.invalidate_roster(org_id=org_id)
+        CacheInvalidator.invalidate_shifts(org_id=org_id)
 
         logger.info(f"Roster confirmed: {confirmed_count} shifts assigned, caches invalidated")
 
-        return {
+        response = {
             "success": True,
             "confirmed_shifts": confirmed_count,
             "total_assignments": len(assignments)
         }
 
+        # Generate PDF URL if requested
+        if generate_pdf and shift_ids:
+            # Get date range from confirmed shifts
+            shifts = db.query(Shift).filter(Shift.shift_id.in_(shift_ids)).all()
+            if shifts:
+                start_date = min(s.start_time for s in shifts).date().isoformat()
+                end_date = max(s.end_time for s in shifts).date().isoformat()
+
+                # Construct PDF URL
+                pdf_url = f"/api/v1/exports/roster/pdf?start_date={start_date}&end_date={end_date}"
+                response["pdf_url"] = pdf_url
+                logger.info(f"PDF URL generated: {pdf_url}")
+
+        return response
+
     except Exception as e:
+        logger.error(f"Error confirming roster: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error confirming roster: {str(e)}"
@@ -167,24 +250,34 @@ async def get_unfilled_shifts(
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Get list of shifts without assigned employees (filtered by organization)."""
+    """Get list of shifts without assigned employees (filtered by organization and accessible clients)."""
     if not start_date:
         start_date = datetime.now()
     if not end_date:
         end_date = start_date + timedelta(days=7)
 
+    # Get accessible clients for client filtering
+    accessible_clients = ClientFilterService.get_accessible_clients(db, org_id)
+
     # Filter site_id to ensure it belongs to the organization if provided
     if site_id:
-        site = db.query(Site).filter(Site.site_id == site_id, Site.org_id == org_id).first()
+        site_query = db.query(Site).filter(Site.site_id == site_id, Site.org_id == org_id)
+        # Also check if site's client is accessible
+        if accessible_clients is not None:
+            site_query = site_query.filter(Site.client_id.in_(accessible_clients))
+        site = site_query.first()
         if not site:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Site with ID {site_id} not found in your organization"
+                detail=f"Site with ID {site_id} not found or not accessible in your organization"
             )
         site_ids = [site_id]
     else:
-        # Get all sites for this organization
-        org_sites = db.query(Site.site_id).filter(Site.org_id == org_id).all()
+        # Get all sites for this organization (filtered by accessible clients)
+        site_query = db.query(Site.site_id).filter(Site.org_id == org_id)
+        if accessible_clients is not None:
+            site_query = site_query.filter(Site.client_id.in_(accessible_clients))
+        org_sites = site_query.all()
         site_ids = [s.site_id for s in org_sites] if org_sites else []
 
     if not site_ids:
@@ -325,6 +418,13 @@ async def generate_roster_for_client(
                 detail=f"Client with ID {client_id} not found in your organization"
             )
 
+        # Check if client is accessible based on client management settings
+        if not ClientFilterService.is_client_accessible(db, org_id, client_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Client with ID {client_id} is not accessible based on your client management settings"
+            )
+
         # Get all sites for this client
         sites = db.query(Site).filter(Site.client_id == client_id).all()
 
@@ -354,7 +454,7 @@ async def generate_roster_for_client(
             end_datetime = datetime.combine(end_date, datetime.max.time())
 
         # Determine which algorithm to use
-        selected_algorithm = algorithm or "production"
+        selected_algorithm = algorithm or "auto"
 
         # Auto-select based on roster period and complexity
         if selected_algorithm == "auto":
@@ -363,7 +463,23 @@ async def generate_roster_for_client(
             logger.info(f"Auto-selected {selected_algorithm}")
 
         # Initialize appropriate optimizer
-        if selected_algorithm == "production":
+        if selected_algorithm == "auto" or selected_algorithm == "scalable":
+            logger.info("Using Scalable Partitioned Optimizer")
+            optimizer = PartitionedRosterOptimizer(
+                db,
+                config=OptimizationConfig(
+                    time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 300),
+                    fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2)
+                ),
+                org_id=org_id
+            )
+            result = optimizer.optimize(
+                start_date=start_datetime,
+                end_date=end_datetime,
+                site_ids=site_ids
+            )
+
+        elif selected_algorithm == "production":
             logger.info("Using Production CP-SAT Optimizer")
             optimizer = ProductionRosterOptimizer(
                 db,
@@ -389,12 +505,12 @@ async def generate_roster_for_client(
             result["algorithm_used"] = "milp"
 
         else:
-            # Unknown algorithm, default to production
-            logger.warning(f"Unknown algorithm '{selected_algorithm}', defaulting to production")
-            optimizer = ProductionRosterOptimizer(
+            # Unknown algorithm, default to scalable
+            logger.warning(f"Unknown algorithm '{selected_algorithm}', defaulting to scalable")
+            optimizer = PartitionedRosterOptimizer(
                 db,
                 config=OptimizationConfig(
-                    time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 120),
+                    time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 300),
                     fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2)
                 )
             )

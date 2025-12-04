@@ -66,3 +66,119 @@ export interface Certification {
   cert_number?: string
   issuing_authority?: string
 }
+
+// Site Staffing Profiles
+export type PeriodType = 'day' | 'night' | 'all_day' | 'custom'
+export type DayType = 'weekday' | 'weekend' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday' | 'public_holiday' | 'all'
+
+export interface StaffingProfile {
+  profile_id: number
+  site_id: number
+  org_id: number
+  profile_name: string
+  period_type: PeriodType
+  day_type: DayType
+  required_staff: number
+  required_skill?: string
+  required_psira_grade?: string
+  requires_firearm: boolean
+  priority: number
+  custom_start_time?: string
+  custom_end_time?: string
+  is_active: boolean
+}
+
+export interface StaffingProfileCreate {
+  profile_name: string
+  period_type: PeriodType
+  day_type: DayType
+  required_staff: number
+  required_skill?: string
+  required_psira_grade?: string
+  requires_firearm?: boolean
+  priority?: number
+  custom_start_time?: string
+  custom_end_time?: string
+}
+
+// Employee Availability Patterns
+export type PatternType = 'recurring_weekly' | 'date_range' | 'exception'
+
+export interface AvailabilityPattern {
+  pattern_id: number
+  employee_id: number
+  org_id: number
+  pattern_name: string
+  pattern_type: PatternType
+  effective_from: string
+  effective_to?: string
+  priority: number
+  is_active: boolean
+  // Weekly schedule
+  monday_available: boolean
+  monday_start?: string
+  monday_end?: string
+  tuesday_available: boolean
+  tuesday_start?: string
+  tuesday_end?: string
+  wednesday_available: boolean
+  wednesday_start?: string
+  wednesday_end?: string
+  thursday_available: boolean
+  thursday_start?: string
+  thursday_end?: string
+  friday_available: boolean
+  friday_start?: string
+  friday_end?: string
+  saturday_available: boolean
+  saturday_start?: string
+  saturday_end?: string
+  sunday_available: boolean
+  sunday_start?: string
+  sunday_end?: string
+  // Date range times
+  range_start_time?: string
+  range_end_time?: string
+}
+
+export interface AvailabilityPatternCreate {
+  pattern_name: string
+  pattern_type?: PatternType
+  effective_from: string
+  effective_to?: string
+  priority?: number
+  // Weekly schedule (for recurring_weekly)
+  monday_available?: boolean
+  monday_start?: string
+  monday_end?: string
+  tuesday_available?: boolean
+  tuesday_start?: string
+  tuesday_end?: string
+  wednesday_available?: boolean
+  wednesday_start?: string
+  wednesday_end?: string
+  thursday_available?: boolean
+  thursday_start?: string
+  thursday_end?: string
+  friday_available?: boolean
+  friday_start?: string
+  friday_end?: string
+  saturday_available?: boolean
+  saturday_start?: string
+  saturday_end?: string
+  sunday_available?: boolean
+  sunday_start?: string
+  sunday_end?: string
+  // Date range times
+  range_start_time?: string
+  range_end_time?: string
+}
+
+export interface AvailabilityCalendarDay {
+  date: string
+  day_name: string
+  is_weekend: boolean
+  is_available: boolean
+  reason: string
+  time_windows: Array<{ start: string; end: string }>
+}

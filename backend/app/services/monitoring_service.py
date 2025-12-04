@@ -142,10 +142,11 @@ class HealthMonitor:
             "components": {}
         }
 
+        from sqlalchemy import text
         # Check database
         try:
             db = SessionLocal()
-            db.execute("SELECT 1")
+            db.execute(text("SELECT 1"))
             db.close()
             health_status["components"]["database"] = {
                 "status": "healthy",

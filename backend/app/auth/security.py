@@ -2,15 +2,17 @@
 
 from datetime import datetime, timedelta
 from typing import Optional
+import secrets
 from jose import JWTError, jwt
 import bcrypt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request, Cookie
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import get_db
 from app.models.user import User, UserRole
+from app.models.refresh_token import RefreshToken
 
 # OAuth2 scheme
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_PREFIX}/auth/login")
@@ -154,14 +156,20 @@ def authenticate_user(db: Session, username: str, password: str) -> Optional[Use
 
 
 def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    request: Request,
+    access_token: Optional[str] = Cookie(None),
     db: Session = Depends(get_db)
 ) -> User:
     """
-    Get current authenticated user from token.
+    Get current authenticated user from Bearer token or httpOnly cookie.
+
+    Supports both authentication methods:
+    1. Bearer token in Authorization header (for API clients)
+    2. httpOnly cookie (for browser-based XSS protection)
 
     Args:
-        token: JWT token from request
+        request: FastAPI Request object
+        access_token: JWT token from httpOnly cookie
         db: Database session
 
     Returns:
@@ -176,10 +184,29 @@ def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
 
-    payload = decode_access_token(token)
-    user_id: int = payload.get("sub")
+    # Try Bearer token from Authorization header first
+    token = None
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header[7:]  # Extract token after "Bearer "
 
-    if user_id is None:
+    # Fall back to httpOnly cookie if no Bearer token
+    if token is None:
+        token = access_token
+
+    # Check if token exists
+    if token is None:
+        raise credentials_exception
+
+    payload = decode_access_token(token)
+    user_id_str: str = payload.get("sub")
+
+    if user_id_str is None:
+        raise credentials_exception
+
+    try:
+        user_id = int(user_id_str)
+    except (ValueError, TypeError):
         raise credentials_exception
 
     user = db.query(User).filter(User.user_id == user_id).first()
@@ -272,3 +299,123 @@ def get_current_org_id(current_user: User = Depends(get_current_user)) -> int:
             detail="User has no organization assigned. Please contact administrator."
         )
     return current_user.org_id
+
+
+def create_refresh_token(
+    user_id: int,
+    db: Session,
+    user_agent: Optional[str] = None,
+    ip_address: Optional[str] = None
+) -> str:
+    """
+    Create a new refresh token for a user.
+
+    Args:
+        user_id: User ID
+        db: Database session
+        user_agent: Optional user agent string
+        ip_address: Optional IP address
+
+    Returns:
+        Refresh token string
+    """
+    # Generate secure random token
+    token = secrets.token_urlsafe(32)
+
+    # Calculate expiration (7 days)
+    expires_at = datetime.utcnow() + timedelta(days=7)
+
+    # Create refresh token record
+    refresh_token = RefreshToken(
+        token=token,
+        user_id=user_id,
+        expires_at=expires_at,
+        user_agent=user_agent,
+        ip_address=ip_address
+    )
+
+    db.add(refresh_token)
+    db.commit()
+
+    return token
+
+
+def validate_refresh_token(token: str, db: Session) -> Optional[User]:
+    """
+    Validate a refresh token and return the associated user.
+
+    Args:
+        token: Refresh token string
+        db: Database session
+
+    Returns:
+        User if token is valid, None otherwise
+    """
+    # Find the refresh token
+    refresh_token = db.query(RefreshToken).filter(
+        RefreshToken.token == token,
+        RefreshToken.revoked == False
+    ).first()
+
+    if not refresh_token:
+        return None
+
+    # Check if token is expired
+    if datetime.utcnow() > refresh_token.expires_at:
+        return None
+
+    # Get the user
+    user = db.query(User).filter(User.user_id == refresh_token.user_id).first()
+
+    if not user or not user.is_active:
+        return None
+
+    return user
+
+
+def revoke_refresh_token(token: str, db: Session) -> bool:
+    """
+    Revoke a refresh token.
+
+    Args:
+        token: Refresh token string
+        db: Database session
+
+    Returns:
+        True if token was revoked, False if not found
+    """
+    refresh_token = db.query(RefreshToken).filter(
+        RefreshToken.token == token
+    ).first()
+
+    if not refresh_token:
+        return False
+
+    refresh_token.revoked = True
+    refresh_token.revoked_at = datetime.utcnow()
+    db.commit()
+
+    return True
+
+
+def revoke_all_user_tokens(user_id: int, db: Session) -> int:
+    """
+    Revoke all refresh tokens for a user.
+
+    Args:
+        user_id: User ID
+        db: Database session
+
+    Returns:
+        Number of tokens revoked
+    """
+    count = db.query(RefreshToken).filter(
+        RefreshToken.user_id == user_id,
+        RefreshToken.revoked == False
+    ).update({
+        "revoked": True,
+        "revoked_at": datetime.utcnow()
+    })
+
+    db.commit()
+    return count

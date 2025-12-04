@@ -185,11 +185,11 @@ class RosterGenerator:
         # Start with role as primary skill
         skills = [employee.role.value]
 
-        # Add skills from SkillsMatrix
-        if hasattr(employee, 'skills') and employee.skills:
-            for skill in employee.skills:
-                if skill.skill_name and skill.skill_name not in skills:
-                    skills.append(skill.skill_name)
+        # Add certifications as skills
+        if hasattr(employee, 'certifications') and employee.certifications:
+            for cert in employee.certifications:
+                if cert.cert_type and cert.cert_type not in skills:
+                    skills.append(cert.cert_type)
 
         return skills
 

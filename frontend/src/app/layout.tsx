@@ -2,13 +2,32 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/context/AuthContext'
+import { ThemeProvider } from '@/context/ThemeContext'
 import ErrorBoundary from '@/components/ErrorBoundary'
+import PWAInstaller from '@/components/PWAInstaller'
+import TrialBanner from '@/components/TrialBanner'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'GuardianOS - Security Workforce Management',
-  description: 'AI-Powered Security Workforce Management System',
+  title: 'RostraCore - Security Workforce Management',
+  description: 'Comprehensive security workforce management system for scheduling, rostering, and employee management',
+  manifest: '/manifest.json',
+  themeColor: '#2563eb',
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/rostracore-logo.png',
+  },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'RostraCore',
+  },
 }
 
 export default function RootLayout({
@@ -18,9 +37,22 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#2563eb" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="RostraCore" />
+      </head>
       <body className={inter.className}>
         <ErrorBoundary>
-          <AuthProvider>{children}</AuthProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <TrialBanner />
+              {children}
+              <PWAInstaller />
+            </AuthProvider>
+          </ThemeProvider>
         </ErrorBoundary>
       </body>
     </html>

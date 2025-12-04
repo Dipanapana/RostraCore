@@ -29,7 +29,9 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=6)
     full_name: Optional[str] = None
+    phone: Optional[str] = None
     role: UserRole = UserRole.SCHEDULER
+    company_name: Optional[str] = None  # For creating organization during registration
 
 
 class UserUpdate(BaseModel):

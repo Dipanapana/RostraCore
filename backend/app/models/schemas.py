@@ -52,6 +52,7 @@ class EmployeeResponse(EmployeeBase):
     employee_id: int
     org_id: int  # Include organization in response
     assigned_client_id: Optional[int] = None  # Include client assignment in response
+    max_hours_week: Optional[int] = 48  # Override to allow NULL from database
 
     class Config:
         from_attributes = True
@@ -134,6 +135,7 @@ class ShiftBase(BaseModel):
     created_by: Optional[str] = None
     is_overtime: bool = False
     notes: Optional[str] = None
+    assigned_employee_id: Optional[int] = None
 
 
 class ShiftCreate(ShiftBase):
@@ -149,6 +151,7 @@ class ShiftUpdate(BaseModel):
     status: Optional[ShiftStatus] = None
     is_overtime: Optional[bool] = None
     notes: Optional[str] = None
+    assigned_employee_id: Optional[int] = None
 
 
 class ShiftResponse(ShiftBase):
@@ -262,6 +265,7 @@ class RosterGenerateRequest(BaseModel):
     start_date: date
     end_date: date
     site_ids: Optional[list[int]] = None
+    client_ids: Optional[list[int]] = None  # Generate roster for specific clients
     budget_limit: Optional[float] = None
 
 

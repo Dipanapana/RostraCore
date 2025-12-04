@@ -103,8 +103,10 @@ async def superadmin_login(
     user.last_login = datetime.utcnow()
     db.commit()
 
-    # Generate JWT token
-    access_token = create_access_token(data={"sub": user.username})
+    # Generate JWT token (use user_id as sub, consistent with regular auth)
+    access_token = create_access_token(
+        data={"sub": str(user.user_id), "username": user.username, "role": user.role.value}
+    )
 
     logger.info(f"SuperAdmin login successful: {user.username} (ID: {user.user_id})")
 
@@ -181,8 +183,10 @@ async def register_superadmin(
     db.commit()
     db.refresh(new_superadmin)
 
-    # Generate JWT token
-    access_token = create_access_token(data={"sub": new_superadmin.username})
+    # Generate JWT token (use user_id as sub, consistent with regular auth)
+    access_token = create_access_token(
+        data={"sub": str(new_superadmin.user_id), "username": new_superadmin.username, "role": new_superadmin.role.value}
+    )
 
     logger.info(f"SuperAdmin created: {new_superadmin.username} (ID: {new_superadmin.user_id})")
 

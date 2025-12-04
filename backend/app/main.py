@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api.endpoints import employees, sites, shifts, availability, certifications, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, organization_approval, organization_users, clients, payments, superadmin_analytics, subscriptions, subscription_plans, dashboards, superadmin_auth
+from app.api.endpoints import employees, sites, shifts, availability, certifications, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, organization_approval, organization_users, organization_settings, clients, payments, superadmin_analytics, subscriptions, subscription_plans, dashboards, superadmin_auth, invoices, reports, roster_preferences, superadmin, staffing_profiles, availability_patterns, system_settings
 from app.middleware import RateLimitMiddleware
 
 # Initialize Sentry for error tracking and performance monitoring
@@ -88,6 +88,7 @@ app.include_router(auth.router, prefix=settings.API_V1_PREFIX, tags=["auth"])
 app.include_router(organizations.router, prefix=f"{settings.API_V1_PREFIX}/organizations", tags=["organizations"])
 app.include_router(organization_approval.router, prefix=f"{settings.API_V1_PREFIX}/organizations", tags=["organization-approval"])
 app.include_router(organization_users.router, prefix=f"{settings.API_V1_PREFIX}/organizations", tags=["organization-users"])
+app.include_router(organization_settings.router, prefix=f"{settings.API_V1_PREFIX}/organization-settings", tags=["organization-settings"])
 app.include_router(employees.router, prefix=f"{settings.API_V1_PREFIX}/employees", tags=["employees"])
 app.include_router(certifications.router, prefix=f"{settings.API_V1_PREFIX}/certifications", tags=["certifications"])
 app.include_router(clients.router, prefix=f"{settings.API_V1_PREFIX}/clients", tags=["clients"])
@@ -96,11 +97,17 @@ app.include_router(shifts.router, prefix=f"{settings.API_V1_PREFIX}/shifts", tag
 app.include_router(availability.router, prefix=f"{settings.API_V1_PREFIX}/availability", tags=["availability"])
 app.include_router(roster.router, prefix=f"{settings.API_V1_PREFIX}/roster", tags=["roster"])
 app.include_router(payroll.router, prefix=f"{settings.API_V1_PREFIX}/payroll", tags=["payroll"])
+app.include_router(invoices.router, prefix=f"{settings.API_V1_PREFIX}/invoices", tags=["invoices"])
+app.include_router(reports.router, prefix=f"{settings.API_V1_PREFIX}/reports", tags=["reports"])
 
 # Dashboard & Settings
 app.include_router(dashboard.router, prefix=settings.API_V1_PREFIX, tags=["dashboard"])
 app.include_router(dashboards.router, tags=["dashboards"])
 app.include_router(settings_endpoint.router, prefix=f"{settings.API_V1_PREFIX}/settings", tags=["settings"])
+app.include_router(system_settings.router, prefix=f"{settings.API_V1_PREFIX}/system-settings", tags=["system-settings"])
+app.include_router(roster_preferences.router, prefix=f"{settings.API_V1_PREFIX}/roster-preferences", tags=["roster-preferences"])
+app.include_router(staffing_profiles.router, prefix=settings.API_V1_PREFIX, tags=["staffing-profiles"])
+app.include_router(availability_patterns.router, prefix=settings.API_V1_PREFIX, tags=["availability-patterns"])
 app.include_router(exports.router, prefix=settings.API_V1_PREFIX, tags=["exports"])
 
 # Subscriptions & Payments
@@ -111,6 +118,7 @@ app.include_router(payments.router, prefix=f"{settings.API_V1_PREFIX}/payments",
 # SuperAdmin
 app.include_router(superadmin_auth.router, prefix=f"{settings.API_V1_PREFIX}/superadmin", tags=["superadmin-auth"])
 app.include_router(superadmin_analytics.router, prefix=f"{settings.API_V1_PREFIX}/superadmin/analytics", tags=["superadmin-analytics"])
+app.include_router(superadmin.router, prefix=f"{settings.API_V1_PREFIX}/superadmin", tags=["superadmin"])
 
 
 if __name__ == "__main__":

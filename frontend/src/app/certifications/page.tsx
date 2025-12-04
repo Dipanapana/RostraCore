@@ -6,6 +6,9 @@ import { Certification, Employee } from '@/types'
 import CertificationForm from '@/components/CertificationForm'
 import ExportButtons from '@/components/ExportButtons'
 import DashboardLayout from '@/components/layout/DashboardLayout'
+import DataTable, { Column } from '@/components/ui/DataTable'
+import Modal from '@/components/ui/Modal'
+import { Plus, Pencil, Trash2, Award, Calendar, AlertTriangle, CheckCircle, Filter, X, User } from 'lucide-react'
 
 export default function CertificationsPage() {
   const [certifications, setCertifications] = useState<Certification[]>([])
@@ -19,11 +22,6 @@ export default function CertificationsPage() {
   const [filterEmployee, setFilterEmployee] = useState('')
   const [filterType, setFilterType] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
-
-  // Pagination and search
-  const [searchTerm, setSearchTerm] = useState('')
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
 
   useEffect(() => {
     fetchData()
@@ -69,6 +67,7 @@ export default function CertificationsPage() {
 
   const handleFormSuccess = () => {
     fetchData()
+    handleCloseForm()
   }
 
   // Get employee name by ID
@@ -83,52 +82,11 @@ export default function CertificationsPage() {
     const expiry = new Date(expiryDate)
     const daysUntilExpiry = Math.floor((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 
-    if (daysUntilExpiry < 0) return { status: 'expired', label: 'Expired', color: 'bg-red-100 text-red-800' }
-    if (daysUntilExpiry <= 30) return { status: 'expiring', label: 'Expiring Soon', color: 'bg-orange-100 text-orange-800' }
-    if (daysUntilExpiry <= 90) return { status: 'warning', label: 'Expiring', color: 'bg-yellow-100 text-yellow-800' }
-    return { status: 'valid', label: 'Valid', color: 'bg-green-100 text-green-800' }
+    if (daysUntilExpiry < 0) return { status: 'expired', label: 'Expired', color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' }
+    if (daysUntilExpiry <= 30) return { status: 'expiring', label: 'Expiring Soon', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' }
+    if (daysUntilExpiry <= 90) return { status: 'warning', label: 'Expiring', color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' }
+    return { status: 'valid', label: 'Valid', color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' }
   }
-
-  // Filter and search certifications
-  const filteredCertifications = useMemo(() => {
-    return certifications.filter(cert => {
-      // Apply existing filters
-      if (filterEmployee && cert.employee_id.toString() !== filterEmployee) return false
-      if (filterType && cert.cert_type !== filterType) return false
-      if (filterStatus) {
-        const status = getCertificationStatus(cert.expiry_date).status
-        if (filterStatus !== status) return false
-      }
-
-      // Apply search
-      if (searchTerm) {
-        const searchLower = searchTerm.toLowerCase()
-        const employeeName = getEmployeeName(cert.employee_id).toLowerCase()
-        const certType = cert.cert_type.toLowerCase()
-        const certNumber = cert.cert_number?.toLowerCase() || ''
-        const issuingAuthority = cert.issuing_authority?.toLowerCase() || ''
-
-        return (
-          employeeName.includes(searchLower) ||
-          certType.includes(searchLower) ||
-          certNumber.includes(searchLower) ||
-          issuingAuthority.includes(searchLower)
-        )
-      }
-
-      return true
-    })
-  }, [certifications, filterEmployee, filterType, filterStatus, searchTerm])
-
-  const totalPages = Math.ceil(filteredCertifications.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const currentCertifications = filteredCertifications.slice(startIndex, endIndex)
-
-  // Reset to page 1 when search changes
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [searchTerm])
 
   // Format date
   const formatDate = (dateStr: string) => {
@@ -143,16 +101,95 @@ export default function CertificationsPage() {
   // Get unique cert types for filter
   const certTypes = [...new Set(certifications.map(c => c.cert_type))]
 
+  // Filter certifications
+  const filteredCertifications = useMemo(() => {
+    return certifications.filter(cert => {
+      if (filterEmployee && cert.employee_id.toString() !== filterEmployee) return false
+      if (filterType && cert.cert_type !== filterType) return false
+      if (filterStatus) {
+        const status = getCertificationStatus(cert.expiry_date).status
+        if (filterStatus !== status) return false
+      }
+      return true
+    })
+  }, [certifications, filterEmployee, filterType, filterStatus])
+
   // Stats
   const expiredCount = certifications.filter(c => getCertificationStatus(c.expiry_date).status === 'expired').length
   const expiringSoonCount = certifications.filter(c => getCertificationStatus(c.expiry_date).status === 'expiring').length
   const validCount = certifications.filter(c => getCertificationStatus(c.expiry_date).status === 'valid').length
 
+  const columns: Column<Certification>[] = [
+    {
+      header: 'Employee',
+      cell: (cert) => (
+        <div className="flex items-center gap-2">
+          <User className="w-4 h-4 text-slate-400" />
+          <span className="font-medium text-slate-900 dark:text-white">
+            {getEmployeeName(cert.employee_id)}
+          </span>
+        </div>
+      ),
+    },
+    {
+      header: 'Type',
+      cell: (cert) => (
+        <div className="flex items-center gap-2">
+          <Award className="w-4 h-4 text-slate-400" />
+          <span className="text-slate-700 dark:text-slate-300">{cert.cert_type}</span>
+        </div>
+      ),
+    },
+    {
+      header: 'Cert Number',
+      cell: (cert) => (
+        <span className="font-mono text-xs text-slate-500 dark:text-slate-400">
+          {cert.cert_number || '-'}
+        </span>
+      ),
+    },
+    {
+      header: 'Dates',
+      cell: (cert) => (
+        <div className="flex flex-col text-sm">
+          <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+            <Calendar className="w-3 h-3" />
+            <span className="text-xs">Issued: {formatDate(cert.issue_date)}</span>
+          </div>
+          <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 mt-0.5">
+            <Calendar className="w-3 h-3" />
+            <span className="text-xs">Expires: {formatDate(cert.expiry_date)}</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      header: 'Status',
+      cell: (cert) => {
+        const status = getCertificationStatus(cert.expiry_date)
+        return (
+          <div className="flex flex-col gap-1">
+            <span className={`px-2.5 py-0.5 inline-flex items-center gap-1 text-xs font-medium rounded-full ${status.color}`}>
+              {status.status === 'expired' && <AlertTriangle className="w-3 h-3" />}
+              {status.status === 'valid' && <CheckCircle className="w-3 h-3" />}
+              {status.label}
+            </span>
+            {cert.verified && (
+              <span className="px-2 py-0.5 inline-flex text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                Verified
+              </span>
+            )}
+          </div>
+        )
+      },
+    },
+  ]
+
   if (loading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-lg">Loading certifications...</div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
         </div>
       </DashboardLayout>
     )
@@ -160,356 +197,156 @@ export default function CertificationsPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Certifications Management</h1>
-            <p className="text-gray-600">Track and manage employee certifications and licenses</p>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Certifications Management</h1>
+            <p className="text-slate-500 dark:text-slate-400 mt-1">
+              Track and manage employee certifications and licenses
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <ExportButtons type="certifications" />
             <button
               onClick={() => setShowForm(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95"
             >
-              + Add Certification
+              <Plus className="w-5 h-5" />
+              Add Certification
             </button>
           </div>
         </div>
 
-        {/* Search and Items Per Page */}
-        <div className="bg-white rounded-lg shadow-lg p-4 mb-6">
-          <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
-            <div className="flex-1 w-full md:max-w-md">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search certifications..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                />
-                <svg
-                  className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-700 font-medium">Show:</label>
-              <select
-                value={itemsPerPage}
-                onChange={(e) => {
-                  setItemsPerPage(Number(e.target.value))
-                  setCurrentPage(1)
-                }}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-              </select>
-            </div>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="glass-card p-4 rounded-xl">
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{certifications.length}</div>
+            <div className="text-sm text-slate-600 dark:text-slate-400">Total Certifications</div>
+          </div>
+          <div className="glass-card p-4 rounded-xl">
+            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{validCount}</div>
+            <div className="text-sm text-slate-600 dark:text-slate-400">Valid</div>
+          </div>
+          <div className="glass-card p-4 rounded-xl">
+            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{expiringSoonCount}</div>
+            <div className="text-sm text-slate-600 dark:text-slate-400">Expiring Soon</div>
+          </div>
+          <div className="glass-card p-4 rounded-xl">
+            <div className="text-2xl font-bold text-red-600 dark:text-red-400">{expiredCount}</div>
+            <div className="text-sm text-slate-600 dark:text-slate-400">Expired</div>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white p-4 rounded-lg shadow-md mb-6">
+        <div className="glass-panel p-4 rounded-xl space-y-4">
+          <div className="flex items-center gap-2 text-sm font-medium text-slate-900 dark:text-white mb-2">
+            <Filter className="w-4 h-4" />
+            Filters
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Filter by Employee
-              </label>
-              <select
-                value={filterEmployee}
-                onChange={(e) => setFilterEmployee(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              >
-                <option value="">All Employees</option>
-                {employees.map(emp => (
-                  <option key={emp.employee_id} value={emp.employee_id}>
-                    {emp.first_name} {emp.last_name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <select
+              value={filterEmployee}
+              onChange={(e) => setFilterEmployee(e.target.value)}
+              className="w-full px-3 py-2 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            >
+              <option value="">All Employees</option>
+              {employees.map(emp => (
+                <option key={emp.employee_id} value={emp.employee_id}>
+                  {emp.first_name} {emp.last_name}
+                </option>
+              ))}
+            </select>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Filter by Type
-              </label>
-              <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              >
-                <option value="">All Types</option>
-                {certTypes.map(type => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="w-full px-3 py-2 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            >
+              <option value="">All Types</option>
+              {certTypes.map(type => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Filter by Status
-              </label>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              >
-                <option value="">All Statuses</option>
-                <option value="valid">Valid</option>
-                <option value="warning">Expiring (90 days)</option>
-                <option value="expiring">Expiring Soon (30 days)</option>
-                <option value="expired">Expired</option>
-              </select>
-            </div>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="w-full px-3 py-2 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            >
+              <option value="">All Statuses</option>
+              <option value="valid">Valid</option>
+              <option value="warning">Expiring (90 days)</option>
+              <option value="expiring">Expiring Soon (30 days)</option>
+              <option value="expired">Expired</option>
+            </select>
 
-            <div className="flex items-end">
-              <button
-                onClick={() => {
-                  setFilterEmployee('')
-                  setFilterType('')
-                  setFilterStatus('')
-                }}
-                className="w-full px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md"
-              >
-                Clear Filters
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white p-4 rounded-lg shadow-md">
-            <div className="text-2xl font-bold text-blue-600">{certifications.length}</div>
-            <div className="text-sm text-gray-600">Total Certifications</div>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow-md">
-            <div className="text-2xl font-bold text-green-600">{validCount}</div>
-            <div className="text-sm text-gray-600">Valid</div>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow-md">
-            <div className="text-2xl font-bold text-orange-600">{expiringSoonCount}</div>
-            <div className="text-sm text-gray-600">Expiring Soon</div>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow-md">
-            <div className="text-2xl font-bold text-red-600">{expiredCount}</div>
-            <div className="text-sm text-gray-600">Expired</div>
+            <button
+              onClick={() => {
+                setFilterEmployee('')
+                setFilterType('')
+                setFilterStatus('')
+              }}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 rounded-lg text-sm font-medium transition-colors"
+            >
+              <X className="w-4 h-4" />
+              Clear Filters
+            </button>
           </div>
         </div>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl animate-in fade-in slide-in-from-top-2">
             {error}
           </div>
         )}
 
-        {/* Certifications Table */}
-        <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    ID
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Employee
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Cert Number
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Issue Date
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Expiry Date
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {currentCertifications.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
-                      {searchTerm
-                        ? `No certifications match "${searchTerm}"`
-                        : certifications.length === 0
-                        ? 'No certifications found. Click "Add Certification" to create one.'
-                        : 'No certifications match your filters.'}
-                    </td>
-                  </tr>
-                ) : (
-                  currentCertifications.map((cert) => {
-                    const status = getCertificationStatus(cert.expiry_date)
-                    return (
-                      <tr key={cert.cert_id} className="hover:bg-blue-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          #{cert.cert_id}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {getEmployeeName(cert.employee_id)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {cert.cert_type}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {cert.cert_number || '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatDate(cert.issue_date)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatDate(cert.expiry_date)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex flex-col gap-1">
-                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${status.color}`}>
-                              {status.label}
-                            </span>
-                            {cert.verified && (
-                              <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                Verified
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button
-                            onClick={() => handleEdit(cert)}
-                            className="text-blue-600 hover:text-blue-900 font-medium transition-colors"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDelete(cert.cert_id)}
-                            className="text-red-600 hover:text-red-900 ml-4 font-medium transition-colors"
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Pagination */}
-        {filteredCertifications.length > 0 && (
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4 rounded-lg shadow-md">
-            <div className="flex-1 flex justify-between sm:hidden">
+        {/* Data Table */}
+        <DataTable
+          data={filteredCertifications}
+          columns={columns}
+          searchKeys={['cert_type', 'cert_number']}
+          actions={(cert) => (
+            <>
               <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleEdit(cert)
+                }}
+                className="p-2 text-slate-400 dark:text-slate-300 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                title="Edit"
               >
-                Previous
+                <Pencil className="w-4 h-4" />
               </button>
               <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleDelete(cert.cert_id)
+                }}
+                className="p-2 text-slate-400 dark:text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                title="Delete"
               >
-                Next
+                <Trash2 className="w-4 h-4" />
               </button>
-            </div>
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-gray-700">
-                  Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
-                  <span className="font-medium">{Math.min(endIndex, filteredCertifications.length)}</span> of{' '}
-                  <span className="font-medium">{filteredCertifications.length}</span> results
-                </p>
-              </div>
-              <div>
-                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <span className="sr-only">Previous</span>
-                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-
-                  {[...Array(totalPages)].map((_, idx) => {
-                    const pageNumber = idx + 1
-                    // Show first page, last page, current page, and pages around current
-                    if (
-                      pageNumber === 1 ||
-                      pageNumber === totalPages ||
-                      (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
-                    ) {
-                      return (
-                        <button
-                          key={pageNumber}
-                          onClick={() => setCurrentPage(pageNumber)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-colors ${
-                            currentPage === pageNumber
-                              ? 'z-10 bg-blue-600 border-blue-600 text-white'
-                              : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                          }`}
-                        >
-                          {pageNumber}
-                        </button>
-                      )
-                    } else if (
-                      pageNumber === currentPage - 2 ||
-                      pageNumber === currentPage + 2
-                    ) {
-                      return <span key={pageNumber} className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>
-                    }
-                    return null
-                  })}
-
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <span className="sr-only">Next</span>
-                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                </nav>
-              </div>
-            </div>
-          </div>
-        )}
-
-      {showForm && (
-        <CertificationForm
-          certification={editingCertification}
-          onClose={handleCloseForm}
-          onSuccess={handleFormSuccess}
+            </>
+          )}
         />
-      )}
+
+        {/* Modal Form */}
+        <Modal
+          isOpen={showForm}
+          onClose={handleCloseForm}
+          title={editingCertification ? 'Edit Certification' : 'Add New Certification'}
+          maxWidth="2xl"
+        >
+          <CertificationForm
+            certification={editingCertification}
+            onClose={handleCloseForm}
+            onSuccess={handleFormSuccess}
+          />
+        </Modal>
       </div>
     </DashboardLayout>
   )

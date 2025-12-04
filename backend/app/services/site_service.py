@@ -4,17 +4,31 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.models.site import Site
 from app.models.schemas import SiteCreate, SiteUpdate
+from app.services.client_filter_service import ClientFilterService
 
 
 class SiteService:
     """Service for site-related operations."""
 
     @staticmethod
-    def get_all(db: Session, skip: int = 0, limit: int = 100, org_id: Optional[int] = None) -> List[Site]:
-        """Get all sites (optionally filtered by organization)."""
+    def get_all(
+        db: Session,
+        skip: int = 0,
+        limit: int = 100,
+        org_id: Optional[int] = None,
+        apply_client_filter: bool = True
+    ) -> List[Site]:
+        """Get all sites (optionally filtered by organization and client access)."""
         query = db.query(Site)
         if org_id is not None:
             query = query.filter(Site.org_id == org_id)
+
+            # Apply client management filtering
+            if apply_client_filter:
+                accessible_clients = ClientFilterService.get_accessible_clients(db, org_id)
+                if accessible_clients is not None:
+                    query = query.filter(Site.client_id.in_(accessible_clients))
+
         return query.offset(skip).limit(limit).all()
 
     @staticmethod

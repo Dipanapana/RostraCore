@@ -55,10 +55,10 @@ class Settings(BaseSettings):
     MILP_TIME_LIMIT: int = 180  # Maximum solver time in seconds
 
     # Testing Mode - Relaxed Constraints for Development
-    TESTING_MODE: bool = True  # Set to False for production BCEA-compliant mode
-    SKIP_CERTIFICATION_CHECK: bool = True  # Skip PSIRA cert validation for testing
+    TESTING_MODE: bool = False  # Set to False for production BCEA-compliant mode
+    SKIP_CERTIFICATION_CHECK: bool = False  # Skip PSIRA cert validation for testing
     SKIP_SKILL_MATCHING: bool = False  # Still match skills but more flexible
-    SKIP_AVAILABILITY_CHECK: bool = True  # Skip availability checks for testing (allows all shifts)
+    SKIP_AVAILABILITY_CHECK: bool = False  # Skip availability checks for testing (allows all shifts)
 
     # Pagination
     DEFAULT_PAGE_SIZE: int = 50
@@ -106,15 +106,23 @@ class Settings(BaseSettings):
     ENABLE_PREMIUM_JOBS: bool = False
 
     # MVP Pricing Model
-    MVP_MONTHLY_RATE_PER_GUARD: float = 45.00
+    MVP_MONTHLY_RATE_PER_GUARD: float = 29.00  # R29/guard/month
     MVP_CURRENCY: str = "ZAR"
+    FREE_TRIAL_DAYS: int = 14  # Standard trial period (extended for pilots)
 
-    # PayFast Payment Gateway (South African)
+    # PayFast Payment Gateway (South African) - Legacy/Backup
     PAYFAST_MERCHANT_ID: str = ""  # Set in .env
     PAYFAST_MERCHANT_KEY: str = ""  # Set in .env
     PAYFAST_PASSPHRASE: str = ""  # Set in .env (optional but recommended)
     PAYFAST_SANDBOX: bool = True  # True for testing, False for production
-    BACKEND_URL: str = "http://localhost:8000"  # For PayFast webhooks
+    BACKEND_URL: str = "http://localhost:8000"  # For webhooks
+
+    # Yoco Payment Gateway (Primary - South African)
+    # Note: Yoco does NOT support native subscriptions - uses monthly one-time payments
+    YOCO_SECRET_KEY: str = ""  # Set in .env (sk_test_... or sk_live_...)
+    YOCO_PUBLIC_KEY: str = ""  # Set in .env (pk_test_... or pk_live_...)
+    YOCO_WEBHOOK_SECRET: str = ""  # Set in .env for webhook signature verification
+    YOCO_SANDBOX: bool = True  # True for testing, False for production
 
     # Security Settings
     PASSWORD_MIN_LENGTH: int = 12

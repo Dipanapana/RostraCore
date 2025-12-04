@@ -1,10 +1,11 @@
 """User model for authentication."""
 
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Enum as SQLEnum, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Enum as SQLEnum, ForeignKey, ARRAY
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
 import enum
+from typing import Optional, List
 
 
 class UserRole(str, enum.Enum):
@@ -33,6 +34,10 @@ class User(Base):
     # Organization link
     org_id = Column(Integer, ForeignKey("organizations.org_id"), nullable=True)
 
+    # Owner and client access control
+    is_owner = Column(Boolean, default=False, nullable=False)  # Can manage users and see all clients
+    managed_client_ids = Column(ARRAY(Integer), nullable=True)  # Specific clients this user can access
+
     # Account status
     is_active = Column(Boolean, default=True)
     is_email_verified = Column(Boolean, default=False)
@@ -60,6 +65,26 @@ class User(Base):
 
     # Relationships
     organization = relationship("Organization", back_populates="users")
+
+    @property
+    def is_superadmin(self) -> bool:
+        """Check if user has superadmin role."""
+        return self.role == UserRole.SUPERADMIN
+
+    def get_accessible_client_ids(self) -> Optional[List[int]]:
+        """
+        Get list of client IDs this user can access.
+
+        Returns:
+            - None: User is owner with full access (no filtering needed)
+            - []: User is non-owner with no assignments (sees nothing)
+            - [1,2,3]: User sees only these specific clients
+        """
+        if self.is_owner:
+            # Owners get full access - return None to indicate no filtering
+            return None
+        # Non-owners must have explicit client assignments
+        return self.managed_client_ids if self.managed_client_ids else []
 
     def __repr__(self):
         return f"<User {self.user_id}: {self.username} ({self.role.value})>"

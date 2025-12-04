@@ -1,19 +1,10 @@
-"use client";
-
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import Navbar from '@/components/landing/Navbar';
+import Hero from '@/components/landing/Hero';
+import Features from '@/components/landing/Features';
+import Pricing from '@/components/landing/Pricing';
+import Footer from '@/components/landing/Footer';
 
 export default function LandingPage() {
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
   return (
     <div className="min-h-screen bg-white">
       {/* HEADER - Sticky Navigation */}

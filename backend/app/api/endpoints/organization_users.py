@@ -27,6 +27,7 @@ class InviteUserRequest(BaseModel):
     email: EmailStr
     full_name: str = Field(..., min_length=1, max_length=200)
     role: UserRole = Field(default=UserRole.SCHEDULER)
+    managed_client_ids: Optional[List[int]] = None  # Clients this user can access
     send_email: bool = True
 
 
@@ -39,10 +40,22 @@ class UserResponse(BaseModel):
     role: UserRole
     is_active: bool
     is_email_verified: bool
+    is_owner: bool = False
+    managed_client_ids: Optional[List[int]] = None
     created_at: str
 
     class Config:
         from_attributes = True
+
+
+class UpdateUserClientsRequest(BaseModel):
+    """Schema for updating user's client assignments."""
+    managed_client_ids: List[int]
+
+
+class UpdateOwnerStatusRequest(BaseModel):
+    """Schema for updating user's owner status."""
+    is_owner: bool
 
 
 class InviteResponse(BaseModel):
@@ -96,6 +109,8 @@ async def list_organization_users(
             role=user.role,
             is_active=user.is_active,
             is_email_verified=user.is_email_verified,
+            is_owner=user.is_owner,
+            managed_client_ids=user.managed_client_ids,
             created_at=user.created_at.isoformat() if user.created_at else None
         )
         for user in users
@@ -114,15 +129,16 @@ async def invite_user_to_organization(
     This will:
     1. Create a new user account with a temporary password
     2. Associate the user with the organization
-    3. Send an email with login credentials (if send_email=True)
+    3. Assign specific clients if provided (non-owners see only assigned clients)
+    4. Send an email with login credentials (if send_email=True)
 
-    **Requires**: ADMIN or COMPANY_ADMIN role
+    **Requires**: Owner status (is_owner=True)
     """
-    # Check if user has permission
-    if current_user.role not in [UserRole.ADMIN, UserRole.COMPANY_ADMIN]:
+    # Check if user is an owner
+    if not current_user.is_owner:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can invite users to the organization"
+            detail="Only organization owners can invite new users"
         )
 
     # Check if user has an organization
@@ -171,7 +187,7 @@ async def invite_user_to_organization(
     temporary_password = secrets.token_urlsafe(12)  # Generates a secure random password
     hashed_password = get_password_hash(temporary_password)
 
-    # Create new user
+    # Create new user (non-owner with assigned clients)
     new_user = User(
         username=username,
         email=invite_request.email,
@@ -179,6 +195,8 @@ async def invite_user_to_organization(
         full_name=invite_request.full_name,
         role=invite_request.role,
         org_id=current_user.org_id,
+        is_owner=False,  # New users are never owners by default
+        managed_client_ids=invite_request.managed_client_ids,  # Assign specific clients
         is_active=True,
         is_email_verified=False  # Will need to verify email
     )
@@ -376,4 +394,192 @@ async def update_user_role(
         "username": user_to_update.username,
         "old_role": old_role.value,
         "new_role": new_role.value
+    }
+
+
+@router.patch("/users/{user_id}/clients")
+async def update_user_clients(
+    user_id: int,
+    request: UpdateUserClientsRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Update a user's assigned clients.
+
+    **Requires**: Owner status (is_owner=True)
+
+    Non-owners can only see data for their assigned clients.
+    """
+    # Check if current user is an owner
+    if not current_user.is_owner:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only organization owners can assign clients to users"
+        )
+
+    # Check if user has an organization
+    if not current_user.org_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User is not associated with an organization"
+        )
+
+    # Get the user to update
+    user_to_update = db.query(User).filter(User.user_id == user_id).first()
+
+    if not user_to_update:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    # Check if user is in the same organization
+    if user_to_update.org_id != current_user.org_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only update users in your own organization"
+        )
+
+    # Update the client assignments
+    old_clients = user_to_update.managed_client_ids or []
+    user_to_update.managed_client_ids = request.managed_client_ids
+    db.commit()
+
+    return {
+        "status": "success",
+        "message": f"User client assignments updated",
+        "user_id": user_to_update.user_id,
+        "username": user_to_update.username,
+        "old_clients": old_clients,
+        "new_clients": request.managed_client_ids
+    }
+
+
+@router.patch("/users/{user_id}/owner")
+async def update_user_owner_status(
+    user_id: int,
+    request: UpdateOwnerStatusRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Update a user's owner status (grant or revoke ownership).
+
+    **Requires**: Owner status (is_owner=True)
+
+    **Cannot**:
+    - Remove ownership from yourself if you're the last owner
+    """
+    # Check if current user is an owner
+    if not current_user.is_owner:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only organization owners can manage ownership"
+        )
+
+    # Check if user has an organization
+    if not current_user.org_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User is not associated with an organization"
+        )
+
+    # Get the user to update
+    user_to_update = db.query(User).filter(User.user_id == user_id).first()
+
+    if not user_to_update:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    # Check if user is in the same organization
+    if user_to_update.org_id != current_user.org_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only update users in your own organization"
+        )
+
+    # If removing ownership, check this isn't the last owner
+    if not request.is_owner and user_to_update.is_owner:
+        owner_count = db.query(User).filter(
+            User.org_id == current_user.org_id,
+            User.is_owner == True,
+            User.is_active == True
+        ).count()
+
+        if owner_count <= 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot remove ownership from the last owner. Transfer ownership to another user first."
+            )
+
+    # Update owner status
+    old_status = user_to_update.is_owner
+    user_to_update.is_owner = request.is_owner
+
+    # If granting ownership, clear client restrictions (owners see all)
+    if request.is_owner:
+        user_to_update.managed_client_ids = None
+
+    db.commit()
+
+    action = "granted" if request.is_owner else "revoked"
+    return {
+        "status": "success",
+        "message": f"Ownership {action} for user {user_to_update.username}",
+        "user_id": user_to_update.user_id,
+        "username": user_to_update.username,
+        "is_owner": user_to_update.is_owner
+    }
+
+
+@router.get("/users/{user_id}/clients")
+async def get_user_clients(
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get a user's assigned clients.
+
+    **Requires**: ADMIN, COMPANY_ADMIN role, or owner status
+    """
+    # Check if user has permission
+    if current_user.role not in [UserRole.ADMIN, UserRole.COMPANY_ADMIN] and not current_user.is_owner:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins or owners can view user client assignments"
+        )
+
+    # Check if user has an organization
+    if not current_user.org_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User is not associated with an organization"
+        )
+
+    # Get the user
+    user = db.query(User).filter(User.user_id == user_id).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    # Check if user is in the same organization
+    if user.org_id != current_user.org_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only view users in your own organization"
+        )
+
+    return {
+        "user_id": user.user_id,
+        "username": user.username,
+        "is_owner": user.is_owner,
+        "managed_client_ids": user.managed_client_ids,
+        "has_full_access": user.is_owner or user.managed_client_ids is None
     }

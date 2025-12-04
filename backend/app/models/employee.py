@@ -37,6 +37,10 @@ class Employee(Base):
     # Multi-tenancy: Employee belongs to an organization
     org_id = Column(Integer, ForeignKey("organizations.org_id", ondelete="CASCADE"), nullable=False, index=True)
 
+    # Client assignment: Employee can be assigned to a specific client
+    # NULL = can work for any client in the organization
+    assigned_client_id = Column(Integer, ForeignKey("clients.client_id", ondelete="SET NULL"), nullable=True, index=True)
+
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
     id_number = Column(String(50), unique=True, nullable=False, index=True)
@@ -70,9 +74,12 @@ class Employee(Base):
 
     # Relationships (MVP core only)
     organization = relationship("Organization", back_populates="employees")
+    assigned_client = relationship("Client", foreign_keys=[assigned_client_id])
     certifications = relationship("Certification", back_populates="employee")
     availability = relationship("Availability", back_populates="employee")
     payroll_summary = relationship("PayrollSummary", back_populates="employee")
+    roster_preferences = relationship("RosterPreferences", back_populates="employee", cascade="all, delete-orphan")
+    availability_patterns = relationship("AvailabilityPattern", back_populates="employee", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Employee {self.employee_id}: {self.first_name} {self.last_name}>"

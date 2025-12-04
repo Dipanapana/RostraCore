@@ -6,6 +6,10 @@ import { Employee } from '@/types'
 import EmployeeForm from '@/components/EmployeeForm'
 import ExportButtons from '@/components/ExportButtons'
 import DashboardLayout from '@/components/layout/DashboardLayout'
+import DataTable, { Column } from '@/components/ui/DataTable'
+import Modal from '@/components/ui/Modal'
+import { Plus, Pencil, Trash2, Upload, Download, Calendar } from 'lucide-react'
+import EmployeeAvailabilityPatterns from '@/components/EmployeeAvailabilityPatterns'
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([])
@@ -13,11 +17,11 @@ export default function EmployeesPage() {
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
-
-  // Pagination and search
-  const [searchTerm, setSearchTerm] = useState('')
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [showImportModal, setShowImportModal] = useState(false)
+  const [importFile, setImportFile] = useState<File | null>(null)
+  const [importing, setImporting] = useState(false)
+  const [importResult, setImportResult] = useState<any>(null)
+  const [availabilityEmployee, setAvailabilityEmployee] = useState<Employee | null>(null)
 
   useEffect(() => {
     fetchEmployees()
@@ -59,37 +63,122 @@ export default function EmployeesPage() {
 
   const handleFormSuccess = () => {
     fetchEmployees()
+    handleCloseForm()
   }
 
-  // Filter and paginate employees
-  const filteredEmployees = useMemo(() => {
-    return employees.filter(employee => {
-      const searchLower = searchTerm.toLowerCase()
-      return (
-        employee.first_name.toLowerCase().includes(searchLower) ||
-        employee.last_name.toLowerCase().includes(searchLower) ||
-        employee.id_number.toLowerCase().includes(searchLower) ||
-        employee.role.toLowerCase().includes(searchLower) ||
-        employee.status.toLowerCase().includes(searchLower)
-      )
-    })
-  }, [employees, searchTerm])
+  const handleDownloadTemplate = () => {
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+    window.open(`${API_URL}/api/v1/employees/download-template`, '_blank')
+  }
 
-  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const currentEmployees = filteredEmployees.slice(startIndex, endIndex)
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+        alert('Please select an Excel file (.xlsx or .xls)')
+        return
+      }
+      setImportFile(file)
+      setImportResult(null)
+    }
+  }
 
-  // Reset to page 1 when search changes
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [searchTerm])
+  const handleImport = async () => {
+    if (!importFile) return
+
+    try {
+      setImporting(true)
+      setError(null)
+
+      const formData = new FormData()
+      formData.append('file', importFile)
+
+      const response = await employeesApi.importFromExcel(formData)
+
+      setImportResult(response.data)
+
+      // Refresh employee list after successful import
+      if (response.data.imported_count > 0) {
+        await fetchEmployees()
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.detail || err.message || 'Failed to import employees')
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  const handleCloseImportModal = () => {
+    setShowImportModal(false)
+    setImportFile(null)
+    setImportResult(null)
+    setError(null)
+  }
+
+  const columns: Column<Employee>[] = [
+    {
+      header: 'ID',
+      accessorKey: 'employee_id',
+      cell: (emp) => <span className="font-mono text-xs text-slate-500 dark:text-slate-400">#{emp.employee_id}</span>,
+    },
+    {
+      header: 'Name',
+      cell: (emp) => (
+        <div>
+          <div className="font-medium text-slate-900 dark:text-white">
+            {emp.first_name} {emp.last_name}
+          </div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">{emp.email}</div>
+        </div>
+      ),
+    },
+    {
+      header: 'ID Number',
+      accessorKey: 'id_number',
+    },
+    {
+      header: 'Role',
+      cell: (emp) => (
+        <span
+          className={`px-2.5 py-0.5 inline-flex text-xs font-medium rounded-full ${emp.role === 'armed'
+            ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+            : emp.role === 'unarmed'
+              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+              : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+            }`}
+        >
+          {emp.role.toUpperCase()}
+        </span>
+      ),
+    },
+    {
+      header: 'Hourly Rate',
+      cell: (emp) => (
+        <span className="font-medium text-slate-700 dark:text-slate-300">
+          R{emp.hourly_rate.toFixed(2)}
+        </span>
+      ),
+    },
+    {
+      header: 'Status',
+      cell: (emp) => (
+        <span
+          className={`px-2.5 py-0.5 inline-flex text-xs font-medium rounded-full ${emp.status === 'active'
+            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+            : 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-400'
+            }`}
+        >
+          {emp.status.toUpperCase()}
+        </span>
+      ),
+    },
+  ]
 
   if (loading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-lg">Loading employees...</div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
         </div>
       </DashboardLayout>
     )
@@ -97,251 +186,263 @@ export default function EmployeesPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Employees</h1>
-            <p className="text-gray-600">Manage your security workforce</p>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Employees</h1>
+            <p className="text-slate-500 dark:text-slate-400 mt-1">
+              Manage your security workforce and profiles
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <ExportButtons type="employees" />
             <button
-              onClick={() => setShowForm(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+              onClick={() => setShowImportModal(true)}
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-green-500/20 transition-all hover:scale-105 active:scale-95"
             >
-              + Add Employee
+              <Upload className="w-5 h-5" />
+              Import Excel
+            </button>
+            <button
+              onClick={() => setShowForm(true)}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95"
+            >
+              <Plus className="w-5 h-5" />
+              Add Employee
             </button>
           </div>
         </div>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 animate-fadeIn">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl animate-in fade-in slide-in-from-top-2">
             {error}
           </div>
         )}
 
-        {/* Search and Items Per Page */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-          <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
-            <div className="flex-1 w-full md:max-w-md">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search employees..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                />
-                <svg
-                  className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-700 font-medium">Show:</label>
-              <select
-                value={itemsPerPage}
-                onChange={(e) => {
-                  setItemsPerPage(Number(e.target.value))
-                  setCurrentPage(1)
+        {/* Data Table */}
+        <DataTable
+          data={employees}
+          columns={columns}
+          searchKeys={['first_name', 'last_name', 'id_number', 'role', 'status']}
+          actions={(emp) => (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setAvailabilityEmployee(emp)
                 }}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="p-2 text-slate-400 dark:text-slate-300 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                title="Availability"
               >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    ID
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    ID Number
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Role
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Hourly Rate
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {currentEmployees.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
-                      {searchTerm ? `No employees match "${searchTerm}"` : 'No employees found. Click "Add Employee" to create one.'}
-                    </td>
-                  </tr>
-                ) : (
-                  currentEmployees.map((employee) => (
-                  <tr key={employee.employee_id} className="hover:bg-blue-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      #{employee.employee_id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                      {employee.first_name} {employee.last_name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {employee.id_number}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        employee.role === 'armed' ? 'bg-red-100 text-red-800' :
-                        employee.role === 'unarmed' ? 'bg-green-100 text-green-800' :
-                        'bg-blue-100 text-blue-800'
-                      }`}>
-                        {employee.role.toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                      R{employee.hourly_rate.toFixed(2)}/hr
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        employee.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {employee.status.toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => handleEdit(employee)}
-                        className="text-blue-600 hover:text-blue-900 font-medium transition-colors"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(employee.employee_id)}
-                        className="text-red-600 hover:text-red-900 ml-4 font-medium transition-colors"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {filteredEmployees.length > 0 && (
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4 rounded-lg shadow-md">
-            <div className="flex-1 flex justify-between sm:hidden">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
+                <Calendar className="w-4 h-4" />
               </button>
               <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleEdit(emp)
+                }}
+                className="p-2 text-slate-400 dark:text-slate-300 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                title="Edit"
               >
-                Next
+                <Pencil className="w-4 h-4" />
               </button>
-            </div>
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-gray-700">
-                  Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
-                  <span className="font-medium">{Math.min(endIndex, filteredEmployees.length)}</span> of{' '}
-                  <span className="font-medium">{filteredEmployees.length}</span> results
-                </p>
-              </div>
-              <div>
-                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <span className="sr-only">Previous</span>
-                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-
-                  {[...Array(totalPages)].map((_, idx) => {
-                    const pageNumber = idx + 1
-                    // Show first page, last page, current page, and pages around current
-                    if (
-                      pageNumber === 1 ||
-                      pageNumber === totalPages ||
-                      (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
-                    ) {
-                      return (
-                        <button
-                          key={pageNumber}
-                          onClick={() => setCurrentPage(pageNumber)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-colors ${
-                            currentPage === pageNumber
-                              ? 'z-10 bg-blue-600 border-blue-600 text-white'
-                              : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                          }`}
-                        >
-                          {pageNumber}
-                        </button>
-                      )
-                    } else if (
-                      pageNumber === currentPage - 2 ||
-                      pageNumber === currentPage + 2
-                    ) {
-                      return <span key={pageNumber} className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>
-                    }
-                    return null
-                  })}
-
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <span className="sr-only">Next</span>
-                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                </nav>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {showForm && (
-        <EmployeeForm
-          employee={editingEmployee}
-          onClose={handleCloseForm}
-          onSuccess={handleFormSuccess}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleDelete(emp.employee_id)
+                }}
+                className="p-2 text-slate-400 dark:text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                title="Delete"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </>
+          )}
         />
-      )}
+
+        {/* Modal Form */}
+        <Modal
+          isOpen={showForm}
+          onClose={handleCloseForm}
+          title={editingEmployee ? 'Edit Employee' : 'Add New Employee'}
+          maxWidth="2xl"
+        >
+          <EmployeeForm
+            employee={editingEmployee}
+            onClose={handleCloseForm}
+            onSuccess={handleFormSuccess}
+          />
+        </Modal>
+
+        {/* Import Modal */}
+        <Modal
+          isOpen={showImportModal}
+          onClose={handleCloseImportModal}
+          title="Import Employees from Excel"
+          maxWidth="2xl"
+        >
+          <div className="space-y-6">
+            {/* Instructions */}
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+              <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">
+                Import Instructions
+              </h3>
+              <ol className="list-decimal list-inside space-y-1 text-sm text-blue-800 dark:text-blue-300">
+                <li>Download the Excel template using the button below</li>
+                <li>Fill in employee data (first_name, last_name, id_number are required)</li>
+                <li>Upload the completed Excel file</li>
+                <li>Review the import results</li>
+              </ol>
+            </div>
+
+            {/* Download Template Button */}
+            <div className="flex justify-center">
+              <button
+                onClick={handleDownloadTemplate}
+                className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-6 py-3 rounded-xl font-medium border border-slate-300 dark:border-slate-600 transition-all hover:scale-105 active:scale-95"
+              >
+                <Download className="w-5 h-5" />
+                Download Excel Template
+              </button>
+            </div>
+
+            {/* File Upload */}
+            <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-8 text-center hover:border-blue-500 dark:hover:border-blue-400 transition-colors">
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileSelect}
+                className="hidden"
+                id="excel-upload"
+              />
+              <label htmlFor="excel-upload" className="cursor-pointer">
+                <Upload className="w-12 h-12 mx-auto text-slate-400 dark:text-slate-500 mb-3" />
+                {importFile ? (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-green-600 dark:text-green-400">
+                      Selected: {importFile.name}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Click to select a different file
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                      Click to select Excel file
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Supports .xlsx and .xls files
+                    </p>
+                  </div>
+                )}
+              </label>
+            </div>
+
+            {/* Import Results */}
+            {importResult && (
+              <div className="space-y-4">
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
+                  <h3 className="font-semibold text-green-900 dark:text-green-200 mb-2">
+                    Import Complete
+                  </h3>
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <p className="text-green-700 dark:text-green-300 font-medium">
+                        {importResult.imported_count} Imported
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-yellow-700 dark:text-yellow-300 font-medium">
+                        {importResult.skipped_count} Skipped
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-red-700 dark:text-red-300 font-medium">
+                        {importResult.error_count} Errors
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Show skipped rows */}
+                {importResult.skipped && importResult.skipped.length > 0 && (
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4">
+                    <h4 className="font-semibold text-yellow-900 dark:text-yellow-200 mb-2 text-sm">
+                      Skipped Rows
+                    </h4>
+                    <ul className="text-xs text-yellow-800 dark:text-yellow-300 space-y-1">
+                      {importResult.skipped.map((skip: any, idx: number) => (
+                        <li key={idx}>
+                          Row {skip.row}: {skip.reason} (ID: {skip.id_number})
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Show errors */}
+                {importResult.errors && importResult.errors.length > 0 && (
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
+                    <h4 className="font-semibold text-red-900 dark:text-red-200 mb-2 text-sm">
+                      Errors
+                    </h4>
+                    <ul className="text-xs text-red-800 dark:text-red-300 space-y-1">
+                      {importResult.errors.map((error: any, idx: number) => (
+                        <li key={idx}>
+                          Row {error.row}: {error.error}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+              <button
+                onClick={handleCloseImportModal}
+                className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg font-medium transition-colors"
+              >
+                {importResult ? 'Close' : 'Cancel'}
+              </button>
+              {!importResult && (
+                <button
+                  onClick={handleImport}
+                  disabled={!importFile || importing}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105 active:scale-95 disabled:hover:scale-100"
+                >
+                  {importing ? (
+                    <span className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Importing...
+                    </span>
+                  ) : (
+                    'Import Employees'
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+        </Modal>
+
+        {/* Availability Patterns Modal */}
+        <Modal
+          isOpen={!!availabilityEmployee}
+          onClose={() => setAvailabilityEmployee(null)}
+          title="Employee Availability"
+          maxWidth="2xl"
+        >
+          {availabilityEmployee && (
+            <EmployeeAvailabilityPatterns
+              employeeId={availabilityEmployee.employee_id}
+              employeeName={`${availabilityEmployee.first_name} ${availabilityEmployee.last_name}`}
+              onClose={() => setAvailabilityEmployee(null)}
+            />
+          )}
+        </Modal>
       </div>
     </DashboardLayout>
   )

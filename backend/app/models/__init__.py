@@ -13,6 +13,10 @@ from app.models.shift_assignment import ShiftAssignment
 from app.models.organization import Organization
 from app.models.client import Client
 from app.models.subscription_plan import SubscriptionPlan
+from app.models.client_invoice import ClientInvoice, InvoiceLineItem
+from app.models.roster_preferences import RosterPreferences, EmergencyShiftRequest
+from app.models.site_staffing_profile import SiteStaffingProfile, PeriodType, DayType, PSIRAGradeRequirement
+from app.models.availability_pattern import AvailabilityPattern, PatternType
 
 __all__ = [
     "User",
@@ -27,5 +31,15 @@ __all__ = [
     "ShiftAssignment",
     "Organization",
     "Client",
-    "SubscriptionPlan"
+    "SubscriptionPlan",
+    "ClientInvoice",
+    "InvoiceLineItem",
+    "RosterPreferences",
+    "EmergencyShiftRequest",
+    "SiteStaffingProfile",
+    "PeriodType",
+    "DayType",
+    "PSIRAGradeRequirement",
+    "AvailabilityPattern",
+    "PatternType"
 ]

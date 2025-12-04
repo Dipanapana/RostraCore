@@ -1,11 +1,11 @@
-"""Excel import service for bulk data uploads."""
+"""Excel import service for bulk data uploads. Updated for correct field mapping."""
 import logging
 import pandas as pd
 from typing import Dict, List, Optional
 from sqlalchemy.orm import Session
 from datetime import datetime
 from io import BytesIO
-from app.models.employee import Employee
+from app.models.employee import Employee, EmployeeRole, EmployeeStatus
 from app.models.site import Site
 from app.models.client import Client
 from app.models.certification import Certification
@@ -31,7 +31,7 @@ class ExcelImportService:
         - id_number (required)
         - email
         - phone
-        - role_name (admin/manager/guard)
+        - role (armed/unarmed)
         - psira_number
         - hourly_rate
         - home_address
@@ -80,22 +80,36 @@ class ExcelImportService:
                         })
                         continue
 
+                    # Parse role
+                    role_str = str(row.get('role', 'unarmed')).strip().lower()
+                    if role_str == 'armed':
+                        role = EmployeeRole.ARMED
+                    else:
+                        role = EmployeeRole.UNARMED
+
                     # Create employee
+                    # Map psira_grade from Excel (handles both 'psira_grade' and 'cert_level' columns)
+                    psira_grade_val = None
+                    if pd.notna(row.get('psira_grade')):
+                        psira_grade_val = str(row.get('psira_grade')).strip().upper()
+                    elif pd.notna(row.get('cert_level')):
+                        psira_grade_val = str(row.get('cert_level')).strip().upper()
+
                     employee = Employee(
-                        organization_id=organization_id,
+                        org_id=organization_id,
                         first_name=str(row['first_name']).strip(),
                         last_name=str(row['last_name']).strip(),
                         id_number=str(row['id_number']).strip(),
                         email=str(row.get('email', '')).strip() if pd.notna(row.get('email')) else None,
                         phone=str(row.get('phone', '')).strip() if pd.notna(row.get('phone')) else None,
-                        role_name=str(row.get('role_name', 'guard')).strip().lower(),
+                        role=role,
                         psira_number=str(row.get('psira_number', '')).strip() if pd.notna(row.get('psira_number')) else None,
+                        psira_grade=psira_grade_val,
                         hourly_rate=float(row.get('hourly_rate', 50.0)) if pd.notna(row.get('hourly_rate')) else 50.0,
-                        home_address=str(row.get('home_address', '')).strip() if pd.notna(row.get('home_address')) else None,
-                        emergency_contact=str(row.get('emergency_contact', '')).strip() if pd.notna(row.get('emergency_contact')) else None,
-                        emergency_phone=str(row.get('emergency_phone', '')).strip() if pd.notna(row.get('emergency_phone')) else None,
-                        is_active=True,
-                        date_hired=datetime.utcnow()
+                        address=str(row.get('home_address', '')).strip() if pd.notna(row.get('home_address')) else None,
+                        emergency_contact_name=str(row.get('emergency_contact', '')).strip() if pd.notna(row.get('emergency_contact')) else None,
+                        emergency_contact_phone=str(row.get('emergency_phone', '')).strip() if pd.notna(row.get('emergency_phone')) else None,
+                        status=EmployeeStatus.ACTIVE
                     )
 
                     db.add(employee)
@@ -272,8 +286,9 @@ class ExcelImportService:
             'id_number': ['8001011234567', '9002022345678'],
             'email': ['john.doe@example.com', 'jane.smith@example.com'],
             'phone': ['+27821234567', '+27829876543'],
-            'role_name': ['guard', 'manager'],
+            'role': ['unarmed', 'armed'],
             'psira_number': ['1234567', '7654321'],
+            'psira_grade': ['E', 'B'],
             'hourly_rate': [55.00, 75.00],
             'home_address': ['123 Main St, Johannesburg', '456 Oak Ave, Pretoria'],
             'emergency_contact': ['Mary Doe', 'Bob Smith'],

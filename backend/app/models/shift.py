@@ -1,7 +1,7 @@
 """Shift model."""
 
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Enum as SQLEnum
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, synonym
 from app.database import Base
 from app.models.certification import PSIRAGrade, FirearmCompetencyType
 import enum
@@ -49,6 +49,13 @@ class Shift(Base):
     organization = relationship("Organization", back_populates="shifts")
     site = relationship("Site", back_populates="shifts")
     shift_assignments = relationship("ShiftAssignment", back_populates="shift", cascade="all, delete-orphan")
+    
+    # Legacy Assignment (Single Guard per Shift) - Kept for backward compatibility
+    assigned_employee_id = Column(Integer, ForeignKey("employees.employee_id"), nullable=True, index=True)
+    employee = relationship("Employee")
+    
+    # Alias for backward compatibility
+    assignments = synonym("shift_assignments")
 
     def __repr__(self):
         return f"<Shift {self.shift_id}: Site {self.site_id} at {self.start_time}>"

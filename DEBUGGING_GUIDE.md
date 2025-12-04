@@ -155,6 +155,7 @@ rostracore_db=#
 
 **Download:** https://dbeaver.io/download/
 
+
 **Setup:**
 1. Open DBeaver
 2. Click "New Database Connection"
