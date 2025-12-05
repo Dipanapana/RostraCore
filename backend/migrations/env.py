@@ -7,9 +7,17 @@ from alembic import context
 import os
 import sys
 
+# Load environment variables FIRST before any app imports
+from dotenv import load_dotenv
+load_dotenv()
+
+# Set DATABASE_URL in environment BEFORE importing app modules
+db_url = os.getenv("DATABASE_URL")
+
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
+# Now import app modules (they will use the environment variable)
 from app.database import Base
 # Import only MVP core models
 from app.models import (
@@ -25,11 +33,7 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Load database URL from environment if available
-from dotenv import load_dotenv
-load_dotenv()
-
-db_url = os.getenv("DATABASE_URL")
+# Set the database URL in alembic config
 if db_url:
     # Double % for ConfigParser interpolation
     db_url_escaped = db_url.replace('%', '%%')

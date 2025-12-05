@@ -1,6 +1,7 @@
 """Application configuration."""
 
-from pydantic_settings import BaseSettings
+import os
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional, Union
 from pydantic import field_validator
 
@@ -134,9 +135,22 @@ class Settings(BaseSettings):
     # SuperAdmin Settings (Phase 5)
     SUPERADMIN_SECRET_TOKEN: Optional[str] = None  # Set in .env for superadmin registration
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    # pydantic-settings v2 configuration
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+        extra="ignore",  # Ignore extra environment variables
+    )
 
 
+# Get DATABASE_URL from environment first if available (for Railway/production)
+_db_url_from_env = os.environ.get("DATABASE_URL")
 settings = Settings()
+
+# Override DATABASE_URL if set in environment (ensures Railway variable is used)
+if _db_url_from_env:
+    # Handle Railway's postgres:// vs postgresql:// URL format
+    if _db_url_from_env.startswith("postgres://"):
+        _db_url_from_env = _db_url_from_env.replace("postgres://", "postgresql://", 1)
+    settings = Settings(DATABASE_URL=_db_url_from_env)
