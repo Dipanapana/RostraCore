@@ -66,6 +66,15 @@ async def root():
 @app.get("/health")
 async def health_check():
     """
+    Simple health check endpoint for Railway/container orchestration.
+    Returns OK if the app is running.
+    """
+    return {"status": "healthy", "message": "RostraCore API is running"}
+
+
+@app.get("/health/detailed")
+async def detailed_health_check():
+    """
     Comprehensive health check endpoint
 
     Checks:
