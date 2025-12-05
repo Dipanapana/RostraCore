@@ -11,6 +11,8 @@ export interface Employee {
   status: 'active' | 'inactive'
   email?: string
   phone?: string
+  assigned_client_id?: number  // Legacy single client
+  assigned_client_ids?: number[]  // Multiple client assignment
 }
 
 export interface Site {
@@ -181,4 +183,35 @@ export interface AvailabilityCalendarDay {
   is_available: boolean
   reason: string
   time_windows: Array<{ start: string; end: string }>
+}
+
+// Organization Users
+export type UserRole = 'admin' | 'company_admin' | 'scheduler' | 'guard' | 'finance' | 'superadmin'
+
+export interface OrganizationUser {
+  user_id: number
+  username: string
+  email: string
+  full_name?: string
+  role: UserRole
+  is_active: boolean
+  is_email_verified: boolean
+  is_owner: boolean
+  managed_client_ids?: number[]
+  created_at: string
+}
+
+export interface InviteUserRequest {
+  email: string
+  full_name: string
+  role: UserRole
+  managed_client_ids?: number[]
+  send_email?: boolean
+}
+
+export interface Client {
+  client_id: number
+  client_name: string
+  status: 'active' | 'inactive' | 'suspended'
+  billing_rate?: number
 }

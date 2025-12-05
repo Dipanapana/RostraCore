@@ -17,6 +17,10 @@ from app.models.client_invoice import ClientInvoice, InvoiceLineItem
 from app.models.roster_preferences import RosterPreferences, EmergencyShiftRequest
 from app.models.site_staffing_profile import SiteStaffingProfile, PeriodType, DayType, PSIRAGradeRequirement
 from app.models.availability_pattern import AvailabilityPattern, PatternType
+from app.models.default_hourly_rate import DefaultHourlyRate
+from app.models.superadmin_invitation import SuperadminInvitation
+from app.models.shift_pattern_template import ShiftPatternTemplate, PatternType as ShiftPatternType
+from app.models.leave import LeaveRequest, LeaveBalance, LeaveType, LeaveStatus
 
 __all__ = [
     "User",
@@ -41,5 +45,13 @@ __all__ = [
     "DayType",
     "PSIRAGradeRequirement",
     "AvailabilityPattern",
-    "PatternType"
+    "PatternType",
+    "DefaultHourlyRate",
+    "SuperadminInvitation",
+    "ShiftPatternTemplate",
+    "ShiftPatternType",
+    "LeaveRequest",
+    "LeaveBalance",
+    "LeaveType",
+    "LeaveStatus"
 ]

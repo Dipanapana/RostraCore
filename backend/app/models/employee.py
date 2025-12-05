@@ -1,6 +1,7 @@
 """Employee model."""
 
 from sqlalchemy import Column, Integer, String, Float, Boolean, Date, Text, DateTime, Numeric, ForeignKey, Enum as SQLEnum
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import relationship
 from app.database import Base
 import enum
@@ -37,9 +38,12 @@ class Employee(Base):
     # Multi-tenancy: Employee belongs to an organization
     org_id = Column(Integer, ForeignKey("organizations.org_id", ondelete="CASCADE"), nullable=False, index=True)
 
-    # Client assignment: Employee can be assigned to a specific client
-    # NULL = can work for any client in the organization
+    # Client assignment: Employee can be assigned to specific client(s)
+    # NULL/empty = can work for any client in the organization
+    # Legacy single-client field (kept for backward compatibility)
     assigned_client_id = Column(Integer, ForeignKey("clients.client_id", ondelete="SET NULL"), nullable=True, index=True)
+    # New multi-client field: array of client IDs
+    assigned_client_ids = Column(ARRAY(Integer), nullable=True)
 
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
@@ -72,6 +76,11 @@ class Employee(Base):
     is_supervisor = Column(Boolean, default=False)  # Whether employee is a supervisor
     province = Column(String(50), nullable=True)  # North West, Northern Cape, Gauteng, etc.
 
+    # Shift pattern assignment for auto-generated availability
+    shift_pattern_id = Column(Integer, ForeignKey("shift_pattern_templates.template_id", ondelete="SET NULL"), nullable=True)
+    rotation_group = Column(String(1), nullable=True)  # A, B, C, D - position in rotation cycle
+    pattern_start_date = Column(Date, nullable=True)  # When their rotation cycle started
+
     # Relationships (MVP core only)
     organization = relationship("Organization", back_populates="employees")
     assigned_client = relationship("Client", foreign_keys=[assigned_client_id])
@@ -80,6 +89,7 @@ class Employee(Base):
     payroll_summary = relationship("PayrollSummary", back_populates="employee")
     roster_preferences = relationship("RosterPreferences", back_populates="employee", cascade="all, delete-orphan")
     availability_patterns = relationship("AvailabilityPattern", back_populates="employee", cascade="all, delete-orphan")
+    shift_pattern = relationship("ShiftPatternTemplate", back_populates="assigned_employees")
 
     def __repr__(self):
         return f"<Employee {self.employee_id}: {self.first_name} {self.last_name}>"

@@ -40,6 +40,7 @@ export const employeesApi = {
       'Content-Type': 'multipart/form-data',
     },
   }),
+  getDataQualityDashboard: () => api.get('/api/v1/employees/dashboard/data-quality'),
 }
 
 export const clientsApi = {
@@ -76,6 +77,8 @@ export const rosterApi = {
   getBudgetSummary: (params?: any) => api.get('/api/v1/roster/budget-summary', { params }),
   getUnfilledShifts: () => api.get('/api/v1/roster/unfilled-shifts'),
   getEmployeeHours: (params?: any) => api.get('/api/v1/roster/employee-hours', { params }),
+  getAssignmentDashboard: (params?: { start_date?: string; end_date?: string; client_id?: number }) =>
+    api.get('/api/v1/roster/assignment-dashboard', { params }),
 }
 
 export const availabilityApi = {
@@ -141,6 +144,27 @@ export const billingApi = {
     api.post('/api/v1/payments/extend-trial', null, { params: { org_id: orgId, days } }),
 }
 
+export const organizationUsersApi = {
+  getAll: () => api.get('/api/v1/organization/users'),
+  getById: (userId: number) => api.get(`/api/v1/organization/users/${userId}`),
+  invite: (data: {
+    email: string
+    full_name: string
+    role: string
+    managed_client_ids?: number[]
+    send_email?: boolean
+  }) => api.post('/api/v1/organization/users/invite', data),
+  updateRole: (userId: number, newRole: string) =>
+    api.patch(`/api/v1/organization/users/${userId}/role`, null, { params: { new_role: newRole } }),
+  updateClients: (userId: number, clientIds: number[]) =>
+    api.patch(`/api/v1/organization/users/${userId}/clients`, { managed_client_ids: clientIds }),
+  updateOwnerStatus: (userId: number, isOwner: boolean) =>
+    api.patch(`/api/v1/organization/users/${userId}/owner`, { is_owner: isOwner }),
+  remove: (userId: number) => api.delete(`/api/v1/organization/users/${userId}`),
+  resetPassword: (userId: number) => api.post(`/api/v1/organization/users/${userId}/reset-password`),
+  getUserClients: (userId: number) => api.get(`/api/v1/organization/users/${userId}/clients`),
+}
+
 export const superadminApi = {
   // System stats
   getStats: () => api.get('/api/v1/superadmin/stats'),
@@ -162,6 +186,17 @@ export const superadminApi = {
     api.post(`/api/v1/superadmin/organizations/${orgId}/extend-trial`, null, { params: { days } }),
   updateTier: (orgId: number, tier: string) =>
     api.put(`/api/v1/superadmin/organizations/${orgId}/tier`, null, { params: { tier } }),
+
+  // SuperAdmin Invitations
+  inviteSuperadmin: (data: { email: string; full_name: string }) =>
+    api.post('/api/v1/superadmin/invite-superadmin', data),
+  getInvitations: () => api.get('/api/v1/superadmin/invitations'),
+  revokeInvitation: (invitationId: number) =>
+    api.delete(`/api/v1/superadmin/invitations/${invitationId}`),
+  validateInvitation: (token: string) =>
+    api.get(`/api/v1/superadmin/invitations/validate/${token}`),
+  acceptInvitation: (data: { token: string; password: string; full_name?: string }) =>
+    api.post('/api/v1/superadmin/accept-invitation', data),
 }
 
 // Site Staffing Profiles API
@@ -212,12 +247,22 @@ export const availabilityPatternsApi = {
   },
 }
 
-// Organization Settings API (Client Management)
+// Organization Settings API (Client Management and Hourly Rates)
 export const organizationSettingsApi = {
   getClientManagement: () => api.get('/api/v1/organization-settings/client-management'),
   updateClientManagement: (data: { mode: 'all' | 'selected'; client_ids?: number[] }) =>
     api.put('/api/v1/organization-settings/client-management', data),
   getClientManagementMode: () => api.get('/api/v1/organization-settings/client-management/mode'),
+
+  // Default Hourly Rates
+  getHourlyRates: () => api.get('/api/v1/organization-settings/hourly-rates'),
+  updateHourlyRates: (rates: Array<{ psira_grade: string; role: string; default_hourly_rate: number }>) =>
+    api.put('/api/v1/organization-settings/hourly-rates', { rates }),
+  lookupHourlyRate: (psiraGrade: string, role: string) =>
+    api.get('/api/v1/organization-settings/hourly-rates/lookup', { params: { psira_grade: psiraGrade, role } }),
+  applyDefaultRates: (data: { employee_ids?: number[]; overwrite_existing?: boolean }) =>
+    api.post('/api/v1/organization-settings/hourly-rates/apply', data),
+  seedDefaultRates: () => api.post('/api/v1/organization-settings/hourly-rates/seed-defaults'),
 }
 
 export const exportsApi = {
@@ -244,6 +289,21 @@ export const exportsApi = {
     return `${API_BASE_URL}/api/v1/exports/shifts/excel${queryString ? '?' + queryString : ''}`
   },
   certificationsExcel: () => `${API_BASE_URL}/api/v1/exports/certifications/excel`,
+}
+
+// Payroll Deductions API (SA Tax Calculations)
+export const payrollDeductionsApi = {
+  calculatePaye: (grossMonthly: number, age: number = 35) =>
+    api.get('/api/v1/payroll-deductions/paye', { params: { gross_monthly: grossMonthly, age } }),
+  calculateUif: (grossMonthly: number) =>
+    api.get('/api/v1/payroll-deductions/uif', { params: { gross_monthly: grossMonthly } }),
+  calculateSdl: (totalMonthlyPayroll: number, isExempt: boolean = false) =>
+    api.get('/api/v1/payroll-deductions/sdl', { params: { total_monthly_payroll: totalMonthlyPayroll, is_exempt: isExempt } }),
+  calculateNetPay: (grossMonthly: number, age: number = 35, otherDeductions: number = 0) =>
+    api.get('/api/v1/payroll-deductions/net-pay', { params: { gross_monthly: grossMonthly, age, other_deductions: otherDeductions } }),
+  calculateCostToCompany: (grossMonthly: number, totalMonthlyPayroll: number = 0) =>
+    api.get('/api/v1/payroll-deductions/cost-to-company', { params: { gross_monthly: grossMonthly, total_monthly_payroll: totalMonthlyPayroll } }),
+  getTaxTables: () => api.get('/api/v1/payroll-deductions/tax-tables'),
 }
 
 export default api

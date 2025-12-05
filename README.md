@@ -1,74 +1,75 @@
-# RostraCore v1
+# RostraCore
 
-**Algorithmic Roster & Budget Engine for Security Guard Management**
+**Multi-Tenant Security Guard Management SaaS Platform**
 
-RostraCore is a deterministic, AI-free auto-rostering system designed for security companies. It uses constraint logic and optimization algorithms to generate legally compliant, cost-optimized weekly/monthly rosters while enforcing rest periods, certification validity, and client coverage requirements.
+RostraCore is a comprehensive security guard management platform designed for South African security companies. It features AI-powered roster optimization with CP-SAT algorithms, BCEA labor law compliance, PSIRA certification tracking, and integrated payroll with SA tax calculations.
 
 ---
 
 ## Features
 
-- **Auto-Rostering Engine**: Deterministic algorithms (Hungarian Algorithm, ILP) for optimal shift assignments
-- **Constraint Enforcement**: Rest periods, weekly hours, certifications, skills matching
-- **Budget Optimization**: Minimize costs while meeting all coverage requirements
-- **Multi-Site Management**: Handle multiple client locations with different requirements
-- **Employee Management**: Track guards, skills, certifications, availability
-- **Payroll Integration**: Calculate regular and overtime hours automatically
-- **Compliance Tracking**: Monitor certification expiry and legal constraints
+### Core Functionality
+- **Multi-Tenant Architecture**: Isolated data per organization with role-based access
+- **Employee Management**: Track guards, PSIRA certifications, availability, leave
+- **Client & Site Management**: Municipality clients with multiple guard posts
+- **AI-Powered Roster Generation**: CP-SAT optimization for optimal shift assignments
+- **Payroll Processing**: SA tax calculations (PAYE, UIF) with payslip generation
+
+### Compliance
+- **BCEA Compliant**: 48h/week limits, 8h rest between shifts
+- **PSIRA Grade Matching**: A, B, C, D, E grade hierarchy enforcement
+- **POPIA Ready**: Data protection compliance for South Africa
+
+### Premium Calculations
+- Night shift premium (18:00-06:00)
+- Weekend rates (Saturday 1.5x, Sunday 2x)
+- Public holiday rates (2x)
 
 ---
 
 ## Tech Stack
 
-### Backend
-- **Python 3.9+** with FastAPI
-- **PostgreSQL 14+** for data persistence
-- **SQLAlchemy** for ORM
-- **Alembic** for database migrations
-- **NumPy/SciPy** for optimization algorithms
-- **PuLP** for integer linear programming (optional)
-- **ReportLab** for PDF reports
-
-### Frontend
-- **Next.js 14** with React 18
-- **TypeScript** for type safety
-- **Tailwind CSS** for styling
-- **React Query** for data fetching
-- **Recharts** for visualizations
+| Layer | Technology |
+|-------|------------|
+| Backend | Python 3.11+, FastAPI, SQLAlchemy 2.0 |
+| Frontend | Next.js 14, TypeScript, Tailwind CSS |
+| Database | PostgreSQL 14+ with Alembic migrations |
+| Optimization | Google OR-Tools CP-SAT solver |
+| Auth | JWT with httpOnly cookies, refresh tokens |
+| Deployment | Railway.app (backend), Vercel (frontend) |
 
 ---
 
 ## Project Structure
 
 ```
-dotroster/
+RostraCore/
 ├── backend/
 │   ├── app/
-│   │   ├── models/           # SQLAlchemy models
 │   │   ├── api/endpoints/    # FastAPI routes
+│   │   ├── models/           # SQLAlchemy models
 │   │   ├── services/         # Business logic
-│   │   ├── algorithms/       # Rostering algorithms
-│   │   ├── utils/            # Helper functions
-│   │   ├── config.py         # Configuration
-│   │   ├── database.py       # DB connection
-│   │   └── main.py           # FastAPI app
+│   │   ├── algorithms/       # CP-SAT roster optimization
+│   │   └── utils/            # Helpers (auth, pagination)
 │   ├── migrations/           # Alembic migrations
-│   ├── tests/                # Backend tests
-│   ├── requirements.txt      # Python dependencies
-│   ├── docker-compose.yml    # PostgreSQL setup
-│   └── alembic.ini           # Migration config
+│   └── tests/                # pytest tests
 ├── frontend/
 │   ├── src/
-│   │   ├── app/              # Next.js app router
+│   │   ├── app/              # Next.js App Router pages
 │   │   ├── components/       # React components
-│   │   ├── services/         # API clients
+│   │   ├── services/         # API client
 │   │   └── types/            # TypeScript types
-│   ├── public/               # Static assets
-│   └── package.json          # Node dependencies
-├── docs/                     # Documentation
-├── spec.md                   # Product specification
-├── SETUP_GUIDE.md            # Detailed setup instructions
-└── README.md                 # This file
+├── docs/
+│   ├── user-guide/           # End-user documentation
+│   ├── admin-guide/          # Administrator docs
+│   ├── developer/            # API & architecture docs
+│   ├── deployment/           # Deployment guides
+│   └── compliance/           # BCEA, POPIA, PSIRA docs
+├── .claude/
+│   └── commands/             # Claude Code agents
+├── railway.json              # Railway deployment config
+├── vercel.json               # Vercel deployment config
+└── .mcp.json                 # MCP server configuration
 ```
 
 ---
@@ -76,258 +77,126 @@ dotroster/
 ## Quick Start
 
 ### Prerequisites
-
 - Node.js 18+
-- Python 3.9+
-- PostgreSQL 14+ (or Docker)
-- Git
+- Python 3.11+
+- PostgreSQL 14+
 
-### 1. Clone Repository
-
-```bash
-git clone <your-repo-url>
-cd dotroster
-```
-
-### 2. Backend Setup
-
+### Backend Setup
 ```bash
 cd backend
-
-# Create virtual environment
 python -m venv venv
-venv\Scripts\activate  # Windows
-# source venv/bin/activate  # Mac/Linux
-
-# Install dependencies
+venv\Scripts\activate          # Windows
 pip install -r requirements.txt
-
-# Start PostgreSQL (Docker)
-docker-compose up -d
-
-# Copy environment file
-cp .env.example .env
-# Edit .env with your settings
-
-# Run migrations
+cp .env.example .env           # Edit with your settings
 alembic upgrade head
-
-# Start backend server
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --port 8001
 ```
 
-Backend will run at: http://localhost:8000
-
-API docs at: http://localhost:8000/docs
-
-### 3. Frontend Setup
-
+### Frontend Setup
 ```bash
 cd frontend
-
-# Install dependencies
 npm install
-
-# Copy environment file
-cp .env.example .env.local
-# Edit .env.local if needed
-
-# Start development server
+cp .env.example .env.local     # Edit with your settings
 npm run dev
 ```
 
-Frontend will run at: http://localhost:3000
+### Access
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8001
+- API Docs: http://localhost:8001/docs
 
 ---
 
-## Database Schema
+## Documentation
 
-### Core Tables
+### User Guides
+- [Getting Started](docs/user-guide/getting-started.md)
+- [Employee Management](docs/user-guide/employee-management.md)
+- [Roster Generation](docs/user-guide/roster-generation.md)
+- [Payroll](docs/user-guide/payroll.md)
 
-- **employees**: Guards/staff with roles, rates, certifications
-- **sites**: Client locations with requirements
-- **shifts**: Planned work periods with assignments
-- **availability**: Employee availability windows
-- **certifications**: Training & licenses with expiry tracking
-- **expenses**: Variable costs (fuel, meals, etc.)
-- **attendance**: Clock-in/out records
-- **payroll_summary**: Weekly/monthly payroll totals
+### Developer Docs
+- [API Documentation](docs/developer/API_DOCUMENTATION.md)
+- [Algorithm Documentation](docs/developer/ALGORITHM_DOCUMENTATION.md)
 
-### Helper Tables
-
-- **rules_config**: Global rostering constraints
-- **shift_templates**: Reusable shift patterns
-- **skills_matrix**: Employee skill mappings
-
-See `spec.md` for detailed schema.
+### Deployment
+- [Deployment Guide](docs/deployment/DEPLOYMENT_GUIDE.md)
+- [PayFast Integration](docs/deployment/PAYFAST_INTEGRATION_GUIDE.md)
 
 ---
 
-## Rostering Algorithm
+## Claude Code Agents
 
-The auto-rostering engine uses a **deterministic algorithmic approach**:
+Custom agents are available in `.claude/commands/`:
 
-1. **Constraint Definition**: Define shifts and employee constraints
-2. **Feasible Pair Generation**: List all valid (employee, shift) combinations
-3. **Optimization**: Use Hungarian Algorithm or ILP to minimize cost
-4. **Validation**: Ensure all constraints are satisfied
-5. **Output**: Generate roster with assignments and budget summary
-
-### Constraints Enforced
-
-- Skill matching (armed/unarmed/supervisor)
-- Certification validity (not expired)
-- Availability windows
-- Weekly hour limits (default 48h)
-- Minimum rest periods (default 8h)
-- Maximum distance from home (optional)
-- Budget caps (optional)
-
----
-
-## API Endpoints
-
-### Employees
-- `GET /api/v1/employees` - List all employees
-- `POST /api/v1/employees` - Create employee
-- `GET /api/v1/employees/{id}` - Get employee details
-- `PUT /api/v1/employees/{id}` - Update employee
-- `DELETE /api/v1/employees/{id}` - Delete employee
-
-### Sites
-- `GET /api/v1/sites` - List all sites
-- `POST /api/v1/sites` - Create site
-- (Similar CRUD operations)
-
-### Shifts
-- `GET /api/v1/shifts` - List shifts (with filters)
-- `POST /api/v1/shifts` - Create shift
-- (Similar CRUD operations)
-
-### Roster Generation
-- `POST /api/v1/roster/generate` - Generate optimized roster
-- `GET /api/v1/roster/preview` - Preview roster
-- `POST /api/v1/roster/confirm` - Confirm roster
-- `GET /api/v1/roster/budget-summary` - Get budget breakdown
-- `GET /api/v1/roster/unfilled-shifts` - Get unfilled shifts
-- `GET /api/v1/roster/employee-hours` - Get hours per employee
-
-See http://localhost:8000/docs for full API documentation.
-
----
-
-## Development Workflow
-
-### Running Backend
-```bash
-cd backend
-venv\Scripts\activate
-uvicorn app.main:app --reload
-```
-
-### Running Frontend
-```bash
-cd frontend
-npm run dev
-```
-
-### Database Migrations
-```bash
-cd backend
-alembic revision --autogenerate -m "Description"
-alembic upgrade head
-```
-
-### Running Tests
-```bash
-cd backend
-pytest
-```
-
----
-
-## Configuration
-
-### Backend (.env)
-```env
-DATABASE_URL=postgresql://user:pass@localhost:5432/rostracore
-SECRET_KEY=your-secret-key
-MAX_HOURS_WEEK=48
-MIN_REST_HOURS=8
-OT_MULTIPLIER=1.5
-```
-
-### Frontend (.env.local)
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8000
-```
+| Agent | Description |
+|-------|-------------|
+| `/backend-dev` | FastAPI backend development context |
+| `/frontend-dev` | Next.js frontend development context |
+| `/testing` | Testing and QA guidance |
+| `/debugger` | Debugging and troubleshooting |
+| `/devops` | Deployment and infrastructure |
 
 ---
 
 ## Deployment
 
-### Docker (Recommended)
-
+### Railway (Backend)
 ```bash
-# Build and run with Docker Compose
-docker-compose up -d
+railway login
+railway init
+railway up
 ```
 
-### Manual Deployment
+### Vercel (Frontend)
+```bash
+vercel login
+vercel --prod
+```
 
-1. Set up PostgreSQL database
-2. Configure environment variables
-3. Run migrations: `alembic upgrade head`
-4. Start backend: `uvicorn app.main:app --host 0.0.0.0 --port 8000`
-5. Build frontend: `npm run build`
-6. Start frontend: `npm start`
-
----
-
-## Roadmap
-
-### MVP (Current)
-- [x] Database models
-- [x] API endpoints structure
-- [x] Basic rostering algorithm
-- [x] Frontend scaffolding
-- [ ] Complete CRUD operations
-- [ ] Full algorithm implementation
-- [ ] Admin dashboard UI
-- [ ] PDF report generation
-
-### Future Features
-- Predictive demand modeling
-- Mobile app for clock-in/out
-- Client portal for live visibility
-- Advanced analytics & reporting
-- Multi-company support
-- Dynamic pricing
+See [Deployment Guide](docs/deployment/DEPLOYMENT_GUIDE.md) for detailed instructions.
 
 ---
 
-## Contributing
+## Environment Variables
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit changes: `git commit -m 'Add amazing feature'`
-4. Push to branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
+### Backend
+```env
+DATABASE_URL=postgresql://user:pass@localhost:5432/rostracore_db
+SECRET_KEY=your-secret-key
+CORS_ORIGINS=http://localhost:3000
+```
+
+### Frontend
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8001
+NEXT_PUBLIC_APP_NAME=RostraCore
+```
+
+---
+
+## API Highlights
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /api/v1/auth/login` | Authenticate user |
+| `GET /api/v1/employees` | List employees |
+| `POST /api/v1/roster/generate` | Generate optimized roster |
+| `GET /api/v1/payroll` | Get payroll records |
+
+Full API documentation at `/docs` when backend is running.
 
 ---
 
 ## License
 
-This project is proprietary. All rights reserved.
+Proprietary - All rights reserved.
 
 ---
 
 ## Support
 
-For detailed setup instructions, see [SETUP_GUIDE.md](./SETUP_GUIDE.md)
+- Documentation: See `docs/` folder
+- Issues: Contact your administrator
 
-For product specification, see [spec.md](./spec.md)
-
----
-
-**Built with no AI - Pure algorithmic optimization**
+**Built for South African security companies**

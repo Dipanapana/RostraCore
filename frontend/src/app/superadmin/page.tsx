@@ -25,6 +25,10 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   RefreshCw,
+  UserPlus,
+  Mail,
+  X,
+  Trash2,
 } from 'lucide-react'
 
 interface Analytics {
@@ -113,6 +117,17 @@ interface Analytics {
   daily_revenue: Array<{ date: string; amount: number }>
 }
 
+interface Invitation {
+  invitation_id: number
+  email: string
+  invited_by: number | null
+  invited_by_username: string | null
+  created_at: string
+  expires_at: string
+  accepted_at: string | null
+  revoked: boolean
+}
+
 interface Organization {
   org_id: number
   org_code: string
@@ -140,10 +155,18 @@ export default function SuperadminPage() {
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'overview' | 'organizations' | 'health' | 'growth'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'organizations' | 'health' | 'growth' | 'invitations'>('overview')
   const [statusFilter, setStatusFilter] = useState<string>('')
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [actionLoading, setActionLoading] = useState<number | null>(null)
+
+  // Invitation state
+  const [invitations, setInvitations] = useState<Invitation[]>([])
+  const [showInviteModal, setShowInviteModal] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteFullName, setInviteFullName] = useState('')
+  const [inviteLoading, setInviteLoading] = useState(false)
+  const [inviteError, setInviteError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!authLoading) {
@@ -237,6 +260,52 @@ export default function SuperadminPage() {
     }
   }
 
+  // Invitation functions
+  const fetchInvitations = async () => {
+    try {
+      const res = await superadminApi.getInvitations()
+      setInvitations(res.data.invitations || [])
+    } catch (err: any) {
+      console.error('Failed to fetch invitations:', err)
+    }
+  }
+
+  const handleInviteSuperadmin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setInviteLoading(true)
+    setInviteError(null)
+    try {
+      await superadminApi.inviteSuperadmin({ email: inviteEmail, full_name: inviteFullName })
+      setShowInviteModal(false)
+      setInviteEmail('')
+      setInviteFullName('')
+      alert('Invitation sent successfully!')
+      fetchInvitations()
+    } catch (err: any) {
+      setInviteError(err.response?.data?.detail || 'Failed to send invitation')
+    } finally {
+      setInviteLoading(false)
+    }
+  }
+
+  const handleRevokeInvitation = async (invitationId: number) => {
+    if (!confirm('Are you sure you want to revoke this invitation?')) return
+    try {
+      await superadminApi.revokeInvitation(invitationId)
+      alert('Invitation revoked successfully')
+      fetchInvitations()
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Failed to revoke invitation')
+    }
+  }
+
+  // Fetch invitations when tab changes to invitations
+  useEffect(() => {
+    if (activeTab === 'invitations' && user?.role?.toLowerCase() === 'superadmin') {
+      fetchInvitations()
+    }
+  }, [activeTab, user])
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount)
   }
@@ -328,13 +397,22 @@ export default function SuperadminPage() {
                 Real-time analytics and organization management
               </p>
             </div>
-            <button
-              onClick={fetchData}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Refresh Data
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowInviteModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <UserPlus className="w-4 h-4" />
+                Invite SuperAdmin
+              </button>
+              <button
+                onClick={fetchData}
+                className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Refresh Data
+              </button>
+            </div>
           </div>
 
           {/* Tab Navigation */}
@@ -344,6 +422,7 @@ export default function SuperadminPage() {
               { id: 'organizations', label: 'Organizations', icon: Building2 },
               { id: 'health', label: 'Customer Health', icon: Activity },
               { id: 'growth', label: 'Growth & Revenue', icon: TrendingUp },
+              { id: 'invitations', label: 'Invitations', icon: Mail },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -948,6 +1027,191 @@ export default function SuperadminPage() {
                 </div>
               </div>
             </>
+          )}
+
+          {activeTab === 'invitations' && (
+            <>
+              {/* Invitations List */}
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+                <div className="px-5 py-4 border-b dark:border-slate-700 flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <Mail className="w-5 h-5 text-blue-500" />
+                    SuperAdmin Invitations
+                  </h2>
+                  <button
+                    onClick={fetchInvitations}
+                    className="text-sm text-blue-600 hover:text-blue-700"
+                  >
+                    Refresh
+                  </button>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+                    <thead className="bg-gray-50 dark:bg-slate-700">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Email</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Invited By</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Created</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Expires</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
+                      {invitations.map((invitation) => {
+                        const isExpired = new Date(invitation.expires_at) < new Date()
+                        const status = invitation.accepted_at
+                          ? 'Accepted'
+                          : invitation.revoked
+                          ? 'Revoked'
+                          : isExpired
+                          ? 'Expired'
+                          : 'Pending'
+                        const statusColor =
+                          status === 'Accepted'
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                            : status === 'Revoked'
+                            ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                            : status === 'Expired'
+                            ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
+                            : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+
+                        return (
+                          <tr key={invitation.invitation_id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50">
+                            <td className="px-4 py-3">
+                              <p className="font-medium text-gray-900 dark:text-white">{invitation.email}</p>
+                            </td>
+                            <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
+                              {invitation.invited_by_username || 'System'}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-500">
+                              {formatDate(invitation.created_at)}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-500">
+                              {formatDate(invitation.expires_at)}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColor}`}>
+                                {status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              {status === 'Pending' && (
+                                <button
+                                  onClick={() => handleRevokeInvitation(invitation.invitation_id)}
+                                  className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 flex items-center gap-1"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                  Revoke
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                      {invitations.length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                            No invitations yet. Click "Invite SuperAdmin" to send one.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Invite SuperAdmin Modal */}
+          {showInviteModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md mx-4">
+                <div className="flex items-center justify-between px-6 py-4 border-b dark:border-slate-700">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <UserPlus className="w-5 h-5 text-blue-500" />
+                    Invite SuperAdmin
+                  </h3>
+                  <button
+                    onClick={() => {
+                      setShowInviteModal(false)
+                      setInviteError(null)
+                      setInviteEmail('')
+                      setInviteFullName('')
+                    }}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <form onSubmit={handleInviteSuperadmin} className="p-6">
+                  {inviteError && (
+                    <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                      <p className="text-sm text-red-600 dark:text-red-400">{inviteError}</p>
+                    </div>
+                  )}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Email Address *
+                    </label>
+                    <input
+                      type="email"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      required
+                      placeholder="admin@example.com"
+                      className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      value={inviteFullName}
+                      onChange={(e) => setInviteFullName(e.target.value)}
+                      placeholder="John Doe"
+                      className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                    An email will be sent with a secure link to set up their account. The invitation expires in 7 days.
+                  </p>
+                  <div className="flex gap-3 justify-end">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowInviteModal(false)
+                        setInviteError(null)
+                        setInviteEmail('')
+                        setInviteFullName('')
+                      }}
+                      className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={inviteLoading || !inviteEmail}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      {inviteLoading ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Mail className="w-4 h-4" />
+                          Send Invitation
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
           )}
 
           {/* Footer */}
