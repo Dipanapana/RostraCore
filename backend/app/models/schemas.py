@@ -1,7 +1,7 @@
 """Pydantic schemas for API request/response validation - MVP Core Only."""
 
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime, date, time
 from app.models.employee import EmployeeRole, EmployeeStatus, Gender
 from app.models.shift import ShiftStatus
@@ -28,7 +28,8 @@ class EmployeeBase(BaseModel):
 
 class EmployeeCreate(EmployeeBase):
     org_id: Optional[int] = None  # Set automatically from current user if not provided
-    assigned_client_id: Optional[int] = None  # Optional client assignment
+    assigned_client_id: Optional[int] = None  # Optional client assignment (legacy)
+    assigned_client_ids: Optional[List[int]] = None  # Multiple client assignment
 
 
 class EmployeeUpdate(BaseModel):
@@ -45,14 +46,21 @@ class EmployeeUpdate(BaseModel):
     gender: Optional[Gender] = None
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
-    assigned_client_id: Optional[int] = None  # Allow updating client assignment
+    assigned_client_id: Optional[int] = None  # Allow updating client assignment (legacy)
+    assigned_client_ids: Optional[List[int]] = None  # Allow updating multiple client assignment
 
 
 class EmployeeResponse(EmployeeBase):
     employee_id: int
     org_id: int  # Include organization in response
-    assigned_client_id: Optional[int] = None  # Include client assignment in response
+    assigned_client_id: Optional[int] = None  # Include client assignment in response (legacy)
+    assigned_client_ids: Optional[List[int]] = None  # Include multiple client assignment in response
     max_hours_week: Optional[int] = 48  # Override to allow NULL from database
+
+    # Shift pattern assignment fields
+    shift_pattern_id: Optional[int] = None
+    rotation_group: Optional[str] = None  # A, B, C, D
+    pattern_start_date: Optional[date] = None
 
     class Config:
         from_attributes = True

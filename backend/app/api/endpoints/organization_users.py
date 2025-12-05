@@ -1,7 +1,7 @@
 """Organization user management endpoints - Add admins and manage access."""
 
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
@@ -36,13 +36,13 @@ class UserResponse(BaseModel):
     user_id: int
     username: str
     email: str
-    full_name: Optional[str]
+    full_name: Optional[str] = None
     role: UserRole
     is_active: bool
     is_email_verified: bool
     is_owner: bool = False
     managed_client_ids: Optional[List[int]] = None
-    created_at: str
+    created_at: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -70,6 +70,61 @@ class InviteResponse(BaseModel):
 # ============================================================================
 # ENDPOINTS
 # ============================================================================
+
+@router.get("/users/{user_id}", response_model=UserResponse)
+async def get_organization_user(
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get a specific user by ID.
+
+    **Requires**: ADMIN or COMPANY_ADMIN role
+    """
+    # Check if user has permission (admin or company_admin)
+    if current_user.role not in [UserRole.ADMIN, UserRole.COMPANY_ADMIN]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins can view user details"
+        )
+
+    # Check if user has an organization
+    if not current_user.org_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User is not associated with an organization"
+        )
+
+    # Get the user
+    user = db.query(User).filter(User.user_id == user_id).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    # Check if user is in the same organization
+    if user.org_id != current_user.org_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only view users in your own organization"
+        )
+
+    return UserResponse(
+        user_id=user.user_id,
+        username=user.username,
+        email=user.email,
+        full_name=user.full_name,
+        role=user.role,
+        is_active=user.is_active,
+        is_email_verified=user.is_email_verified,
+        is_owner=user.is_owner,
+        managed_client_ids=user.managed_client_ids,
+        created_at=user.created_at.isoformat() if user.created_at else None
+    )
+
 
 @router.get("/users", response_model=List[UserResponse])
 async def list_organization_users(
@@ -318,7 +373,7 @@ async def remove_user_from_organization(
 @router.patch("/users/{user_id}/role")
 async def update_user_role(
     user_id: int,
-    new_role: UserRole,
+    new_role: UserRole = Query(..., description="The new role to assign to the user"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -582,4 +637,85 @@ async def get_user_clients(
         "is_owner": user.is_owner,
         "managed_client_ids": user.managed_client_ids,
         "has_full_access": user.is_owner or user.managed_client_ids is None
+    }
+
+
+@router.post("/users/{user_id}/reset-password")
+async def reset_user_password(
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Reset a user's password and generate a new temporary password.
+
+    **Requires**: Owner status (is_owner=True)
+
+    The temporary password will be returned in the response.
+    Optionally sends an email to the user with the new credentials.
+    """
+    # Check if current user is an owner
+    if not current_user.is_owner:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only organization owners can reset user passwords"
+        )
+
+    # Check if user has an organization
+    if not current_user.org_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User is not associated with an organization"
+        )
+
+    # Get the user to reset
+    user_to_reset = db.query(User).filter(User.user_id == user_id).first()
+
+    if not user_to_reset:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    # Check if user is in the same organization
+    if user_to_reset.org_id != current_user.org_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only reset passwords for users in your own organization"
+        )
+
+    # Generate new temporary password
+    temporary_password = secrets.token_urlsafe(12)
+    hashed_password = get_password_hash(temporary_password)
+
+    # Update the user's password
+    user_to_reset.hashed_password = hashed_password
+    db.commit()
+
+    # Try to send email notification
+    email_sent = False
+    try:
+        org = db.query(Organization).filter(
+            Organization.org_id == current_user.org_id
+        ).first()
+
+        if org:
+            result = EmailService.send_password_reset_email(
+                to=user_to_reset.email,
+                user_name=user_to_reset.full_name or user_to_reset.username,
+                temporary_password=temporary_password,
+                login_url=f"{settings.FRONTEND_URL}/login"
+            )
+            if result.get("status") == "success":
+                email_sent = True
+    except Exception as e:
+        print(f"Error sending password reset email: {str(e)}")
+
+    return {
+        "status": "success",
+        "message": f"Password reset for user {user_to_reset.username}",
+        "user_id": user_to_reset.user_id,
+        "email": user_to_reset.email,
+        "temporary_password": temporary_password,
+        "email_sent": email_sent
     }

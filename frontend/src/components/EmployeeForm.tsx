@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Employee } from '@/types'
-import { employeesApi } from '@/services/api'
+import { useState, useEffect, useCallback } from 'react'
+import { Employee, Client } from '@/types'
+import { employeesApi, clientsApi, organizationSettingsApi } from '@/services/api'
 
 interface EmployeeFormProps {
   employee?: Employee | null
@@ -22,11 +22,60 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
     home_location: '',
     status: 'active' as 'active' | 'inactive',
     email: '',
-    phone: ''
+    phone: '',
+    assigned_client_ids: [] as number[]
   })
 
+  const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [rateHint, setRateHint] = useState<string | null>(null)
+
+  // Lookup default hourly rate when grade or role changes
+  const lookupDefaultRate = useCallback(async (grade: string, role: string) => {
+    if (!grade || !role) return
+
+    // Only auto-populate for new employees or if hourly rate is empty/zero
+    if (employee && employee.hourly_rate > 0) return
+
+    try {
+      const response = await organizationSettingsApi.lookupHourlyRate(grade, role)
+      if (response.data.found && response.data.default_hourly_rate) {
+        setFormData(prev => ({
+          ...prev,
+          hourly_rate: response.data.default_hourly_rate.toString()
+        }))
+        setRateHint(`Auto-populated from default rate for Grade ${grade} ${role}`)
+        setTimeout(() => setRateHint(null), 5000)
+      }
+    } catch (err) {
+      console.log('No default rate found')
+    }
+  }, [employee])
+
+  // Validate Grade E cannot be armed
+  const validateGradeRole = (grade: string, role: string): string | null => {
+    if (grade === 'E' && role === 'armed') {
+      return 'Grade E (Basic Security Officer) cannot be armed. Grade B or higher is required for armed roles.'
+    }
+    if ((grade === 'D' || grade === 'E') && role === 'armed') {
+      return `Grade ${grade} typically cannot be armed. Grade B is minimum for armed security.`
+    }
+    return null
+  }
+
+  // Fetch clients on mount
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const response = await clientsApi.getAll()
+        setClients(response.data)
+      } catch (err) {
+        console.error('Failed to fetch clients:', err)
+      }
+    }
+    fetchClients()
+  }, [])
 
   useEffect(() => {
     if (employee) {
@@ -41,15 +90,33 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
         home_location: employee.home_location || '',
         status: employee.status,
         email: employee.email || '',
-        phone: employee.phone || ''
+        phone: employee.phone || '',
+        assigned_client_ids: employee.assigned_client_ids || (employee.assigned_client_id ? [employee.assigned_client_id] : [])
       })
     }
   }, [employee])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+    setFormData(prev => {
+      const newData = { ...prev, [name]: value }
+
+      // When PSIRA grade changes, lookup default rate
+      if (name === 'cert_level' && value) {
+        lookupDefaultRate(value, newData.role)
+      }
+
+      // When role changes, lookup default rate
+      if (name === 'role' && newData.cert_level) {
+        lookupDefaultRate(newData.cert_level, value)
+      }
+
+      return newData
+    })
   }
+
+  // Get validation warning for current grade/role combination
+  const gradeRoleWarning = validateGradeRole(formData.cert_level, formData.role)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -64,7 +131,8 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
         cert_level: formData.cert_level || undefined,
         home_location: formData.home_location || undefined,
         email: formData.email || undefined,
-        phone: formData.phone || undefined
+        phone: formData.phone || undefined,
+        assigned_client_ids: formData.assigned_client_ids.length > 0 ? formData.assigned_client_ids : undefined
       }
 
       if (employee) {
@@ -101,6 +169,12 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
               {error}
+            </div>
+          )}
+
+          {gradeRoleWarning && (
+            <div className="bg-amber-100 border border-amber-400 text-amber-700 px-4 py-3 rounded mb-4">
+              {gradeRoleWarning}
             </div>
           )}
 
@@ -167,7 +241,7 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Hourly Rate <span className="text-red-500">*</span>
+                  Hourly Rate (ZAR) <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
@@ -179,6 +253,9 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
                   min="0"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+                {rateHint && (
+                  <p className="text-xs text-green-600 mt-1">{rateHint}</p>
+                )}
               </div>
 
               <div>
@@ -272,6 +349,46 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
                   placeholder="City or GPS coordinates"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+              </div>
+
+              {/* Client Assignment */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Assigned Clients
+                </label>
+                <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-md p-2 space-y-1">
+                  {clients.length === 0 ? (
+                    <p className="text-sm text-gray-500 p-2">No clients available</p>
+                  ) : (
+                    clients.map(client => (
+                      <label key={client.client_id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.assigned_client_ids.includes(client.client_id)}
+                          onChange={(e) => {
+                            const clientId = client.client_id
+                            if (e.target.checked) {
+                              setFormData(prev => ({
+                                ...prev,
+                                assigned_client_ids: [...prev.assigned_client_ids, clientId]
+                              }))
+                            } else {
+                              setFormData(prev => ({
+                                ...prev,
+                                assigned_client_ids: prev.assigned_client_ids.filter(id => id !== clientId)
+                              }))
+                            }
+                          }}
+                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-700">{client.client_name}</span>
+                      </label>
+                    ))
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Select which clients this guard can work for. Leave empty to allow all clients.
+                </p>
               </div>
             </div>
 

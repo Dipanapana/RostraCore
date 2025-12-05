@@ -7,11 +7,13 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
+  UserCog,
   Briefcase,
   MapPin,
   Calendar,
   CalendarDays,
   ClipboardList,
+  ClipboardCheck,
   Award,
   Clock,
   DollarSign,
@@ -21,6 +23,7 @@ import {
   LogOut,
   Menu,
   Shield,
+  ShieldAlert,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -35,17 +38,23 @@ const menuItems: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Clients", href: "/clients", icon: Briefcase },
   { name: "Employees", href: "/employees", icon: Users },
+  { name: "Guard Data Quality", href: "/employees/dashboard", icon: ShieldAlert },
   { name: "Sites", href: "/sites", icon: MapPin },
   { name: "Shifts", href: "/shifts", icon: Calendar },
   { name: "Roster", href: "/roster", icon: ClipboardList },
+  { name: "Assignments", href: "/roster/assignments", icon: ClipboardCheck },
   { name: "Calendar View", href: "/calendar", icon: CalendarDays },
   { name: "Certifications", href: "/certifications", icon: Award },
   { name: "Availability", href: "/availability", icon: Clock },
+  { name: "Leave", href: "/leave", icon: CalendarDays },
   { name: "Payroll", href: "/payroll", icon: DollarSign },
 ];
 
 const generalItems: NavItem[] = [
   { name: "Billing", href: "/billing", icon: CreditCard },
+  { name: "User Management", href: "/settings/users", icon: UserCog },
+  { name: "Hourly Rates", href: "/settings/hourly-rates", icon: DollarSign },
+  { name: "Shift Patterns", href: "/settings/shift-patterns", icon: Clock },
   { name: "Settings", href: "/settings", icon: Settings },
   { name: "Help", href: "/help", icon: HelpCircle },
 ];

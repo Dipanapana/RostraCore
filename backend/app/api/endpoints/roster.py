@@ -551,3 +551,199 @@ async def generate_roster_for_client(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error generating roster for client: {str(e)}"
         )
+
+
+@router.get("/assignment-dashboard")
+async def get_assignment_dashboard(
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    client_id: Optional[int] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get roster assignment dashboard data grouped by client.
+
+    Returns sites organized by client with fill status, available employees,
+    and shift staffing information.
+
+    Args:
+        start_date: Start date for the dashboard (default: today)
+        end_date: End date for the dashboard (default: 7 days from now)
+        client_id: Optional filter to specific client
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        Dashboard data with clients, sites, fill status, and available employees
+    """
+    from app.models.employee import Employee, EmployeeStatus
+    from app.models.shift_assignment import ShiftAssignment
+
+    org_id = current_user.org_id or 1
+
+    if not start_date:
+        start_date = datetime.now()
+    if not end_date:
+        end_date = start_date + timedelta(days=7)
+
+    # Get accessible clients
+    accessible_clients = ClientFilterService.get_accessible_clients(db, org_id)
+
+    # Build client query
+    client_query = db.query(Client).filter(Client.org_id == org_id)
+    if accessible_clients is not None:
+        client_query = client_query.filter(Client.client_id.in_(accessible_clients))
+    if client_id:
+        client_query = client_query.filter(Client.client_id == client_id)
+
+    clients = client_query.order_by(Client.client_name).all()
+
+    dashboard_data = {
+        "clients": [],
+        "summary": {
+            "total_clients": 0,
+            "total_sites": 0,
+            "total_shifts": 0,
+            "filled_shifts": 0,
+            "understaffed_shifts": 0,
+            "empty_shifts": 0,
+        },
+        "date_range": {
+            "start_date": start_date.isoformat(),
+            "end_date": end_date.isoformat()
+        }
+    }
+
+    for client in clients:
+        # Get sites for this client
+        sites = db.query(Site).filter(Site.client_id == client.client_id).order_by(Site.site_name).all()
+
+        client_data = {
+            "client_id": client.client_id,
+            "client_name": client.client_name,
+            "status": client.status,
+            "sites": [],
+            "summary": {
+                "total_sites": len(sites),
+                "total_shifts": 0,
+                "filled_shifts": 0,
+                "understaffed_shifts": 0,
+                "empty_shifts": 0,
+            }
+        }
+
+        for site in sites:
+            # Get shifts for this site in the date range
+            shifts = db.query(Shift).filter(
+                Shift.site_id == site.site_id,
+                Shift.start_time >= start_date,
+                Shift.end_time <= end_date
+            ).order_by(Shift.start_time).all()
+
+            site_shifts = []
+            for shift in shifts:
+                # Get assignments for this shift
+                assignments = db.query(ShiftAssignment).filter(
+                    ShiftAssignment.shift_id == shift.shift_id
+                ).all()
+
+                assigned_count = len(assignments)
+                required_staff = shift.required_staff or 1
+
+                # Determine fill status
+                if assigned_count >= required_staff:
+                    fill_status = "full"
+                    client_data["summary"]["filled_shifts"] += 1
+                    dashboard_data["summary"]["filled_shifts"] += 1
+                elif assigned_count > 0:
+                    fill_status = "partial"
+                    client_data["summary"]["understaffed_shifts"] += 1
+                    dashboard_data["summary"]["understaffed_shifts"] += 1
+                else:
+                    fill_status = "empty"
+                    client_data["summary"]["empty_shifts"] += 1
+                    dashboard_data["summary"]["empty_shifts"] += 1
+
+                client_data["summary"]["total_shifts"] += 1
+                dashboard_data["summary"]["total_shifts"] += 1
+
+                site_shifts.append({
+                    "shift_id": shift.shift_id,
+                    "start_time": shift.start_time.isoformat(),
+                    "end_time": shift.end_time.isoformat(),
+                    "required_staff": required_staff,
+                    "assigned_count": assigned_count,
+                    "fill_status": fill_status,
+                    "status": shift.status.value if shift.status else "planned"
+                })
+
+            # Calculate site fill rate
+            total_site_shifts = len(site_shifts)
+            filled_site_shifts = sum(1 for s in site_shifts if s["fill_status"] == "full")
+            site_fill_rate = round(filled_site_shifts / total_site_shifts * 100, 1) if total_site_shifts > 0 else 0
+
+            client_data["sites"].append({
+                "site_id": site.site_id,
+                "site_name": site.site_name or f"Site {site.site_id}",
+                "address": site.address,
+                "total_shifts": total_site_shifts,
+                "fill_rate": site_fill_rate,
+                "shifts": site_shifts
+            })
+
+        # Get available employees for this client
+        # Employees can work for a client if:
+        # 1. They have no client restriction (assigned_client_ids is NULL/empty)
+        # 2. OR this client is in their assigned_client_ids
+        # 3. OR this client matches their legacy assigned_client_id
+        from sqlalchemy import or_, and_
+
+        available_employees_query = db.query(Employee).filter(
+            Employee.org_id == org_id,
+            Employee.status == EmployeeStatus.ACTIVE,
+            or_(
+                # No client restriction
+                and_(
+                    Employee.assigned_client_ids.is_(None),
+                    Employee.assigned_client_id.is_(None)
+                ),
+                # Empty client restriction
+                Employee.assigned_client_ids == [],
+                # Client is in assigned_client_ids array
+                Employee.assigned_client_ids.any(client.client_id),
+                # Legacy: matches assigned_client_id
+                Employee.assigned_client_id == client.client_id
+            )
+        )
+        available_employees = available_employees_query.all()
+
+        client_data["available_employees"] = [
+            {
+                "employee_id": emp.employee_id,
+                "first_name": emp.first_name,
+                "last_name": emp.last_name,
+                "role": emp.role.value if emp.role else None,
+                "psira_grade": emp.psira_grade,
+                "hourly_rate": emp.hourly_rate
+            }
+            for emp in available_employees[:50]  # Limit to 50
+        ]
+        client_data["available_employees_count"] = len(available_employees)
+
+        # Calculate client fill rate
+        total_client_shifts = client_data["summary"]["total_shifts"]
+        filled_client_shifts = client_data["summary"]["filled_shifts"]
+        client_data["fill_rate"] = round(filled_client_shifts / total_client_shifts * 100, 1) if total_client_shifts > 0 else 0
+
+        dashboard_data["clients"].append(client_data)
+        dashboard_data["summary"]["total_sites"] += len(sites)
+
+    dashboard_data["summary"]["total_clients"] = len(clients)
+
+    # Calculate overall fill rate
+    total = dashboard_data["summary"]["total_shifts"]
+    filled = dashboard_data["summary"]["filled_shifts"]
+    dashboard_data["summary"]["fill_rate"] = round(filled / total * 100, 1) if total > 0 else 0
+
+    return dashboard_data

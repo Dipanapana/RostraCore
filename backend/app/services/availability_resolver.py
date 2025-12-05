@@ -7,6 +7,7 @@ from sqlalchemy import and_, or_
 
 from app.models.availability_pattern import AvailabilityPattern, PatternType
 from app.models.availability import Availability
+from app.models.employee import Employee
 
 
 class AvailabilityResolver:
@@ -17,7 +18,12 @@ class AvailabilityResolver:
     1. Specific dates in existing `availability` table (highest priority)
     2. Exception patterns (type='exception')
     3. Recurring weekly patterns
-    4. Default: Assume available (configurable)
+    4. Shift pattern assignments (employees with shift_pattern_id)
+    5. Default: Assume available (configurable)
+
+    NOTE: For employees with shift pattern assignments:
+    - Availability records are ONLY created for working days
+    - Missing records for a date means it's an OFF day (not available)
     """
 
     def __init__(self, db: Session, default_available: bool = True):
@@ -30,6 +36,21 @@ class AvailabilityResolver:
         """
         self.db = db
         self.default_available = default_available
+        # Cache employee data to avoid repeated queries
+        self._employee_cache: Dict[int, Employee] = {}
+
+    def _get_employee(self, employee_id: int) -> Optional[Employee]:
+        """Get employee from cache or database."""
+        if employee_id not in self._employee_cache:
+            self._employee_cache[employee_id] = self.db.query(Employee).filter(
+                Employee.employee_id == employee_id
+            ).first()
+        return self._employee_cache[employee_id]
+
+    def _has_shift_pattern(self, employee_id: int) -> bool:
+        """Check if employee has a shift pattern assigned."""
+        emp = self._get_employee(employee_id)
+        return emp is not None and emp.shift_pattern_id is not None
 
     def get_patterns_for_employee(
         self,
@@ -139,7 +160,12 @@ class AvailabilityResolver:
                     return True, f"Available (date range: {pattern.range_start_time}-{pattern.range_end_time})"
                 return True, f"Available (date range: {pattern.pattern_name or 'unnamed'})"
 
-        # 3. Default
+        # 4. Check if employee has a shift pattern assignment
+        # For pattern-assigned employees, no availability record = OFF day
+        if self._has_shift_pattern(employee_id):
+            return False, "Not available (shift pattern OFF day - no availability record for this date)"
+
+        # 5. Default
         if self.default_available:
             return True, "Available (default - no restrictions set)"
         else:
@@ -183,6 +209,11 @@ class AvailabilityResolver:
 
         if available_windows:
             return available_windows
+
+        # Check if employee has a shift pattern assignment
+        # For pattern-assigned employees, no availability record = OFF day
+        if self._has_shift_pattern(employee_id):
+            return []  # Not available (OFF day)
 
         # Default
         if self.default_available:

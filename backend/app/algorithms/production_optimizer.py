@@ -748,7 +748,16 @@ class ProductionRosterOptimizer:
         return True
 
     def _check_availability(self, emp: Employee, shift: Shift) -> bool:
-        """Check if employee is available during shift time"""
+        """
+        Check if employee is available during shift time.
+
+        For employees with shift pattern assignments:
+        - No availability record for a date means it's an OFF day (not available)
+        - Availability records are only created for WORKING days
+
+        For employees without shift patterns (manual availability):
+        - No record means assume available (default behavior)
+        """
 
         # Skip check in testing mode
         if settings.TESTING_MODE and settings.SKIP_AVAILABILITY_CHECK:
@@ -762,8 +771,13 @@ class ProductionRosterOptimizer:
         key = (emp.employee_id, shift_date)
         avail = self.employee_availabilities.get(key)
 
-        # If no availability record, assume available (default behavior)
+        # If no availability record...
         if not avail:
+            # Check if employee has a shift pattern assigned
+            # If they do, no record means OFF day (not available)
+            if emp.shift_pattern_id is not None:
+                return False
+            # Otherwise, assume available (default behavior for manual availability)
             return True
 
         # If marked as not available
