@@ -2,10 +2,10 @@
 const nextConfig = {
   reactStrictMode: true,
 
-  // Disable instrumentation - was causing 20+ second page loads
-  // experimental: {
-  //   instrumentationHook: true,
-  // },
+  // Allow useSearchParams in client components without Suspense boundary
+  experimental: {
+    missingSuspenseWithCSRBailout: false,
+  },
 
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
