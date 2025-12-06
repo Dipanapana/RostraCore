@@ -2,15 +2,13 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 from datetime import datetime, timedelta
 import logging
 
 logger = logging.getLogger(__name__)
 from app.database import get_db
 from app.models.schemas import RosterGenerateRequest, RosterGenerateResponse, ShiftResponse
-from app.algorithms.milp_roster_generator import MILPRosterGenerator
-from app.algorithms.production_optimizer import ProductionRosterOptimizer, OptimizationConfig
 from app.services.shift_service import ShiftService
 from app.services.cache_service import CacheInvalidator
 from app.services.client_filter_service import ClientFilterService
@@ -25,7 +23,14 @@ from app.auth.security import get_current_org_id
 router = APIRouter()
 
 
-from app.algorithms.scalable_roster_optimizer import PartitionedRosterOptimizer
+# Lazy imports for ortools-dependent modules (loaded on first use)
+# This prevents import errors on Railway if ortools has issues
+def get_optimizer_classes():
+    """Lazy load optimizer classes to defer ortools import."""
+    from app.algorithms.milp_roster_generator import MILPRosterGenerator
+    from app.algorithms.production_optimizer import ProductionRosterOptimizer, OptimizationConfig
+    from app.algorithms.scalable_roster_optimizer import PartitionedRosterOptimizer
+    return MILPRosterGenerator, ProductionRosterOptimizer, OptimizationConfig, PartitionedRosterOptimizer
 
 
 @router.get("/test")
@@ -105,6 +110,9 @@ async def generate_roster(
         selected_algorithm = algorithm or "auto"
 
         logger.info(f"Roster generation requested: {start_datetime} to {end_datetime}, algorithm={selected_algorithm}")
+
+        # Lazy load optimizer classes
+        MILPRosterGenerator, ProductionRosterOptimizer, OptimizationConfig, PartitionedRosterOptimizer = get_optimizer_classes()
 
         # Initialize appropriate optimizer
         if selected_algorithm == "auto" or selected_algorithm == "scalable":
@@ -461,6 +469,9 @@ async def generate_roster_for_client(
             # Always use production optimizer (most robust)
             selected_algorithm = "production"
             logger.info(f"Auto-selected {selected_algorithm}")
+
+        # Lazy load optimizer classes
+        MILPRosterGenerator, ProductionRosterOptimizer, OptimizationConfig, PartitionedRosterOptimizer = get_optimizer_classes()
 
         # Initialize appropriate optimizer
         if selected_algorithm == "auto" or selected_algorithm == "scalable":

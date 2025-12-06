@@ -15,7 +15,7 @@ ortools>=9.8.0
 reportlab>=4.0.0
 pandas>=2.2.0
 openpyxl>=3.1.0
-weasyprint>=60.0
+# weasyprint>=60.0  # Removed for Railway - requires system libs (Cairo, Pango). Re-add for CV generation feature.
 python-dotenv==1.0.1
 pytest==8.3.4
 httpx==0.28.1
