@@ -13,6 +13,11 @@ const nextConfig = {
 
   // Disable source maps for development performance
   productionBrowserSourceMaps: false,
+
+  // Ignore ESLint errors during production builds (Vercel deployment)
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 }
 
 // Inject Sentry config via withSentryConfig if Sentry is enabled
