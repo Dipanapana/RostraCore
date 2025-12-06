@@ -92,7 +92,7 @@ const DraggableEmployee = ({ employee }: { employee: Employee }) => {
 
     return (
         <div
-            ref={drag}
+            ref={drag as unknown as React.LegacyRef<HTMLDivElement>}
             className={`p-3 bg-white border border-slate-200 rounded-lg cursor-move hover:bg-blue-50 hover:border-blue-300 transition-colors ${
                 isDragging ? "opacity-50" : "opacity-100"
             }`}
@@ -128,7 +128,7 @@ const DroppableEventWrapper = ({
 
     return (
         <div
-            ref={drop}
+            ref={drop as unknown as React.LegacyRef<HTMLDivElement>}
             className={`${isOver && canDrop ? "ring-2 ring-blue-500 ring-offset-1" : ""}`}
             style={{ height: "100%" }}
         >
