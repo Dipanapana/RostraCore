@@ -2,7 +2,6 @@
   "buildCommand": "cd frontend && npm run build",
   "outputDirectory": "frontend/.next",
   "framework": "nextjs",
-  "regions": ["jnb1"],
   "headers": [
     {
       "source": "/(.*)",
