@@ -2,6 +2,11 @@
 const nextConfig = {
   reactStrictMode: true,
 
+  // Generate unique build ID for cache busting
+  generateBuildId: async () => {
+    return `build-${Date.now()}`
+  },
+
   // Allow useSearchParams in client components without Suspense boundary
   experimental: {
     missingSuspenseWithCSRBailout: false,
