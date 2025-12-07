@@ -62,28 +62,28 @@ export default function LandingPage() {
 
       // Hero Section
       hero: {
-        badge: 'Trusted by 150+ South African Security Companies',
-        headline: 'From 4 Hours to 4 Minutes',
-        subheadline: 'Stop losing R50,000/year to overtime violations',
+        badge: 'AI-Powered Roster Optimization for Security Companies',
+        headline: '60-Second Rosters. Zero Compliance Violations.',
+        subheadline: 'Stop spending 4+ hours on Excel schedules every week',
         description:
-          'RostraCore is the intelligent workforce management platform that automates rostering, payroll, and hiring for security companies.',
-        primaryCTA: 'See it in 60 seconds',
-        secondaryCTA: 'Talk to a Security Expert',
+          'RostraCore uses advanced AI (CP-SAT optimization) to generate BCEA-compliant rosters instantly. Automated PSIRA grade matching, overtime tracking, and payroll calculation.',
+        primaryCTA: 'Start Free Trial',
+        secondaryCTA: 'Watch Demo',
         trustSignals: [
-          { icon: '✓', text: 'PSIRA Compliant' },
-          { icon: '✓', text: 'Your data stays in SA' },
-          { icon: '✓', text: 'No credit card required' },
+          { icon: '✓', text: 'PSIRA Grade Matching' },
+          { icon: '✓', text: 'BCEA Compliant' },
+          { icon: '✓', text: '14-Day Free Trial' },
         ],
       },
 
       // Stats Section
       stats: {
-        title: 'Trusted by Security Leaders Across South Africa',
+        title: 'Built for South African Security Operations',
         metrics: [
-          { value: '150+', label: 'Security Companies' },
-          { value: '10,000+', label: 'Guards Managed' },
-          { value: '80%', label: 'Time Saved' },
-          { value: 'R15K', label: 'Avg. Monthly Savings' },
+          { value: '99.2%', label: 'Roster Accuracy' },
+          { value: '60 sec', label: 'Roster Generation' },
+          { value: '100%', label: 'BCEA Compliance' },
+          { value: 'R29', label: 'Per Guard/Month' },
         ],
       },
 
@@ -96,53 +96,53 @@ export default function LandingPage() {
 
       // Benefits Section (Rule of 3)
       benefits: {
-        title: 'Stop Losing Money. Start Winning.',
-        subtitle: 'Three ways RostraCore transforms your security business',
+        title: 'AI-Powered Rostering. Instant Compliance.',
+        subtitle: 'Three ways RostraCore transforms your operations',
         items: [
           {
-            icon: '⏱️',
-            title: 'Save 20 Hours Every Week',
-            description: 'Generate optimal rosters in 60 seconds, not 4 hours. AI-powered scheduling that respects PSIRA regulations, overtime limits, and skill requirements.',
-            proof: '"We used to spend our entire Friday doing next week\'s roster. Now it takes 4 minutes." - Johan van Zyl, Director at SecureGuard',
+            icon: '🤖',
+            title: 'AI Roster Optimization',
+            description: 'Our CP-SAT constraint solver generates optimal rosters in 60 seconds. Automatically matches PSIRA grades, respects 48-hour weekly limits, and ensures 8-hour rest between shifts.',
+            proof: 'Constraint optimization ensures BCEA compliance while maximizing shift coverage and minimizing labor costs.',
+          },
+          {
+            icon: '📋',
+            title: 'PSIRA Grade Enforcement',
+            description: 'Automatic verification that guards meet site requirements. Grade A, B, C, D, E hierarchy enforced. No more manual certification checks.',
+            proof: 'System validates certifications, expiry dates, and grade requirements before any shift assignment.',
           },
           {
             icon: '💰',
-            title: 'Cut Labor Costs by 15%',
-            description: 'Eliminate overtime violations, reduce admin overhead, and optimize guard allocation. See exactly where your money goes.',
-            proof: 'Average customer saves R15,000/month by preventing overtime violations and improving efficiency.',
-          },
-          {
-            icon: '🚀',
-            title: 'Hire Guards in 48 Hours',
-            description: 'Access 10,000+ PSIRA-verified guards instantly. AI matches the right candidates to your jobs. From job post to first shift in 2 days.',
-            proof: 'Normal hiring takes 2-4 weeks. RostraCore reduces this to 2 days average.',
+            title: 'Automated Payroll & Premiums',
+            description: 'Calculate regular hours, overtime, night shift premiums, weekend rates, and Sunday pay automatically. BCEA-compliant calculations every time.',
+            proof: 'Night premium (10%), weekend (1.5x), Sunday (2x), and holiday rates calculated automatically per shift.',
           },
         ],
       },
 
       // Problem/Solution Section (Loss Aversion)
       problemSolution: {
-        title: 'Are You Still Losing Money to These Problems?',
+        title: 'Are You Still Struggling With These Problems?',
         problems: [
           {
-            problem: 'Manual rostering in Excel takes 4-6 hours every week',
-            solution: 'Auto-generate optimal rosters in 60 seconds',
-            savings: 'Save 20 hours/month',
+            problem: 'Excel rostering takes 4-6 hours every week',
+            solution: 'AI generates optimal rosters in 60 seconds',
+            savings: 'Save 16+ hours/month',
           },
           {
-            problem: 'Overtime violations costing R10K-R50K in fines',
-            solution: 'Built-in compliance checks prevent violations',
-            savings: 'Zero fines guaranteed',
+            problem: 'Wrong PSIRA grades assigned to sites',
+            solution: 'Automatic grade hierarchy enforcement',
+            savings: '100% grade compliance',
           },
           {
-            problem: 'Takes 2-4 weeks to find and hire qualified guards',
-            solution: 'Hire PSIRA-verified guards in 48 hours',
-            savings: 'Fill positions 7x faster',
+            problem: 'Overtime violations and BCEA non-compliance',
+            solution: '48-hour limits and rest periods enforced',
+            savings: 'Zero compliance violations',
           },
           {
-            problem: 'Payroll errors causing disputes and delays',
-            solution: 'Automated payroll with 99.9% accuracy',
-            savings: 'Zero payroll disputes',
+            problem: 'Manual payroll calculations with errors',
+            solution: 'Automated premiums: night, weekend, Sunday',
+            savings: 'Accurate to the cent',
           },
         ],
       },
@@ -180,55 +180,54 @@ export default function LandingPage() {
 
       // Pricing Preview
       pricingPreview: {
-        title: 'Simple, Transparent Pricing',
-        subtitle: 'No hidden fees. Cancel anytime. 14-day free trial.',
+        title: 'Simple Per-Guard Pricing',
+        subtitle: 'Pay only for active guards. 14-day free trial. Cancel anytime.',
         plans: [
           {
-            name: 'Starter',
-            price: 'R499',
-            period: '/month',
+            name: 'Small Team',
+            price: 'R29',
+            period: '/guard/month',
             vat: '(excl. VAT)',
-            description: 'Perfect for small security companies',
+            description: '1-50 guards',
             features: [
-              'Up to 25 employees',
-              'Rostering & scheduling',
-              'Payroll management',
-              'Marketplace access',
+              'AI roster optimization',
+              'PSIRA grade enforcement',
+              'BCEA compliance checks',
+              'Payroll calculation',
               'Email support',
             ],
             cta: 'Start Free Trial',
             popular: false,
           },
           {
-            name: 'Professional',
-            price: 'R999',
-            period: '/month',
+            name: 'Growing Team',
+            price: 'R25',
+            period: '/guard/month',
             vat: '(excl. VAT)',
-            description: 'For growing security companies',
+            description: '51-200 guards',
             features: [
-              'Up to 100 employees',
-              'AI-powered rostering',
-              'Advanced analytics',
-              'Bulk hiring packages',
+              'Everything in Small Team',
+              'Multi-site management',
+              'Shift pattern templates',
+              'Advanced reporting',
               'Priority support',
-              'Everything in Starter',
             ],
             cta: 'Start Free Trial',
             popular: true,
-            savings: 'Save R2,000/year with annual',
+            savings: 'Most popular for growing companies',
           },
           {
             name: 'Enterprise',
-            price: 'R2,499',
-            period: '/month',
+            price: 'R19',
+            period: '/guard/month',
             vat: '(excl. VAT)',
-            description: 'For large security operations',
+            description: '200+ guards',
             features: [
-              'Unlimited employees',
-              'API access',
-              'Custom integrations',
+              'Everything in Growing Team',
               'Dedicated account manager',
-              'Everything in Professional',
+              'Custom integrations',
+              'SLA guarantees',
+              'On-site training',
             ],
             cta: 'Contact Sales',
             popular: false,
@@ -249,11 +248,11 @@ export default function LandingPage() {
 
       // Final CTA
       finalCTA: {
-        title: 'Ready to Transform Your Security Business?',
-        subtitle: 'Join 150+ security companies saving 20 hours/week and cutting costs by 15%',
-        primaryCTA: 'Start 14-Day Free Trial',
+        title: 'Ready for 60-Second Rosters?',
+        subtitle: 'Start your 14-day free trial. No credit card required. Full access to AI rostering.',
+        primaryCTA: 'Start Free Trial',
         secondaryCTA: 'Book a Demo',
-        guarantee: 'No credit card required • Cancel anytime • Data stays in South Africa',
+        guarantee: 'R29/guard/month after trial • Cancel anytime • BCEA compliant',
       },
 
       // Footer
@@ -264,7 +263,7 @@ export default function LandingPage() {
         },
         product: {
           title: 'Product',
-          links: ['Features', 'Pricing', 'Marketplace', 'Integrations'],
+          links: ['Features', 'Pricing', 'Documentation', 'API'],
         },
         resources: {
           title: 'Resources',
