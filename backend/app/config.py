@@ -31,7 +31,7 @@ class Settings(BaseSettings):
 
     # CORS
     FRONTEND_URL: str = "http://localhost:3000"
-    ALLOWED_ORIGINS: Union[list[str], str] = "http://localhost:3000"
+    ALLOWED_ORIGINS: Union[list[str], str] = "http://localhost:3000,http://localhost:3001,https://rostra-core.vercel.app,https://rostracore.com,https://www.rostracore.com"
 
     @field_validator('ALLOWED_ORIGINS', mode='before')
     @classmethod
