@@ -24,7 +24,7 @@ export default function VerifyEmailPage() {
 
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/auth/verify-email`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/verify-email`,
           {
             method: "POST",
             headers: {
