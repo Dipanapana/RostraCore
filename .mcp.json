@@ -1,10 +1,17 @@
 {
   "mcpServers": {
-    "postgres": {
+    "postgres-local": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-postgres"],
       "env": {
         "POSTGRES_CONNECTION_STRING": "postgresql://postgres:postgres@localhost:5432/rostracore_db"
+      }
+    },
+    "postgres-railway": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres"],
+      "env": {
+        "POSTGRES_CONNECTION_STRING": "postgresql://postgres:ThXKAIVXyOEMdNhUhNhArKdrlwddBoYY@yamabiko.proxy.rlwy.net:41494/railway"
       }
     },
     "filesystem": {

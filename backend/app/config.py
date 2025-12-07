@@ -94,7 +94,7 @@ class Settings(BaseSettings):
     SMTP_TLS: bool = True
 
     # MVP Feature Flags (Option B Security)
-    ENABLE_EMAIL_VERIFICATION: bool = True
+    ENABLE_EMAIL_VERIFICATION: bool = False  # Disabled for initial deployment
     ENABLE_ORGANIZATION_APPROVAL: bool = True
     ENABLE_RATE_LIMITING: bool = True
 
@@ -126,7 +126,7 @@ class Settings(BaseSettings):
     YOCO_SANDBOX: bool = True  # True for testing, False for production
 
     # Security Settings
-    PASSWORD_MIN_LENGTH: int = 12
+    PASSWORD_MIN_LENGTH: int = 8
     MAX_LOGIN_ATTEMPTS: int = 5
     ACCOUNT_LOCKOUT_DURATION_MINUTES: int = 30
     RATE_LIMIT_PER_MINUTE: int = 60

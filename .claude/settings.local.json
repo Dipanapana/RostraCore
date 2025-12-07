@@ -174,7 +174,22 @@
       "Bash(\"C:\\Program Files\\PostgreSQL\\14\\bin\\psql.exe\" -U postgres -d rostracore_db -c \"SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name=''leave_requests'' ORDER BY ordinal_position;\")",
       "Bash(timeout /t 2 /nobreak)",
       "Bash(\"C:\\Program Files\\PostgreSQL\\14\\bin\\psql.exe\" -U postgres -d rostracore_db -c \"SELECT username, email, role, is_active FROM users ORDER BY user_id LIMIT 5;\")",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(git merge:*)",
+      "Bash(\"C:\\Program Files\\PostgreSQL\\14\\bin\\psql.exe\" \"postgresql://postgres:ThXKAIVXyOEMdNhUhNhArKdrlwddBoYY@yamabiko.proxy.rlwy.net:41494/railway\" -c \"SELECT ''Connection successful!'' as status;\")",
+      "Bash(set \"DATABASE_URL=postgresql://postgres:test@railway.app:5432/railway\")",
+      "Bash(\"C:\\Program Files\\PostgreSQL\\14\\bin\\psql.exe\" \"postgresql://postgres:ThXKAIVXyOEMdNhUhNhArKdrlwddBoYY@yamabiko.proxy.rlwy.net:41494/railway\" -c \"SELECT ''Railway PostgreSQL is accessible!'' as status;\")",
+      "Bash(\"C:\\Program Files\\PostgreSQL\\14\\bin\\psql.exe\" \"postgresql://postgres:ThXKAIVXyOEMdNhUhNhArKdrlwddBoYY@yamabiko.proxy.rlwy.net:41494/railway\" -c \"\\dt\")",
+      "Bash(git -C \"c:/Users/USER/Documents/Master Plan/RostraCore\" status)",
+      "Bash(git -C \"c:/Users/USER/Documents/Master Plan/RostraCore\" diff --stat)",
+      "Bash(git -C \"c:/Users/USER/Documents/Master Plan/RostraCore\" add backend/app/api/endpoints/roster.py backend/requirements.txt)",
+      "Bash(git -C \"c:/Users/USER/Documents/Master Plan/RostraCore\" commit -m \"$(cat <<''EOF''\nfix: Make ortools imports lazy for Railway deployment\n\n- Move ortools-dependent algorithm imports inside functions\n- Comment out weasyprint from requirements (requires system libs)\n- Prevents import failures on Railway when ortools has issues\n\nThis allows the app to start successfully even if ortools\nhas platform-specific problems. The optimization algorithms\nare only loaded when roster generation endpoints are called.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git -C \"c:/Users/USER/Documents/Master Plan/RostraCore\" push origin main)",
+      "Bash(git -C \"c:/Users/USER/Documents/Master Plan/RostraCore\" add backend/requirements.txt)",
+      "Bash(git -C \"c:/Users/USER/Documents/Master Plan/RostraCore\" commit -m \"$(cat <<''EOF''\nfix: Add missing requests dependency\n\nThe payment_service.py uses the requests library for HTTP calls\nbut it wasn''t in requirements.txt.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(copy:*)",
+      "Bash(del vercel.json)",
+      "Bash(git mv:*)"
     ],
     "deny": [],
     "ask": []

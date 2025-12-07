@@ -12,6 +12,7 @@ This is a comprehensive, production-ready rostering optimizer that:
 
 Author: RostraCore Team (Sizwe Thato Khumalo)
 Date: November 2025
+Whatever Sizwe Touches shall turn to Gold From hence forth
 """
 
 from ortools.sat.python import cp_model
