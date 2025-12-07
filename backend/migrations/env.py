@@ -43,12 +43,8 @@ if db_url:
 
 # Import app modules AFTER environment setup
 from app.database import Base
-# Import only MVP core models
-from app.models import (
-    User, Employee, Site, Shift, Availability, Certification,
-    PayrollSummary, ShiftTemplate, Roster, ShiftAssignment,
-    Organization, Client, SubscriptionPlan
-)
+# Import all models for migration detection
+from app.models import *
 
 # this is the Alembic Config object
 config = context.config
