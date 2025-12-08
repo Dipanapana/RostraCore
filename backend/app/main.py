@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.api.endpoints import employees, sites, shifts, availability, certifications, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, organization_approval, organization_users, organization_settings, clients, payments, superadmin_analytics, subscriptions, subscription_plans, dashboards, superadmin_auth, invoices, reports, roster_preferences, superadmin, staffing_profiles, availability_patterns, system_settings, shift_patterns, leave, payroll_deductions
-from app.middleware import RateLimitMiddleware
+from app.middleware import RateLimitMiddleware, ForceHTTPSRedirectMiddleware
 
 # Initialize Sentry for error tracking and performance monitoring
 if settings.SENTRY_DSN:
@@ -54,6 +54,10 @@ app.add_middleware(
 
 # Rate limiting middleware (Option B Security - MVP)
 app.add_middleware(RateLimitMiddleware)
+
+# HTTPS redirect middleware - Forces HTTPS in redirect Location headers
+# This fixes Mixed Content errors when behind Railway's SSL termination proxy
+app.add_middleware(ForceHTTPSRedirectMiddleware)
 
 
 @app.get("/")
