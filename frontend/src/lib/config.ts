@@ -5,22 +5,25 @@
  * - Browser requests /api/v1/* from same origin (HTTPS, no Mixed Content)
  * - Vercel rewrites to Railway backend server-to-server
  *
- * @version 3.0 - Dec 8 2025 - Use Vercel rewrites proxy
+ * @version 4.0 - Dec 8 2025 - Hardcode empty string, ignore env vars
  */
 
 /**
  * Get the API URL base.
  * Returns empty string for production (use same-origin via Vercel rewrites)
  * Returns localhost URL for development
+ *
+ * IMPORTANT: Do NOT use process.env.NEXT_PUBLIC_API_URL here!
+ * Vercel may have an old env var set that would override our empty string.
  */
 export function getApiUrl(): string {
-  // In development, use localhost backend
+  // ONLY use localhost in development - check hostname directly
   if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+    return 'http://localhost:8001';
   }
 
-  // In production, use same-origin (Vercel rewrites to Railway)
-  // Empty string means /api/v1/clients becomes same-origin request
+  // ALWAYS return empty string in production
+  // This makes requests same-origin, Vercel rewrites handle the rest
   return '';
 }
 
