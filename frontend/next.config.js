@@ -4,7 +4,7 @@ const nextConfig = {
 
   // Generate unique build ID for cache busting
   generateBuildId: async () => {
-    return `build-${Date.now()}`
+    return `build-v3-${Date.now()}`
   },
 
   // Allow useSearchParams in client components without Suspense boundary
