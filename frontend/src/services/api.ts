@@ -8,17 +8,21 @@ export const api = axios.create({
   },
 })
 
-// Request interceptor to attach Bearer token from localStorage
+// Request interceptor to:
+// 1. Force HTTPS at RUNTIME (fixes Mixed Content even if build has http://)
+// 2. Attach Bearer token from localStorage
 api.interceptors.request.use(
   (config) => {
+    // RUNTIME HTTPS fix - runs in browser at request time, not build time
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+      if (config.baseURL?.startsWith('http://')) {
+        config.baseURL = config.baseURL.replace('http://', 'https://')
+      }
+    }
+
     const token = localStorage.getItem('access_token')
-    console.log('[API] Request to:', config.url)
-    console.log('[API] Token in localStorage:', token ? token.substring(0, 20) + '...' : 'NONE')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
-      console.log('[API] Authorization header set')
-    } else {
-      console.log('[API] No token - request will be unauthenticated')
     }
     return config
   },
