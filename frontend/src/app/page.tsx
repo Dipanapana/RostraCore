@@ -169,7 +169,7 @@ export default function LandingPage() {
             company: 'SecureNation (85 guards)',
           },
           {
-            quote: 'Hiring used to take 3 weeks. Now we fill positions in 2 days. Game changer for our business.',
+            quote: 'The AI roster optimization handles 200 guards across 15 sites perfectly. What took us days now takes minutes.',
             author: 'Johan van der Merwe',
             role: 'Director',
             location: 'Cape Town',
@@ -380,7 +380,7 @@ export default function LandingPage() {
             company: 'SecureNation (85 wagte)',
           },
           {
-            quote: 'Werwing het 3 weke geneem. Nou vul ons posisies in 2 dae. Spelwisselaar vir ons besigheid.',
+            quote: 'Die KI-roosteroptimalisering hanteer 200 wagte oor 15 terreine perfek. Wat ons dae geneem het, neem nou minute.',
             author: 'Johan van der Merwe',
             role: 'Direkteur',
             location: 'Kaapstad',
