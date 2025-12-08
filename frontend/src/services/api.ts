@@ -1,25 +1,21 @@
 import axios from 'axios'
 import { getApiUrl } from '@/lib/config'
 
-// HARDCODED HTTPS - this ensures even old cached builds use HTTPS
-const HARDCODED_API_URL = 'https://rostracore-production.up.railway.app'
-
-// Create axios instance with HARDCODED HTTPS baseURL
+// Create axios instance - uses Vercel rewrites in production (same-origin)
+// In dev, uses localhost:8001
 export const api = axios.create({
-  baseURL: HARDCODED_API_URL,
+  baseURL: '', // Empty = same-origin requests, Vercel rewrites to Railway
   headers: {
     'Content-Type': 'application/json',
   },
 })
 
 // Request interceptor to:
-// 1. Set baseURL at RUNTIME using getApiUrl() - ALWAYS forces HTTPS
+// 1. Set baseURL at RUNTIME (empty for production, localhost for dev)
 // 2. Attach Bearer token from localStorage
-// Note: No trailing slash manipulation needed - backend uses --proxy-headers
-// so 307 redirects now correctly use https://
 api.interceptors.request.use(
   (config) => {
-    // ALWAYS set baseURL at request time - this is the ultimate fix
+    // Set baseURL based on environment
     config.baseURL = getApiUrl()
 
     const token = localStorage.getItem('access_token')

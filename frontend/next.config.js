@@ -13,8 +13,8 @@ const nextConfig = {
   },
 
   env: {
-    // Use HTTPS production URL as default for Vercel builds
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://rostracore-production.up.railway.app',
+    // Use relative URL - API calls go through Vercel rewrites (no Mixed Content!)
+    NEXT_PUBLIC_API_URL: '',
   },
 
   // Disable source maps for development performance
@@ -28,6 +28,17 @@ const nextConfig = {
   // Ignore TypeScript errors during production builds (react-dnd ref type issues)
   typescript: {
     ignoreBuildErrors: true,
+  },
+
+  // CRITICAL: Proxy API calls through Vercel to avoid Mixed Content errors
+  // Browser talks to Vercel (HTTPS) -> Vercel proxies to Railway (server-to-server)
+  async rewrites() {
+    return [
+      {
+        source: '/api/v1/:path*',
+        destination: 'https://rostracore-production.up.railway.app/api/v1/:path*',
+      },
+    ]
   },
 }
 
