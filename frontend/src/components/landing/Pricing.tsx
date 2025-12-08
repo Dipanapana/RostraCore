@@ -1,48 +1,17 @@
 "use client";
 
 import Link from 'next/link';
-import { Check } from 'lucide-react';
+import { Check, Shield, Zap, Users } from 'lucide-react';
 
-const plans = [
-    {
-        name: "Basic",
-        price: "1,499",
-        description: "Essential tools for small security companies",
-        features: [
-            "Up to 50 security guards",
-            "Automated roster generation",
-            "PSIRA certification tracking",
-            "Basic payroll export",
-            "Email support"
-        ],
-        highlight: false
-    },
-    {
-        name: "Professional",
-        price: "3,499",
-        description: "Advanced management for growing fleets",
-        features: [
-            "Up to 200 security guards",
-            "Everything in Basic",
-            "Billable hours tracking",
-            "Client portal access",
-            "Priority email & phone support"
-        ],
-        highlight: true
-    },
-    {
-        name: "Enterprise",
-        price: "7,999",
-        description: "Full control for large-scale operations",
-        features: [
-            "Unlimited security guards",
-            "Everything in Professional",
-            "Custom API integrations",
-            "Dedicated account manager",
-            "SLA guarantees"
-        ],
-        highlight: false
-    }
+const features = [
+    "AI-powered roster optimization",
+    "PSIRA grade enforcement",
+    "BCEA compliance checks",
+    "Automated payroll calculation",
+    "Multi-site management",
+    "Shift pattern templates",
+    "Advanced reporting",
+    "Email & phone support",
 ];
 
 export default function Pricing() {
@@ -52,63 +21,74 @@ export default function Pricing() {
                 {/* Section Header */}
                 <div className="text-center max-w-3xl mx-auto mb-16">
                     <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mb-6">
-                        Simple, Transparent Pricing
+                        Simple, Per-Guard Pricing
                     </h2>
                     <p className="text-lg text-slate-600">
-                        Choose the plan that fits your scale. No hidden fees.
+                        Pay only for active guards. No hidden fees. Cancel anytime.
                     </p>
                 </div>
 
-                {/* Pricing Cards */}
-                <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                    {plans.map((plan, index) => (
-                        <div
-                            key={index}
-                            className={`relative rounded-2xl p-8 transition-all duration-300 ${plan.highlight
-                                ? 'glass-panel border-2 border-blue-500 shadow-[0_0_40px_rgba(59,130,246,0.15)] transform md:-translate-y-4'
-                                : 'glass-card border border-white/5 hover:border-white/10'
-                                }`}
-                        >
-                            {plan.highlight && (
-                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-bold shadow-lg">
-                                    Most Popular
-                                </div>
-                            )}
+                {/* Single Pricing Card */}
+                <div className="max-w-lg mx-auto">
+                    <div className="relative rounded-3xl p-10 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-500 shadow-[0_0_60px_rgba(59,130,246,0.2)]">
+                        {/* Badge */}
+                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-6 py-1.5 rounded-full text-sm font-bold shadow-lg">
+                            14-Day Free Trial
+                        </div>
 
-                            <h3 className="text-2xl font-bold text-slate-900 mb-2">{plan.name}</h3>
-                            <p className="text-slate-600 mb-6 text-sm">{plan.description}</p>
-
-                            <div className="mb-8">
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-sm text-slate-600">R</span>
-                                    <span className="text-5xl font-bold text-slate-900">{plan.price}</span>
-                                    <span className="text-slate-600">/mo</span>
-                                </div>
-                                <p className="text-xs text-slate-500 mt-2">Excluding VAT</p>
+                        {/* Price */}
+                        <div className="text-center mb-8 pt-4">
+                            <div className="flex items-baseline justify-center gap-1">
+                                <span className="text-2xl text-slate-600">R</span>
+                                <span className="text-7xl font-bold text-slate-900">29</span>
                             </div>
+                            <p className="text-xl text-slate-600 mt-2">per guard / month</p>
+                            <p className="text-sm text-slate-500 mt-1">Excluding VAT</p>
+                        </div>
 
-                            <Link
-                                href="/register"
-                                className={`block w-full py-3 px-6 rounded-xl text-center font-bold transition-all ${plan.highlight
-                                    ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg hover:shadow-blue-500/25'
-                                    : 'bg-slate-200 hover:bg-slate-300 text-slate-900'
-                                    }`}
-                            >
-                                Start Free Trial
-                            </Link>
+                        {/* CTA Button */}
+                        <Link
+                            href="/register"
+                            className="block w-full py-4 px-6 rounded-xl text-center font-bold text-lg bg-blue-600 hover:bg-blue-500 text-white shadow-lg hover:shadow-blue-500/25 transition-all hover:scale-[1.02] active:scale-[0.98] mb-8"
+                        >
+                            Start Free Trial
+                        </Link>
 
-                            <div className="mt-8 space-y-4">
-                                {plan.features.map((feature, i) => (
-                                    <div key={i} className="flex items-start gap-3">
-                                        <div className={`mt-1 p-0.5 rounded-full ${plan.highlight ? 'bg-blue-500/20' : 'bg-slate-800'}`}>
-                                            <Check className={`w-3 h-3 ${plan.highlight ? 'text-blue-400' : 'text-slate-400'}`} />
-                                        </div>
-                                        <span className="text-sm text-slate-700">{feature}</span>
+                        {/* Features Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {features.map((feature, i) => (
+                                <div key={i} className="flex items-start gap-3">
+                                    <div className="mt-0.5 p-1 rounded-full bg-blue-500/20">
+                                        <Check className="w-4 h-4 text-blue-600" />
                                     </div>
-                                ))}
+                                    <span className="text-sm text-slate-700">{feature}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Trust Signals */}
+                        <div className="mt-8 pt-8 border-t border-blue-200">
+                            <div className="flex flex-wrap justify-center gap-6 text-sm text-slate-600">
+                                <div className="flex items-center gap-2">
+                                    <Shield className="w-4 h-4 text-blue-500" />
+                                    <span>PSIRA Compliant</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Zap className="w-4 h-4 text-blue-500" />
+                                    <span>60-Second Rosters</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Users className="w-4 h-4 text-blue-500" />
+                                    <span>Unlimited Guards</span>
+                                </div>
                             </div>
                         </div>
-                    ))}
+                    </div>
+
+                    {/* Money Back Guarantee */}
+                    <p className="text-center text-sm text-slate-500 mt-6">
+                        No credit card required for trial • Cancel anytime
+                    </p>
                 </div>
             </div>
         </section>
