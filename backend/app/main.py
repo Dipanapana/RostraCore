@@ -37,11 +37,10 @@ app = FastAPI(
     description="AI-Powered Security Workforce Management System",
     version="1.0.0",
     docs_url="/docs",
-    redoc_url="/redoc",
-    # CRITICAL: Disable automatic slash redirects
-    # Railway terminates SSL at edge, so FastAPI's 307 redirects use http://
-    # instead of https://, causing Mixed Content errors
-    redirect_slashes=False
+    redoc_url="/redoc"
+    # Note: redirect_slashes=True (default) works correctly because
+    # Procfile now has --proxy-headers which tells Uvicorn to trust
+    # X-Forwarded-Proto from Railway, generating correct HTTPS redirects
 )
 
 # CORS middleware
