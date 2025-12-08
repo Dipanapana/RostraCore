@@ -4,10 +4,11 @@
 export const dynamic = 'force-dynamic';
 
 /**
- * RostraCore Landing Page
+ * RostraCore Landing Page - v2.0
  *
  * Mobile-first, conversion-optimized landing page
  * Designed with South African security industry in mind
+ * Updated: December 2025
  *
  * Expert insights applied:
  * - Dr. Sarah Chen: Progressive disclosure, visual hierarchy
