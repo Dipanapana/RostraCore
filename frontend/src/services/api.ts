@@ -1,24 +1,20 @@
 import axios from 'axios'
-import { API_URL, getApiUrl } from '@/lib/config'
+import { getApiUrl } from '@/lib/config'
 
+// Create axios instance - baseURL is set dynamically via interceptor
 export const api = axios.create({
-  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 })
 
 // Request interceptor to:
-// 1. Force HTTPS at RUNTIME (fixes Mixed Content even if build has http://)
+// 1. Set baseURL at RUNTIME using getApiUrl() - ALWAYS forces HTTPS
 // 2. Attach Bearer token from localStorage
 api.interceptors.request.use(
   (config) => {
-    // RUNTIME HTTPS fix - runs in browser at request time, not build time
-    if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
-      if (config.baseURL?.startsWith('http://')) {
-        config.baseURL = config.baseURL.replace('http://', 'https://')
-      }
-    }
+    // ALWAYS set baseURL at request time - this is the ultimate fix
+    config.baseURL = getApiUrl()
 
     const token = localStorage.getItem('access_token')
     if (token) {
