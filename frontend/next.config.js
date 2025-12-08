@@ -15,7 +15,11 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=0, must-revalidate',
+            value: 'private, no-cache, no-store, must-revalidate',
+          },
+          {
+            key: 'Pragma',
+            value: 'no-cache',
           },
         ],
       },
@@ -45,8 +49,9 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
 
-  // CRITICAL: Proxy API calls through Vercel to avoid Mixed Content errors
-  // Browser talks to Vercel (HTTPS) -> Vercel proxies to Railway (server-to-server)
+  // FALLBACK: Rewrites as safety net (API routes in app/api/v1/[...path] are primary)
+  // Note: Next.js API routes take precedence over rewrites, so these only trigger
+  // if the API route somehow fails to match. Keeping for backward compatibility.
   async rewrites() {
     return [
       {
