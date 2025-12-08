@@ -1,12 +1,12 @@
-// Service Worker for RostraCore PWA - HTTPS FIX v3
-const CACHE_VERSION = 'v2.0.0-https-fix';
+// Service Worker for RostraCore PWA - HTTPS FIX v4
+// ALWAYS rebuild Railway URLs with HTTPS
+const CACHE_VERSION = 'v3.0.0-https-fix';
 const CACHE_NAME = `rostracore-${CACHE_VERSION}`;
 
 const STATIC_ASSETS = ['/', '/dashboard', '/employees', '/roster', '/sites', '/manifest.json'];
 
-// Install - clear ALL old caches
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing v2.0.0-https-fix');
+  console.log('[SW] Installing v3.0.0-https-fix');
   event.waitUntil(
     caches.keys().then(names => Promise.all(names.map(n => caches.delete(n))))
       .then(() => caches.open(CACHE_NAME))
@@ -15,46 +15,55 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate - claim clients
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating v2.0.0-https-fix');
+  console.log('[SW] Activating v3.0.0-https-fix');
   event.waitUntil(
     caches.keys().then(names => Promise.all(names.filter(n => n !== CACHE_NAME).map(n => caches.delete(n))))
       .then(() => self.clients.claim())
   );
 });
 
-// Fetch - FORCE HTTPS for Railway
 self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
-  if (event.request.method !== 'GET') return;
+  const requestUrl = event.request.url;
+  
+  // Skip non-GET requests - let browser handle them
+  if (event.request.method !== 'GET') {
+    return;
+  }
 
-  // Force HTTPS for Railway
-  if (url.hostname.includes('railway.app')) {
-    if (url.protocol === 'http:') {
-      console.log('[SW] Forcing HTTPS:', url.href);
-      url.protocol = 'https:';
-      event.respondWith(fetch(new Request(url.href, {
+  // ALWAYS force HTTPS for Railway - rebuild the URL completely
+  if (requestUrl.includes('railway.app')) {
+    // Replace http:// with https:// in the URL string directly
+    const httpsUrl = requestUrl.replace(/^http:\/\//i, 'https://');
+    console.log('[SW] Railway request:', requestUrl, '→', httpsUrl);
+    
+    event.respondWith(
+      fetch(httpsUrl, {
         method: event.request.method,
         headers: event.request.headers,
-        mode: 'cors'
-      })));
-      return;
-    }
+        mode: 'cors',
+        credentials: event.request.credentials
+      }).catch(err => {
+        console.error('[SW] Fetch failed:', err);
+        return new Response(JSON.stringify({ error: 'Network error' }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      })
+    );
+    return;
+  }
+
+  // Local API - network only
+  if (requestUrl.includes('/api/')) {
     event.respondWith(fetch(event.request));
     return;
   }
 
-  // API - network only
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(fetch(event.request));
-    return;
-  }
-
-  // Static - cache first
+  // Static assets - cache first
   event.respondWith(
     caches.match(event.request).then(r => r || fetch(event.request).then(res => {
-      if (res.status === 200) {
+      if (res && res.status === 200) {
         const clone = res.clone();
         caches.open(CACHE_NAME).then(c => c.put(event.request, clone));
       }
@@ -70,4 +79,4 @@ self.addEventListener('message', (event) => {
   }
 });
 
-console.log('[SW] v2.0.0-https-fix loaded');
+console.log('[SW] v3.0.0-https-fix loaded');
