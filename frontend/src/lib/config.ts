@@ -5,6 +5,8 @@
  * use http:// when the page is served over https://.
  *
  * The fix works at RUNTIME, not build time, to handle cached old builds.
+ *
+ * @version 2.0 - Dec 8 2025 - Force HTTPS at runtime
  */
 
 // Build-time URL (may be http:// if old build is cached)
