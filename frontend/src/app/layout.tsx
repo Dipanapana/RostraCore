@@ -43,6 +43,14 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="RostraCore" />
+        {/* Auto-reload on ChunkLoadError after deployments */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          window.addEventListener('error', function(e) {
+            if (e.message && (e.message.includes('Loading chunk') || e.message.includes('ChunkLoadError'))) {
+              window.location.reload();
+            }
+          });
+        `}} />
       </head>
       <body className={inter.className}>
         <ErrorBoundary>

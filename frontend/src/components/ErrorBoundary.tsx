@@ -31,15 +31,14 @@ class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Log error to console (Sentry disabled for performance)
-    // Sentry.captureException(error, {
-    //   contexts: {
-    //     react: {
-    //       componentStack: errorInfo.componentStack,
-    //     },
-    //   },
-    // });
-
     console.error('Error caught by boundary:', error, errorInfo);
+
+    // Auto-reload on ChunkLoadError (happens after new deployments)
+    if (error.name === 'ChunkLoadError' || error.message?.includes('Loading chunk')) {
+      console.log('ChunkLoadError detected - reloading page...');
+      window.location.reload();
+      return;
+    }
   }
 
   render() {
