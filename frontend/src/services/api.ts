@@ -1,8 +1,12 @@
 import axios from 'axios'
 import { getApiUrl } from '@/lib/config'
 
-// Create axios instance - baseURL is set dynamically via interceptor
+// HARDCODED HTTPS - this ensures even old cached builds use HTTPS
+const HARDCODED_API_URL = 'https://rostracore-production.up.railway.app'
+
+// Create axios instance with HARDCODED HTTPS baseURL
 export const api = axios.create({
+  baseURL: HARDCODED_API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
