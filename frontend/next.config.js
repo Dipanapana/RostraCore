@@ -13,7 +13,8 @@ const nextConfig = {
   },
 
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+    // Use HTTPS production URL as default for Vercel builds
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://rostracore-production.up.railway.app',
   },
 
   // Disable source maps for development performance
