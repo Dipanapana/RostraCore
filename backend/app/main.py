@@ -37,7 +37,7 @@ app = FastAPI(
     description="AI-Powered Security Workforce Management System",
     version="1.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",n    # Railway terminates SSL at edge, so FastAPI's 307 redirects use http://n    redirect_slashes=False
 )
 
 # CORS middleware
