@@ -5,8 +5,13 @@
  * - Browser requests /api/v1/* from same origin (HTTPS, no Mixed Content)
  * - Vercel rewrites to Railway backend server-to-server
  *
- * @version 4.0 - Dec 8 2025 - Hardcode empty string, ignore env vars
+ * @version 5.0 - Dec 8 2025 - Added console log for deployment verification
  */
+
+// Log version on load to verify deployment
+if (typeof window !== 'undefined') {
+  console.log('[RostraCore] API Config v5.0 loaded - using Vercel rewrites');
+}
 
 /**
  * Get the API URL base.

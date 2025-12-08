@@ -4,7 +4,22 @@ const nextConfig = {
 
   // Generate unique build ID for cache busting
   generateBuildId: async () => {
-    return `build-v5-${Date.now()}`
+    return `build-v6-${Date.now()}`
+  },
+
+  // Force no caching on JS bundles to fix stale deployment issues
+  async headers() {
+    return [
+      {
+        source: '/:path*.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=0, must-revalidate',
+          },
+        ],
+      },
+    ]
   },
 
   // Allow useSearchParams in client components without Suspense boundary
