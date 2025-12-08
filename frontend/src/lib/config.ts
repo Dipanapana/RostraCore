@@ -7,19 +7,21 @@
 
 // Get the API URL from environment, with smart defaults
 function getApiUrl(): string {
-  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+  const envUrl = process.env.NEXT_PUBLIC_API_URL || 'https://rostracore-production.up.railway.app';
 
-  // If env var is set, use it (but ensure HTTPS in production)
-  if (envUrl) {
-    // Force HTTPS if we're in production (browser check)
-    if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
-      return envUrl.replace('http://', 'https://');
-    }
+  // Always force HTTPS for Railway URLs (Railway always supports HTTPS)
+  // This runs at BUILD TIME, so we can't rely on window checks
+  if (envUrl.includes('railway.app')) {
+    return envUrl.replace('http://', 'https://');
+  }
+
+  // For local development, allow HTTP
+  if (envUrl.includes('localhost')) {
     return envUrl;
   }
 
-  // Default: production Railway URL
-  return 'https://rostracore-production.up.railway.app';
+  // For all other production URLs, force HTTPS
+  return envUrl.replace('http://', 'https://');
 }
 
 export const API_URL = getApiUrl();
