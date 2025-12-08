@@ -22,8 +22,16 @@ const RAILWAY_BACKEND = process.env.RAILWAY_BACKEND_URL ||
  * Proxy a request to the Railway backend
  */
 async function proxyRequest(req: NextRequest, method: string): Promise<NextResponse> {
-  const path = req.nextUrl.pathname; // e.g., /api/v1/clients
+  let path = req.nextUrl.pathname; // e.g., /api/v1/clients
   const searchParams = req.nextUrl.search; // query string including ?
+
+  // IMPORTANT: Add trailing slash to prevent Railway from redirecting
+  // Railway's FastAPI uses redirect_slashes=True which generates 307 redirects
+  // with the Railway hostname, causing the browser to bypass our proxy
+  if (!path.endsWith('/') && !path.includes('.')) {
+    path = path + '/';
+  }
+
   const targetUrl = `${RAILWAY_BACKEND}${path}${searchParams}`;
 
   // Log for debugging (visible in Vercel function logs)
@@ -62,7 +70,19 @@ async function proxyRequest(req: NextRequest, method: string): Promise<NextRespo
     response.headers.forEach((value, key) => {
       const skipResponseHeaders = ['content-encoding', 'transfer-encoding', 'connection'];
       if (!skipResponseHeaders.includes(key.toLowerCase())) {
-        responseHeaders.set(key, value);
+        // CRITICAL: Rewrite Location header to keep redirects going through our proxy
+        if (key.toLowerCase() === 'location') {
+          const location = value;
+          // Replace Railway backend URL with our proxy URL
+          const rewrittenLocation = location.replace(
+            RAILWAY_BACKEND,
+            '' // Empty = same-origin, relative URL
+          );
+          responseHeaders.set(key, rewrittenLocation);
+          console.log(`[API Proxy] Rewrote redirect: ${location} → ${rewrittenLocation}`);
+        } else {
+          responseHeaders.set(key, value);
+        }
       }
     });
 
