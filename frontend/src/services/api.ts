@@ -1,6 +1,5 @@
 import axios from 'axios'
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+import { API_URL } from '@/lib/config'
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -97,8 +96,6 @@ export const certificationsApi = {
   update: (id: number, data: any) => api.put(`/api/v1/certifications/${id}`, data),
   delete: (id: number) => api.delete(`/api/v1/certifications/${id}`),
 }
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 export const rosterPreferencesApi = {
   getAll: (scope?: string) => {
@@ -269,26 +266,26 @@ export const exportsApi = {
   // PDF Reports
   rosterPdf: (params?: any) => {
     const queryString = new URLSearchParams(params).toString()
-    return `${API_BASE_URL}/api/v1/exports/roster/pdf${queryString ? '?' + queryString : ''}`
+    return `${API_URL}/api/v1/exports/roster/pdf${queryString ? '?' + queryString : ''}`
   },
 
   // CSV Exports
-  employeesCsv: () => `${API_BASE_URL}/api/v1/exports/employees/csv`,
-  sitesCsv: () => `${API_BASE_URL}/api/v1/exports/sites/csv`,
+  employeesCsv: () => `${API_URL}/api/v1/exports/employees/csv`,
+  sitesCsv: () => `${API_URL}/api/v1/exports/sites/csv`,
   shiftsCsv: (params?: any) => {
     const queryString = new URLSearchParams(params).toString()
-    return `${API_BASE_URL}/api/v1/exports/shifts/csv${queryString ? '?' + queryString : ''}`
+    return `${API_URL}/api/v1/exports/shifts/csv${queryString ? '?' + queryString : ''}`
   },
-  certificationsCsv: () => `${API_BASE_URL}/api/v1/exports/certifications/csv`,
+  certificationsCsv: () => `${API_URL}/api/v1/exports/certifications/csv`,
 
   // Excel Exports
-  employeesExcel: () => `${API_BASE_URL}/api/v1/exports/employees/excel`,
-  sitesExcel: () => `${API_BASE_URL}/api/v1/exports/sites/excel`,
+  employeesExcel: () => `${API_URL}/api/v1/exports/employees/excel`,
+  sitesExcel: () => `${API_URL}/api/v1/exports/sites/excel`,
   shiftsExcel: (params?: any) => {
     const queryString = new URLSearchParams(params).toString()
-    return `${API_BASE_URL}/api/v1/exports/shifts/excel${queryString ? '?' + queryString : ''}`
+    return `${API_URL}/api/v1/exports/shifts/excel${queryString ? '?' + queryString : ''}`
   },
-  certificationsExcel: () => `${API_BASE_URL}/api/v1/exports/certifications/excel`,
+  certificationsExcel: () => `${API_URL}/api/v1/exports/certifications/excel`,
 }
 
 // Payroll Deductions API (SA Tax Calculations)

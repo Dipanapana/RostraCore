@@ -67,7 +67,7 @@ export default function EmployeesPage() {
   }
 
   const handleDownloadTemplate = () => {
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+    const { API_URL } = require('@/lib/config')
     window.open(`${API_URL}/api/v1/employees/download-template`, '_blank')
   }
 

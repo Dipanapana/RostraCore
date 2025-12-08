@@ -18,6 +18,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
+import { API_URL } from "@/lib/config";
 import {
   LineChart,
   Line,
@@ -40,8 +41,6 @@ import {
   ChartIcon,
   UserIcon,
 } from "@/design-system/components";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 interface DashboardMetrics {
   employees: {

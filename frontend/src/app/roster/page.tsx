@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { rosterApi, clientsApi } from '@/services/api'
+import { API_URL } from '@/lib/config'
 import ExportButtons from '@/components/ExportButtons'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import DatePicker from '@/components/DatePicker'
@@ -107,7 +108,7 @@ export default function RosterPage() {
         return `${year}-${month}-${day}`
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/roster/generate?algorithm=production`, {
+      const response = await fetch(`${API_URL}/api/v1/roster/generate?algorithm=production`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -151,7 +152,7 @@ export default function RosterPage() {
       // Auto-download PDF if URL is provided
       if (response.data.pdf_url) {
         const token = localStorage.getItem('access_token')
-        const pdfUrl = `${process.env.NEXT_PUBLIC_API_URL}${response.data.pdf_url}`
+        const pdfUrl = `${API_URL}${response.data.pdf_url}`
 
         // Create a temporary link and trigger download
         const link = document.createElement('a')

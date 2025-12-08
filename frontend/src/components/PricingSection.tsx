@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { API_URL } from '@/lib/config';
 
 interface PricingConfig {
   monthly_rate_per_guard: number;
@@ -19,8 +20,7 @@ export default function PricingSection() {
   useEffect(() => {
     const fetchPricing = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8002';
-        const response = await fetch(`${apiUrl}/api/v1/system-settings/pricing`);
+        const response = await fetch(`${API_URL}/api/v1/system-settings/pricing`);
         if (response.ok) {
           const config: PricingConfig = await response.json();
           setPricePerGuard(config.monthly_rate_per_guard);

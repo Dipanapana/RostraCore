@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/services/api";
+import { API_URL } from "@/lib/config";
 import Link from "next/link";
 import {
   Users,
@@ -18,8 +19,6 @@ import ComplianceChart from "@/components/dashboard/ComplianceChart";
 import LiveActivityFeed from "@/components/dashboard/LiveActivityFeed";
 import UpcomingShiftsCard from "@/components/dashboard/UpcomingShiftsCard";
 import AlertsCard from "@/components/dashboard/AlertsCard";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 // Types
 interface DashboardMetrics {

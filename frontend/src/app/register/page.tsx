@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { User, Mail, Phone, Lock, Building2, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
+import { API_URL } from "@/lib/config";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -49,7 +50,7 @@ export default function RegisterPage() {
     try {
       // Register user
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/register`,
+        `${API_URL}/api/v1/auth/register`,
         {
           method: "POST",
           headers: {

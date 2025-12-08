@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { API_URL } from "@/lib/config";
 
 interface SubscriptionPlan {
   plan_id: number;
@@ -57,7 +58,7 @@ export default function SubscriptionPlansPage() {
 
   const fetchPlans = async () => {
     try {
-      const response = await fetch("http://localhost:8000/api/v1/subscription-plans/plans", {
+      const response = await fetch(`${API_URL}/api/v1/subscription-plans/plans`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("superadmin_token")}`,
         },
@@ -74,7 +75,7 @@ export default function SubscriptionPlansPage() {
 
   const handleCreatePlan = async () => {
     try {
-      const response = await fetch("http://localhost:8000/api/v1/subscription-plans/plans", {
+      const response = await fetch(`${API_URL}/api/v1/subscription-plans/plans`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -103,7 +104,7 @@ export default function SubscriptionPlansPage() {
 
     try {
       const response = await fetch(
-        `http://localhost:8000/api/v1/subscription-plans/plans/${editingPlan.plan_id}`,
+        `${API_URL}/api/v1/subscription-plans/plans/${editingPlan.plan_id}`,
         {
           method: "PUT",
           headers: {
@@ -132,7 +133,7 @@ export default function SubscriptionPlansPage() {
   const handleToggleActive = async (planId: number) => {
     try {
       const response = await fetch(
-        `http://localhost:8000/api/v1/subscription-plans/plans/${planId}/toggle-active`,
+        `${API_URL}/api/v1/subscription-plans/plans/${planId}/toggle-active`,
         {
           method: "PUT",
           headers: {

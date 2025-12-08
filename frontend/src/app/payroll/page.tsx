@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { API_URL } from "@/lib/config";
 import Link from "next/link";
 
 interface PayrollRecord {
@@ -72,7 +73,7 @@ export default function PayrollPage() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/payroll`,
+        `${API_URL}/api/v1/payroll`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -96,7 +97,7 @@ export default function PayrollPage() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/employees`,
+        `${API_URL}/api/v1/employees`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -119,7 +120,7 @@ export default function PayrollPage() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/payroll/generate`,
+        `${API_URL}/api/v1/payroll/generate`,
         {
           method: "POST",
           headers: {
@@ -156,7 +157,7 @@ export default function PayrollPage() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/payroll/${payrollId}`,
+        `${API_URL}/api/v1/payroll/${payrollId}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
