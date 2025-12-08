@@ -18,7 +18,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { rosterApi } from '@/services/api';
-import { API_URL } from '@/lib/config';
+import { getApiUrl } from '@/lib/config';
 import { RosterWizard, RosterGenerationParams } from '@/components/RosterWizard';
 import {
   PullToRefresh,
@@ -85,7 +85,7 @@ export default function RosterPage() {
       pollIntervalRef.current = setInterval(async () => {
         try {
           const response = await fetch(
-            `${API_URL}/api/v1/jobs/status/${jobId}`
+            `${getApiUrl()}/api/v1/jobs/status/${jobId}`
           );
           const data: JobStatusResponse = await response.json();
           setJobStatus(data);
@@ -132,7 +132,7 @@ export default function RosterPage() {
       setShowWizard(false);
 
       const response = await fetch(
-        `${API_URL}/api/v1/jobs/roster/generate`,
+        `${getApiUrl()}/api/v1/jobs/roster/generate`,
         {
           method: 'POST',
           headers: {
@@ -166,7 +166,7 @@ export default function RosterPage() {
     if (!jobId) return;
 
     try {
-      await fetch(`${API_URL}/api/v1/jobs/cancel/${jobId}`, {
+      await fetch(`${getApiUrl()}/api/v1/jobs/cancel/${jobId}`, {
         method: 'DELETE',
       });
 

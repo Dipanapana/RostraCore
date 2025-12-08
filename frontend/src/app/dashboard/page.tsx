@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/services/api";
-import { API_URL } from "@/lib/config";
+import { getApiUrl } from "@/lib/config";
 import Link from "next/link";
 import {
   Users,
@@ -72,9 +72,9 @@ export default function DashboardPage() {
     }
     try {
         const [metricsRes, shiftsRes, trendsRes] = await Promise.all([
-          api.get(`${API_URL}/api/v1/dashboard/metrics`),
-          api.get(`${API_URL}/api/v1/dashboard/upcoming-shifts?limit=5`),
-          api.get(`${API_URL}/api/v1/dashboard/cost-trends?days=7`),
+          api.get(`${getApiUrl()}/api/v1/dashboard/metrics`),
+          api.get(`${getApiUrl()}/api/v1/dashboard/upcoming-shifts?limit=5`),
+          api.get(`${getApiUrl()}/api/v1/dashboard/cost-trends?days=7`),
         ]);
 
         const metricsData = metricsRes.data;

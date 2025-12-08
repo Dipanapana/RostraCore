@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { API_URL } from "@/lib/config";
+import { getApiUrl } from "@/lib/config";
 
 export default function VerifyEmailPage() {
   const router = useRouter();
@@ -25,7 +25,7 @@ export default function VerifyEmailPage() {
 
       try {
         const response = await fetch(
-          `${API_URL}/api/v1/auth/verify-email`,
+          `${getApiUrl()}/api/v1/auth/verify-email`,
           {
             method: "POST",
             headers: {

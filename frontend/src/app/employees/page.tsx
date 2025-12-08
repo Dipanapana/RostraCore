@@ -67,8 +67,8 @@ export default function EmployeesPage() {
   }
 
   const handleDownloadTemplate = () => {
-    const { API_URL } = require('@/lib/config')
-    window.open(`${API_URL}/api/v1/employees/download-template`, '_blank')
+    const { getApiUrl } = require('@/lib/config')
+    window.open(`${getApiUrl()}/api/v1/employees/download-template`, '_blank')
   }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {

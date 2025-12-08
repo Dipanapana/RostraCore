@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
-import { API_URL } from '@/lib/config'
+import { getApiUrl } from '@/lib/config'
 import Sidebar from '@/components/layout/Sidebar'
 import TopHeader from '@/components/layout/TopHeader'
 import {
@@ -65,7 +65,7 @@ export default function SuperadminSettingsPage() {
       setError(null)
 
       // Fetch pricing config
-      const pricingRes = await fetch(`${API_URL}/api/v1/system-settings/pricing`)
+      const pricingRes = await fetch(`${getApiUrl()}/api/v1/system-settings/pricing`)
       if (!pricingRes.ok) throw new Error('Failed to fetch pricing config')
       const pricingData = await pricingRes.json()
       setPricing(pricingData)
@@ -75,7 +75,7 @@ export default function SuperadminSettingsPage() {
 
       // Fetch all settings (requires auth)
       if (token) {
-        const allRes = await fetch(`${API_URL}/api/v1/system-settings/all`, {
+        const allRes = await fetch(`${getApiUrl()}/api/v1/system-settings/all`, {
           headers: { Authorization: `Bearer ${token}` }
         })
         if (allRes.ok) {
@@ -106,7 +106,7 @@ export default function SuperadminSettingsPage() {
       setError(null)
       setSuccess(null)
 
-      const res = await fetch(`${API_URL}/api/v1/system-settings/pricing`, {
+      const res = await fetch(`${getApiUrl()}/api/v1/system-settings/pricing`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -138,7 +138,7 @@ export default function SuperadminSettingsPage() {
       setError(null)
       setSuccess(null)
 
-      const res = await fetch(`${API_URL}/api/v1/system-settings/${key}`, {
+      const res = await fetch(`${getApiUrl()}/api/v1/system-settings/${key}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

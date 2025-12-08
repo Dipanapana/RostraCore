@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { API_URL } from '@/lib/config'
+import { API_URL, getApiUrl } from '@/lib/config'
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -270,26 +270,26 @@ export const exportsApi = {
   // PDF Reports
   rosterPdf: (params?: any) => {
     const queryString = new URLSearchParams(params).toString()
-    return `${API_URL}/api/v1/exports/roster/pdf${queryString ? '?' + queryString : ''}`
+    return `${getApiUrl()}/api/v1/exports/roster/pdf${queryString ? '?' + queryString : ''}`
   },
 
   // CSV Exports
-  employeesCsv: () => `${API_URL}/api/v1/exports/employees/csv`,
-  sitesCsv: () => `${API_URL}/api/v1/exports/sites/csv`,
+  employeesCsv: () => `${getApiUrl()}/api/v1/exports/employees/csv`,
+  sitesCsv: () => `${getApiUrl()}/api/v1/exports/sites/csv`,
   shiftsCsv: (params?: any) => {
     const queryString = new URLSearchParams(params).toString()
-    return `${API_URL}/api/v1/exports/shifts/csv${queryString ? '?' + queryString : ''}`
+    return `${getApiUrl()}/api/v1/exports/shifts/csv${queryString ? '?' + queryString : ''}`
   },
-  certificationsCsv: () => `${API_URL}/api/v1/exports/certifications/csv`,
+  certificationsCsv: () => `${getApiUrl()}/api/v1/exports/certifications/csv`,
 
   // Excel Exports
-  employeesExcel: () => `${API_URL}/api/v1/exports/employees/excel`,
-  sitesExcel: () => `${API_URL}/api/v1/exports/sites/excel`,
+  employeesExcel: () => `${getApiUrl()}/api/v1/exports/employees/excel`,
+  sitesExcel: () => `${getApiUrl()}/api/v1/exports/sites/excel`,
   shiftsExcel: (params?: any) => {
     const queryString = new URLSearchParams(params).toString()
-    return `${API_URL}/api/v1/exports/shifts/excel${queryString ? '?' + queryString : ''}`
+    return `${getApiUrl()}/api/v1/exports/shifts/excel${queryString ? '?' + queryString : ''}`
   },
-  certificationsExcel: () => `${API_URL}/api/v1/exports/certifications/excel`,
+  certificationsExcel: () => `${getApiUrl()}/api/v1/exports/certifications/excel`,
 }
 
 // Payroll Deductions API (SA Tax Calculations)

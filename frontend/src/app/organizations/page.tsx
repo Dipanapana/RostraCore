@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { API_URL } from "@/lib/config";
+import { getApiUrl } from "@/lib/config";
 
 interface Organization {
   org_id: number;
@@ -42,7 +42,7 @@ export default function OrganizationsPage() {
     try {
       // Note: This endpoint needs to be implemented in backend
       const response = await fetch(
-        `${API_URL}/api/v1/organizations`
+        `${getApiUrl()}/api/v1/organizations`
       );
 
       if (response.ok) {
@@ -65,8 +65,8 @@ export default function OrganizationsPage() {
 
     try {
       const url = editingOrg
-        ? `${API_URL}/api/v1/organizations/${editingOrg.org_id}`
-        : `${API_URL}/api/v1/organizations`;
+        ? `${getApiUrl()}/api/v1/organizations/${editingOrg.org_id}`
+        : `${getApiUrl()}/api/v1/organizations`;
 
       const response = await fetch(url, {
         method: editingOrg ? "PUT" : "POST",
@@ -109,7 +109,7 @@ export default function OrganizationsPage() {
 
     try {
       const response = await fetch(
-        `${API_URL}/api/v1/organizations/${orgId}`,
+        `${getApiUrl()}/api/v1/organizations/${orgId}`,
         { method: "DELETE" }
       );
 

@@ -18,7 +18,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
-import { API_URL } from "@/lib/config";
+import { getApiUrl } from "@/lib/config";
 import {
   LineChart,
   Line,
@@ -187,13 +187,13 @@ export default function DashboardPage() {
     try {
       const [metricsRes, shiftsRes, certsRes, trendsRes, weeklyRes] =
         await Promise.all([
-          axios.get(`${API_URL}/api/v1/dashboard/metrics`),
-          axios.get(`${API_URL}/api/v1/dashboard/upcoming-shifts?limit=5`),
+          axios.get(`${getApiUrl()}/api/v1/dashboard/metrics`),
+          axios.get(`${getApiUrl()}/api/v1/dashboard/upcoming-shifts?limit=5`),
           axios.get(
-            `${API_URL}/api/v1/dashboard/expiring-certifications?days_ahead=30`
+            `${getApiUrl()}/api/v1/dashboard/expiring-certifications?days_ahead=30`
           ),
-          axios.get(`${API_URL}/api/v1/dashboard/cost-trends?days=14`),
-          axios.get(`${API_URL}/api/v1/dashboard/weekly-summary`),
+          axios.get(`${getApiUrl()}/api/v1/dashboard/cost-trends?days=14`),
+          axios.get(`${getApiUrl()}/api/v1/dashboard/weekly-summary`),
         ]);
 
       setMetrics(metricsRes.data);

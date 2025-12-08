@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { API_URL } from "@/lib/config";
+import { getApiUrl } from "@/lib/config";
 
 interface Client {
   client_id: number;
@@ -97,7 +97,7 @@ export default function ClientsPage() {
 
     try {
       const response = await fetch(
-        `${API_URL}/api/v1/clients`,
+        `${getApiUrl()}/api/v1/clients`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -129,8 +129,8 @@ export default function ClientsPage() {
 
     try {
       const url = editingClient
-        ? `${API_URL}/api/v1/clients/${editingClient.client_id}`
-        : `${API_URL}/api/v1/clients`;
+        ? `${getApiUrl()}/api/v1/clients/${editingClient.client_id}`
+        : `${getApiUrl()}/api/v1/clients`;
 
       const method = editingClient ? "PUT" : "POST";
 
@@ -185,7 +185,7 @@ export default function ClientsPage() {
 
     try {
       const response = await fetch(
-        `${API_URL}/api/v1/clients/${clientId}`,
+        `${getApiUrl()}/api/v1/clients/${clientId}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },

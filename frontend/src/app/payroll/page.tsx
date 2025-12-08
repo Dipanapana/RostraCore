@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { API_URL } from "@/lib/config";
+import { getApiUrl } from "@/lib/config";
 import Link from "next/link";
 
 interface PayrollRecord {
@@ -73,7 +73,7 @@ export default function PayrollPage() {
 
     try {
       const response = await fetch(
-        `${API_URL}/api/v1/payroll`,
+        `${getApiUrl()}/api/v1/payroll`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -97,7 +97,7 @@ export default function PayrollPage() {
 
     try {
       const response = await fetch(
-        `${API_URL}/api/v1/employees`,
+        `${getApiUrl()}/api/v1/employees`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -120,7 +120,7 @@ export default function PayrollPage() {
 
     try {
       const response = await fetch(
-        `${API_URL}/api/v1/payroll/generate`,
+        `${getApiUrl()}/api/v1/payroll/generate`,
         {
           method: "POST",
           headers: {
@@ -157,7 +157,7 @@ export default function PayrollPage() {
 
     try {
       const response = await fetch(
-        `${API_URL}/api/v1/payroll/${payrollId}`,
+        `${getApiUrl()}/api/v1/payroll/${payrollId}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
