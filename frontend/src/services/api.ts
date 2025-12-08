@@ -14,15 +14,15 @@ export const api = axios.create({
 
 // Request interceptor to:
 // 1. Set baseURL at RUNTIME using getApiUrl() - ALWAYS forces HTTPS
-// 2. Attach Bearer token from localStorage
-// 3. Add trailing slash to avoid 307 redirects (FastAPI redirect_slashes issue)
+// 2. Add trailing slash (backend routes require it with redirect_slashes=False)
+// 3. Attach Bearer token from localStorage
 api.interceptors.request.use(
   (config) => {
     // ALWAYS set baseURL at request time - this is the ultimate fix
     config.baseURL = getApiUrl()
 
-    // Add trailing slash to URL to avoid 307 redirects
-    // FastAPI's redirect_slashes generates http:// URLs behind Railway's HTTPS proxy
+    // Add trailing slash - backend routes require it
+    // /api/v1/clients → 404, /api/v1/clients/ → works
     if (config.url && !config.url.endsWith('/') && !config.url.includes('?')) {
       config.url = config.url + '/'
     }
