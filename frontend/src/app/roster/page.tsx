@@ -128,7 +128,16 @@ export default function RosterPage() {
       }
 
       const data = await response.json()
-      setResult(data)
+
+      // Check if the result indicates no shifts found
+      if (data.status === 'empty' || (data.assignments && data.assignments.length === 0)) {
+        const reason = data.reason || 'No shifts found for the selected date range'
+        setError(reason + '. Please create shifts first before generating a roster.')
+        setResult(null)
+      } else {
+        setResult(data)
+        setError(null)
+      }
       setLoading(false)
 
     } catch (err: any) {
