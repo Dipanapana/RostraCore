@@ -87,14 +87,15 @@ class Settings(BaseSettings):
 
     # Email Configuration (SendGrid)
     SENDGRID_API_KEY: Optional[str] = None
-    FROM_EMAIL: str = "noreply@guardianos.co.za"
-    FROM_NAME: str = "GuardianOS"
+    FROM_EMAIL: str = "noreply@rostracore.com"
+    FROM_NAME: str = "RostraCore"
+    REPLY_TO_EMAIL: str = "support@rostracore.com"
 
-    # SMTP Configuration (Alternative to SendGrid)
-    SMTP_HOST: Optional[str] = None
+    # SMTP Configuration (Alternative to SendGrid - Gmail supported)
+    SMTP_HOST: Optional[str] = None  # e.g., "smtp.gmail.com" for Gmail
     SMTP_PORT: int = 587
-    SMTP_USER: Optional[str] = None
-    SMTP_PASSWORD: Optional[str] = None
+    SMTP_USER: Optional[str] = None  # e.g., "yourname@gmail.com"
+    SMTP_PASSWORD: Optional[str] = None  # Gmail App Password (not regular password)
     SMTP_TLS: bool = True
 
     # MVP Feature Flags (Option B Security)

@@ -23,7 +23,8 @@ class EmailService:
         html_content: str,
         text_content: Optional[str] = None,
         from_email: Optional[str] = None,
-        from_name: Optional[str] = None
+        from_name: Optional[str] = None,
+        reply_to: Optional[str] = None
     ) -> Dict:
         """
         Send email via SendGrid or SMTP.
@@ -35,12 +36,14 @@ class EmailService:
             text_content: Plain text body (optional)
             from_email: Sender email (defaults to config)
             from_name: Sender name (defaults to config)
+            reply_to: Reply-to email address (defaults to config)
 
         Returns:
             Dict with status and message
         """
         from_email = from_email or settings.FROM_EMAIL
         from_name = from_name or settings.FROM_NAME
+        reply_to = reply_to or getattr(settings, 'REPLY_TO_EMAIL', from_email)
 
         # Try SendGrid first
         if settings.SENDGRID_API_KEY:
@@ -50,7 +53,8 @@ class EmailService:
                 html_content=html_content,
                 text_content=text_content,
                 from_email=from_email,
-                from_name=from_name
+                from_name=from_name,
+                reply_to=reply_to
             )
 
         # Fall back to SMTP
@@ -61,7 +65,8 @@ class EmailService:
                 html_content=html_content,
                 text_content=text_content,
                 from_email=from_email,
-                from_name=from_name
+                from_name=from_name,
+                reply_to=reply_to
             )
 
         # Development mode - just log
@@ -81,12 +86,13 @@ class EmailService:
         html_content: str,
         text_content: Optional[str],
         from_email: str,
-        from_name: str
+        from_name: str,
+        reply_to: Optional[str] = None
     ) -> Dict:
         """Send email via SendGrid API"""
         try:
             from sendgrid import SendGridAPIClient
-            from sendgrid.helpers.mail import Mail, Email, To, Content
+            from sendgrid.helpers.mail import Mail, Email, To, Content, ReplyTo
 
             # Create email message
             message = Mail(
@@ -95,6 +101,10 @@ class EmailService:
                 subject=subject,
                 html_content=Content("text/html", html_content)
             )
+
+            # Add reply-to if provided
+            if reply_to:
+                message.reply_to = ReplyTo(reply_to)
 
             # Add plain text if provided
             if text_content:
@@ -134,7 +144,8 @@ class EmailService:
         html_content: str,
         text_content: Optional[str],
         from_email: str,
-        from_name: str
+        from_name: str,
+        reply_to: Optional[str] = None
     ) -> Dict:
         """Send email via SMTP"""
         try:
@@ -147,6 +158,8 @@ class EmailService:
             msg['Subject'] = subject
             msg['From'] = f"{from_name} <{from_email}>"
             msg['To'] = to
+            if reply_to:
+                msg['Reply-To'] = reply_to
 
             # Add plain text and HTML parts
             if text_content:
