@@ -271,6 +271,12 @@ export const exportsApi = {
     return `${getApiUrl()}/api/v1/exports/roster/pdf${queryString ? '?' + queryString : ''}`
   },
 
+  // Excel Reports
+  rosterExcel: (params?: any) => {
+    const queryString = new URLSearchParams(params).toString()
+    return `${getApiUrl()}/api/v1/exports/roster/excel${queryString ? '?' + queryString : ''}`
+  },
+
   // CSV Exports
   employeesCsv: () => `${getApiUrl()}/api/v1/exports/employees/csv`,
   sitesCsv: () => `${getApiUrl()}/api/v1/exports/sites/csv`,

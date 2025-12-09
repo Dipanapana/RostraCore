@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getApiUrl } from "@/lib/config";
 import Link from "next/link";
+import { FileSpreadsheet, FileText, Download, Users, User } from "lucide-react";
 
 interface PayrollRecord {
   payroll_id: number;
@@ -16,6 +17,27 @@ interface PayrollRecord {
   gross_pay: number;
   net_pay: number;
   status: string;
+  // SA deduction fields
+  paye?: number;
+  uif_employee?: number;
+  uif_employer?: number;
+  sdl?: number;
+  total_deductions?: number;
+  cost_to_company?: number;
+}
+
+interface ComprehensivePayrollResponse {
+  payroll_records: PayrollRecord[];
+  summary: {
+    total_gross: number;
+    total_net: number;
+    total_paye: number;
+    total_uif_employee: number;
+    total_uif_employer: number;
+    total_sdl: number;
+    total_cost_to_company: number;
+    employee_count: number;
+  };
 }
 
 export default function PayrollPage() {
@@ -25,9 +47,12 @@ export default function PayrollPage() {
   const [error, setError] = useState("");
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<number | null>(null);
+  const [generateAll, setGenerateAll] = useState(false);
   const [periodStart, setPeriodStart] = useState("");
   const [periodEnd, setPeriodEnd] = useState("");
   const [employees, setEmployees] = useState<any[]>([]);
+  const [payrollSummary, setPayrollSummary] = useState<ComprehensivePayrollResponse["summary"] | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   // Date range filter state
   const [filterStartDate, setFilterStartDate] = useState("");
@@ -113,31 +138,51 @@ export default function PayrollPage() {
   };
 
   const handleGeneratePayroll = async () => {
-    if (!selectedEmployee || !periodStart || !periodEnd) {
-      setError("Please select employee and date range");
+    if (!periodStart || !periodEnd) {
+      setError("Please select a date range");
+      return;
+    }
+
+    if (!generateAll && !selectedEmployee) {
+      setError("Please select an employee or choose 'All Employees'");
       return;
     }
 
     try {
-      const response = await fetch(
-        `${getApiUrl()}/api/v1/payroll/generate`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
+      // Use comprehensive endpoint for full SA deduction calculations
+      const endpoint = generateAll
+        ? `${getApiUrl()}/api/v1/payroll/generate-comprehensive`
+        : `${getApiUrl()}/api/v1/payroll/generate`;
+
+      const body = generateAll
+        ? {
+            period_start: periodStart,
+            period_end: periodEnd,
+            include_deductions: true,
+          }
+        : {
             employee_id: selectedEmployee,
             period_start: periodStart,
             period_end: periodEnd,
-          }),
-        }
-      );
+          };
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
 
       if (response.ok) {
+        const data = await response.json();
+        if (generateAll && data.summary) {
+          setPayrollSummary(data.summary);
+        }
         setShowGenerateModal(false);
         setSelectedEmployee(null);
+        setGenerateAll(false);
         setPeriodStart("");
         setPeriodEnd("");
         fetchPayrolls();
@@ -147,6 +192,119 @@ export default function PayrollPage() {
       }
     } catch (err: any) {
       setError(err.message || "Failed to generate payroll");
+    }
+  };
+
+  const handleExportExcel = async () => {
+    if (!periodStart || !periodEnd) {
+      setError("Please filter by date range first");
+      return;
+    }
+
+    setExporting(true);
+    try {
+      const response = await fetch(
+        `${getApiUrl()}/api/v1/payroll/generate-comprehensive/excel`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            period_start: filterStartDate || periodStart,
+            period_end: filterEndDate || periodEnd,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `payroll_${filterStartDate || periodStart}_to_${filterEndDate || periodEnd}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+      } else {
+        const data = await response.json();
+        setError(data.detail || "Failed to export payroll");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to export payroll");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleDownloadPayslipPDF = async (payrollId: number, employeeName: string) => {
+    try {
+      const response = await fetch(
+        `${getApiUrl()}/api/v1/payroll/${payrollId}/payslip/pdf`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `payslip_${employeeName.replace(/\s+/g, "_")}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+      } else {
+        setError("Failed to download payslip PDF");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to download payslip");
+    }
+  };
+
+  const handleBulkPayslipPDF = async () => {
+    if (filteredPayrolls.length === 0) {
+      setError("No payroll records to export");
+      return;
+    }
+
+    setExporting(true);
+    try {
+      const payrollIds = filteredPayrolls.map((p) => p.payroll_id);
+      const response = await fetch(
+        `${getApiUrl()}/api/v1/payroll/payslips/pdf/bulk`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ payroll_ids: payrollIds }),
+        }
+      );
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `payslips_bulk_${new Date().toISOString().split("T")[0]}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+      } else {
+        const data = await response.json();
+        setError(data.detail || "Failed to generate bulk payslips");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to generate bulk payslips");
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -197,7 +355,7 @@ export default function PayrollPage() {
                 Generate and manage employee payroll records
               </p>
             </div>
-            <div className="flex gap-4">
+            <div className="flex gap-3 flex-wrap">
               <Link
                 href="/dashboard"
                 className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
@@ -205,8 +363,24 @@ export default function PayrollPage() {
                 ← Back to Dashboard
               </Link>
               <button
+                onClick={handleExportExcel}
+                disabled={exporting || filteredPayrolls.length === 0}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                Export Excel
+              </button>
+              <button
+                onClick={handleBulkPayslipPDF}
+                disabled={exporting || filteredPayrolls.length === 0}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                <FileText className="w-4 h-4" />
+                All Payslips PDF
+              </button>
+              <button
                 onClick={() => setShowGenerateModal(true)}
-                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2"
               >
                 + Generate Payroll
               </button>
@@ -267,33 +441,70 @@ export default function PayrollPage() {
           </div>
         </div>
 
+        {/* Summary Cards */}
+        {payrollSummary && (
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
+            <div className="bg-white shadow rounded-lg p-4">
+              <p className="text-xs text-gray-500 uppercase">Employees</p>
+              <p className="text-xl font-bold text-gray-900">{payrollSummary.employee_count}</p>
+            </div>
+            <div className="bg-white shadow rounded-lg p-4">
+              <p className="text-xs text-gray-500 uppercase">Total Gross</p>
+              <p className="text-xl font-bold text-gray-900">R {payrollSummary.total_gross.toLocaleString()}</p>
+            </div>
+            <div className="bg-white shadow rounded-lg p-4">
+              <p className="text-xs text-gray-500 uppercase">PAYE</p>
+              <p className="text-xl font-bold text-red-600">R {payrollSummary.total_paye.toLocaleString()}</p>
+            </div>
+            <div className="bg-white shadow rounded-lg p-4">
+              <p className="text-xs text-gray-500 uppercase">UIF (Employee)</p>
+              <p className="text-xl font-bold text-red-600">R {payrollSummary.total_uif_employee.toLocaleString()}</p>
+            </div>
+            <div className="bg-white shadow rounded-lg p-4">
+              <p className="text-xs text-gray-500 uppercase">UIF (Employer)</p>
+              <p className="text-xl font-bold text-orange-600">R {payrollSummary.total_uif_employer.toLocaleString()}</p>
+            </div>
+            <div className="bg-white shadow rounded-lg p-4">
+              <p className="text-xs text-gray-500 uppercase">SDL</p>
+              <p className="text-xl font-bold text-orange-600">R {payrollSummary.total_sdl.toLocaleString()}</p>
+            </div>
+            <div className="bg-white shadow rounded-lg p-4">
+              <p className="text-xs text-gray-500 uppercase">Total Net</p>
+              <p className="text-xl font-bold text-green-600">R {payrollSummary.total_net.toLocaleString()}</p>
+            </div>
+          </div>
+        )}
+
         {/* Payroll Table */}
         <div className="bg-white shadow rounded-lg overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Employee
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Period
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total Hours
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Hours
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Overtime Hours
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Gross Pay
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  PAYE
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  UIF
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Net Pay
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -301,7 +512,7 @@ export default function PayrollPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredPayrolls.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
                     {payrolls.length === 0
                       ? 'No payroll records found. Click "Generate Payroll" to create one.'
                       : 'No payroll records match the selected date range.'}
@@ -310,15 +521,15 @@ export default function PayrollPage() {
               ) : (
                 filteredPayrolls.map((payroll) => (
                   <tr key={payroll.payroll_id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
                         {payroll.employee_name}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-xs text-gray-500">
                         ID: {payroll.employee_id}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
                         {new Date(payroll.period_start).toLocaleDateString()} -
                       </div>
@@ -326,37 +537,50 @@ export default function PayrollPage() {
                         {new Date(payroll.period_end).toLocaleDateString()}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {payroll.total_hours.toFixed(2)} hrs
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{payroll.total_hours.toFixed(1)}h</div>
+                      <div className="text-xs text-gray-500">OT: {payroll.overtime_hours.toFixed(1)}h</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {payroll.overtime_hours.toFixed(2)} hrs
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                       R {payroll.gross_pay.toFixed(2)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-red-600">
+                      R {(payroll.paye || 0).toFixed(2)}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-red-600">
+                      R {(payroll.uif_employee || 0).toFixed(2)}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-green-700">
                       R {payroll.net_pay.toFixed(2)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                         payroll.status === "paid"
                           ? "bg-green-100 text-green-800"
+                          : payroll.status === "approved"
+                          ? "bg-blue-100 text-blue-800"
                           : "bg-yellow-100 text-yellow-800"
                       }`}>
                         {payroll.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                      <button
+                        onClick={() => handleDownloadPayslipPDF(payroll.payroll_id, payroll.employee_name)}
+                        className="text-red-600 hover:text-red-900"
+                        title="Download Payslip PDF"
+                      >
+                        <FileText className="w-4 h-4 inline" />
+                      </button>
                       <button
                         onClick={() => window.open(`/payroll/${payroll.payroll_id}`, '_blank')}
-                        className="text-purple-600 hover:text-purple-900 mr-4"
+                        className="text-purple-600 hover:text-purple-900"
                       >
                         View
                       </button>
                       <button
                         onClick={() => handleDeletePayroll(payroll.payroll_id)}
-                        className="text-red-600 hover:text-red-900"
+                        className="text-gray-600 hover:text-red-900"
                       >
                         Delete
                       </button>
@@ -376,24 +600,50 @@ export default function PayrollPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Generate Payroll</h2>
 
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Employee
+              {/* All Employees Toggle */}
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={generateAll}
+                    onChange={(e) => {
+                      setGenerateAll(e.target.checked);
+                      if (e.target.checked) setSelectedEmployee(null);
+                    }}
+                    className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
+                  />
+                  <span className="ml-3 flex items-center gap-2">
+                    <Users className="w-5 h-5 text-purple-600" />
+                    <span className="font-medium text-gray-900">Generate for All Employees</span>
+                  </span>
                 </label>
-                <select
-                  value={selectedEmployee || ""}
-                  onChange={(e) => setSelectedEmployee(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  required
-                >
-                  <option value="">Select Employee</option>
-                  {employees.map((emp) => (
-                    <option key={emp.employee_id} value={emp.employee_id}>
-                      {emp.first_name} {emp.last_name} - {emp.position}
-                    </option>
-                  ))}
-                </select>
+                <p className="mt-2 ml-8 text-xs text-gray-600">
+                  Calculate SA deductions (PAYE, UIF, SDL) for all active employees
+                </p>
               </div>
+
+              {/* Single Employee Selection */}
+              {!generateAll && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <User className="w-4 h-4 inline mr-1" />
+                    Select Employee
+                  </label>
+                  <select
+                    value={selectedEmployee || ""}
+                    onChange={(e) => setSelectedEmployee(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="">Select Employee</option>
+                    {employees.map((emp) => (
+                      <option key={emp.employee_id} value={emp.employee_id}>
+                        {emp.first_name} {emp.last_name} - {emp.position || "Guard"}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -420,6 +670,16 @@ export default function PayrollPage() {
                   required
                 />
               </div>
+
+              {/* SA Deductions Info */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
+                <p className="font-medium mb-1">SA Statutory Deductions Applied:</p>
+                <ul className="list-disc list-inside space-y-0.5">
+                  <li>PAYE - Tax based on annual income brackets</li>
+                  <li>UIF - 1% employee + 1% employer (max R177.12 each)</li>
+                  <li>SDL - 1% employer contribution</li>
+                </ul>
+              </div>
             </div>
 
             <div className="mt-6 flex gap-4">
@@ -427,6 +687,7 @@ export default function PayrollPage() {
                 onClick={() => {
                   setShowGenerateModal(false);
                   setSelectedEmployee(null);
+                  setGenerateAll(false);
                   setPeriodStart("");
                   setPeriodEnd("");
                 }}
@@ -436,9 +697,10 @@ export default function PayrollPage() {
               </button>
               <button
                 onClick={handleGeneratePayroll}
-                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center justify-center gap-2"
               >
-                Generate
+                {generateAll ? <Users className="w-4 h-4" /> : <User className="w-4 h-4" />}
+                Generate {generateAll ? "All" : ""}
               </button>
             </div>
           </div>
