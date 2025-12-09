@@ -51,6 +51,11 @@ class OptimizationConfig:
     use_lazy_feasibility: bool = True  # Phase 4: Lazy feasibility for memory optimization
     # NOTE: Distance constraints have been removed - guards can be assigned regardless of distance
 
+    # Budget constraints - None means no limit
+    budget_limit: Optional[float] = None  # Total budget limit for the roster period
+    budget_per_client: Optional[Dict[int, float]] = None  # Budget limits per client {client_id: limit}
+    budget_per_site: Optional[Dict[int, float]] = None  # Budget limits per site {site_id: limit}
+
 
 @dataclass
 class FeasibilityCheck:
@@ -278,6 +283,7 @@ class ProductionRosterOptimizer:
             self._add_consecutive_days_constraints()
             self._add_consecutive_nights_constraints()
             self._add_fairness_constraints()
+            self._add_budget_constraints()  # Budget limits per org/client/site
             self.timing["add_constraints"] = time.time() - t0
 
             # Step 5: Define objective
@@ -1373,6 +1379,110 @@ class ProductionRosterOptimizer:
             # Ensure fair distribution of premium-paying Sunday shifts
             self.model.Add(max_sundays - min_sundays <= 2)
             logger.info(f"Sunday fairness constraint added: {len(sunday_shifts)} Sunday shifts")
+
+    def _add_budget_constraints(self):
+        """
+        Add budget constraints to limit total roster cost.
+
+        Supports three levels of budget control:
+        1. Total budget limit - Overall cap for entire roster period
+        2. Per-client budget - Limit spending per client (municipality)
+        3. Per-site budget - Limit spending per site (guard post)
+
+        These constraints ensure rosters stay within financial limits while
+        still achieving maximum shift coverage within the budget.
+        """
+        budget_constraints_added = 0
+
+        # 1. Total budget constraint
+        if self.config.budget_limit is not None and self.config.budget_limit > 0:
+            logger.info(f"Adding total budget constraint: R{self.config.budget_limit:,.2f}")
+
+            # Sum of all assignment costs must not exceed budget
+            # Costs are scaled to cents (integers) for CP-SAT
+            cost_terms = []
+            for key, var in self.assignment_vars.items():
+                cost_cents = int(self.feasibility_matrix[key].cost * 100)  # Convert to cents
+                cost_terms.append(var * cost_cents)
+
+            if cost_terms:
+                budget_cents = int(self.config.budget_limit * 100)
+                self.model.Add(sum(cost_terms) <= budget_cents)
+                budget_constraints_added += 1
+                logger.info(f"Total budget constraint: sum(costs) <= {budget_cents} cents")
+
+        # 2. Per-client budget constraints
+        if self.config.budget_per_client:
+            logger.info(f"Adding per-client budget constraints for {len(self.config.budget_per_client)} clients")
+
+            # Group shifts by client (via site -> client relationship)
+            shifts_by_client: Dict[int, List[Shift]] = defaultdict(list)
+            for shift in self.shifts:
+                if shift.site and shift.site.client_id:
+                    shifts_by_client[shift.site.client_id].append(shift)
+
+            for client_id, client_budget in self.config.budget_per_client.items():
+                if client_budget <= 0:
+                    continue
+
+                client_shifts = shifts_by_client.get(client_id, [])
+                if not client_shifts:
+                    logger.warning(f"No shifts found for client {client_id}")
+                    continue
+
+                # Sum costs for assignments to this client's shifts
+                cost_terms = []
+                for shift in client_shifts:
+                    for emp in self.employees:
+                        key = (emp.employee_id, shift.shift_id)
+                        if key in self.assignment_vars:
+                            cost_cents = int(self.feasibility_matrix[key].cost * 100)
+                            cost_terms.append(self.assignment_vars[key] * cost_cents)
+
+                if cost_terms:
+                    budget_cents = int(client_budget * 100)
+                    self.model.Add(sum(cost_terms) <= budget_cents)
+                    budget_constraints_added += 1
+                    logger.info(f"Client {client_id} budget constraint: R{client_budget:,.2f} ({len(client_shifts)} shifts)")
+
+        # 3. Per-site budget constraints
+        if self.config.budget_per_site:
+            logger.info(f"Adding per-site budget constraints for {len(self.config.budget_per_site)} sites")
+
+            # Group shifts by site
+            shifts_by_site: Dict[int, List[Shift]] = defaultdict(list)
+            for shift in self.shifts:
+                if shift.site_id:
+                    shifts_by_site[shift.site_id].append(shift)
+
+            for site_id, site_budget in self.config.budget_per_site.items():
+                if site_budget <= 0:
+                    continue
+
+                site_shifts = shifts_by_site.get(site_id, [])
+                if not site_shifts:
+                    logger.warning(f"No shifts found for site {site_id}")
+                    continue
+
+                # Sum costs for assignments to this site's shifts
+                cost_terms = []
+                for shift in site_shifts:
+                    for emp in self.employees:
+                        key = (emp.employee_id, shift.shift_id)
+                        if key in self.assignment_vars:
+                            cost_cents = int(self.feasibility_matrix[key].cost * 100)
+                            cost_terms.append(self.assignment_vars[key] * cost_cents)
+
+                if cost_terms:
+                    budget_cents = int(site_budget * 100)
+                    self.model.Add(sum(cost_terms) <= budget_cents)
+                    budget_constraints_added += 1
+                    logger.info(f"Site {site_id} budget constraint: R{site_budget:,.2f} ({len(site_shifts)} shifts)")
+
+        if budget_constraints_added > 0:
+            logger.info(f"Added {budget_constraints_added} budget constraints")
+        else:
+            logger.info("No budget constraints specified - no spending limits applied")
 
     def _define_objective(self):
         """Define multi-objective optimization function"""

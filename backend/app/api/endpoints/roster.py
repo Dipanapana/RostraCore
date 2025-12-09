@@ -111,18 +111,33 @@ async def generate_roster(
 
         logger.info(f"Roster generation requested: {start_datetime} to {end_datetime}, algorithm={selected_algorithm}")
 
+        # Log budget constraints if specified
+        if request.budget_limit:
+            logger.info(f"Budget constraint: R{request.budget_limit:,.2f} total limit")
+        if request.budget_per_client:
+            logger.info(f"Per-client budgets: {len(request.budget_per_client)} clients")
+        if request.budget_per_site:
+            logger.info(f"Per-site budgets: {len(request.budget_per_site)} sites")
+
         # Lazy load optimizer classes
         MILPRosterGenerator, ProductionRosterOptimizer, OptimizationConfig, PartitionedRosterOptimizer = get_optimizer_classes()
+
+        # Build optimization config with budget constraints
+        def build_config(time_limit: int = 300) -> OptimizationConfig:
+            return OptimizationConfig(
+                time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', time_limit),
+                fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2),
+                budget_limit=request.budget_limit,
+                budget_per_client=request.budget_per_client,
+                budget_per_site=request.budget_per_site
+            )
 
         # Initialize appropriate optimizer
         if selected_algorithm == "auto" or selected_algorithm == "scalable":
             logger.info("Using Scalable Partitioned Optimizer")
             optimizer = PartitionedRosterOptimizer(
                 db,
-                config=OptimizationConfig(
-                    time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 300),
-                    fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2)
-                ),
+                config=build_config(300),
                 org_id=current_user.org_id if hasattr(current_user, 'org_id') else None
             )
             result = optimizer.optimize(
@@ -135,10 +150,7 @@ async def generate_roster(
             logger.info("Using Production CP-SAT Optimizer (Single Partition)")
             optimizer = ProductionRosterOptimizer(
                 db,
-                config=OptimizationConfig(
-                    time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 120),
-                    fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2)
-                ),
+                config=build_config(120),
                 org_id=current_user.org_id if hasattr(current_user, 'org_id') else None
             )
             result = optimizer.optimize(
@@ -148,7 +160,7 @@ async def generate_roster(
             )
 
         elif selected_algorithm == "milp":
-            logger.info("Using Legacy MILP Generator")
+            logger.info("Using Legacy MILP Generator (budget constraints not supported)")
             generator = MILPRosterGenerator(db)
             result = generator.generate_roster(
                 start_date=start_datetime,
@@ -162,10 +174,7 @@ async def generate_roster(
             logger.warning(f"Unknown algorithm '{selected_algorithm}', defaulting to scalable")
             optimizer = PartitionedRosterOptimizer(
                 db,
-                config=OptimizationConfig(
-                    time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 300),
-                    fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2)
-                ),
+                config=build_config(300),
                 org_id=current_user.org_id if hasattr(current_user, 'org_id') else None
             )
             result = optimizer.optimize(

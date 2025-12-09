@@ -301,7 +301,11 @@ class RosterGenerateRequest(BaseModel):
     end_date: date
     site_ids: Optional[list[int]] = None
     client_ids: Optional[list[int]] = None  # Generate roster for specific clients
-    budget_limit: Optional[float] = None
+
+    # Budget constraints - all optional, None means no limit
+    budget_limit: Optional[float] = None  # Total budget limit for roster period
+    budget_per_client: Optional[dict[int, float]] = None  # Budget limits per client {client_id: limit}
+    budget_per_site: Optional[dict[int, float]] = None  # Budget limits per site {site_id: limit}
 
 
 class RosterAssignment(BaseModel):
