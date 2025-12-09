@@ -175,6 +175,7 @@ class PayrollGeneratorService:
 
         # Process each employee
         payroll_records: List[PayrollEmployeeRecord] = []
+        employees_with_no_shifts: List[str] = []
 
         for employee in employees:
             record = cls._process_employee_payroll(
@@ -185,7 +186,22 @@ class PayrollGeneratorService:
                 site_ids=site_ids,
                 include_deductions=include_deductions
             )
-            payroll_records.append(record)
+
+            # Only include employees who worked at least one shift
+            if record.total_hours_worked > 0:
+                payroll_records.append(record)
+            else:
+                employees_with_no_shifts.append(f"{employee.first_name} {employee.last_name}")
+
+        # If no employees had shifts, return an error with helpful message
+        if not payroll_records:
+            return {
+                "status": "error",
+                "message": f"No employees worked shifts in the period {start_date} to {end_date}. "
+                           f"Please create shifts and assign guards first, or select a period with confirmed shifts.",
+                "employees_checked": len(employees),
+                "employees_with_no_shifts": employees_with_no_shifts[:20]  # Show first 20
+            }
 
         # Calculate summary
         summary = cls._calculate_summary(payroll_records)
