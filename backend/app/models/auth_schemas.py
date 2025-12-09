@@ -67,3 +67,14 @@ class UserWithToken(BaseModel):
     """User with token response."""
     user: UserResponse
     token: Token
+
+
+class ForgotPasswordRequest(BaseModel):
+    """Forgot password request schema."""
+    email: EmailStr = Field(..., description="Email address to send reset link to")
+
+
+class ResetPasswordRequest(BaseModel):
+    """Reset password request schema."""
+    token: str = Field(..., description="Password reset token from email")
+    new_password: str = Field(..., min_length=8, description="New password (min 8 characters)")

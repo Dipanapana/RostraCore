@@ -17,6 +17,8 @@ from app.models.auth_schemas import (
     UserChangePassword,
     UserResponse,
     UserWithToken,
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
 )
 from app.auth.security import (
     authenticate_user,
@@ -198,12 +200,15 @@ def login(
         db=db
     )
 
+    # Determine if secure cookies should be used (production = HTTPS)
+    use_secure_cookies = settings.ENVIRONMENT in ("production", "staging")
+
     # Set access token httpOnly cookie (XSS protection)
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,  # JavaScript cannot access
-        secure=False,    # Set to True in production with HTTPS
+        secure=use_secure_cookies,  # True in production (HTTPS required)
         samesite="lax",  # CSRF protection
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # seconds
         path="/"
@@ -214,7 +219,7 @@ def login(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=False,
+        secure=use_secure_cookies,
         samesite="lax",
         max_age=7 * 24 * 60 * 60,  # 7 days in seconds
         path="/"
@@ -284,12 +289,15 @@ def login_json(
         db=db
     )
 
+    # Determine if secure cookies should be used (production = HTTPS)
+    use_secure_cookies = settings.ENVIRONMENT in ("production", "staging")
+
     # Set access token httpOnly cookie (XSS protection)
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,  # JavaScript cannot access
-        secure=False,    # Set to True in production with HTTPS
+        secure=use_secure_cookies,  # True in production (HTTPS required)
         samesite="lax",  # CSRF protection
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # seconds
         path="/"
@@ -300,7 +308,7 @@ def login_json(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=False,
+        secure=use_secure_cookies,
         samesite="lax",
         max_age=7 * 24 * 60 * 60,  # 7 days in seconds
         path="/"
@@ -338,12 +346,15 @@ def logout(
     if refresh_token:
         revoke_refresh_token(refresh_token, db)
 
+    # Determine if secure cookies should be used (production = HTTPS)
+    use_secure_cookies = settings.ENVIRONMENT in ("production", "staging")
+
     # Clear access token cookie
     response.set_cookie(
         key="access_token",
         value="",
         httponly=True,
-        secure=False,
+        secure=use_secure_cookies,
         samesite="lax",
         max_age=0,
         path="/"
@@ -354,7 +365,7 @@ def logout(
         key="refresh_token",
         value="",
         httponly=True,
-        secure=False,
+        secure=use_secure_cookies,
         samesite="lax",
         max_age=0,
         path="/"
@@ -408,12 +419,15 @@ def refresh_access_token(
         expires_delta=access_token_expires
     )
 
+    # Determine if secure cookies should be used (production = HTTPS)
+    use_secure_cookies = settings.ENVIRONMENT in ("production", "staging")
+
     # Set new access token cookie
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=False,
+        secure=use_secure_cookies,
         samesite="lax",
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         path="/"
@@ -725,49 +739,47 @@ def verify_phone(
 
 @router.post("/forgot-password", status_code=status.HTTP_200_OK)
 def forgot_password(
-    email: str,
+    request: ForgotPasswordRequest,
     db: Session = Depends(get_db)
 ):
     """
     Request password reset email
 
     Args:
-        email: User email address
+        request: ForgotPasswordRequest with email address
         db: Database session
 
     Returns:
         Success message (always returns success for security)
     """
-    result = VerificationService.send_password_reset(email, db)
+    result = VerificationService.send_password_reset(request.email, db)
     return result
 
 
 @router.post("/reset-password", status_code=status.HTTP_200_OK)
 def reset_password(
-    token: str,
-    new_password: str,
+    request: ResetPasswordRequest,
     db: Session = Depends(get_db)
 ):
     """
     Reset password using token from email
 
     Args:
-        token: Password reset token
-        new_password: New password
+        request: ResetPasswordRequest with token and new password
         db: Database session
 
     Returns:
         Success message
     """
     # Validate password strength
-    is_valid, error_message = validate_password_strength(new_password)
+    is_valid, error_message = validate_password_strength(request.new_password)
     if not is_valid:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=error_message
         )
 
-    result = VerificationService.reset_password(token, new_password, db)
+    result = VerificationService.reset_password(request.token, request.new_password, db)
 
     if result["status"] == "error":
         raise HTTPException(

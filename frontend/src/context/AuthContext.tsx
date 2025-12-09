@@ -6,13 +6,18 @@ import { api } from "@/services/api";
 
 import { API_URL } from "@/lib/config";
 
-interface User {
+export interface User {
   user_id: number;
   username: string;
   email: string;
   full_name?: string;
   role: string;
   is_active: boolean;
+  // Access control fields
+  org_id?: number;
+  is_owner?: boolean;
+  is_superadmin?: boolean;
+  managed_client_ids?: number[] | null;  // null = full access, [] = no access, [1,2] = specific clients
 }
 
 interface AuthContextType {

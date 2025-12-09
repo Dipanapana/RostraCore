@@ -273,29 +273,47 @@ class VerificationService:
         # Build reset URL
         reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
 
-        # TODO: Send actual email
-        logger.info(f"Password reset URL for {user.email}: {reset_url}")
-
-        # In development, return the URL
-        if settings.ENVIRONMENT == "development":
-            return {
-                "status": "success",
-                "message": "Password reset email sent",
-                "reset_url": reset_url,  # Only in dev!
-                "token": token  # Only in dev!
-            }
-
-        # In production, send actual email
+        # Send password reset email
         try:
-            # Send email with reset link
-            pass
+            from app.services.email_service import EmailService
+
+            result = EmailService.send_password_reset_email(
+                to=user.email,
+                reset_token=token,
+                user_name=user.full_name or user.username
+            )
+
+            if result["status"] == "success":
+                logger.info(f"Password reset email sent to {user.email}")
+
+                # In development mode, include URL for easy testing
+                if settings.ENVIRONMENT == "development" and result.get("dev_mode"):
+                    return {
+                        "status": "success",
+                        "message": "Password reset email sent",
+                        "reset_url": reset_url,  # Only in dev!
+                        "token": token  # Only in dev!
+                    }
+
+                return {
+                    "status": "success",
+                    "message": "If an account exists with this email, a password reset link has been sent."
+                }
+            else:
+                logger.error(f"Failed to send password reset email: {result.get('message')}")
+                # Still return success to not reveal if email exists
+                return {
+                    "status": "success",
+                    "message": "If an account exists with this email, a password reset link has been sent."
+                }
+
         except Exception as e:
             logger.error(f"Failed to send password reset email: {e}")
-
-        return {
-            "status": "success",
-            "message": "If an account exists with this email, a password reset link has been sent."
-        }
+            # Still return success to not reveal if email exists
+            return {
+                "status": "success",
+                "message": "If an account exists with this email, a password reset link has been sent."
+            }
 
     @staticmethod
     def reset_password(token: str, new_password: str, db: Session) -> Dict:
