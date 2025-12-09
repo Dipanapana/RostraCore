@@ -65,7 +65,7 @@ export default function GuardDataQualityDashboard() {
     const [clientModal, setClientModal] = useState<{ guard: Guard } | null>(null)
     const [saving, setSaving] = useState(false)
     const [newHourlyRate, setNewHourlyRate] = useState('')
-    const [newCert, setNewCert] = useState({ cert_type: 'PSIRA', expiry_date: '', cert_number: '' })
+    const [newCert, setNewCert] = useState({ cert_type: 'PSIRA', issue_date: '', expiry_date: '', cert_number: '' })
     const [selectedClientIds, setSelectedClientIds] = useState<number[]>([])
 
     // Full edit modal state
@@ -150,19 +150,20 @@ export default function GuardDataQualityDashboard() {
     }
 
     const handleSaveCertification = async () => {
-        if (!certModal || !newCert.expiry_date) return
+        if (!certModal || !newCert.issue_date || !newCert.expiry_date) return
         const guardName = `${certModal.guard.first_name} ${certModal.guard.last_name}`
         setSaving(true)
         try {
             await certificationsApi.create({
                 employee_id: certModal.guard.employee_id,
                 cert_type: newCert.cert_type,
+                issue_date: newCert.issue_date,
                 expiry_date: newCert.expiry_date,
                 cert_number: newCert.cert_number || undefined,
                 verified: false
             })
             setCertModal(null)
-            setNewCert({ cert_type: 'PSIRA', expiry_date: '', cert_number: '' })
+            setNewCert({ cert_type: 'PSIRA', issue_date: '', expiry_date: '', cert_number: '' })
             showSuccess(`Certification added for ${guardName}!`)
             fetchData()
         } catch (err: any) {
@@ -665,6 +666,17 @@ export default function GuardDataQualityDashboard() {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                    Issue Date
+                                </label>
+                                <input
+                                    type="date"
+                                    value={newCert.issue_date}
+                                    onChange={(e) => setNewCert({ ...newCert, issue_date: e.target.value })}
+                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                                     Expiry Date
                                 </label>
                                 <input
@@ -684,7 +696,7 @@ export default function GuardDataQualityDashboard() {
                             </button>
                             <button
                                 onClick={handleSaveCertification}
-                                disabled={saving || !newCert.expiry_date}
+                                disabled={saving || !newCert.issue_date || !newCert.expiry_date}
                                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                             >
                                 {saving ? 'Saving...' : 'Add Certification'}
