@@ -17,20 +17,36 @@ class EmployeeService:
         limit: int = 100,
         status: Optional[str] = None,
         org_id: Optional[int] = None,
-        apply_client_filter: bool = True
+        apply_client_filter: bool = True,
+        accessible_client_ids: Optional[List[int]] = None  # User-level client filtering
     ) -> List[Employee]:
-        """Get all employees with optional filtering by organization and client access."""
+        """
+        Get all employees with optional filtering.
+
+        Args:
+            accessible_client_ids: Pre-computed list of accessible client IDs for user.
+                                   None = full access, [] = no access, [1,2] = specific clients
+        """
         query = db.query(Employee)
 
         # Filter by organization if provided
         if org_id is not None:
             query = query.filter(Employee.org_id == org_id)
 
-            # Apply client management filtering
-            if apply_client_filter:
+            # Apply client-level filtering
+            # Use pre-computed accessible_client_ids if provided (includes user-level)
+            if accessible_client_ids is not None:  # None = full access (owner)
+                if not accessible_client_ids:  # Empty list = no access
+                    return []  # Return empty immediately
+                # Filter by assigned_client_id or include unassigned employees
+                query = query.filter(
+                    (Employee.assigned_client_id.in_(accessible_client_ids)) |
+                    (Employee.assigned_client_id.is_(None))
+                )
+            elif apply_client_filter:
+                # Fallback to org-level filtering only
                 accessible_clients = ClientFilterService.get_accessible_clients(db, org_id)
                 if accessible_clients is not None:
-                    # Filter by assigned_client_id or include unassigned employees
                     query = query.filter(
                         (Employee.assigned_client_id.in_(accessible_clients)) |
                         (Employee.assigned_client_id.is_(None))

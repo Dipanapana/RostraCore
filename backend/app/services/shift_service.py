@@ -23,19 +23,33 @@ class ShiftService:
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
         org_id: Optional[int] = None,
-        apply_client_filter: bool = True
+        apply_client_filter: bool = True,
+        accessible_client_ids: Optional[List[int]] = None  # User-level client filtering
     ) -> List[Shift]:
-        """Get all shifts with optional filtering."""
+        """
+        Get all shifts with optional filtering.
+
+        Args:
+            accessible_client_ids: Pre-computed list of accessible client IDs for user.
+                                   None = full access, [] = no access, [1,2] = specific clients
+        """
         query = db.query(Shift)
 
         if org_id is not None:
             query = query.filter(Shift.org_id == org_id)
 
-            # Apply client management filtering via site's client_id
-            if apply_client_filter:
+            # Apply client-level filtering via site's client_id
+            # Use pre-computed accessible_client_ids if provided (includes user-level)
+            if accessible_client_ids is not None:  # None = full access (owner)
+                if not accessible_client_ids:  # Empty list = no access
+                    return []  # Return empty immediately
+                # Join with Site and filter by client_id
+                query = query.join(Site, Shift.site_id == Site.site_id)
+                query = query.filter(Site.client_id.in_(accessible_client_ids))
+            elif apply_client_filter:
+                # Fallback to org-level filtering only
                 accessible_clients = ClientFilterService.get_accessible_clients(db, org_id)
                 if accessible_clients is not None:
-                    # Join with Site and filter by client_id
                     query = query.join(Site, Shift.site_id == Site.site_id)
                     query = query.filter(Site.client_id.in_(accessible_clients))
 

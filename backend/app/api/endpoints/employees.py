@@ -11,6 +11,7 @@ from app.database import get_db
 from app.models.schemas import EmployeeCreate, EmployeeUpdate, EmployeeResponse
 from app.services.employee_service import EmployeeService
 from app.services.excel_import_service import ExcelImportService
+from app.services.client_filter_service import ClientFilterService
 from app.api.deps import get_current_user
 from app.models.user import User
 from app.models.employee import Employee, EmployeeStatus
@@ -27,6 +28,16 @@ def _get_org_id_or_403(current_user: User) -> int:
             detail="User has no organization assigned. Please contact administrator."
         )
     return current_user.org_id
+
+
+def _check_employee_client_access(db: Session, employee: Employee, current_user: User):
+    """Check if user has client-level access to view/modify this employee."""
+    if employee.assigned_client_id is not None:
+        if not ClientFilterService.is_client_accessible(db, current_user.org_id, employee.assigned_client_id, current_user):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You don't have access to employees assigned to this client"
+            )
 
 
 @router.get("/dashboard/data-quality")
@@ -145,14 +156,26 @@ async def get_employees(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get all employees with optional status filter (filtered by organization)."""
+    """
+    Get all employees with optional status filter.
+
+    Filtering:
+    - Organization: Only employees in user's organization
+    - Client Access: If user has managed_client_ids, only employees assigned to those clients
+                     (or unassigned employees) are visible
+    """
     org_id = _get_org_id_or_403(current_user)
+
+    # Get accessible clients for client-level filtering
+    accessible_clients = ClientFilterService.get_accessible_clients_for_user(db, current_user)
+
     employees = EmployeeService.get_all(
         db,
         skip=skip,
         limit=limit,
         status=status_filter,
-        org_id=org_id
+        org_id=org_id,
+        accessible_client_ids=accessible_clients
     )
     return employees
 
@@ -163,7 +186,7 @@ async def get_employee(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get employee by ID (filtered by organization)."""
+    """Get employee by ID (filtered by organization and client access)."""
     org_id = _get_org_id_or_403(current_user)
     employee = EmployeeService.get_by_id(db, employee_id, org_id=org_id)
     if not employee:
@@ -171,6 +194,7 @@ async def get_employee(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Employee with ID {employee_id} not found"
         )
+    _check_employee_client_access(db, employee, current_user)
     return employee
 
 
@@ -223,14 +247,18 @@ async def update_employee(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Update employee (filtered by organization)."""
+    """Update employee (filtered by organization and client access)."""
     org_id = _get_org_id_or_403(current_user)
-    employee = EmployeeService.update(db, employee_id, employee_data, org_id=org_id)
-    if not employee:
+    # First check if employee exists and user has access
+    existing_employee = EmployeeService.get_by_id(db, employee_id, org_id=org_id)
+    if not existing_employee:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Employee with ID {employee_id} not found"
         )
+    _check_employee_client_access(db, existing_employee, current_user)
+
+    employee = EmployeeService.update(db, employee_id, employee_data, org_id=org_id)
     return employee
 
 
@@ -240,14 +268,18 @@ async def delete_employee(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Delete employee (filtered by organization)."""
+    """Delete employee (filtered by organization and client access)."""
     org_id = _get_org_id_or_403(current_user)
-    success = EmployeeService.delete(db, employee_id, org_id=org_id)
-    if not success:
+    # First check if employee exists and user has access
+    existing_employee = EmployeeService.get_by_id(db, employee_id, org_id=org_id)
+    if not existing_employee:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Employee with ID {employee_id} not found"
         )
+    _check_employee_client_access(db, existing_employee, current_user)
+
+    EmployeeService.delete(db, employee_id, org_id=org_id)
     return None
 
 
@@ -319,23 +351,32 @@ async def get_employee_shifts(
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
     status_filter: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """
     Get all shift assignments for an employee.
     Returns shifts with assignment details.
+    Filtered by organization and client access.
     """
     from app.models.shift_assignment import ShiftAssignment, AssignmentStatus
     from app.models.shift import Shift
-    from app.models.employee import Employee
-    
-    # Verify employee exists
-    employee = db.query(Employee).filter(Employee.employee_id == employee_id).first()
+
+    org_id = _get_org_id_or_403(current_user)
+
+    # Verify employee exists in user's organization
+    employee = db.query(Employee).filter(
+        Employee.employee_id == employee_id,
+        Employee.org_id == org_id
+    ).first()
     if not employee:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Employee with ID {employee_id} not found"
         )
+
+    # Check client-level access
+    _check_employee_client_access(db, employee, current_user)
     
     # Build query
     query = db.query(ShiftAssignment).join(Shift).filter(

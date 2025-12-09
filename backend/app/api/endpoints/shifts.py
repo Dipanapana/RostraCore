@@ -7,8 +7,10 @@ from datetime import datetime
 from app.database import get_db
 from app.models.schemas import ShiftCreate, ShiftUpdate, ShiftResponse, ShiftAssignmentCreate, ShiftAssignmentResponse
 from app.models.shift_assignment import ShiftAssignment, AssignmentStatus
+from app.models.user import User
 from app.services.shift_service import ShiftService
-from app.auth.security import get_current_org_id
+from app.services.client_filter_service import ClientFilterService
+from app.auth.security import get_current_org_id, get_current_user
 
 router = APIRouter()
 
@@ -22,10 +24,20 @@ async def get_shifts(
     status_filter: Optional[str] = None,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
+    current_user: User = Depends(get_current_user),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Get all shifts with optional filters (filtered by organization)."""
+    """
+    Get all shifts with optional filters.
+
+    Filtering:
+    - Organization: Only shifts in user's organization
+    - Client Access: If user has managed_client_ids, only shifts at their clients' sites
+    """
+    # Get accessible clients for client-level filtering
+    accessible_clients = ClientFilterService.get_accessible_clients_for_user(db, current_user)
+
     shifts = ShiftService.get_all(
         db,
         skip=skip,
@@ -35,34 +47,57 @@ async def get_shifts(
         status=status_filter,
         start_date=start_date,
         end_date=end_date,
-        org_id=org_id
+        org_id=org_id,
+        accessible_client_ids=accessible_clients  # Pass to service for filtering
     )
     return shifts
+
+
+def _check_shift_client_access(db: Session, shift, org_id: int, current_user: User):
+    """Helper to check client-level access for a shift via its site."""
+    from app.models.site import Site
+    site = db.query(Site).filter(Site.site_id == shift.site_id).first()
+    if site and not ClientFilterService.is_client_accessible(db, org_id, site.client_id, current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have access to this shift's client"
+        )
 
 
 @router.get("/{shift_id}", response_model=ShiftResponse)
 async def get_shift(
     shift_id: int,
+    current_user: User = Depends(get_current_user),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Get shift by ID (filtered by organization)."""
+    """Get shift by ID (filtered by organization and client access)."""
     shift = ShiftService.get_by_id(db, shift_id, org_id=org_id)
     if not shift:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Shift with ID {shift_id} not found"
         )
+    _check_shift_client_access(db, shift, org_id, current_user)
     return shift
 
 
 @router.post("/", response_model=ShiftResponse, status_code=status.HTTP_201_CREATED)
 async def create_shift(
     shift_data: ShiftCreate,
+    current_user: User = Depends(get_current_user),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Create new shift (automatically assigned to user's organization)."""
+    """Create new shift (with client access check for the site)."""
+    # Check client access for the site
+    from app.models.site import Site
+    site = db.query(Site).filter(Site.site_id == shift_data.site_id).first()
+    if site and not ClientFilterService.is_client_accessible(db, org_id, site.client_id, current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have access to create shifts for this client's site"
+        )
     shift = ShiftService.create(db, shift_data, org_id=org_id)
     return shift
 
@@ -71,26 +106,41 @@ async def create_shift(
 async def update_shift(
     shift_id: int,
     shift_data: ShiftUpdate,
+    current_user: User = Depends(get_current_user),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Update shift (filtered by organization)."""
-    shift = ShiftService.update(db, shift_id, shift_data, org_id=org_id)
-    if not shift:
+    """Update shift (filtered by organization and client access)."""
+    # First get the shift to check access
+    existing_shift = ShiftService.get_by_id(db, shift_id, org_id=org_id)
+    if not existing_shift:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Shift with ID {shift_id} not found"
         )
+    _check_shift_client_access(db, existing_shift, org_id, current_user)
+
+    shift = ShiftService.update(db, shift_id, shift_data, org_id=org_id)
     return shift
 
 
 @router.delete("/{shift_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_shift(
     shift_id: int,
+    current_user: User = Depends(get_current_user),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Delete shift (filtered by organization)."""
+    """Delete shift (filtered by organization and client access)."""
+    # First get the shift to check access
+    existing_shift = ShiftService.get_by_id(db, shift_id, org_id=org_id)
+    if not existing_shift:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Shift with ID {shift_id} not found"
+        )
+    _check_shift_client_access(db, existing_shift, org_id, current_user)
+
     success = ShiftService.delete(db, shift_id, org_id=org_id)
     if not success:
         raise HTTPException(
@@ -103,10 +153,11 @@ async def delete_shift(
 @router.get("/{shift_id}/assignments", response_model=List[ShiftAssignmentResponse])
 async def get_shift_assignments(
     shift_id: int,
+    current_user: User = Depends(get_current_user),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Get all guard assignments for a shift (filtered by organization)."""
+    """Get all guard assignments for a shift (filtered by organization and client access)."""
     from app.models.shift import Shift
 
     shift = db.query(Shift).filter(
@@ -118,6 +169,7 @@ async def get_shift_assignments(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Shift with ID {shift_id} not found"
         )
+    _check_shift_client_access(db, shift, org_id, current_user)
 
     assignments = db.query(ShiftAssignment).filter(
         ShiftAssignment.shift_id == shift_id,
@@ -131,11 +183,12 @@ async def get_shift_assignments(
 async def assign_guard_to_shift(
     shift_id: int,
     employee_id: int,
+    current_user: User = Depends(get_current_user),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
     """
-    Assign a guard to a shift (manual assignment, filtered by organization).
+    Assign a guard to a shift (manual assignment, filtered by organization and client access).
     Creates assignment with 'pending' status.
     """
     from app.models.shift import Shift
@@ -151,6 +204,9 @@ async def assign_guard_to_shift(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Shift with ID {shift_id} not found"
         )
+
+    # Check client-level access
+    _check_shift_client_access(db, shift, org_id, current_user)
 
     # Verify employee exists and belongs to organization
     employee = db.query(Employee).filter(
