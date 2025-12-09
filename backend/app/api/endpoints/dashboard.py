@@ -44,7 +44,7 @@ def get_dashboard_metrics(
             "employees": {"total": 0, "active": 0, "inactive": 0},
             "shifts": {"total": 0, "upcoming": 0, "assigned": 0, "unassigned": 0, "this_week": 0, "fill_rate": 0},
             "sites": {"total": 0},
-            "certifications": {"expiring_soon": 0, "expired": 0},
+            "certifications": {"total": 0, "expiring_soon": 0, "expired": 0},
             "availability": {"total_records": 0}
         }
 
@@ -115,7 +115,11 @@ def get_dashboard_metrics(
         Site.org_id == org_id
     ).count()
 
-    # Certification Expiry Warnings - filtered by organization through employees
+    # Certification Stats - filtered by organization through employees
+    total_certifications = db.query(Certification).join(Employee).filter(
+        Employee.org_id == org_id
+    ).count()
+
     expiring_soon = db.query(Certification).join(Employee).filter(
         Employee.org_id == org_id,
         Certification.expiry_date <= datetime.now().date() + timedelta(days=30),
@@ -157,6 +161,7 @@ def get_dashboard_metrics(
             "total": total_sites
         },
         "certifications": {
+            "total": total_certifications,
             "expiring_soon": expiring_soon,
             "expired": expired_certifications
         },

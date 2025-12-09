@@ -33,7 +33,7 @@ interface DashboardMetrics {
     fill_rate: number;
   };
   sites: { total: number };
-  certifications: { expiring_soon: number; expired: number };
+  certifications: { total: number; expiring_soon: number; expired: number };
 }
 
 interface UpcomingShift {
@@ -83,14 +83,16 @@ export default function DashboardPage() {
         setCostTrends(trendsRes.data.trend || []);
 
         // Calculate real certification compliance data
-        const totalCerts = metricsData.employees.active; // Assume 1 cert per active employee
+        // Use actual certification counts from backend, not assumed from employees
         const expiringCerts = metricsData.certifications.expiring_soon || 0;
         const expiredCerts = metricsData.certifications.expired || 0;
+        const totalCerts = metricsData.certifications.total || (expiringCerts + expiredCerts);
         const compliantCerts = Math.max(0, totalCerts - expiringCerts - expiredCerts);
 
+        // If no certifications exist at all, compliance should be 0%, not 100%
         const compliancePct = totalCerts > 0
           ? Math.round((compliantCerts / totalCerts) * 100)
-          : 100;
+          : 0;
 
         // Calculate Operational Readiness Score (ORS)
         const fillRate = metricsData.shifts.fill_rate || 0;
@@ -163,6 +165,13 @@ export default function DashboardPage() {
             id: "2",
             type: "alert",
             message: `${metricsData.certifications.expiring_soon} certifications expiring within 30 days`,
+            time: "Real-time"
+          });
+        } else if (totalCerts === 0) {
+          newActivities.push({
+            id: "2",
+            type: "warning",
+            message: "No certifications registered - add PSIRA certifications for guards",
             time: "Real-time"
           });
         } else {
