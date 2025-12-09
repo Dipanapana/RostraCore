@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import api from '@/services/api'
 import { getApiUrl } from '@/lib/config'
+import { useAuth } from '@/context/AuthContext'
 
 interface PayrollDetail {
   payroll_id: number
@@ -50,6 +51,7 @@ interface SADeductions {
 export default function PayslipDetailPage() {
   const params = useParams()
   const payrollId = params.id as string
+  const { token } = useAuth()
 
   const [payroll, setPayroll] = useState<PayrollDetail | null>(null)
   const [deductions, setDeductions] = useState<SADeductions | null>(null)
@@ -107,9 +109,6 @@ export default function PayslipDetailPage() {
 
     setDownloading(true)
     try {
-      // Get token from localStorage
-      const token = localStorage.getItem('token')
-
       const response = await fetch(
         `${getApiUrl()}/api/v1/payroll/${payrollId}/payslip/pdf`,
         {
