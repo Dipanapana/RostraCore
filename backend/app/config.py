@@ -1,4 +1,7 @@
-"""Application configuration."""
+"""Application configuration.
+
+Last deployment trigger: 2025-12-09 16:20 UTC
+"""
 
 import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
