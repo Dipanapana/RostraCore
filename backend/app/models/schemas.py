@@ -31,6 +31,15 @@ class EmployeeCreate(EmployeeBase):
     assigned_client_id: Optional[int] = None  # Optional client assignment (legacy)
     assigned_client_ids: Optional[List[int]] = None  # Multiple client assignment
 
+    # Banking details
+    bank_name: Optional[str] = None  # e.g., FNB, ABSA, Standard Bank, Nedbank
+    account_number: Optional[str] = None  # Bank account number (masked in responses)
+    branch_code: Optional[str] = None  # Branch code for EFT
+    account_type: Optional[str] = None  # cheque, savings, transmission
+
+    # Tax details
+    tax_number: Optional[str] = None  # SA tax reference number
+
 
 class EmployeeUpdate(BaseModel):
     first_name: Optional[str] = None
@@ -49,6 +58,15 @@ class EmployeeUpdate(BaseModel):
     assigned_client_id: Optional[int] = None  # Allow updating client assignment (legacy)
     assigned_client_ids: Optional[List[int]] = None  # Allow updating multiple client assignment
 
+    # Banking details
+    bank_name: Optional[str] = None
+    account_number: Optional[str] = None
+    branch_code: Optional[str] = None
+    account_type: Optional[str] = None
+
+    # Tax details
+    tax_number: Optional[str] = None
+
 
 class EmployeeResponse(EmployeeBase):
     employee_id: int
@@ -56,6 +74,15 @@ class EmployeeResponse(EmployeeBase):
     assigned_client_id: Optional[int] = None  # Include client assignment in response (legacy)
     assigned_client_ids: Optional[List[int]] = None  # Include multiple client assignment in response
     max_hours_week: Optional[int] = 48  # Override to allow NULL from database
+
+    # Banking details (account number is masked for security)
+    bank_name: Optional[str] = None
+    account_number: Optional[str] = None  # Will be masked in service layer
+    branch_code: Optional[str] = None
+    account_type: Optional[str] = None
+
+    # Tax details
+    tax_number: Optional[str] = None
 
     # Shift pattern assignment fields
     shift_pattern_id: Optional[int] = None

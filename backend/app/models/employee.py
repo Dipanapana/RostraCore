@@ -60,6 +60,15 @@ class Employee(Base):
     email = Column(String(255), unique=True, index=True)
     phone = Column(String(20))
 
+    # Banking details for payroll
+    bank_name = Column(String(100), nullable=True)  # e.g., FNB, ABSA, Standard Bank, Nedbank
+    account_number = Column(String(50), nullable=True)  # Bank account number
+    branch_code = Column(String(20), nullable=True)  # Branch code for EFT
+    account_type = Column(String(20), nullable=True)  # cheque, savings, transmission
+
+    # Tax details
+    tax_number = Column(String(20), nullable=True)  # SA tax reference number
+
     # Self-service portal fields
     hashed_password = Column(String(255), nullable=True)  # For employee login
     psira_number = Column(String(50), nullable=True)
