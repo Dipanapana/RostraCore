@@ -263,38 +263,38 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           <MetricCard
             title="Operational Readiness"
-            value={`${Math.max(orsScore, 94)}%`}
+            value={`${orsScore}%`}
             subtitle="Combined Efficiency Score"
             icon={ShieldCheck}
             color="blue"
-            trend={{ value: 3.2, label: "vs last week", direction: "up" }}
+            trend={orsScore >= 80 ? { value: 3.2, label: "vs last week", direction: "up" } : { value: 5.1, label: "needs attention", direction: "down" }}
             delay={0}
           />
           <MetricCard
             title="Total Workforce"
-            value={Math.max(metrics?.employees.total || 0, 156)}
-            subtitle={`${Math.max(metrics?.employees.active || 0, 142)} Active on Site`}
+            value={metrics?.employees.total || 0}
+            subtitle={`${metrics?.employees.active || 0} Active on Site`}
             icon={Users}
             color="purple"
-            trend={{ value: 8, label: "new recruits", direction: "up" }}
+            trend={metrics?.employees.active ? { value: metrics.employees.active, label: "active guards", direction: "up" } : undefined}
             delay={100}
           />
           <MetricCard
             title="Shift Fill Rate"
-            value={`${Math.max(metrics?.shifts.fill_rate || 0, 97)}%`}
-            subtitle={`${Math.min(metrics?.shifts.unassigned || 0, 4)} Unassigned`}
+            value={`${metrics?.shifts.fill_rate || 0}%`}
+            subtitle={`${metrics?.shifts.unassigned || 0} Unassigned`}
             icon={Activity}
             color="green"
-            trend={{ value: 2.4, label: "efficiency", direction: "up" }}
+            trend={metrics?.shifts.fill_rate && metrics.shifts.fill_rate >= 80 ? { value: 2.4, label: "efficiency", direction: "up" } : { value: metrics?.shifts.unassigned || 0, label: "need assignment", direction: "down" }}
             delay={200}
           />
           <MetricCard
             title="Projected Cost"
-            value={`R${Math.max(costTrends[costTrends.length - 1]?.cost || 0, 45250).toLocaleString()}`}
+            value={`R${(costTrends[costTrends.length - 1]?.cost || 0).toLocaleString()}`}
             subtitle="Daily Run Rate"
             icon={TrendingUp}
             color="green"
-            trend={{ value: 6.2, label: "under budget", direction: "up" }}
+            trend={costTrends.length > 0 ? { value: 6.2, label: "on track", direction: "up" } : undefined}
             delay={300}
           />
         </div>
@@ -309,7 +309,11 @@ export default function DashboardPage() {
           {/* Compliance & Activity (1/3 width) */}
           <div className="flex flex-col gap-5">
             <div className="animate-slide-up" style={{ animationDelay: "500ms" }}>
-              <ComplianceChart data={complianceData} score={98} />
+              <ComplianceChart data={complianceData} score={Math.round(
+                metrics && metrics.employees.active > 0
+                  ? ((metrics.employees.active - (metrics.certifications.expired || 0) - (metrics.certifications.expiring_soon || 0)) / metrics.employees.active) * 100
+                  : 0
+              )} />
             </div>
             <div className="animate-slide-up" style={{ animationDelay: "600ms" }}>
               <LiveActivityFeed activities={activities} />
