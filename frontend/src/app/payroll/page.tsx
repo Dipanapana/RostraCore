@@ -292,7 +292,7 @@ export default function PayrollPage() {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `payslips_bulk_${new Date().toISOString().split("T")[0]}.zip`;
+        a.download = `payslips_bulk_${new Date().toISOString().split("T")[0]}.pdf`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -446,31 +446,31 @@ export default function PayrollPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
             <div className="bg-white shadow rounded-lg p-4">
               <p className="text-xs text-gray-500 uppercase">Employees</p>
-              <p className="text-xl font-bold text-gray-900">{payrollSummary.employee_count}</p>
+              <p className="text-xl font-bold text-gray-900">{payrollSummary.employee_count ?? 0}</p>
             </div>
             <div className="bg-white shadow rounded-lg p-4">
               <p className="text-xs text-gray-500 uppercase">Total Gross</p>
-              <p className="text-xl font-bold text-gray-900">R {payrollSummary.total_gross.toLocaleString()}</p>
+              <p className="text-xl font-bold text-gray-900">R {(payrollSummary.total_gross ?? 0).toLocaleString()}</p>
             </div>
             <div className="bg-white shadow rounded-lg p-4">
               <p className="text-xs text-gray-500 uppercase">PAYE</p>
-              <p className="text-xl font-bold text-red-600">R {payrollSummary.total_paye.toLocaleString()}</p>
+              <p className="text-xl font-bold text-red-600">R {(payrollSummary.total_paye ?? 0).toLocaleString()}</p>
             </div>
             <div className="bg-white shadow rounded-lg p-4">
               <p className="text-xs text-gray-500 uppercase">UIF (Employee)</p>
-              <p className="text-xl font-bold text-red-600">R {payrollSummary.total_uif_employee.toLocaleString()}</p>
+              <p className="text-xl font-bold text-red-600">R {(payrollSummary.total_uif_employee ?? 0).toLocaleString()}</p>
             </div>
             <div className="bg-white shadow rounded-lg p-4">
               <p className="text-xs text-gray-500 uppercase">UIF (Employer)</p>
-              <p className="text-xl font-bold text-orange-600">R {payrollSummary.total_uif_employer.toLocaleString()}</p>
+              <p className="text-xl font-bold text-orange-600">R {(payrollSummary.total_uif_employer ?? 0).toLocaleString()}</p>
             </div>
             <div className="bg-white shadow rounded-lg p-4">
               <p className="text-xs text-gray-500 uppercase">SDL</p>
-              <p className="text-xl font-bold text-orange-600">R {payrollSummary.total_sdl.toLocaleString()}</p>
+              <p className="text-xl font-bold text-orange-600">R {(payrollSummary.total_sdl ?? 0).toLocaleString()}</p>
             </div>
             <div className="bg-white shadow rounded-lg p-4">
               <p className="text-xs text-gray-500 uppercase">Total Net</p>
-              <p className="text-xl font-bold text-green-600">R {payrollSummary.total_net.toLocaleString()}</p>
+              <p className="text-xl font-bold text-green-600">R {(payrollSummary.total_net ?? 0).toLocaleString()}</p>
             </div>
           </div>
         )}

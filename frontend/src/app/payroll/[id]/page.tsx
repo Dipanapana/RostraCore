@@ -14,9 +14,11 @@ import {
   Calendar,
   Clock,
   DollarSign,
-  Calculator
+  Calculator,
+  Printer
 } from 'lucide-react'
 import api from '@/services/api'
+import { getApiUrl } from '@/lib/config'
 
 interface PayrollDetail {
   payroll_id: number
@@ -53,6 +55,7 @@ export default function PayslipDetailPage() {
   const [deductions, setDeductions] = useState<SADeductions | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [downloading, setDownloading] = useState(false)
 
   useEffect(() => {
     if (payrollId) {
@@ -97,6 +100,45 @@ export default function PayslipDetailPage() {
       month: 'long',
       year: 'numeric'
     })
+  }
+
+  const handleDownloadPDF = async () => {
+    if (!payroll) return
+
+    setDownloading(true)
+    try {
+      // Get token from localStorage
+      const token = localStorage.getItem('token')
+
+      const response = await fetch(
+        `${getApiUrl()}/api/v1/payroll/${payrollId}/payslip/pdf`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `payslip_${payroll.employee?.name?.replace(/\s+/g, '_') || payrollId}_${payroll.period_end}.pdf`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        a.remove()
+      } else {
+        const data = await response.json()
+        setError(data.detail || 'Failed to download payslip PDF')
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to download payslip PDF')
+    } finally {
+      setDownloading(false)
+    }
   }
 
   if (loading) {
@@ -151,13 +193,27 @@ export default function PayslipDetailPage() {
               </p>
             </div>
           </div>
-          <button
-            onClick={() => window.print()}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            <Download className="w-4 h-4" />
-            Print / Download
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleDownloadPDF}
+              disabled={downloading}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {downloading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4" />
+              )}
+              {downloading ? 'Generating...' : 'Download PDF'}
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+            >
+              <Printer className="w-4 h-4" />
+              Print
+            </button>
+          </div>
         </div>
 
         {/* Payslip Card */}
