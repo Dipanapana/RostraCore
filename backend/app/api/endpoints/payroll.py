@@ -1,4 +1,8 @@
-"""Payroll API endpoints with SA deductions integration."""
+"""Payroll API endpoints with SA deductions integration.
+
+Route ordering note: Static routes (/sa-tax-tables) must come before
+dynamic routes (/{payroll_id}) to avoid route conflicts.
+"""
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -220,6 +224,25 @@ async def generate_payroll(
         "shift_count": len(assignments)
     }
 
+
+# =============================================================================
+# STATIC ROUTES (must come before /{payroll_id} to avoid route conflicts)
+# =============================================================================
+
+@router.get("/sa-tax-tables")
+async def get_sa_tax_tables():
+    """
+    Get South African tax tables reference for 2024/2025 tax year.
+
+    Useful for displaying tax information to users.
+    """
+    from app.services.sa_payroll_service import get_tax_tables_reference
+    return get_tax_tables_reference()
+
+
+# =============================================================================
+# DYNAMIC ROUTES (with path parameters)
+# =============================================================================
 
 @router.get("/{payroll_id}")
 async def get_payroll_detail(
@@ -490,17 +513,6 @@ async def generate_payroll_excel(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating Excel: {str(e)}")
-
-
-@router.get("/sa-tax-tables")
-async def get_sa_tax_tables():
-    """
-    Get South African tax tables reference for 2024/2025 tax year.
-
-    Useful for displaying tax information to users.
-    """
-    from app.services.sa_payroll_service import get_tax_tables_reference
-    return get_tax_tables_reference()
 
 
 @router.post("/calculate-employee-payslip")
