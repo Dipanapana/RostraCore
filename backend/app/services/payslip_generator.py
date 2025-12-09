@@ -200,56 +200,62 @@ class PayslipData:
 
 
 class PayslipPDFGenerator:
-    """Generate professional PDF payslips with SA compliance."""
+    """Generate professional PDF payslips with SA compliance - Sage-inspired design."""
 
-    # Color scheme
-    PRIMARY_COLOR = colors.HexColor('#1E3A8A')  # Navy blue
-    SECONDARY_COLOR = colors.HexColor('#3B82F6')  # Blue
-    ACCENT_COLOR = colors.HexColor('#10B981')  # Green for net pay
-    TEXT_COLOR = colors.HexColor('#1F2937')  # Dark gray
-    LIGHT_BG = colors.HexColor('#F3F4F6')  # Light gray background
-    BORDER_COLOR = colors.HexColor('#D1D5DB')  # Border gray
+    # Professional color scheme (inspired by Sage/corporate payslips)
+    PRIMARY_COLOR = colors.HexColor('#2D3748')  # Charcoal gray
+    HEADER_BG = colors.HexColor('#1A202C')  # Dark charcoal for header
+    ACCENT_COLOR = colors.HexColor('#276749')  # Professional green (Sage green)
+    NET_PAY_BG = colors.HexColor('#276749')  # Green background for net pay
+    TEXT_COLOR = colors.HexColor('#2D3748')  # Dark text
+    MUTED_TEXT = colors.HexColor('#718096')  # Muted gray for labels
+    LIGHT_BG = colors.HexColor('#F7FAFC')  # Very light gray background
+    TABLE_HEADER_BG = colors.HexColor('#EDF2F7')  # Light gray for table headers
+    BORDER_COLOR = colors.HexColor('#CBD5E0')  # Subtle border
+    EARNINGS_COLOR = colors.HexColor('#2D3748')  # Dark for earnings header
+    DEDUCTIONS_COLOR = colors.HexColor('#742A2A')  # Dark red for deductions
 
     def __init__(self):
         self.styles = getSampleStyleSheet()
         self._setup_custom_styles()
 
     def _setup_custom_styles(self):
-        """Create custom paragraph styles."""
+        """Create custom paragraph styles for professional look."""
         self.title_style = ParagraphStyle(
             'PayslipTitle',
             parent=self.styles['Heading1'],
-            fontSize=16,
-            textColor=self.PRIMARY_COLOR,
+            fontSize=18,
+            textColor=colors.white,
             spaceAfter=6,
-            alignment=TA_CENTER,
+            alignment=TA_LEFT,
             fontName='Helvetica-Bold'
         )
 
         self.company_style = ParagraphStyle(
             'CompanyName',
             parent=self.styles['Heading1'],
-            fontSize=14,
+            fontSize=16,
             textColor=self.PRIMARY_COLOR,
-            spaceAfter=3,
+            spaceAfter=2,
             fontName='Helvetica-Bold'
         )
 
         self.section_header_style = ParagraphStyle(
             'SectionHeader',
             parent=self.styles['Heading2'],
-            fontSize=10,
+            fontSize=9,
             textColor=self.PRIMARY_COLOR,
-            spaceBefore=10,
+            spaceBefore=8,
             spaceAfter=4,
-            fontName='Helvetica-Bold'
+            fontName='Helvetica-Bold',
+            textTransform='uppercase'
         )
 
         self.label_style = ParagraphStyle(
             'Label',
             parent=self.styles['Normal'],
             fontSize=8,
-            textColor=colors.HexColor('#6B7280'),
+            textColor=self.MUTED_TEXT,
             fontName='Helvetica'
         )
 
@@ -264,8 +270,8 @@ class PayslipPDFGenerator:
         self.net_pay_style = ParagraphStyle(
             'NetPay',
             parent=self.styles['Heading1'],
-            fontSize=14,
-            textColor=self.ACCENT_COLOR,
+            fontSize=16,
+            textColor=colors.white,
             alignment=TA_RIGHT,
             fontName='Helvetica-Bold'
         )
@@ -274,7 +280,7 @@ class PayslipPDFGenerator:
             'Footer',
             parent=self.styles['Normal'],
             fontSize=7,
-            textColor=colors.HexColor('#9CA3AF'),
+            textColor=self.MUTED_TEXT,
             alignment=TA_CENTER
         )
 
@@ -295,166 +301,216 @@ class PayslipPDFGenerator:
         return f"R {amount:,.2f}"
 
     def _create_header(self, data: PayslipData) -> List:
-        """Create payslip header with company info."""
+        """Create professional payslip header - Sage-inspired design."""
         elements = []
 
-        # Company name and payslip title row
-        header_data = [
+        # Top header bar with PAYSLIP title
+        header_bar_data = [
             [
-                Paragraph(data.company.company_name.upper(), self.company_style),
-                Paragraph("PAYSLIP", self.title_style)
+                Paragraph("PAYSLIP", ParagraphStyle(
+                    'HeaderTitle',
+                    fontSize=14,
+                    textColor=colors.white,
+                    fontName='Helvetica-Bold'
+                )),
+                Paragraph(f"Reference: {data.payslip_number}" if data.payslip_number else "", ParagraphStyle(
+                    'HeaderRef',
+                    fontSize=9,
+                    textColor=colors.white,
+                    alignment=TA_RIGHT,
+                    fontName='Helvetica'
+                ))
             ]
         ]
 
-        header_table = Table(header_data, colWidths=[4*inch, 3.5*inch])
-        header_table.setStyle(TableStyle([
+        header_bar = Table(header_bar_data, colWidths=[4*inch, 3.5*inch])
+        header_bar.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), self.HEADER_BG),
             ('ALIGN', (0, 0), (0, 0), 'LEFT'),
             ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, -1), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+            ('LEFTPADDING', (0, 0), (-1, -1), 15),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 15),
         ]))
-        elements.append(header_table)
+        elements.append(header_bar)
+        elements.append(Spacer(1, 0.12*inch))
 
-        # Company details
-        company_info = []
+        # Company and period info section
+        company_name = data.company.company_name.upper()
+        reg_info = []
         if data.company.registration_number:
-            company_info.append(f"Reg No: {data.company.registration_number}")
+            reg_info.append(f"Reg: {data.company.registration_number}")
         if data.company.psira_registration:
-            company_info.append(f"PSIRA: {data.company.psira_registration}")
+            reg_info.append(f"PSIRA: {data.company.psira_registration}")
         if data.company.vat_number:
-            company_info.append(f"VAT: {data.company.vat_number}")
+            reg_info.append(f"VAT: {data.company.vat_number}")
 
-        if company_info:
-            elements.append(Paragraph(
-                " | ".join(company_info),
-                ParagraphStyle('CompanyReg', fontSize=8, textColor=colors.HexColor('#6B7280'))
-            ))
-
-        # Address
+        # Build address
+        address_lines = []
         if data.company.address_line1:
-            address_parts = [data.company.address_line1]
-            if data.company.address_line2:
-                address_parts.append(data.company.address_line2)
-            if data.company.city:
-                city_line = data.company.city
-                if data.company.postal_code:
-                    city_line += f", {data.company.postal_code}"
-                address_parts.append(city_line)
+            address_lines.append(data.company.address_line1)
+        if data.company.address_line2:
+            address_lines.append(data.company.address_line2)
+        if data.company.city:
+            city_line = data.company.city
+            if data.company.postal_code:
+                city_line += f" {data.company.postal_code}"
+            address_lines.append(city_line)
 
-            elements.append(Paragraph(
-                " | ".join(address_parts),
-                ParagraphStyle('Address', fontSize=8, textColor=colors.HexColor('#6B7280'))
-            ))
+        # Left side: Company details
+        left_content = [
+            [Paragraph(company_name, ParagraphStyle(
+                'CompName', fontSize=11, fontName='Helvetica-Bold', textColor=self.PRIMARY_COLOR
+            ))],
+        ]
+        if reg_info:
+            left_content.append([Paragraph(
+                " | ".join(reg_info),
+                ParagraphStyle('RegInfo', fontSize=7, textColor=self.MUTED_TEXT)
+            )])
+        if address_lines:
+            left_content.append([Paragraph(
+                ", ".join(address_lines),
+                ParagraphStyle('AddrInfo', fontSize=7, textColor=self.MUTED_TEXT)
+            )])
 
-        elements.append(Spacer(1, 0.15*inch))
-
-        # Period information bar
-        period_data = [
-            [
-                f"Period: {data.period_start.strftime('%d %b %Y')} - {data.period_end.strftime('%d %b %Y')}",
-                f"Payment Date: {data.payment_date.strftime('%d %b %Y')}",
-                f"Payslip #: {data.payslip_number}" if data.payslip_number else ""
-            ]
+        # Right side: Period info
+        right_content = [
+            ['Pay Period:', f"{data.period_start.strftime('%d %B %Y')} - {data.period_end.strftime('%d %B %Y')}"],
+            ['Payment Date:', data.payment_date.strftime('%d %B %Y')],
         ]
 
-        period_table = Table(period_data, colWidths=[2.8*inch, 2.4*inch, 2.3*inch])
-        period_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, -1), self.PRIMARY_COLOR),
-            ('TEXTCOLOR', (0, 0), (-1, -1), colors.white),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 9),
-            ('TOPPADDING', (0, 0), (-1, -1), 8),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        left_table = Table(left_content, colWidths=[3.5*inch])
+        left_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('TOPPADDING', (0, 0), (-1, -1), 1),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
         ]))
-        elements.append(period_table)
-        elements.append(Spacer(1, 0.15*inch))
+
+        right_table = Table(right_content, colWidths=[1.2*inch, 2.3*inch])
+        right_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+            ('ALIGN', (1, 0), (1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica'),
+            ('FONTNAME', (1, 0), (1, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('TEXTCOLOR', (0, 0), (0, -1), self.MUTED_TEXT),
+            ('TEXTCOLOR', (1, 0), (1, -1), self.TEXT_COLOR),
+            ('TOPPADDING', (0, 0), (-1, -1), 2),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+        ]))
+
+        # Combine company and period info
+        info_data = [[left_table, right_table]]
+        info_table = Table(info_data, colWidths=[4*inch, 3.5*inch])
+        info_table.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ]))
+
+        elements.append(info_table)
+        elements.append(Spacer(1, 0.1*inch))
+
+        # Divider line
+        elements.append(HRFlowable(width="100%", thickness=1, color=self.BORDER_COLOR, spaceAfter=8))
 
         return elements
 
     def _create_employee_section(self, data: PayslipData) -> List:
-        """Create employee details section."""
+        """Create professional employee details section - clean grid layout."""
         elements = []
 
-        elements.append(Paragraph("EMPLOYEE DETAILS", self.section_header_style))
+        # Section header
+        elements.append(Paragraph("EMPLOYEE INFORMATION", ParagraphStyle(
+            'EmpHeader',
+            fontSize=9,
+            fontName='Helvetica-Bold',
+            textColor=self.PRIMARY_COLOR,
+            spaceBefore=4,
+            spaceAfter=6
+        )))
 
-        # Two-column layout for employee info
         emp = data.employee
 
-        left_column = [
-            ['Name:', f"{emp.first_name} {emp.last_name}"],
-            ['ID Number:', self._mask_id_number(emp.id_number)],
-            ['Tax Number:', emp.tax_number or 'Not Provided'],
-            ['Department:', emp.department],
+        # Create a clean 4-column grid for employee info
+        emp_data = [
+            # Row 1
+            [
+                Paragraph('Employee Name', ParagraphStyle('lbl', fontSize=7, textColor=self.MUTED_TEXT)),
+                Paragraph(f"{emp.first_name} {emp.last_name}", ParagraphStyle('val', fontSize=9, fontName='Helvetica-Bold', textColor=self.TEXT_COLOR)),
+                Paragraph('Employee Number', ParagraphStyle('lbl', fontSize=7, textColor=self.MUTED_TEXT)),
+                Paragraph(emp.employee_number, ParagraphStyle('val', fontSize=9, fontName='Helvetica-Bold', textColor=self.TEXT_COLOR)),
+            ],
+            # Row 2
+            [
+                Paragraph('ID Number', ParagraphStyle('lbl', fontSize=7, textColor=self.MUTED_TEXT)),
+                Paragraph(self._mask_id_number(emp.id_number), ParagraphStyle('val', fontSize=9, fontName='Helvetica-Bold', textColor=self.TEXT_COLOR)),
+                Paragraph('Tax Reference', ParagraphStyle('lbl', fontSize=7, textColor=self.MUTED_TEXT)),
+                Paragraph(emp.tax_number or '-', ParagraphStyle('val', fontSize=9, fontName='Helvetica-Bold', textColor=self.TEXT_COLOR)),
+            ],
+            # Row 3
+            [
+                Paragraph('Position', ParagraphStyle('lbl', fontSize=7, textColor=self.MUTED_TEXT)),
+                Paragraph(emp.position, ParagraphStyle('val', fontSize=9, fontName='Helvetica-Bold', textColor=self.TEXT_COLOR)),
+                Paragraph('Department', ParagraphStyle('lbl', fontSize=7, textColor=self.MUTED_TEXT)),
+                Paragraph(emp.department, ParagraphStyle('val', fontSize=9, fontName='Helvetica-Bold', textColor=self.TEXT_COLOR)),
+            ],
+            # Row 4 - PSIRA details
+            [
+                Paragraph('PSIRA Number', ParagraphStyle('lbl', fontSize=7, textColor=self.MUTED_TEXT)),
+                Paragraph(emp.psira_number or '-', ParagraphStyle('val', fontSize=9, fontName='Helvetica-Bold', textColor=self.TEXT_COLOR)),
+                Paragraph('PSIRA Grade', ParagraphStyle('lbl', fontSize=7, textColor=self.MUTED_TEXT)),
+                Paragraph(emp.psira_grade or '-', ParagraphStyle('val', fontSize=9, fontName='Helvetica-Bold', textColor=self.TEXT_COLOR)),
+            ],
         ]
 
-        right_column = [
-            ['Employee #:', emp.employee_number],
-            ['PSIRA #:', emp.psira_number or 'N/A'],
-            ['PSIRA Grade:', emp.psira_grade or 'N/A'],
-            ['Position:', emp.position],
-        ]
-
-        # Create individual tables
-        left_table = Table(left_column, colWidths=[1.2*inch, 2.3*inch])
-        right_table = Table(right_column, colWidths=[1.2*inch, 2.3*inch])
-
-        cell_style = TableStyle([
-            ('FONTNAME', (0, 0), (0, -1), 'Helvetica'),
-            ('FONTNAME', (1, 0), (1, -1), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 8),
-            ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#6B7280')),
-            ('TEXTCOLOR', (1, 0), (1, -1), self.TEXT_COLOR),
-            ('ALIGN', (0, 0), (0, -1), 'LEFT'),
-            ('ALIGN', (1, 0), (1, -1), 'LEFT'),
-            ('TOPPADDING', (0, 0), (-1, -1), 3),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-        ])
-
-        left_table.setStyle(cell_style)
-        right_table.setStyle(cell_style)
-
-        # Combine into main table
-        main_data = [[left_table, right_table]]
-        main_table = Table(main_data, colWidths=[3.75*inch, 3.75*inch])
-        main_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, -1), self.LIGHT_BG),
-            ('BOX', (0, 0), (-1, -1), 0.5, self.BORDER_COLOR),
+        emp_table = Table(emp_data, colWidths=[1.4*inch, 2.35*inch, 1.4*inch, 2.35*inch])
+        emp_table.setStyle(TableStyle([
+            # Alternating row background
+            ('BACKGROUND', (0, 0), (-1, 0), self.LIGHT_BG),
+            ('BACKGROUND', (0, 2), (-1, 2), self.LIGHT_BG),
+            # Grid
+            ('GRID', (0, 0), (-1, -1), 0.5, self.BORDER_COLOR),
+            # Padding
             ('TOPPADDING', (0, 0), (-1, -1), 6),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
             ('LEFTPADDING', (0, 0), (-1, -1), 8),
             ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+            # Vertical alignment
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ]))
 
-        elements.append(main_table)
-        elements.append(Spacer(1, 0.1*inch))
+        elements.append(emp_table)
+        elements.append(Spacer(1, 0.12*inch))
 
         return elements
 
     def _create_earnings_deductions_section(self, data: PayslipData) -> List:
-        """Create side-by-side earnings and deductions tables."""
+        """Create professional earnings and deductions tables - Sage-inspired."""
         elements = []
 
         earn = data.earnings
         ded = data.deductions
 
-        # Earnings data
+        # Earnings data - clean format
         earnings_rows = [
-            ['EARNINGS', 'Hours', 'Rate', 'Amount'],
+            ['Description', 'Hours', 'Rate', 'Amount'],
         ]
 
         # Basic salary
         if earn.basic_salary > 0:
             earnings_rows.append([
                 'Basic Salary',
-                f"{earn.normal_hours:.1f}",
-                self._format_currency(earn.hourly_rate),
+                f"{earn.normal_hours:.1f}" if earn.normal_hours > 0 else '-',
+                self._format_currency(earn.hourly_rate) if earn.hourly_rate > 0 else '-',
                 self._format_currency(earn.basic_salary)
             ])
 
         # Overtime
         if earn.overtime_pay > 0:
             earnings_rows.append([
-                'Overtime (1.5x)',
+                'Overtime @ 1.5x',
                 f"{earn.overtime_hours:.1f}",
                 self._format_currency(earn.hourly_rate * 1.5),
                 self._format_currency(earn.overtime_pay)
@@ -462,159 +518,164 @@ class PayslipPDFGenerator:
 
         # Night shift allowance
         if earn.night_shift_allowance > 0:
-            earnings_rows.append([
-                'Night Shift Allowance',
-                '', '',
-                self._format_currency(earn.night_shift_allowance)
-            ])
+            earnings_rows.append(['Night Shift Allowance', '-', '-', self._format_currency(earn.night_shift_allowance)])
 
         # Sunday premium
         if earn.sunday_premium > 0:
-            earnings_rows.append([
-                'Sunday Premium (1.5x)',
-                f"{earn.sunday_hours:.1f}",
-                '',
-                self._format_currency(earn.sunday_premium)
-            ])
+            earnings_rows.append(['Sunday Premium @ 1.5x', f"{earn.sunday_hours:.1f}", '-', self._format_currency(earn.sunday_premium)])
 
         # Holiday premium
         if earn.holiday_premium > 0:
-            earnings_rows.append([
-                'Holiday Premium (2x)',
-                f"{earn.holiday_hours:.1f}",
-                '',
-                self._format_currency(earn.holiday_premium)
-            ])
+            earnings_rows.append(['Public Holiday @ 2x', f"{earn.holiday_hours:.1f}", '-', self._format_currency(earn.holiday_premium)])
 
         # Allowances
         if earn.supervisor_allowance > 0:
-            earnings_rows.append(['Supervisor Allowance', '', '', self._format_currency(earn.supervisor_allowance)])
+            earnings_rows.append(['Supervisor Allowance', '-', '-', self._format_currency(earn.supervisor_allowance)])
         if earn.travel_allowance > 0:
-            earnings_rows.append(['Travel Allowance', '', '', self._format_currency(earn.travel_allowance)])
+            earnings_rows.append(['Travel Allowance', '-', '-', self._format_currency(earn.travel_allowance)])
         if earn.gun_allowance > 0:
-            earnings_rows.append(['Gun Allowance', '', '', self._format_currency(earn.gun_allowance)])
+            earnings_rows.append(['Firearm Allowance', '-', '-', self._format_currency(earn.gun_allowance)])
         if earn.cleaning_allowance > 0:
-            earnings_rows.append(['Cleaning Allowance', '', '', self._format_currency(earn.cleaning_allowance)])
+            earnings_rows.append(['Cleaning Allowance', '-', '-', self._format_currency(earn.cleaning_allowance)])
         if earn.funeral_cover > 0:
-            earnings_rows.append(['Funeral Cover', '', '', self._format_currency(earn.funeral_cover)])
+            earnings_rows.append(['Funeral Benefit', '-', '-', self._format_currency(earn.funeral_cover)])
         if earn.bonus > 0:
-            earnings_rows.append(['Bonus', '', '', self._format_currency(earn.bonus)])
+            earnings_rows.append(['Bonus', '-', '-', self._format_currency(earn.bonus)])
         if earn.sick_pay > 0:
-            earnings_rows.append(['Sick Pay', '', '', self._format_currency(earn.sick_pay)])
+            earnings_rows.append(['Sick Leave Pay', '-', '-', self._format_currency(earn.sick_pay)])
 
-        # Gross total
-        earnings_rows.append(['', '', '', ''])  # Spacer row
-        earnings_rows.append(['GROSS SALARY', '', '', self._format_currency(earn.gross_salary)])
+        # Gross total row
+        earnings_rows.append(['GROSS PAY', '', '', self._format_currency(earn.gross_salary)])
 
         # Deductions data
         deductions_rows = [
-            ['DEDUCTIONS', '', 'Amount'],
+            ['Description', 'Amount'],
         ]
 
         if ded.paye > 0:
-            deductions_rows.append(['PAYE (Tax)', '', self._format_currency(ded.paye)])
+            deductions_rows.append(['PAYE (Income Tax)', self._format_currency(ded.paye)])
         if ded.uif > 0:
-            deductions_rows.append(['UIF (1%)', '', self._format_currency(ded.uif)])
+            deductions_rows.append(['UIF Contribution', self._format_currency(ded.uif)])
         if ded.psira_levy > 0:
-            deductions_rows.append(['PSIRA Levy', '', self._format_currency(ded.psira_levy)])
+            deductions_rows.append(['PSIRA Levy', self._format_currency(ded.psira_levy)])
         if ded.bargaining_council > 0:
-            deductions_rows.append(['Bargaining Council', '', self._format_currency(ded.bargaining_council)])
+            deductions_rows.append(['Bargaining Council', self._format_currency(ded.bargaining_council)])
         if ded.provident_fund > 0:
-            deductions_rows.append(['Provident Fund', '', self._format_currency(ded.provident_fund)])
+            deductions_rows.append(['Provident Fund', self._format_currency(ded.provident_fund)])
         if ded.hospital_cover > 0:
-            deductions_rows.append(['Hospital Cover', '', self._format_currency(ded.hospital_cover)])
+            deductions_rows.append(['Medical Aid', self._format_currency(ded.hospital_cover)])
         if ded.nucaaw_fee > 0:
-            deductions_rows.append(['NUCAAW Fee', '', self._format_currency(ded.nucaaw_fee)])
+            deductions_rows.append(['Union Fee (NUCAAW)', self._format_currency(ded.nucaaw_fee)])
         if ded.defect_deduction > 0:
-            deductions_rows.append(['Defect Deduction', '', self._format_currency(ded.defect_deduction)])
+            deductions_rows.append(['Equipment Deduction', self._format_currency(ded.defect_deduction)])
         if ded.other_deductions > 0:
-            deductions_rows.append(['Other Deductions', '', self._format_currency(ded.other_deductions)])
+            deductions_rows.append(['Other Deductions', self._format_currency(ded.other_deductions)])
 
-        # Total deductions
-        deductions_rows.append(['', '', ''])  # Spacer row
-        deductions_rows.append(['TOTAL DEDUCTIONS', '', self._format_currency(ded.total_deductions)])
+        # Total deductions row
+        deductions_rows.append(['TOTAL DEDUCTIONS', self._format_currency(ded.total_deductions)])
 
-        # Create earnings table
-        earnings_table = Table(
-            earnings_rows,
-            colWidths=[1.8*inch, 0.6*inch, 0.8*inch, 1.0*inch]
-        )
+        # Create earnings table with professional styling
+        earnings_table = Table(earnings_rows, colWidths=[2.0*inch, 0.6*inch, 0.8*inch, 1.0*inch])
         earnings_table.setStyle(TableStyle([
-            # Header row
-            ('BACKGROUND', (0, 0), (-1, 0), self.SECONDARY_COLOR),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            # Header row - subtle gray
+            ('BACKGROUND', (0, 0), (-1, 0), self.TABLE_HEADER_BG),
+            ('TEXTCOLOR', (0, 0), (-1, 0), self.PRIMARY_COLOR),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 9),
-            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('FONTSIZE', (0, 0), (-1, 0), 8),
+            ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+            ('ALIGN', (1, 0), (-1, 0), 'RIGHT'),
             # Data rows
-            ('FONTNAME', (0, 1), (0, -1), 'Helvetica'),
-            ('FONTNAME', (1, 1), (-1, -1), 'Helvetica'),
-            ('FONTSIZE', (0, 1), (-1, -1), 8),
+            ('FONTNAME', (0, 1), (0, -2), 'Helvetica'),
+            ('FONTNAME', (1, 1), (-1, -2), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -2), 8),
             ('ALIGN', (1, 1), (-1, -1), 'RIGHT'),
             ('ALIGN', (0, 1), (0, -1), 'LEFT'),
-            # Gross row styling
-            ('BACKGROUND', (0, -1), (-1, -1), self.LIGHT_BG),
+            ('TEXTCOLOR', (0, 1), (-1, -2), self.TEXT_COLOR),
+            # Gross row - bold with background
+            ('BACKGROUND', (0, -1), (-1, -1), self.TABLE_HEADER_BG),
             ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-            # Grid
-            ('GRID', (0, 0), (-1, -1), 0.5, self.BORDER_COLOR),
-            ('TOPPADDING', (0, 0), (-1, -1), 4),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-            ('LEFTPADDING', (0, 0), (-1, -1), 4),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+            ('TEXTCOLOR', (0, -1), (-1, -1), self.PRIMARY_COLOR),
+            # Grid - minimal
+            ('LINEBELOW', (0, 0), (-1, 0), 1, self.BORDER_COLOR),
+            ('LINEBELOW', (0, -2), (-1, -2), 0.5, self.BORDER_COLOR),
+            ('LINEBELOW', (0, -1), (-1, -1), 1, self.PRIMARY_COLOR),
+            # Padding
+            ('TOPPADDING', (0, 0), (-1, -1), 5),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+            ('LEFTPADDING', (0, 0), (-1, -1), 6),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 6),
         ]))
 
-        # Create deductions table
-        deductions_table = Table(
-            deductions_rows,
-            colWidths=[1.8*inch, 0.6*inch, 1.0*inch]
-        )
+        # Create deductions table with professional styling
+        deductions_table = Table(deductions_rows, colWidths=[2.4*inch, 1.0*inch])
         deductions_table.setStyle(TableStyle([
-            # Header row
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#EF4444')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            # Header row - subtle gray
+            ('BACKGROUND', (0, 0), (-1, 0), self.TABLE_HEADER_BG),
+            ('TEXTCOLOR', (0, 0), (-1, 0), self.DEDUCTIONS_COLOR),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 9),
-            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('FONTSIZE', (0, 0), (-1, 0), 8),
+            ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+            ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
             # Data rows
-            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-            ('FONTSIZE', (0, 1), (-1, -1), 8),
+            ('FONTNAME', (0, 1), (-1, -2), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -2), 8),
             ('ALIGN', (-1, 1), (-1, -1), 'RIGHT'),
             ('ALIGN', (0, 1), (0, -1), 'LEFT'),
-            # Total row styling
-            ('BACKGROUND', (0, -1), (-1, -1), self.LIGHT_BG),
+            ('TEXTCOLOR', (0, 1), (-1, -2), self.TEXT_COLOR),
+            # Total row - bold with background
+            ('BACKGROUND', (0, -1), (-1, -1), self.TABLE_HEADER_BG),
             ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-            # Grid
-            ('GRID', (0, 0), (-1, -1), 0.5, self.BORDER_COLOR),
-            ('TOPPADDING', (0, 0), (-1, -1), 4),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-            ('LEFTPADDING', (0, 0), (-1, -1), 4),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+            ('TEXTCOLOR', (0, -1), (-1, -1), self.DEDUCTIONS_COLOR),
+            # Grid - minimal
+            ('LINEBELOW', (0, 0), (-1, 0), 1, self.BORDER_COLOR),
+            ('LINEBELOW', (0, -2), (-1, -2), 0.5, self.BORDER_COLOR),
+            ('LINEBELOW', (0, -1), (-1, -1), 1, self.DEDUCTIONS_COLOR),
+            # Padding
+            ('TOPPADDING', (0, 0), (-1, -1), 5),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+            ('LEFTPADDING', (0, 0), (-1, -1), 6),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 6),
         ]))
 
-        # Combine side by side
-        combined_data = [[earnings_table, Spacer(0.2*inch, 0), deductions_table]]
-        combined_table = Table(combined_data, colWidths=[4.2*inch, 0.2*inch, 3.4*inch])
+        # Section headers
+        earnings_header = Paragraph("EARNINGS", ParagraphStyle(
+            'EarnHead', fontSize=9, fontName='Helvetica-Bold', textColor=self.PRIMARY_COLOR, spaceAfter=4
+        ))
+        deductions_header = Paragraph("DEDUCTIONS", ParagraphStyle(
+            'DedHead', fontSize=9, fontName='Helvetica-Bold', textColor=self.DEDUCTIONS_COLOR, spaceAfter=4
+        ))
 
-        elements.append(combined_table)
-        elements.append(Spacer(1, 0.15*inch))
+        # Combine in a layout table
+        layout_data = [
+            [earnings_header, '', deductions_header],
+            [earnings_table, '', deductions_table],
+        ]
+        layout_table = Table(layout_data, colWidths=[4.4*inch, 0.2*inch, 3.4*inch])
+        layout_table.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ]))
+
+        elements.append(layout_table)
+        elements.append(Spacer(1, 0.12*inch))
 
         return elements
 
     def _create_net_pay_section(self, data: PayslipData) -> List:
-        """Create prominent net pay display."""
+        """Create prominent net pay display - professional green bar."""
         elements = []
 
+        # Net pay summary bar
         net_pay_data = [
             [
                 Paragraph('NET PAY', ParagraphStyle(
                     'NetPayLabel',
-                    fontSize=12,
+                    fontSize=11,
                     fontName='Helvetica-Bold',
                     textColor=colors.white
                 )),
                 Paragraph(self._format_currency(data.net_salary), ParagraphStyle(
                     'NetPayValue',
-                    fontSize=16,
+                    fontSize=18,
                     fontName='Helvetica-Bold',
                     textColor=colors.white,
                     alignment=TA_RIGHT
@@ -624,46 +685,57 @@ class PayslipPDFGenerator:
 
         net_pay_table = Table(net_pay_data, colWidths=[3*inch, 4.5*inch])
         net_pay_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, -1), self.ACCENT_COLOR),
+            ('BACKGROUND', (0, 0), (-1, -1), self.NET_PAY_BG),
             ('ALIGN', (0, 0), (0, 0), 'LEFT'),
             ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('TOPPADDING', (0, 0), (-1, -1), 12),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+            ('TOPPADDING', (0, 0), (-1, -1), 14),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 14),
             ('LEFTPADDING', (0, 0), (-1, -1), 15),
             ('RIGHTPADDING', (0, 0), (-1, -1), 15),
         ]))
 
         elements.append(net_pay_table)
-        elements.append(Spacer(1, 0.15*inch))
+        elements.append(Spacer(1, 0.12*inch))
 
         return elements
 
     def _create_banking_section(self, data: PayslipData) -> List:
-        """Create banking details section."""
+        """Create professional banking details section."""
         elements = []
 
         emp = data.employee
 
         if emp.bank_name or emp.account_number:
-            elements.append(Paragraph("PAYMENT DETAILS", self.section_header_style))
+            elements.append(Paragraph("PAYMENT METHOD", ParagraphStyle(
+                'BankHeader', fontSize=9, fontName='Helvetica-Bold', textColor=self.PRIMARY_COLOR, spaceAfter=4
+            )))
 
-            banking_data = [[
-                f"Bank: {emp.bank_name or 'N/A'}",
-                f"Account: {self._mask_account_number(emp.account_number) if emp.account_number else 'N/A'}",
-                f"Branch: {emp.branch_code or 'N/A'}",
-                f"Type: {emp.account_type or 'N/A'}"
-            ]]
+            # Create a cleaner banking details table
+            banking_data = [
+                [
+                    Paragraph('Bank', ParagraphStyle('lbl', fontSize=7, textColor=self.MUTED_TEXT)),
+                    Paragraph(emp.bank_name or '-', ParagraphStyle('val', fontSize=8, fontName='Helvetica-Bold', textColor=self.TEXT_COLOR)),
+                    Paragraph('Account Number', ParagraphStyle('lbl', fontSize=7, textColor=self.MUTED_TEXT)),
+                    Paragraph(self._mask_account_number(emp.account_number) if emp.account_number else '-', ParagraphStyle('val', fontSize=8, fontName='Helvetica-Bold', textColor=self.TEXT_COLOR)),
+                ],
+                [
+                    Paragraph('Branch Code', ParagraphStyle('lbl', fontSize=7, textColor=self.MUTED_TEXT)),
+                    Paragraph(emp.branch_code or '-', ParagraphStyle('val', fontSize=8, fontName='Helvetica-Bold', textColor=self.TEXT_COLOR)),
+                    Paragraph('Account Type', ParagraphStyle('lbl', fontSize=7, textColor=self.MUTED_TEXT)),
+                    Paragraph(emp.account_type or '-', ParagraphStyle('val', fontSize=8, fontName='Helvetica-Bold', textColor=self.TEXT_COLOR)),
+                ]
+            ]
 
-            banking_table = Table(banking_data, colWidths=[2*inch, 2*inch, 1.75*inch, 1.75*inch])
+            banking_table = Table(banking_data, colWidths=[1.4*inch, 2.35*inch, 1.4*inch, 2.35*inch])
             banking_table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, -1), self.LIGHT_BG),
-                ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-                ('FONTSIZE', (0, 0), (-1, -1), 8),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('BOX', (0, 0), (-1, -1), 0.5, self.BORDER_COLOR),
-                ('TOPPADDING', (0, 0), (-1, -1), 6),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                ('GRID', (0, 0), (-1, -1), 0.5, self.BORDER_COLOR),
+                ('TOPPADDING', (0, 0), (-1, -1), 5),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+                ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ]))
 
             elements.append(banking_table)
@@ -676,24 +748,38 @@ class PayslipPDFGenerator:
         elements = []
 
         if data.ytd:
-            elements.append(Paragraph("YEAR-TO-DATE SUMMARY", self.section_header_style))
+            elements.append(Paragraph("YEAR-TO-DATE SUMMARY", ParagraphStyle(
+                'YTDHeader', fontSize=9, fontName='Helvetica-Bold', textColor=self.PRIMARY_COLOR, spaceAfter=4
+            )))
 
-            ytd_data = [[
-                f"Gross Earnings: {self._format_currency(data.ytd.gross_earnings)}",
-                f"Total Tax: {self._format_currency(data.ytd.total_tax)}",
-                f"Total UIF: {self._format_currency(data.ytd.total_uif)}",
-                f"Net Earnings: {self._format_currency(data.ytd.net_earnings)}"
-            ]]
+            ytd_data = [
+                ['Gross Earnings', 'Total Tax (PAYE)', 'Total UIF', 'Net Earnings'],
+                [
+                    self._format_currency(data.ytd.gross_earnings),
+                    self._format_currency(data.ytd.total_tax),
+                    self._format_currency(data.ytd.total_uif),
+                    self._format_currency(data.ytd.net_earnings)
+                ]
+            ]
 
-            ytd_table = Table(ytd_data, colWidths=[2*inch, 2*inch, 1.75*inch, 1.75*inch])
+            ytd_table = Table(ytd_data, colWidths=[1.875*inch, 1.875*inch, 1.875*inch, 1.875*inch])
             ytd_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#EEF2FF')),
-                ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-                ('FONTSIZE', (0, 0), (-1, -1), 8),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('BOX', (0, 0), (-1, -1), 0.5, self.BORDER_COLOR),
-                ('TOPPADDING', (0, 0), (-1, -1), 6),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                # Header row
+                ('BACKGROUND', (0, 0), (-1, 0), self.TABLE_HEADER_BG),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica'),
+                ('FONTSIZE', (0, 0), (-1, 0), 7),
+                ('TEXTCOLOR', (0, 0), (-1, 0), self.MUTED_TEXT),
+                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+                # Data row
+                ('FONTNAME', (0, 1), (-1, 1), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 1), (-1, 1), 9),
+                ('TEXTCOLOR', (0, 1), (-1, 1), self.TEXT_COLOR),
+                ('ALIGN', (0, 1), (-1, 1), 'CENTER'),
+                ('BACKGROUND', (0, 1), (-1, 1), self.LIGHT_BG),
+                # Grid
+                ('GRID', (0, 0), (-1, -1), 0.5, self.BORDER_COLOR),
+                ('TOPPADDING', (0, 0), (-1, -1), 5),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
             ]))
 
             elements.append(ytd_table)
@@ -706,24 +792,38 @@ class PayslipPDFGenerator:
         elements = []
 
         if data.leave:
-            elements.append(Paragraph("LEAVE BALANCES", self.section_header_style))
+            elements.append(Paragraph("LEAVE BALANCES", ParagraphStyle(
+                'LeaveHeader', fontSize=9, fontName='Helvetica-Bold', textColor=self.PRIMARY_COLOR, spaceAfter=4
+            )))
 
-            leave_data = [[
-                f"Annual: {data.leave.annual_leave_days:.1f} days",
-                f"Sick: {data.leave.sick_leave_days:.1f} days",
-                f"Family: {data.leave.family_responsibility_days:.1f} days",
-                f"Taken YTD: {data.leave.leave_taken_ytd:.1f} days"
-            ]]
+            leave_data = [
+                ['Annual Leave', 'Sick Leave', 'Family Responsibility', 'Taken (YTD)'],
+                [
+                    f"{data.leave.annual_leave_days:.1f} days",
+                    f"{data.leave.sick_leave_days:.1f} days",
+                    f"{data.leave.family_responsibility_days:.1f} days",
+                    f"{data.leave.leave_taken_ytd:.1f} days"
+                ]
+            ]
 
-            leave_table = Table(leave_data, colWidths=[2*inch, 2*inch, 1.75*inch, 1.75*inch])
+            leave_table = Table(leave_data, colWidths=[1.875*inch, 1.875*inch, 1.875*inch, 1.875*inch])
             leave_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#FEF3C7')),
-                ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-                ('FONTSIZE', (0, 0), (-1, -1), 8),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('BOX', (0, 0), (-1, -1), 0.5, self.BORDER_COLOR),
-                ('TOPPADDING', (0, 0), (-1, -1), 6),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                # Header row
+                ('BACKGROUND', (0, 0), (-1, 0), self.TABLE_HEADER_BG),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica'),
+                ('FONTSIZE', (0, 0), (-1, 0), 7),
+                ('TEXTCOLOR', (0, 0), (-1, 0), self.MUTED_TEXT),
+                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+                # Data row
+                ('FONTNAME', (0, 1), (-1, 1), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 1), (-1, 1), 9),
+                ('TEXTCOLOR', (0, 1), (-1, 1), self.TEXT_COLOR),
+                ('ALIGN', (0, 1), (-1, 1), 'CENTER'),
+                ('BACKGROUND', (0, 1), (-1, 1), self.LIGHT_BG),
+                # Grid
+                ('GRID', (0, 0), (-1, -1), 0.5, self.BORDER_COLOR),
+                ('TOPPADDING', (0, 0), (-1, -1), 5),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
             ]))
 
             elements.append(leave_table)
@@ -732,33 +832,38 @@ class PayslipPDFGenerator:
         return elements
 
     def _create_footer(self, data: PayslipData) -> List:
-        """Create payslip footer."""
+        """Create professional payslip footer."""
         elements = []
 
         elements.append(HRFlowable(
             width="100%",
             thickness=0.5,
             color=self.BORDER_COLOR,
-            spaceBefore=10,
-            spaceAfter=10
+            spaceBefore=12,
+            spaceAfter=8
         ))
 
         footer_text = (
-            f"This is a computer-generated payslip and does not require a signature. | "
-            f"Generated on {datetime.now().strftime('%d %B %Y at %H:%M')} | "
-            f"RostraCore Payroll System | All amounts in South African Rand (ZAR)"
+            f"This is a computer-generated payslip. | "
+            f"Generated: {datetime.now().strftime('%d %B %Y %H:%M')} | "
+            f"All amounts in South African Rand (ZAR)"
         )
 
-        elements.append(Paragraph(footer_text, self.footer_style))
+        elements.append(Paragraph(footer_text, ParagraphStyle(
+            'FooterMain',
+            fontSize=7,
+            textColor=self.MUTED_TEXT,
+            alignment=TA_CENTER
+        )))
 
         # Disclaimer
         disclaimer = (
-            "Please review your payslip carefully. Any queries must be raised within 7 days "
-            "of receipt. For questions, contact your HR department or payroll administrator."
+            "Please review your payslip carefully. Any queries should be raised within 7 days. "
+            "For questions, contact your payroll administrator."
         )
         elements.append(Paragraph(disclaimer, ParagraphStyle(
             'Disclaimer',
-            fontSize=7,
+            fontSize=6,
             textColor=colors.HexColor('#9CA3AF'),
             alignment=TA_CENTER,
             spaceBefore=5
