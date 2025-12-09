@@ -49,17 +49,9 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
 
-  // FALLBACK: Rewrites as safety net (API routes in app/api/v1/[...path] are primary)
-  // Note: Next.js API routes take precedence over rewrites, so these only trigger
-  // if the API route somehow fails to match. Keeping for backward compatibility.
-  async rewrites() {
-    return [
-      {
-        source: '/api/v1/:path*',
-        destination: 'https://rostracore-production.up.railway.app/api/v1/:path*',
-      },
-    ]
-  },
+  // REMOVED: Rewrites were causing issues - API route handler is the only proxy now
+  // The rewrite was taking precedence over the API route for unknown reasons
+  // async rewrites() { ... }
 }
 
 // Inject Sentry config via withSentryConfig if Sentry is enabled
