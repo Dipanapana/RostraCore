@@ -549,3 +549,321 @@ class EmailService:
             html_content=html_content,
             text_content=text_content
         )
+
+    @staticmethod
+    def send_password_reset_email(
+        to: str,
+        reset_token: str,
+        user_name: str
+    ) -> Dict:
+        """
+        Send password reset email to user.
+
+        Args:
+            to: User email address
+            reset_token: Password reset token
+            user_name: User's name
+
+        Returns:
+            Dict with status and message
+        """
+        reset_url = f"{settings.FRONTEND_URL}/reset-password?token={reset_token}"
+        subject = "Reset Your RostraCore Password"
+
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background: linear-gradient(135deg, #0A2463 0%, #071952 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }}
+                .content {{ background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }}
+                .button {{ display: inline-block; padding: 15px 30px; background: linear-gradient(135deg, #3B82F6 0%, #06B6D4 100%); color: white; text-decoration: none; border-radius: 25px; font-weight: bold; margin: 20px 0; }}
+                .warning {{ background: #FEF3C7; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #F59E0B; }}
+                .footer {{ text-align: center; margin-top: 30px; font-size: 12px; color: #666; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>RostraCore</h1>
+                    <p>Password Reset Request</p>
+                </div>
+                <div class="content">
+                    <h2>Hello, {user_name}</h2>
+                    <p>We received a request to reset your password for your RostraCore account.</p>
+                    <p>Click the button below to reset your password:</p>
+                    <div style="text-align: center;">
+                        <a href="{reset_url}" class="button">Reset Password</a>
+                    </div>
+                    <p>Or copy and paste this link into your browser:</p>
+                    <p style="word-break: break-all; color: #3B82F6;">{reset_url}</p>
+                    <div class="warning">
+                        <p style="margin: 0;"><strong>⚠️ Important:</strong></p>
+                        <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                            <li>This link will expire in <strong>1 hour</strong>.</li>
+                            <li>If you didn't request this password reset, please ignore this email.</li>
+                            <li>Your password will not change until you access the link and create a new one.</li>
+                        </ul>
+                    </div>
+                    <p>If you continue to have problems, please contact support at <a href="mailto:hello@rostracore.co.za">hello@rostracore.co.za</a>.</p>
+                </div>
+                <div class="footer">
+                    <p>© 2025 RostraCore (Pty) Ltd. All rights reserved.</p>
+                    <p>Professional workforce management for South African security companies</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        text_content = f"""
+        Hello, {user_name}
+
+        We received a request to reset your password for your RostraCore account.
+
+        Click here to reset your password: {reset_url}
+
+        ⚠️ Important:
+        - This link will expire in 1 hour.
+        - If you didn't request this password reset, please ignore this email.
+        - Your password will not change until you access the link and create a new one.
+
+        If you continue to have problems, please contact support at hello@rostracore.co.za.
+
+        © 2025 RostraCore (Pty) Ltd.
+        """
+
+        return EmailService.send_email(
+            to=to,
+            subject=subject,
+            html_content=html_content,
+            text_content=text_content
+        )
+
+    @staticmethod
+    def send_password_changed_notification(
+        to: str,
+        user_name: str
+    ) -> Dict:
+        """
+        Send notification that password was successfully changed.
+
+        Args:
+            to: User email address
+            user_name: User's name
+
+        Returns:
+            Dict with status and message
+        """
+        subject = "Your RostraCore Password Has Been Changed"
+
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                <div style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 8px;">
+                    <h1>✓ Password Changed</h1>
+                </div>
+                <div style="padding: 30px;">
+                    <h2>Hello, {user_name}</h2>
+                    <p>This email confirms that your RostraCore password has been successfully changed.</p>
+                    <p>If you made this change, no further action is required.</p>
+                    <div style="background: #FEE2E2; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #EF4444;">
+                        <p style="margin: 0;"><strong>🚨 If you didn't make this change:</strong></p>
+                        <p style="margin: 10px 0 0 0;">Please contact us immediately at <a href="mailto:hello@rostracore.co.za">hello@rostracore.co.za</a> to secure your account.</p>
+                    </div>
+                    <p>You can now log in with your new password:</p>
+                    <div style="text-align: center; margin: 20px 0;">
+                        <a href="{settings.FRONTEND_URL}/login" style="display: inline-block; padding: 15px 30px; background: linear-gradient(135deg, #3B82F6 0%, #06B6D4 100%); color: white; text-decoration: none; border-radius: 25px; font-weight: bold;">Login to RostraCore</a>
+                    </div>
+                </div>
+                <div style="text-align: center; padding: 20px; color: #666; font-size: 12px; border-top: 1px solid #E5E7EB;">
+                    <p>© 2025 RostraCore (Pty) Ltd.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        text_content = f"""
+        Hello, {user_name}
+
+        This email confirms that your RostraCore password has been successfully changed.
+
+        If you made this change, no further action is required.
+
+        🚨 If you didn't make this change:
+        Please contact us immediately at hello@rostracore.co.za to secure your account.
+
+        You can now log in with your new password at: {settings.FRONTEND_URL}/login
+
+        © 2025 RostraCore (Pty) Ltd.
+        """
+
+        return EmailService.send_email(
+            to=to,
+            subject=subject,
+            html_content=html_content,
+            text_content=text_content
+        )
+
+    @staticmethod
+    def send_payslip_email(
+        to: str,
+        user_name: str,
+        period_display: str,
+        net_pay: float,
+        payslip_url: str,
+        company_name: str
+    ) -> Dict:
+        """
+        Send payslip notification email to employee.
+
+        Args:
+            to: Employee email address
+            user_name: Employee's name
+            period_display: Pay period display string (e.g., "December 2024")
+            net_pay: Net pay amount
+            payslip_url: URL to download payslip
+            company_name: Employer company name
+
+        Returns:
+            Dict with status and message
+        """
+        subject = f"Your Payslip for {period_display} - {company_name}"
+
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                <div style="background: linear-gradient(135deg, #0A2463 0%, #071952 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+                    <h1>💰 Your Payslip is Ready</h1>
+                    <p>{period_display}</p>
+                </div>
+                <div style="padding: 30px; background: #f9f9f9; border-radius: 0 0 8px 8px;">
+                    <h2>Hello, {user_name}</h2>
+                    <p>Your payslip for <strong>{period_display}</strong> is now available.</p>
+
+                    <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; border: 2px solid #10B981;">
+                        <p style="margin: 0; color: #666;">Net Pay</p>
+                        <h1 style="margin: 10px 0; color: #10B981;">R {{net_pay:,.2f}}</h1>
+                    </div>
+
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="{payslip_url}" style="display: inline-block; padding: 15px 30px; background: linear-gradient(135deg, #3B82F6 0%, #06B6D4 100%); color: white; text-decoration: none; border-radius: 25px; font-weight: bold;">Download Payslip (PDF)</a>
+                    </div>
+
+                    <p style="font-size: 14px; color: #666;">This payslip has been generated by {company_name} through RostraCore.</p>
+                    <p style="font-size: 14px; color: #666;">If you have any questions about your pay, please contact your employer directly.</p>
+                </div>
+                <div style="text-align: center; padding: 20px; color: #666; font-size: 12px;">
+                    <p>Sent via RostraCore on behalf of {company_name}</p>
+                    <p>© 2025 RostraCore (Pty) Ltd.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """.replace("{{net_pay:,.2f}}", f"{net_pay:,.2f}")
+
+        text_content = f"""
+        Your Payslip is Ready - {period_display}
+
+        Hello, {user_name}
+
+        Your payslip for {period_display} is now available.
+
+        Net Pay: R {net_pay:,.2f}
+
+        Download your payslip: {payslip_url}
+
+        This payslip has been generated by {company_name} through RostraCore.
+        If you have any questions about your pay, please contact your employer directly.
+
+        Sent via RostraCore on behalf of {company_name}
+        © 2025 RostraCore (Pty) Ltd.
+        """
+
+        return EmailService.send_email(
+            to=to,
+            subject=subject,
+            html_content=html_content,
+            text_content=text_content
+        )
+
+    @staticmethod
+    def send_roster_published_notification(
+        to_list: List[str],
+        period_start: str,
+        period_end: str,
+        company_name: str,
+        roster_url: str
+    ) -> List[Dict]:
+        """
+        Send roster published notification to employees.
+
+        Args:
+            to_list: List of employee email addresses
+            period_start: Roster start date
+            period_end: Roster end date
+            company_name: Organization name
+            roster_url: URL to view roster
+
+        Returns:
+            List of Dict results for each email
+        """
+        subject = f"New Roster Published: {period_start} - {period_end}"
+        results = []
+
+        for to in to_list:
+            html_content = f"""
+            <!DOCTYPE html>
+            <html>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <div style="background: linear-gradient(135deg, #3B82F6 0%, #06B6D4 100%); color: white; padding: 30px; text-align: center; border-radius: 8px;">
+                        <h1>📅 New Roster Published</h1>
+                        <p>{period_start} to {period_end}</p>
+                    </div>
+                    <div style="padding: 30px;">
+                        <p>A new roster has been published by <strong>{company_name}</strong>.</p>
+                        <p>Please log in to view your schedule for the period <strong>{period_start}</strong> to <strong>{period_end}</strong>.</p>
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="{roster_url}" style="display: inline-block; padding: 15px 30px; background: linear-gradient(135deg, #3B82F6 0%, #06B6D4 100%); color: white; text-decoration: none; border-radius: 25px; font-weight: bold;">View My Schedule</a>
+                        </div>
+                        <p style="font-size: 14px; color: #666;">If you have any questions or conflicts with your schedule, please contact your supervisor.</p>
+                    </div>
+                    <div style="text-align: center; padding: 20px; color: #666; font-size: 12px;">
+                        <p>© 2025 RostraCore (Pty) Ltd.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """
+
+            text_content = f"""
+            New Roster Published - {period_start} to {period_end}
+
+            A new roster has been published by {company_name}.
+
+            Please log in to view your schedule for the period {period_start} to {period_end}.
+
+            View your schedule at: {roster_url}
+
+            If you have any questions or conflicts with your schedule, please contact your supervisor.
+
+            © 2025 RostraCore (Pty) Ltd.
+            """
+
+            result = EmailService.send_email(
+                to=to,
+                subject=subject,
+                html_content=html_content,
+                text_content=text_content
+            )
+            results.append(result)
+
+        return results

@@ -42,24 +42,25 @@ class Settings(BaseSettings):
             return [origin.strip() for origin in v.split(',')]
         return v
 
-    # Rostering Constraints (BCEA Compliance)
-    MAX_HOURS_WEEK: int = 60  # Relaxed from 48 for testing (BCEA: 48)
-    MIN_REST_HOURS: int = 6   # Relaxed from 8 for testing (BCEA: 8)
-    MAX_CONSECUTIVE_DAYS: int = 6  # Maximum consecutive working days (BCEA)
-    MAX_CONSECUTIVE_NIGHTS: int = 3  # Maximum consecutive night shifts (safety & fatigue management)
-    OT_MULTIPLIER: float = 1.5
-    MAX_DISTANCE_KM: float = 100.0  # Relaxed from 50km for testing
+    # Rostering Constraints (BCEA Compliance - Basic Conditions of Employment Act)
+    # BCEA allows: 45 ordinary hours/week, up to 48 with overtime agreement
+    MAX_HOURS_WEEK: int = 48  # BCEA compliant (45 ordinary + 3 overtime allowed)
+    MIN_REST_HOURS: int = 8   # BCEA requires 12h daily rest; 8h is minimum safe period
+    MAX_CONSECUTIVE_DAYS: int = 6  # Maximum consecutive working days (BCEA: at least 1 rest day per week)
+    MAX_CONSECUTIVE_NIGHTS: int = 4  # Maximum consecutive night shifts (safety & fatigue management)
+    OT_MULTIPLIER: float = 1.5  # BCEA overtime rate
+    MAX_DISTANCE_KM: float = 50.0  # Reasonable commute distance for assignment
 
     # Rostering Algorithm Settings
     ROSTER_ALGORITHM: str = "production"  # Options: "production", "milp", "auto"
-    FAIRNESS_WEIGHT: float = 0.15  # Relaxed from 0.2 to prioritize fill rate
+    FAIRNESS_WEIGHT: float = 0.2  # Weight for equitable hours distribution
     MILP_TIME_LIMIT: int = 180  # Maximum solver time in seconds
 
-    # Testing Mode - Relaxed Constraints for Development
-    TESTING_MODE: bool = False  # Set to False for production BCEA-compliant mode
+    # Testing Mode - Set to True to relax constraints for development/testing
+    TESTING_MODE: bool = False  # False = BCEA-compliant production mode
     SKIP_CERTIFICATION_CHECK: bool = False  # Skip PSIRA cert validation for testing
-    SKIP_SKILL_MATCHING: bool = False  # Still match skills but more flexible
-    SKIP_AVAILABILITY_CHECK: bool = False  # Skip availability checks for testing (allows all shifts)
+    SKIP_SKILL_MATCHING: bool = False  # Skip skill matching for testing
+    SKIP_AVAILABILITY_CHECK: bool = False  # Skip availability checks for testing
 
     # Pagination
     DEFAULT_PAGE_SIZE: int = 50

@@ -76,7 +76,8 @@ export const rosterApi = {
   preview: (params?: any) => api.get('/api/v1/roster/preview', { params }),
   confirm: (data: any) => api.post('/api/v1/roster/confirm', data),
   getBudgetSummary: (params?: any) => api.get('/api/v1/roster/budget-summary', { params }),
-  getUnfilledShifts: () => api.get('/api/v1/roster/unfilled-shifts'),
+  getUnfilledShifts: (params?: { start_date?: string; end_date?: string; site_id?: number }) =>
+    api.get('/api/v1/roster/unfilled-shifts', { params }),
   getEmployeeHours: (params?: any) => api.get('/api/v1/roster/employee-hours', { params }),
   getAssignmentDashboard: (params?: { start_date?: string; end_date?: string; client_id?: number }) =>
     api.get('/api/v1/roster/assignment-dashboard', { params }),

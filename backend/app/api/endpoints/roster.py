@@ -758,3 +758,412 @@ async def get_assignment_dashboard(
     dashboard_data["summary"]["fill_rate"] = round(filled / total * 100, 1) if total > 0 else 0
 
     return dashboard_data
+
+
+# ============== SAVED ROSTER MANAGEMENT ==============
+
+@router.post("/save")
+async def save_roster(
+    roster_data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Save a generated roster to the database for future reference.
+
+    This endpoint persists a roster after generation, allowing it to be
+    retrieved, published, or exported later.
+
+    Args:
+        roster_data: Dictionary containing:
+            - name: Human-readable name (e.g., "Week 50 2024 - Cape Town")
+            - start_date: Roster start date
+            - end_date: Roster end date
+            - client_id: Optional client filter
+            - assignments: List of shift assignments
+            - summary: Optimization summary (costs, fill rate, etc.)
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        Saved roster with ID and status
+    """
+    from app.models.roster import Roster
+    from app.models.shift_assignment import ShiftAssignment
+    import uuid
+
+    try:
+        org_id = current_user.org_id
+        if not org_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User must belong to an organization"
+            )
+
+        # Generate unique roster code
+        start_date = datetime.fromisoformat(roster_data.get('start_date', '').replace('Z', '+00:00'))
+        end_date = datetime.fromisoformat(roster_data.get('end_date', '').replace('Z', '+00:00'))
+        week_num = start_date.isocalendar()[1]
+        year = start_date.year
+        unique_suffix = str(uuid.uuid4())[:8].upper()
+        roster_code = f"R{year}-W{week_num}-{unique_suffix}"
+
+        # Extract summary data
+        summary = roster_data.get('summary', {})
+
+        # Create roster record
+        roster = Roster(
+            org_id=org_id,
+            roster_code=roster_code,
+            name=roster_data.get('name', f"Roster {roster_code}"),
+            start_date=start_date,
+            end_date=end_date,
+            client_id=roster_data.get('client_id'),
+            status="draft",
+            total_shifts=summary.get('total_shifts', 0),
+            assigned_shifts=summary.get('assigned_shifts', 0),
+            unassigned_shifts=summary.get('unassigned_shifts', 0),
+            total_cost=summary.get('total_cost', 0.0),
+            regular_pay_cost=summary.get('regular_pay_cost', 0.0),
+            overtime_cost=summary.get('overtime_cost', 0.0),
+            premium_cost=summary.get('premium_cost', 0.0),
+            bcea_compliant=summary.get('bcea_compliant', True),
+            psira_compliant=summary.get('psira_compliant', True),
+            compliance_issues=summary.get('compliance_issues'),
+            solver_status=roster_data.get('solver_status', 'optimal'),
+            algorithm_used=roster_data.get('algorithm_used', 'production_cpsat'),
+            fairness_score=summary.get('fairness_score'),
+            optimization_duration_seconds=roster_data.get('optimization_duration_seconds'),
+            created_by=current_user.user_id,
+            notes=roster_data.get('notes')
+        )
+
+        db.add(roster)
+        db.flush()  # Get roster_id
+
+        # Create shift assignments if provided
+        assignments = roster_data.get('assignments', [])
+        for assignment in assignments:
+            shift_assignment = ShiftAssignment(
+                shift_id=assignment.get('shift_id'),
+                employee_id=assignment.get('employee_id'),
+                roster_id=roster.roster_id,
+                status='pending',  # Will be confirmed when roster is published
+                regular_hours=assignment.get('duration_hours', 0),
+                cost_regular=assignment.get('cost', 0)
+            )
+            db.add(shift_assignment)
+
+        db.commit()
+        db.refresh(roster)
+
+        logger.info(f"Roster saved: {roster_code} with {len(assignments)} assignments")
+
+        return {
+            "success": True,
+            "roster_id": roster.roster_id,
+            "roster_code": roster.roster_code,
+            "name": roster.name,
+            "status": roster.status,
+            "total_shifts": roster.total_shifts,
+            "assigned_shifts": roster.assigned_shifts,
+            "fill_rate": roster.fill_rate
+        }
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error saving roster: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error saving roster: {str(e)}"
+        )
+
+
+@router.get("/saved")
+async def list_saved_rosters(
+    status_filter: Optional[str] = Query(None, description="Filter by status: draft, published, archived"),
+    client_id: Optional[int] = Query(None, description="Filter by client ID"),
+    start_date: Optional[datetime] = Query(None, description="Filter by start date (from)"),
+    end_date: Optional[datetime] = Query(None, description="Filter by end date (to)"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    List all saved rosters for the organization.
+
+    Args:
+        status_filter: Filter by roster status (draft, published, archived)
+        client_id: Filter by specific client
+        start_date: Filter rosters starting from this date
+        end_date: Filter rosters ending before this date
+        skip: Pagination offset
+        limit: Maximum number of results
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        List of saved rosters with summary information
+    """
+    from app.models.roster import Roster
+
+    try:
+        org_id = current_user.org_id
+        if not org_id:
+            return {"rosters": [], "total": 0}
+
+        query = db.query(Roster).filter(Roster.org_id == org_id)
+
+        # Apply filters
+        if status_filter:
+            query = query.filter(Roster.status == status_filter)
+        if client_id:
+            query = query.filter(Roster.client_id == client_id)
+        if start_date:
+            query = query.filter(Roster.start_date >= start_date)
+        if end_date:
+            query = query.filter(Roster.end_date <= end_date)
+
+        # Get total count
+        total = query.count()
+
+        # Apply pagination and ordering
+        rosters = query.order_by(Roster.created_at.desc()).offset(skip).limit(limit).all()
+
+        return {
+            "rosters": [roster.to_dict() for roster in rosters],
+            "total": total,
+            "skip": skip,
+            "limit": limit
+        }
+
+    except Exception as e:
+        logger.error(f"Error listing rosters: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error listing rosters: {str(e)}"
+        )
+
+
+@router.get("/saved/{roster_id}")
+async def get_saved_roster(
+    roster_id: int,
+    include_assignments: bool = Query(True, description="Include shift assignments in response"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get a specific saved roster by ID.
+
+    Args:
+        roster_id: Roster ID
+        include_assignments: Whether to include detailed assignments
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        Roster details with optional assignments
+    """
+    from app.models.roster import Roster
+    from app.models.shift_assignment import ShiftAssignment
+
+    try:
+        org_id = current_user.org_id
+
+        roster = db.query(Roster).filter(
+            Roster.roster_id == roster_id,
+            Roster.org_id == org_id
+        ).first()
+
+        if not roster:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Roster with ID {roster_id} not found"
+            )
+
+        result = roster.to_dict()
+
+        if include_assignments:
+            assignments = db.query(ShiftAssignment).filter(
+                ShiftAssignment.roster_id == roster_id
+            ).all()
+
+            result["assignments"] = [
+                {
+                    "assignment_id": a.assignment_id,
+                    "shift_id": a.shift_id,
+                    "employee_id": a.employee_id,
+                    "status": a.status,
+                    "regular_hours": a.regular_hours,
+                    "overtime_hours": a.overtime_hours,
+                    "cost_regular": a.cost_regular,
+                    "cost_overtime": a.cost_overtime
+                }
+                for a in assignments
+            ]
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting roster: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error getting roster: {str(e)}"
+        )
+
+
+@router.put("/saved/{roster_id}/status")
+async def update_roster_status(
+    roster_id: int,
+    new_status: str = Query(..., description="New status: draft, published, archived"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Update the status of a saved roster.
+
+    Workflow: draft → published → archived
+
+    When publishing:
+    - All pending shift assignments are confirmed
+    - Published timestamp is recorded
+
+    Args:
+        roster_id: Roster ID
+        new_status: New status to set
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        Updated roster status
+    """
+    from app.models.roster import Roster
+    from app.models.shift_assignment import ShiftAssignment
+
+    valid_statuses = ["draft", "published", "archived"]
+    if new_status not in valid_statuses:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid status. Must be one of: {valid_statuses}"
+        )
+
+    try:
+        org_id = current_user.org_id
+
+        roster = db.query(Roster).filter(
+            Roster.roster_id == roster_id,
+            Roster.org_id == org_id
+        ).first()
+
+        if not roster:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Roster with ID {roster_id} not found"
+            )
+
+        old_status = roster.status
+        roster.status = new_status
+
+        # If publishing, confirm all pending assignments
+        if new_status == "published" and old_status != "published":
+            roster.published_at = datetime.utcnow()
+            roster.published_by = current_user.user_id
+
+            # Confirm all pending assignments
+            db.query(ShiftAssignment).filter(
+                ShiftAssignment.roster_id == roster_id,
+                ShiftAssignment.status == 'pending'
+            ).update({'status': 'confirmed'})
+
+            # Invalidate caches
+            CacheInvalidator.invalidate_dashboard(org_id=org_id)
+            CacheInvalidator.invalidate_roster(org_id=org_id)
+            CacheInvalidator.invalidate_shifts(org_id=org_id)
+
+            logger.info(f"Roster {roster_id} published with all assignments confirmed")
+
+        db.commit()
+
+        return {
+            "success": True,
+            "roster_id": roster_id,
+            "old_status": old_status,
+            "new_status": new_status,
+            "published_at": roster.published_at.isoformat() if roster.published_at else None
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error updating roster status: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error updating roster status: {str(e)}"
+        )
+
+
+@router.delete("/saved/{roster_id}")
+async def delete_roster(
+    roster_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Delete a saved roster (only draft rosters can be deleted).
+
+    Published rosters should be archived instead.
+
+    Args:
+        roster_id: Roster ID to delete
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        Success confirmation
+    """
+    from app.models.roster import Roster
+
+    try:
+        org_id = current_user.org_id
+
+        roster = db.query(Roster).filter(
+            Roster.roster_id == roster_id,
+            Roster.org_id == org_id
+        ).first()
+
+        if not roster:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Roster with ID {roster_id} not found"
+            )
+
+        if roster.status == "published":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Published rosters cannot be deleted. Archive them instead."
+            )
+
+        roster_code = roster.roster_code
+        db.delete(roster)  # Cascade will delete assignments
+        db.commit()
+
+        logger.info(f"Roster {roster_code} deleted")
+
+        return {
+            "success": True,
+            "message": f"Roster {roster_code} deleted successfully"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error deleting roster: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error deleting roster: {str(e)}"
+        )

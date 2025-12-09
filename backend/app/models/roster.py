@@ -20,8 +20,12 @@ class Roster(Base):
     org_id = Column(Integer, ForeignKey("organizations.org_id", ondelete="CASCADE"), nullable=False, index=True)
 
     roster_code = Column(String(50), unique=True, nullable=False, index=True)  # e.g., "R2025-11-W1"
+    name = Column(String(200), nullable=True)  # Human-readable name, e.g., "Week 50 2024 - Cape Town"
     start_date = Column(DateTime, nullable=False)
     end_date = Column(DateTime, nullable=False)
+
+    # Optional client filter (null = all clients)
+    client_id = Column(Integer, ForeignKey("clients.client_id", ondelete="SET NULL"), nullable=True, index=True)
 
     # Status tracking
     status = Column(
@@ -74,6 +78,7 @@ class Roster(Base):
 
     # Relationships
     organization = relationship("Organization", back_populates="rosters")
+    client = relationship("Client", backref="rosters")
     shift_assignments = relationship("ShiftAssignment", back_populates="roster", cascade="all, delete-orphan")
     creator = relationship("User", foreign_keys=[created_by])
     publisher = relationship("User", foreign_keys=[published_by])
@@ -100,6 +105,9 @@ class Roster(Base):
         return {
             "roster_id": self.roster_id,
             "roster_code": self.roster_code,
+            "name": self.name,
+            "client_id": self.client_id,
+            "client_name": self.client.client_name if self.client else None,
             "start_date": self.start_date.isoformat() if self.start_date else None,
             "end_date": self.end_date.isoformat() if self.end_date else None,
             "status": self.status,
