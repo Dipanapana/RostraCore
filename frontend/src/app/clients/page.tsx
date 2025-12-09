@@ -1,5 +1,6 @@
 "use client";
 
+// Force bundle rebuild - Dec 8 2025
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
