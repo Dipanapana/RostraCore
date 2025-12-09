@@ -19,6 +19,16 @@ from app.models.certification import Certification
 router = APIRouter()
 
 
+def _get_org_id_or_403(current_user: User) -> int:
+    """Extract org_id from user, raise 403 if not present (multi-tenancy security)."""
+    if not current_user.org_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User has no organization assigned. Please contact administrator."
+        )
+    return current_user.org_id
+
+
 @router.get("/dashboard/data-quality")
 async def get_data_quality_dashboard(
     db: Session = Depends(get_db),
@@ -35,7 +45,7 @@ async def get_data_quality_dashboard(
     - guards_with_expiring_certs: List of guards with certs expiring in 30 days
     - total_guards: Total active guard count
     """
-    org_id = current_user.org_id or 1
+    org_id = _get_org_id_or_403(current_user)
     today = datetime.utcnow().date()
     expiring_threshold = today + timedelta(days=30)
 
@@ -136,7 +146,7 @@ async def get_employees(
     current_user: User = Depends(get_current_user)
 ):
     """Get all employees with optional status filter (filtered by organization)."""
-    org_id = current_user.org_id or 1
+    org_id = _get_org_id_or_403(current_user)
     employees = EmployeeService.get_all(
         db,
         skip=skip,
@@ -154,7 +164,7 @@ async def get_employee(
     current_user: User = Depends(get_current_user)
 ):
     """Get employee by ID (filtered by organization)."""
-    org_id = current_user.org_id or 1
+    org_id = _get_org_id_or_403(current_user)
     employee = EmployeeService.get_by_id(db, employee_id, org_id=org_id)
     if not employee:
         raise HTTPException(
@@ -171,7 +181,7 @@ async def create_employee(
     current_user: User = Depends(get_current_user)
 ):
     """Create new employee (automatically assigned to user's organization)."""
-    org_id = current_user.org_id or 1
+    org_id = _get_org_id_or_403(current_user)
 
     # Check subscription limits (guard limit enforcement)
     from app.models.organization import Organization
@@ -214,7 +224,7 @@ async def update_employee(
     current_user: User = Depends(get_current_user)
 ):
     """Update employee (filtered by organization)."""
-    org_id = current_user.org_id or 1
+    org_id = _get_org_id_or_403(current_user)
     employee = EmployeeService.update(db, employee_id, employee_data, org_id=org_id)
     if not employee:
         raise HTTPException(
@@ -231,7 +241,7 @@ async def delete_employee(
     current_user: User = Depends(get_current_user)
 ):
     """Delete employee (filtered by organization)."""
-    org_id = current_user.org_id or 1
+    org_id = _get_org_id_or_403(current_user)
     success = EmployeeService.delete(db, employee_id, org_id=org_id)
     if not success:
         raise HTTPException(
@@ -269,7 +279,7 @@ async def import_employees_from_excel(
     content = await file.read()
 
     # Import employees
-    org_id = current_user.org_id or 1
+    org_id = _get_org_id_or_403(current_user)
     result = ExcelImportService.import_employees(
         db=db,
         file_content=content,
@@ -411,7 +421,7 @@ async def assign_shift_pattern(
     from app.models.shift_pattern_template import ShiftPatternTemplate
     from app.services.pattern_availability_service import PatternAvailabilityService
 
-    org_id = current_user.org_id or 1
+    org_id = _get_org_id_or_403(current_user)
 
     # Validate rotation group
     if request.rotation_group.upper() not in ['A', 'B', 'C', 'D']:
@@ -500,7 +510,7 @@ async def regenerate_pattern_availability(
     from app.models.shift_pattern_template import ShiftPatternTemplate
     from app.services.pattern_availability_service import PatternAvailabilityService
 
-    org_id = current_user.org_id or 1
+    org_id = _get_org_id_or_403(current_user)
 
     # Get employee
     employee = db.query(Employee).filter(
@@ -575,7 +585,7 @@ async def get_employee_pattern_schedule(
     from app.models.shift_pattern_template import ShiftPatternTemplate
     from app.services.pattern_availability_service import PatternAvailabilityService
 
-    org_id = current_user.org_id or 1
+    org_id = _get_org_id_or_403(current_user)
 
     # Get employee
     employee = db.query(Employee).filter(
@@ -664,7 +674,7 @@ async def remove_pattern_assignment(
     """
     from app.models.availability import Availability
 
-    org_id = current_user.org_id or 1
+    org_id = _get_org_id_or_403(current_user)
 
     # Get employee
     employee = db.query(Employee).filter(

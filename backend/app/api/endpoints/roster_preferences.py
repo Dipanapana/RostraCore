@@ -18,6 +18,16 @@ from pydantic import BaseModel, Field
 router = APIRouter()
 
 
+def _get_org_id_or_403(current_user: User) -> int:
+    """Extract org_id from user, raise 403 if not present (multi-tenancy security)."""
+    if not current_user.org_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User has no organization assigned. Please contact administrator."
+        )
+    return current_user.org_id
+
+
 # === Pydantic Schemas ===
 
 class RosterPreferencesBase(BaseModel):
@@ -149,7 +159,7 @@ async def get_all_preferences(
 
     Optionally filter by scope (organization, client, site, employee).
     """
-    org_id = current_user.org_id or 1
+    org_id = _get_org_id_or_403(current_user)
 
     query = db.query(RosterPreferences).filter(RosterPreferences.org_id == org_id)
 
@@ -167,7 +177,7 @@ async def get_preference(
     current_user: User = Depends(get_current_user)
 ):
     """Get specific preference by ID."""
-    org_id = current_user.org_id or 1
+    org_id = _get_org_id_or_403(current_user)
 
     preference = db.query(RosterPreferences).filter(
         RosterPreferences.preference_id == preference_id,
@@ -198,7 +208,7 @@ async def create_preference(
     - SITE: site_id required
     - EMPLOYEE: employee_id required
     """
-    org_id = current_user.org_id or 1
+    org_id = _get_org_id_or_403(current_user)
 
     # Validate scope-specific requirements
     if preference_data.scope == ConstraintScope.ORGANIZATION:
@@ -266,7 +276,7 @@ async def update_preference(
     current_user: User = Depends(get_current_user)
 ):
     """Update existing preference."""
-    org_id = current_user.org_id or 1
+    org_id = _get_org_id_or_403(current_user)
 
     preference = db.query(RosterPreferences).filter(
         RosterPreferences.preference_id == preference_id,
@@ -306,7 +316,7 @@ async def delete_preference(
     Deleting a preference causes the system to fall back to the next level
     in the hierarchy (Employee → Site → Client → Org → System).
     """
-    org_id = current_user.org_id or 1
+    org_id = _get_org_id_or_403(current_user)
 
     preference = db.query(RosterPreferences).filter(
         RosterPreferences.preference_id == preference_id,
@@ -346,7 +356,7 @@ async def preview_resolved_constraints(
 
     Useful for debugging and understanding which constraints are active.
     """
-    org_id = current_user.org_id or 1
+    org_id = _get_org_id_or_403(current_user)
 
     resolver = ConstraintResolver(db)
     constraints = resolver.resolve_constraints(
@@ -386,7 +396,7 @@ async def create_emergency_request(
     The system will attempt to find replacements with relaxed constraints.
     """
     from datetime import datetime as dt
-    org_id = current_user.org_id or 1
+    org_id = _get_org_id_or_403(current_user)
 
     # Verify shift exists
     from app.models.shift import Shift
@@ -422,7 +432,7 @@ async def get_emergency_requests(
     current_user: User = Depends(get_current_user)
 ):
     """Get all emergency shift requests for the organization."""
-    org_id = current_user.org_id or 1
+    org_id = _get_org_id_or_403(current_user)
 
     query = db.query(EmergencyShiftRequest).filter(EmergencyShiftRequest.org_id == org_id)
 
@@ -448,7 +458,7 @@ async def resolve_emergency_request(
     Records which constraints were violated to maintain audit trail.
     """
     from datetime import datetime as dt
-    org_id = current_user.org_id or 1
+    org_id = _get_org_id_or_403(current_user)
 
     request = db.query(EmergencyShiftRequest).filter(
         EmergencyShiftRequest.request_id == request_id,

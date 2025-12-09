@@ -34,11 +34,19 @@ def get_dashboard_metrics(
     Returns:
         Dict with all key metrics for dashboard display
     """
-    # Get organization ID from current user
+    # Get organization ID from current user (multi-tenancy security)
     org_id = current_user.org_id
     if not org_id:
-        # Fallback for users without organization (superadmin)
-        org_id = 1
+        # Superadmins without org_id get empty metrics - they should use /admin endpoints
+        # Regular users without org_id should not see any data
+        return {
+            "users": {"total": 0, "active": 0},
+            "employees": {"total": 0, "active": 0, "inactive": 0},
+            "shifts": {"total": 0, "upcoming": 0, "assigned": 0, "unassigned": 0, "this_week": 0, "fill_rate": 0},
+            "sites": {"total": 0},
+            "certifications": {"expiring_soon": 0, "expired": 0},
+            "availability": {"total_records": 0}
+        }
 
     # Check cache first (include org_id in cache key for multi-tenancy)
     cache_key = f"dashboard:metrics:org_{org_id}"
@@ -182,8 +190,10 @@ def get_upcoming_shifts(
     Returns:
         List of upcoming shifts with details
     """
-    # Get organization ID
-    org_id = current_user.org_id or 1
+    # Get organization ID (multi-tenancy security)
+    org_id = current_user.org_id
+    if not org_id:
+        return []  # No org = no data
 
     # Check cache (include org_id)
     cache_key = f"dashboard:upcoming_shifts:org_{org_id}:{limit}"
@@ -250,7 +260,9 @@ def get_expiring_certifications(
     Returns:
         List of expiring certifications
     """
-    org_id = current_user.org_id or 1
+    org_id = current_user.org_id
+    if not org_id:
+        return []  # No org = no data
     expiry_threshold = datetime.now().date() + timedelta(days=days_ahead)
 
     certs = db.query(Certification).join(Employee).filter(
@@ -290,7 +302,9 @@ def get_cost_trends(
     Returns:
         Cost trend data
     """
-    org_id = current_user.org_id or 1
+    org_id = current_user.org_id
+    if not org_id:
+        return {"trend": [], "summary": {"total_cost": 0, "avg_daily_cost": 0, "period_days": days}}
     start_date = datetime.now() - timedelta(days=days)
 
     # Get shifts for sites in this organization
@@ -357,7 +371,9 @@ def get_employee_utilization(
     Returns:
         Employee utilization data
     """
-    org_id = current_user.org_id or 1
+    org_id = current_user.org_id
+    if not org_id:
+        return []  # No org = no data
     start_date = datetime.now() - timedelta(days=days)
 
     # Get all active employees in this organization
@@ -413,7 +429,9 @@ def get_site_coverage(
     Returns:
         Site coverage data
     """
-    org_id = current_user.org_id or 1
+    org_id = current_user.org_id
+    if not org_id:
+        return []  # No org = no data
 
     # Get sites for clients in this organization
     sites = db.query(Site).join(Client).filter(
@@ -473,7 +491,15 @@ def get_weekly_summary(
     Returns:
         Weekly summary data
     """
-    org_id = current_user.org_id or 1
+    org_id = current_user.org_id
+    if not org_id:
+        return {
+            "week_start": None, "week_end": None,
+            "shifts": {"total": 0, "assigned": 0, "unassigned": 0, "fill_rate": 0},
+            "costs": {"total": 0, "avg_per_shift": 0},
+            "hours": {"total": 0, "avg_per_employee": 0},
+            "employees_utilized": 0
+        }
     today = datetime.now()
     start_of_week = today - timedelta(days=today.weekday())
     start_of_week = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)

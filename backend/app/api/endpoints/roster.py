@@ -600,7 +600,13 @@ async def get_assignment_dashboard(
     from app.models.employee import Employee, EmployeeStatus
     from app.models.shift_assignment import ShiftAssignment
 
-    org_id = current_user.org_id or 1
+    # Multi-tenancy security - require valid org_id
+    org_id = current_user.org_id
+    if not org_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User has no organization assigned. Please contact administrator."
+        )
 
     if not start_date:
         start_date = datetime.now()
