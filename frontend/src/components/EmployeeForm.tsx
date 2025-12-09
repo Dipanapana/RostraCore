@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Employee, Client } from '@/types'
+import { Employee, Client, Gender, AccountType } from '@/types'
 import { employeesApi, clientsApi, organizationSettingsApi } from '@/services/api'
 
 interface EmployeeFormProps {
@@ -23,7 +23,24 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
     status: 'active' as 'active' | 'inactive',
     email: '',
     phone: '',
-    assigned_client_ids: [] as number[]
+    assigned_client_ids: [] as number[],
+    // Personal details
+    gender: '' as Gender | '',
+    address: '',
+    province: '',
+    employee_number: '',
+    // Banking details
+    bank_name: '',
+    account_number: '',
+    branch_code: '',
+    account_type: '' as AccountType | '',
+    // Tax details
+    tax_number: '',
+    // PSIRA details
+    psira_number: '',
+    // Emergency contact
+    emergency_contact_name: '',
+    emergency_contact_phone: ''
   })
 
   const [clients, setClients] = useState<Client[]>([])
@@ -91,7 +108,24 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
         status: employee.status,
         email: employee.email || '',
         phone: employee.phone || '',
-        assigned_client_ids: employee.assigned_client_ids || (employee.assigned_client_id ? [employee.assigned_client_id] : [])
+        assigned_client_ids: employee.assigned_client_ids || (employee.assigned_client_id ? [employee.assigned_client_id] : []),
+        // Personal details
+        gender: employee.gender || '',
+        address: employee.address || '',
+        province: employee.province || '',
+        employee_number: employee.employee_number || '',
+        // Banking details
+        bank_name: employee.bank_name || '',
+        account_number: employee.account_number || '',
+        branch_code: employee.branch_code || '',
+        account_type: employee.account_type || '',
+        // Tax details
+        tax_number: employee.tax_number || '',
+        // PSIRA details
+        psira_number: employee.psira_number || '',
+        // Emergency contact
+        emergency_contact_name: employee.emergency_contact_name || '',
+        emergency_contact_phone: employee.emergency_contact_phone || ''
       })
     }
   }, [employee])
@@ -132,7 +166,24 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
         home_location: formData.home_location || undefined,
         email: formData.email || undefined,
         phone: formData.phone || undefined,
-        assigned_client_ids: formData.assigned_client_ids.length > 0 ? formData.assigned_client_ids : undefined
+        assigned_client_ids: formData.assigned_client_ids.length > 0 ? formData.assigned_client_ids : undefined,
+        // Personal details
+        gender: formData.gender || undefined,
+        address: formData.address || undefined,
+        province: formData.province || undefined,
+        employee_number: formData.employee_number || undefined,
+        // Banking details
+        bank_name: formData.bank_name || undefined,
+        account_number: formData.account_number || undefined,
+        branch_code: formData.branch_code || undefined,
+        account_type: formData.account_type || undefined,
+        // Tax details
+        tax_number: formData.tax_number || undefined,
+        // PSIRA details
+        psira_number: formData.psira_number || undefined,
+        // Emergency contact
+        emergency_contact_name: formData.emergency_contact_name || undefined,
+        emergency_contact_phone: formData.emergency_contact_phone || undefined
       }
 
       if (employee) {
@@ -347,6 +398,219 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
                   value={formData.home_location}
                   onChange={handleChange}
                   placeholder="City or GPS coordinates"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Additional Personal Details */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Gender
+                </label>
+                <select
+                  name="gender"
+                  value={formData.gender}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select Gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Employee Number
+                </label>
+                <input
+                  type="text"
+                  name="employee_number"
+                  value={formData.employee_number}
+                  onChange={handleChange}
+                  placeholder="Internal employee number"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Province
+                </label>
+                <select
+                  name="province"
+                  value={formData.province}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select Province</option>
+                  <option value="Gauteng">Gauteng</option>
+                  <option value="Western Cape">Western Cape</option>
+                  <option value="KwaZulu-Natal">KwaZulu-Natal</option>
+                  <option value="Eastern Cape">Eastern Cape</option>
+                  <option value="Free State">Free State</option>
+                  <option value="Mpumalanga">Mpumalanga</option>
+                  <option value="Limpopo">Limpopo</option>
+                  <option value="North West">North West</option>
+                  <option value="Northern Cape">Northern Cape</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  PSIRA Number
+                </label>
+                <input
+                  type="text"
+                  name="psira_number"
+                  value={formData.psira_number}
+                  onChange={handleChange}
+                  placeholder="PSIRA registration number"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Address
+                </label>
+                <input
+                  type="text"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  placeholder="Physical address"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Banking Details Section */}
+              <div className="md:col-span-2 border-t pt-4 mt-2">
+                <h3 className="text-lg font-medium text-gray-900 mb-3">Banking Details (for Payroll)</h3>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Bank Name
+                </label>
+                <select
+                  name="bank_name"
+                  value={formData.bank_name}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select Bank</option>
+                  <option value="ABSA">ABSA</option>
+                  <option value="FNB">FNB (First National Bank)</option>
+                  <option value="Standard Bank">Standard Bank</option>
+                  <option value="Nedbank">Nedbank</option>
+                  <option value="Capitec">Capitec</option>
+                  <option value="African Bank">African Bank</option>
+                  <option value="TymeBank">TymeBank</option>
+                  <option value="Discovery Bank">Discovery Bank</option>
+                  <option value="Investec">Investec</option>
+                  <option value="Old Mutual">Old Mutual</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Account Type
+                </label>
+                <select
+                  name="account_type"
+                  value={formData.account_type}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select Account Type</option>
+                  <option value="savings">Savings</option>
+                  <option value="cheque">Cheque</option>
+                  <option value="current">Current</option>
+                  <option value="transmission">Transmission</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Account Number
+                </label>
+                <input
+                  type="text"
+                  name="account_number"
+                  value={formData.account_number}
+                  onChange={handleChange}
+                  placeholder="Bank account number"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Branch Code
+                </label>
+                <input
+                  type="text"
+                  name="branch_code"
+                  value={formData.branch_code}
+                  onChange={handleChange}
+                  placeholder="6-digit branch code"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Tax Details Section */}
+              <div className="md:col-span-2 border-t pt-4 mt-2">
+                <h3 className="text-lg font-medium text-gray-900 mb-3">Tax Details</h3>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tax Number
+                </label>
+                <input
+                  type="text"
+                  name="tax_number"
+                  value={formData.tax_number}
+                  onChange={handleChange}
+                  placeholder="SARS tax reference number"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div></div> {/* Spacer for grid alignment */}
+
+              {/* Emergency Contact Section */}
+              <div className="md:col-span-2 border-t pt-4 mt-2">
+                <h3 className="text-lg font-medium text-gray-900 mb-3">Emergency Contact</h3>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Contact Name
+                </label>
+                <input
+                  type="text"
+                  name="emergency_contact_name"
+                  value={formData.emergency_contact_name}
+                  onChange={handleChange}
+                  placeholder="Emergency contact name"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Contact Phone
+                </label>
+                <input
+                  type="tel"
+                  name="emergency_contact_phone"
+                  value={formData.emergency_contact_phone}
+                  onChange={handleChange}
+                  placeholder="+27 123 456 789"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>

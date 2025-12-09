@@ -1,3 +1,6 @@
+export type Gender = 'male' | 'female' | 'other'
+export type AccountType = 'savings' | 'cheque' | 'current' | 'transmission'
+
 export interface Employee {
   employee_id: number
   first_name: string
@@ -13,6 +16,33 @@ export interface Employee {
   phone?: string
   assigned_client_id?: number  // Legacy single client
   assigned_client_ids?: number[]  // Multiple client assignment
+
+  // Personal details
+  gender?: Gender
+  address?: string
+  province?: string
+  employee_number?: string  // Internal employee number for payroll
+
+  // Banking details for payroll
+  bank_name?: string
+  account_number?: string
+  branch_code?: string
+  account_type?: AccountType
+
+  // Tax details
+  tax_number?: string
+
+  // PSIRA details
+  psira_number?: string
+  psira_grade?: string
+  psira_expiry_date?: string
+
+  // Emergency contact
+  emergency_contact_name?: string
+  emergency_contact_phone?: string
+
+  // Flags
+  is_supervisor?: boolean
 }
 
 export interface Site {
