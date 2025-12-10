@@ -216,6 +216,38 @@ class ShiftAssignmentResponse(ShiftAssignmentBase):
         from_attributes = True
 
 
+# Bulk Shift Generation Schemas
+class ShiftTemplateInput(BaseModel):
+    """A single shift template for bulk generation."""
+    day_of_week: int  # 0=Monday, 6=Sunday
+    start_time: time  # e.g., "06:00"
+    end_time: time  # e.g., "18:00"
+    required_staff: int = 1
+    required_skill: Optional[str] = None
+
+
+class BulkShiftGenerateRequest(BaseModel):
+    """Request body for bulk shift generation."""
+    site_ids: List[int]  # Sites to generate shifts for
+    start_date: date  # Start of date range
+    end_date: date  # End of date range (inclusive)
+    pattern: str = "weekly"  # "weekly", "bi-weekly", "custom"
+    shift_templates: Optional[List[ShiftTemplateInput]] = None  # Custom templates
+    use_site_templates: bool = False  # Use existing ShiftTemplate records from DB
+    default_required_staff: int = 1  # Fallback if not specified
+    default_required_skill: Optional[str] = None
+
+
+class BulkShiftGenerateResponse(BaseModel):
+    """Response for bulk shift generation."""
+    success: bool
+    shifts_created: int
+    sites_processed: int
+    date_range: str
+    details: List[dict]  # Per-site breakdown
+    errors: List[str] = []
+
+
 # Availability Schemas
 class AvailabilityBase(BaseModel):
     employee_id: int

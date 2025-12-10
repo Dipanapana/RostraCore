@@ -2,13 +2,24 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { shiftsApi, sitesApi, employeesApi } from '@/services/api'
+import api from '@/services/api'
+import { getApiUrl } from '@/lib/config'
 import { Shift, Site, Employee } from '@/types'
 import ShiftForm from '@/components/ShiftForm'
 import ExportButtons from '@/components/ExportButtons'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import DataTable, { Column } from '@/components/ui/DataTable'
 import Modal from '@/components/ui/Modal'
-import { Plus, Pencil, Trash2, Calendar, Clock, MapPin, User, Filter, X } from 'lucide-react'
+import { Plus, Pencil, Trash2, Calendar, Clock, MapPin, User, Filter, X, Wand2, CheckSquare, Loader2 } from 'lucide-react'
+
+// Shift template type for bulk generation
+interface ShiftTemplate {
+  day_of_week: number
+  start_time: string
+  end_time: string
+  required_staff: number
+  required_skill?: string
+}
 
 export default function ShiftsPage() {
   const [shifts, setShifts] = useState<Shift[]>([])
@@ -18,6 +29,18 @@ export default function ShiftsPage() {
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [editingShift, setEditingShift] = useState<Shift | null>(null)
+
+  // Bulk Generation State
+  const [showBulkGenerate, setShowBulkGenerate] = useState(false)
+  const [bulkLoading, setBulkLoading] = useState(false)
+  const [bulkResult, setBulkResult] = useState<any>(null)
+  const [selectedSites, setSelectedSites] = useState<number[]>([])
+  const [bulkStartDate, setBulkStartDate] = useState('')
+  const [bulkEndDate, setBulkEndDate] = useState('')
+  const [shiftTemplates, setShiftTemplates] = useState<ShiftTemplate[]>([
+    { day_of_week: 0, start_time: '06:00', end_time: '18:00', required_staff: 1 },
+    { day_of_week: 0, start_time: '18:00', end_time: '06:00', required_staff: 1 },
+  ])
 
   // Filters
   const [filterSite, setFilterSite] = useState('')
@@ -72,6 +95,83 @@ export default function ShiftsPage() {
     fetchData()
     handleCloseForm()
   }
+
+  // Bulk Generation Functions
+  const handleBulkGenerate = async () => {
+    if (selectedSites.length === 0) {
+      alert('Please select at least one site')
+      return
+    }
+    if (!bulkStartDate || !bulkEndDate) {
+      alert('Please select start and end dates')
+      return
+    }
+    if (shiftTemplates.length === 0) {
+      alert('Please add at least one shift template')
+      return
+    }
+
+    setBulkLoading(true)
+    setBulkResult(null)
+
+    try {
+      const response = await api.post(`${getApiUrl()}/api/v1/shifts/bulk-generate`, {
+        site_ids: selectedSites,
+        start_date: bulkStartDate,
+        end_date: bulkEndDate,
+        pattern: 'weekly',
+        shift_templates: shiftTemplates,
+        default_required_staff: 1
+      })
+
+      setBulkResult(response.data)
+      if (response.data.success) {
+        fetchData() // Refresh shifts list
+      }
+    } catch (err: any) {
+      setBulkResult({
+        success: false,
+        errors: [err.response?.data?.detail || err.message || 'Failed to generate shifts']
+      })
+    } finally {
+      setBulkLoading(false)
+    }
+  }
+
+  const addShiftTemplate = () => {
+    setShiftTemplates([
+      ...shiftTemplates,
+      { day_of_week: 0, start_time: '06:00', end_time: '18:00', required_staff: 1 }
+    ])
+  }
+
+  const removeShiftTemplate = (index: number) => {
+    setShiftTemplates(shiftTemplates.filter((_, i) => i !== index))
+  }
+
+  const updateShiftTemplate = (index: number, field: keyof ShiftTemplate, value: any) => {
+    const updated = [...shiftTemplates]
+    updated[index] = { ...updated[index], [field]: value }
+    setShiftTemplates(updated)
+  }
+
+  const toggleSiteSelection = (siteId: number) => {
+    setSelectedSites(prev =>
+      prev.includes(siteId)
+        ? prev.filter(id => id !== siteId)
+        : [...prev, siteId]
+    )
+  }
+
+  const selectAllSites = () => {
+    setSelectedSites(sites.map(s => s.site_id))
+  }
+
+  const deselectAllSites = () => {
+    setSelectedSites([])
+  }
+
+  const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
   // Get site name by ID
   const getSiteName = (siteId: number) => {
@@ -188,6 +288,13 @@ export default function ShiftsPage() {
           </div>
           <div className="flex items-center gap-3">
             <ExportButtons type="shifts" />
+            <button
+              onClick={() => setShowBulkGenerate(true)}
+              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-purple-500/20 transition-all hover:scale-105 active:scale-95"
+            >
+              <Wand2 className="w-5 h-5" />
+              Bulk Generate
+            </button>
             <button
               onClick={() => setShowForm(true)}
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95"
@@ -332,6 +439,285 @@ export default function ShiftsPage() {
             onClose={handleCloseForm}
             onSuccess={handleFormSuccess}
           />
+        </Modal>
+
+        {/* Bulk Generate Modal */}
+        <Modal
+          isOpen={showBulkGenerate}
+          onClose={() => {
+            setShowBulkGenerate(false)
+            setBulkResult(null)
+          }}
+          title="Bulk Generate Shifts"
+          maxWidth="4xl"
+        >
+          <div className="space-y-6">
+            {/* Success/Error Result */}
+            {bulkResult && (
+              <div className={`p-4 rounded-lg ${bulkResult.success ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800' : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'}`}>
+                <h4 className={`font-medium ${bulkResult.success ? 'text-emerald-800 dark:text-emerald-400' : 'text-red-800 dark:text-red-400'}`}>
+                  {bulkResult.success ? '✓ Shifts Generated Successfully' : '✗ Generation Failed'}
+                </h4>
+                {bulkResult.success && (
+                  <div className="mt-2 text-sm text-emerald-700 dark:text-emerald-300">
+                    <p>Created {bulkResult.shifts_created} shifts across {bulkResult.sites_processed} sites</p>
+                    <p className="text-xs mt-1">{bulkResult.date_range}</p>
+                    {bulkResult.details?.map((d: any, i: number) => (
+                      <p key={i} className="text-xs">• {d.site_name}: {d.shifts_created} shifts</p>
+                    ))}
+                  </div>
+                )}
+                {bulkResult.errors?.length > 0 && (
+                  <div className="mt-2 text-sm text-red-700 dark:text-red-300 max-h-32 overflow-y-auto">
+                    {bulkResult.errors.slice(0, 10).map((err: string, i: number) => (
+                      <p key={i} className="text-xs">• {err}</p>
+                    ))}
+                    {bulkResult.errors.length > 10 && (
+                      <p className="text-xs">...and {bulkResult.errors.length - 10} more</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Site Selection */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Select Sites ({selectedSites.length} selected)
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={selectAllSites}
+                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    Select All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={deselectAllSites}
+                    className="text-xs text-slate-500 dark:text-slate-400 hover:underline"
+                  >
+                    Deselect All
+                  </button>
+                </div>
+              </div>
+              <div className="max-h-40 overflow-y-auto border border-slate-200 dark:border-white/10 rounded-lg p-2 space-y-1">
+                {sites.length === 0 ? (
+                  <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-2">No sites available</p>
+                ) : (
+                  sites.map(site => (
+                    <label
+                      key={site.site_id}
+                      className={`flex items-center gap-2 p-2 rounded cursor-pointer transition-colors ${
+                        selectedSites.includes(site.site_id)
+                          ? 'bg-blue-50 dark:bg-blue-900/20'
+                          : 'hover:bg-slate-50 dark:hover:bg-white/5'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedSites.includes(site.site_id)}
+                        onChange={() => toggleSiteSelection(site.site_id)}
+                        className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-slate-700 dark:text-slate-300">
+                        {site.site_name || site.client_name}
+                      </span>
+                    </label>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Date Range */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  value={bulkStartDate}
+                  onChange={(e) => setBulkStartDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  End Date
+                </label>
+                <input
+                  type="date"
+                  value={bulkEndDate}
+                  onChange={(e) => setBulkEndDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                />
+              </div>
+            </div>
+
+            {/* Quick Date Range Buttons */}
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const today = new Date()
+                  const startOfWeek = new Date(today)
+                  startOfWeek.setDate(today.getDate() - today.getDay() + 1) // Monday
+                  const endOfWeek = new Date(startOfWeek)
+                  endOfWeek.setDate(startOfWeek.getDate() + 6)
+                  setBulkStartDate(startOfWeek.toISOString().split('T')[0])
+                  setBulkEndDate(endOfWeek.toISOString().split('T')[0])
+                }}
+                className="px-3 py-1 text-xs bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 rounded-full"
+              >
+                This Week
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const today = new Date()
+                  const startOfWeek = new Date(today)
+                  startOfWeek.setDate(today.getDate() - today.getDay() + 8) // Next Monday
+                  const endOfWeek = new Date(startOfWeek)
+                  endOfWeek.setDate(startOfWeek.getDate() + 6)
+                  setBulkStartDate(startOfWeek.toISOString().split('T')[0])
+                  setBulkEndDate(endOfWeek.toISOString().split('T')[0])
+                }}
+                className="px-3 py-1 text-xs bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 rounded-full"
+              >
+                Next Week
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const today = new Date()
+                  const startOfWeek = new Date(today)
+                  startOfWeek.setDate(today.getDate() - today.getDay() + 1) // Monday
+                  const endOfBiWeek = new Date(startOfWeek)
+                  endOfBiWeek.setDate(startOfWeek.getDate() + 13)
+                  setBulkStartDate(startOfWeek.toISOString().split('T')[0])
+                  setBulkEndDate(endOfBiWeek.toISOString().split('T')[0])
+                }}
+                className="px-3 py-1 text-xs bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 rounded-full"
+              >
+                2 Weeks
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const today = new Date()
+                  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+                  const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+                  setBulkStartDate(startOfMonth.toISOString().split('T')[0])
+                  setBulkEndDate(endOfMonth.toISOString().split('T')[0])
+                }}
+                className="px-3 py-1 text-xs bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 rounded-full"
+              >
+                This Month
+              </button>
+            </div>
+
+            {/* Shift Templates */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Shift Templates ({shiftTemplates.length})
+                </label>
+                <button
+                  type="button"
+                  onClick={addShiftTemplate}
+                  className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  <Plus className="w-3 h-3" /> Add Template
+                </button>
+              </div>
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {shiftTemplates.map((template, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-white/5 rounded-lg"
+                  >
+                    <select
+                      value={template.day_of_week}
+                      onChange={(e) => updateShiftTemplate(index, 'day_of_week', parseInt(e.target.value))}
+                      className="px-2 py-1 text-sm bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded text-slate-900 dark:text-white"
+                    >
+                      {dayNames.map((day, dayIndex) => (
+                        <option key={dayIndex} value={dayIndex}>{day}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="time"
+                      value={template.start_time}
+                      onChange={(e) => updateShiftTemplate(index, 'start_time', e.target.value)}
+                      className="px-2 py-1 text-sm bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded text-slate-900 dark:text-white"
+                    />
+                    <span className="text-slate-400">to</span>
+                    <input
+                      type="time"
+                      value={template.end_time}
+                      onChange={(e) => updateShiftTemplate(index, 'end_time', e.target.value)}
+                      className="px-2 py-1 text-sm bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded text-slate-900 dark:text-white"
+                    />
+                    <input
+                      type="number"
+                      min="1"
+                      max="20"
+                      value={template.required_staff}
+                      onChange={(e) => updateShiftTemplate(index, 'required_staff', parseInt(e.target.value) || 1)}
+                      className="w-16 px-2 py-1 text-sm bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded text-slate-900 dark:text-white"
+                      title="Guards needed"
+                    />
+                    <span className="text-xs text-slate-500">guards</span>
+                    <button
+                      type="button"
+                      onClick={() => removeShiftTemplate(index)}
+                      className="ml-auto p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                Templates apply to all selected days in the date range. For overnight shifts (e.g., 18:00 to 06:00), end time is assumed to be the next day.
+              </p>
+            </div>
+
+            {/* Generate Button */}
+            <div className="flex justify-end gap-3 pt-4 border-t dark:border-white/10">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowBulkGenerate(false)
+                  setBulkResult(null)
+                }}
+                className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleBulkGenerate}
+                disabled={bulkLoading || selectedSites.length === 0 || !bulkStartDate || !bulkEndDate}
+                className="flex items-center gap-2 px-6 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-400 text-white rounded-lg font-medium transition-colors disabled:cursor-not-allowed"
+              >
+                {bulkLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="w-4 h-4" />
+                    Generate Shifts
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </Modal>
       </div>
     </DashboardLayout>

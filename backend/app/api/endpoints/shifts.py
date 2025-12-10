@@ -3,9 +3,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from app.database import get_db
-from app.models.schemas import ShiftCreate, ShiftUpdate, ShiftResponse, ShiftAssignmentCreate, ShiftAssignmentResponse
+from app.models.schemas import (
+    ShiftCreate, ShiftUpdate, ShiftResponse,
+    ShiftAssignmentCreate, ShiftAssignmentResponse,
+    BulkShiftGenerateRequest, BulkShiftGenerateResponse
+)
 from app.models.shift_assignment import ShiftAssignment, AssignmentStatus
 from app.models.user import User
 from app.services.shift_service import ShiftService
@@ -378,3 +382,207 @@ async def bulk_delete_shifts(
         "total_requested": len(shift_ids),
         "errors": errors
     }
+
+
+@router.post("/bulk-generate", response_model=BulkShiftGenerateResponse)
+async def bulk_generate_shifts(
+    request: BulkShiftGenerateRequest,
+    current_user: User = Depends(get_current_user),
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db)
+):
+    """
+    Generate multiple shifts for selected sites over a date range.
+
+    This endpoint allows admins to create recurring shifts based on:
+    - Custom shift templates (day_of_week, start/end times)
+    - Existing site shift templates from the database
+    - A pattern like weekly or bi-weekly
+
+    Example request:
+    {
+        "site_ids": [8, 9],
+        "start_date": "2024-12-09",
+        "end_date": "2024-12-22",
+        "pattern": "weekly",
+        "shift_templates": [
+            {"day_of_week": 0, "start_time": "06:00", "end_time": "18:00", "required_staff": 2},
+            {"day_of_week": 0, "start_time": "18:00", "end_time": "06:00", "required_staff": 1}
+        ]
+    }
+    """
+    from app.models.site import Site
+    from app.models.shift import Shift, ShiftStatus
+    from app.models.shift_template import ShiftTemplate
+
+    errors = []
+    details = []
+    total_shifts_created = 0
+
+    # Validate date range
+    if request.start_date > request.end_date:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="start_date must be before or equal to end_date"
+        )
+
+    # Limit date range to avoid creating too many shifts
+    date_diff = (request.end_date - request.start_date).days
+    if date_diff > 90:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Date range cannot exceed 90 days"
+        )
+
+    # Validate sites exist and belong to org
+    sites = db.query(Site).filter(
+        Site.site_id.in_(request.site_ids),
+        Site.org_id == org_id
+    ).all()
+
+    if not sites:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No valid sites found for the provided IDs"
+        )
+
+    # Check client access for each site
+    for site in sites:
+        if not ClientFilterService.is_client_accessible(db, org_id, site.client_id, current_user):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"You don't have access to site {site.site_id} (client access denied)"
+            )
+
+    # Determine which templates to use
+    templates_by_site = {}
+
+    if request.use_site_templates:
+        # Fetch existing templates from database
+        for site in sites:
+            site_templates = db.query(ShiftTemplate).filter(
+                ShiftTemplate.site_id == site.site_id
+            ).all()
+            if site_templates:
+                templates_by_site[site.site_id] = [
+                    {
+                        "day_of_week": t.day_of_week,
+                        "start_time": t.start_time,
+                        "end_time": t.end_time,
+                        "required_staff": t.required_staff_count or request.default_required_staff,
+                        "required_skill": t.required_skill or site.required_skill
+                    }
+                    for t in site_templates
+                ]
+            else:
+                errors.append(f"Site {site.site_id} has no shift templates defined")
+    elif request.shift_templates:
+        # Use provided templates for all sites
+        for site in sites:
+            templates_by_site[site.site_id] = [
+                {
+                    "day_of_week": t.day_of_week,
+                    "start_time": t.start_time,
+                    "end_time": t.end_time,
+                    "required_staff": t.required_staff,
+                    "required_skill": t.required_skill or site.required_skill
+                }
+                for t in request.shift_templates
+            ]
+    else:
+        # Default: Create day shift (06:00-18:00) and night shift (18:00-06:00) for every day
+        from datetime import time as datetime_time
+        default_templates = [
+            {"day_of_week": d, "start_time": datetime_time(6, 0), "end_time": datetime_time(18, 0),
+             "required_staff": request.default_required_staff, "required_skill": request.default_required_skill}
+            for d in range(7)  # All days of week
+        ] + [
+            {"day_of_week": d, "start_time": datetime_time(18, 0), "end_time": datetime_time(6, 0),
+             "required_staff": request.default_required_staff, "required_skill": request.default_required_skill}
+            for d in range(7)  # All days of week
+        ]
+        for site in sites:
+            templates_by_site[site.site_id] = default_templates
+
+    # Generate shifts for each site
+    for site in sites:
+        site_shifts_created = 0
+        templates = templates_by_site.get(site.site_id, [])
+
+        if not templates:
+            continue
+
+        # Iterate through each day in the date range
+        current_date = request.start_date
+        while current_date <= request.end_date:
+            day_of_week = current_date.weekday()  # 0=Monday, 6=Sunday
+
+            # Find matching templates for this day
+            for template in templates:
+                if template["day_of_week"] != day_of_week:
+                    continue
+
+                # Calculate start and end datetimes
+                start_dt = datetime.combine(current_date, template["start_time"])
+
+                # Handle overnight shifts (end_time < start_time means next day)
+                if template["end_time"] < template["start_time"]:
+                    end_dt = datetime.combine(current_date + timedelta(days=1), template["end_time"])
+                else:
+                    end_dt = datetime.combine(current_date, template["end_time"])
+
+                # Check for duplicate shifts (same site, same start time)
+                existing = db.query(Shift).filter(
+                    Shift.site_id == site.site_id,
+                    Shift.start_time == start_dt,
+                    Shift.org_id == org_id
+                ).first()
+
+                if existing:
+                    errors.append(
+                        f"Shift already exists for site {site.site_id} at {start_dt.strftime('%Y-%m-%d %H:%M')}"
+                    )
+                    continue
+
+                # Create the shift
+                new_shift = Shift(
+                    org_id=org_id,
+                    site_id=site.site_id,
+                    start_time=start_dt,
+                    end_time=end_dt,
+                    required_staff=template["required_staff"],
+                    required_skill=template.get("required_skill") or site.required_skill,
+                    status=ShiftStatus.PLANNED,
+                    created_by=current_user.username
+                )
+
+                db.add(new_shift)
+                site_shifts_created += 1
+
+            current_date += timedelta(days=1)
+
+        total_shifts_created += site_shifts_created
+        details.append({
+            "site_id": site.site_id,
+            "site_name": site.site_name or site.client_name,
+            "shifts_created": site_shifts_created
+        })
+
+    # Commit all shifts
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to save shifts: {str(e)}"
+        )
+
+    return BulkShiftGenerateResponse(
+        success=total_shifts_created > 0,
+        shifts_created=total_shifts_created,
+        sites_processed=len(sites),
+        date_range=f"{request.start_date.strftime('%Y-%m-%d')} to {request.end_date.strftime('%Y-%m-%d')}",
+        details=details,
+        errors=errors
+    )
