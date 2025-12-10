@@ -43,9 +43,9 @@ class Organization(Base):
     trial_start_date = Column(DateTime, nullable=True)  # When trial began
     trial_end_date = Column(DateTime, nullable=True)    # When trial expires (auto-set to start + 14 days)
 
-    # Organization approval workflow (MVP Security - Option B)
-    approval_status = Column(String(20), nullable=False, default="pending_approval")
-    # Status: pending_approval, approved, rejected
+    # Organization approval workflow (auto-approved for MVP)
+    approval_status = Column(String(20), nullable=False, default="approved")
+    # Status: pending_approval, approved, rejected (default to approved for immediate access)
     approved_by = Column(Integer, nullable=True)  # user_id of superadmin who approved
     approved_at = Column(DateTime, nullable=True)
     rejection_reason = Column(String(500), nullable=True)
