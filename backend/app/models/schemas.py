@@ -122,7 +122,7 @@ class SiteBase(BaseModel):
 
 
 class SiteCreate(SiteBase):
-    pass
+    client_id: Optional[int] = None  # Optional client association
 
 
 class SiteUpdate(BaseModel):
