@@ -22,6 +22,7 @@ def init_database():
         PayrollSummary, ShiftTemplate, Roster, ShiftAssignment,
         Organization, Client, SubscriptionPlan
     )
+    from app.models.superadmin_invitation import SuperadminInvitation
 
     print(f"[init_db] Connecting to database...")
     try:

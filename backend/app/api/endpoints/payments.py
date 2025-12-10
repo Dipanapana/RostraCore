@@ -252,6 +252,23 @@ async def get_subscription_status(
     Returns trial info, guard count, estimated cost, and whether
     roster generation is allowed.
     """
+    # Superadmins don't belong to any organization
+    if current_user.org_id is None:
+        # Return a default response for superadmins (they don't need subscriptions)
+        return SubscriptionStatusResponse(
+            subscription_status="superadmin",
+            is_trial=False,
+            trial_days_remaining=None,
+            trial_end_date=None,
+            active_guard_count=0,
+            monthly_rate_per_guard=0.0,
+            estimated_monthly_cost=0.0,
+            currency=settings.MVP_CURRENCY,
+            payfast_active=False,
+            next_billing_date=None,
+            can_generate_rosters=True  # Superadmins have full access
+        )
+
     # Get user's organization
     organization = db.query(Organization).filter(
         Organization.org_id == current_user.org_id
