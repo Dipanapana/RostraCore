@@ -2,6 +2,7 @@
 
 import Sidebar from "./Sidebar";
 import TopHeader from "./TopHeader";
+import MobileBottomNav from "./MobileBottomNav";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -20,11 +21,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
         <div className="relative z-10">
           <TopHeader />
-          <div className="p-6 lg:p-8">
+          {/* Add bottom padding on mobile for the bottom nav */}
+          <div className="p-6 lg:p-8 pb-24 lg:pb-8">
             {children}
           </div>
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav />
     </div>
   );
 }
