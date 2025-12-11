@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from app.database import get_db
 from app.models.organization import Organization, SubscriptionTier, SubscriptionStatus
 from app.models.user import User, UserRole
-from app.auth.security import get_current_user
+from app.auth.security import get_current_user, get_current_org_id
 from app.config import settings
 from datetime import datetime, timedelta
 
@@ -70,17 +70,6 @@ class UsageStats(BaseModel):
     employees_percentage: Optional[float] = None
     sites_percentage: Optional[float] = None
     shifts_percentage: Optional[float] = None
-
-
-# Helper function to get current organization (will be replaced with proper auth later)
-def get_current_org_id() -> int:
-    """
-    Get current organization ID from auth context.
-
-    TODO: Replace with proper JWT token-based organization extraction.
-    For now, returns the default organization ID.
-    """
-    return 1  # Default organization
 
 
 @router.post("/", response_model=OrganizationResponse, status_code=status.HTTP_201_CREATED)
@@ -155,14 +144,14 @@ async def create_organization(
 
 @router.get("/current", response_model=OrganizationResponse)
 async def get_current_organization(
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
     """
     Get current user's organization details.
 
-    Returns organization info based on authenticated user's tenant_id.
+    Returns organization info based on authenticated user's org_id.
     """
-    org_id = get_current_org_id()
 
     org = db.query(Organization).filter(Organization.org_id == org_id).first()
 
@@ -192,14 +181,21 @@ async def get_current_organization(
 @router.put("/current", response_model=OrganizationResponse)
 async def update_current_organization(
     org_update: OrganizationUpdate,
+    current_user: User = Depends(get_current_user),
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
     """
     Update current user's organization.
 
-    **Requires**: Company Admin role or higher (TODO: implement role checking)
+    **Requires**: Admin or Owner role.
     """
-    org_id = get_current_org_id()
+    # Only admin/owner can update organization
+    if current_user.role not in [UserRole.ADMIN, UserRole.COMPANY_ADMIN] and not current_user.is_owner:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins or owners can update organization settings"
+        )
 
     org = db.query(Organization).filter(Organization.org_id == org_id).first()
 
@@ -236,6 +232,7 @@ async def update_current_organization(
 
 @router.get("/current/usage", response_model=UsageStats)
 async def get_organization_usage(
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
     """
@@ -248,8 +245,6 @@ async def get_organization_usage(
     from app.models.shift import Shift
     from sqlalchemy import func, extract
     from datetime import datetime
-
-    org_id = get_current_org_id()
 
     org = db.query(Organization).filter(Organization.org_id == org_id).first()
 
@@ -308,14 +303,25 @@ async def get_organization_usage(
 async def list_organizations(
     skip: int = 0,
     limit: int = 100,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    List all organizations.
+    List organizations.
 
-    **Requires**: Super Admin role (TODO: implement role checking)
+    - **Superadmins**: Can see all organizations
+    - **Other users**: Can only see their own organization
     """
-    organizations = db.query(Organization).offset(skip).limit(limit).all()
+    # Superadmins can see all organizations
+    if current_user.is_superadmin:
+        organizations = db.query(Organization).offset(skip).limit(limit).all()
+    else:
+        # Non-superadmins can only see their own organization
+        if current_user.org_id is None:
+            return []
+        organizations = db.query(Organization).filter(
+            Organization.org_id == current_user.org_id
+        ).all()
 
     return [
         OrganizationResponse(
@@ -340,13 +346,22 @@ async def list_organizations(
 @router.get("/{org_id}", response_model=OrganizationResponse)
 async def get_organization(
     org_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     Get organization by ID.
 
-    **Requires**: Super Admin role (TODO: implement role checking)
+    - **Superadmins**: Can view any organization
+    - **Other users**: Can only view their own organization
     """
+    # Non-superadmins can only view their own organization
+    if not current_user.is_superadmin and current_user.org_id != org_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. You can only view your own organization."
+        )
+
     org = db.query(Organization).filter(Organization.org_id == org_id).first()
 
     if not org:

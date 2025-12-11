@@ -9,7 +9,8 @@ from datetime import date, datetime
 from app.database import get_db
 from app.models.client import Client
 from app.models.site import Site
-from app.auth.security import get_current_org_id
+from app.models.user import User
+from app.auth.security import get_current_org_id, get_current_user
 
 router = APIRouter()
 
@@ -56,13 +57,26 @@ async def list_clients(
     status: Optional[str] = None,
     limit: int = 100,
     offset: int = 0,
+    current_user: User = Depends(get_current_user),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
     """
-    List all clients with optional filtering (filtered by organization).
+    List all clients with optional filtering.
+
+    Filtering:
+    - Organization: Only clients in user's organization
+    - Client Access: If user has managed_client_ids, only those clients are visible
+                    Owners/admins with NULL managed_client_ids see all org clients
     """
     query = db.query(Client).filter(Client.org_id == org_id)
+
+    # Apply client-level access control
+    accessible_clients = current_user.get_accessible_client_ids()
+    if accessible_clients is not None:  # None means full access (owner)
+        if not accessible_clients:  # Empty list = no access
+            return []
+        query = query.filter(Client.client_id.in_(accessible_clients))
 
     if status:
         query = query.filter(Client.status == status)
@@ -126,10 +140,19 @@ async def create_client(
 @router.get("/{client_id}", response_model=ClientResponse)
 async def get_client(
     client_id: int,
+    current_user: User = Depends(get_current_user),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Get a specific client by ID (filtered by organization)."""
+    """Get a specific client by ID (filtered by organization and client access)."""
+    # Check client-level access
+    accessible_clients = current_user.get_accessible_client_ids()
+    if accessible_clients is not None and client_id not in accessible_clients:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have access to this client"
+        )
+
     client = db.query(Client).filter(
         Client.client_id == client_id,
         Client.org_id == org_id
@@ -148,10 +171,19 @@ async def get_client(
 async def update_client(
     client_id: int,
     client_data: ClientUpdate,
+    current_user: User = Depends(get_current_user),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Update a client (filtered by organization)."""
+    """Update a client (filtered by organization and client access)."""
+    # Check client-level access
+    accessible_clients = current_user.get_accessible_client_ids()
+    if accessible_clients is not None and client_id not in accessible_clients:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have access to this client"
+        )
+
     client = db.query(Client).filter(
         Client.client_id == client_id,
         Client.org_id == org_id
@@ -177,10 +209,19 @@ async def update_client(
 @router.delete("/{client_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_client(
     client_id: int,
+    current_user: User = Depends(get_current_user),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Delete a client (filtered by organization)."""
+    """Delete a client (filtered by organization and client access)."""
+    # Check client-level access
+    accessible_clients = current_user.get_accessible_client_ids()
+    if accessible_clients is not None and client_id not in accessible_clients:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have access to this client"
+        )
+
     client = db.query(Client).filter(
         Client.client_id == client_id,
         Client.org_id == org_id
@@ -209,10 +250,19 @@ async def delete_client(
 @router.get("/{client_id}/sites")
 async def get_client_sites(
     client_id: int,
+    current_user: User = Depends(get_current_user),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Get all sites for a specific client (filtered by organization)."""
+    """Get all sites for a specific client (filtered by organization and client access)."""
+    # Check client-level access
+    accessible_clients = current_user.get_accessible_client_ids()
+    if accessible_clients is not None and client_id not in accessible_clients:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have access to this client"
+        )
+
     client = db.query(Client).filter(
         Client.client_id == client_id,
         Client.org_id == org_id
