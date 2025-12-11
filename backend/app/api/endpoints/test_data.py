@@ -9,8 +9,8 @@ from datetime import date, datetime, timedelta
 import random
 import string
 
-from app.core.database import get_db
-from app.core.security import get_current_user
+from app.database import get_db
+from app.api.deps import get_current_user
 from app.models.user import User
 from app.models.employee import Employee
 from app.models.site import Site
