@@ -31,9 +31,9 @@ api.interceptors.request.use(
 
 // API endpoints
 export const employeesApi = {
-  getAll: () => api.get('/api/v1/employees'),
+  getAll: () => api.get('/api/v1/employees/'),
   getById: (id: number) => api.get(`/api/v1/employees/${id}`),
-  create: (data: any) => api.post('/api/v1/employees', data),
+  create: (data: any) => api.post('/api/v1/employees/', data),
   update: (id: number, data: any) => api.put(`/api/v1/employees/${id}`, data),
   delete: (id: number) => api.delete(`/api/v1/employees/${id}`),
   importFromExcel: (formData: FormData) => api.post('/api/v1/employees/import-excel', formData, {
@@ -45,17 +45,17 @@ export const employeesApi = {
 }
 
 export const clientsApi = {
-  getAll: () => api.get('/api/v1/clients'),
+  getAll: () => api.get('/api/v1/clients/'),
   getById: (id: number) => api.get(`/api/v1/clients/${id}`),
-  create: (data: any) => api.post('/api/v1/clients', data),
+  create: (data: any) => api.post('/api/v1/clients/', data),
   update: (id: number, data: any) => api.put(`/api/v1/clients/${id}`, data),
   delete: (id: number) => api.delete(`/api/v1/clients/${id}`),
 }
 
 export const sitesApi = {
-  getAll: () => api.get('/api/v1/sites'),
+  getAll: () => api.get('/api/v1/sites/'),
   getById: (id: number) => api.get(`/api/v1/sites/${id}`),
-  create: (data: any) => api.post('/api/v1/sites', data),
+  create: (data: any) => api.post('/api/v1/sites/', data),
   update: (id: number, data: any) => api.put(`/api/v1/sites/${id}`, data),
   delete: (id: number) => api.delete(`/api/v1/sites/${id}`),
 }
