@@ -7,7 +7,7 @@ dynamic routes (/{payroll_id}) to avoid route conflicts.
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
+from sqlalchemy import and_, extract
 from datetime import date, datetime, timedelta
 from typing import List, Optional
 from pydantic import BaseModel
@@ -57,16 +57,30 @@ class ComprehensivePayrollRequest(BaseModel):
 @router.get("/")
 async def get_payroll(
     employee_id: Optional[int] = None,
+    year: Optional[int] = None,
+    month: Optional[int] = None,
     skip: int = 0,
     limit: int = 100,
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Get payroll records with optional filters (filtered by organization via employee)."""
+    """Get payroll records with optional filters (filtered by organization via employee).
+
+    Query params:
+    - employee_id: Filter by specific employee
+    - year: Filter by year (e.g., 2024, 2025)
+    - month: Filter by month (1-12)
+    """
     query = db.query(PayrollSummary).join(Employee).filter(Employee.org_id == org_id)
 
     if employee_id:
         query = query.filter(PayrollSummary.employee_id == employee_id)
+
+    # Filter by year/month using period_start date
+    if year:
+        query = query.filter(extract('year', PayrollSummary.period_start) == year)
+    if month:
+        query = query.filter(extract('month', PayrollSummary.period_start) == month)
 
     payrolls = query.order_by(PayrollSummary.period_start.desc()).offset(skip).limit(limit).all()
 

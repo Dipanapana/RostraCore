@@ -29,6 +29,27 @@ api.interceptors.request.use(
   }
 )
 
+// Response interceptor - handle 401 (session expired) and redirect to login
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      // Clear auth state
+      localStorage.removeItem('access_token')
+
+      // Redirect to login with notification
+      if (typeof window !== 'undefined') {
+        // Don't redirect if already on login page
+        if (!window.location.pathname.includes('/login')) {
+          alert('Your session has expired. Please log in again.')
+          window.location.href = '/login'
+        }
+      }
+    }
+    return Promise.reject(error)
+  }
+)
+
 // API endpoints
 export const employeesApi = {
   getAll: () => api.get('/api/v1/employees/'),
