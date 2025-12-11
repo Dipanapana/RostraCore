@@ -61,9 +61,9 @@ export const sitesApi = {
 }
 
 export const shiftsApi = {
-  getAll: (params?: any) => api.get('/api/v1/shifts', { params }),
+  getAll: (params?: any) => api.get('/api/v1/shifts/', { params }),
   getById: (id: number) => api.get(`/api/v1/shifts/${id}`),
-  create: (data: any) => api.post('/api/v1/shifts', data),
+  create: (data: any) => api.post('/api/v1/shifts/', data),
   update: (id: number, data: any) => api.put(`/api/v1/shifts/${id}`, data),
   delete: (id: number) => api.delete(`/api/v1/shifts/${id}`),
   getAssignments: (shiftId: number) => api.get(`/api/v1/shifts/${shiftId}/assignments`),
@@ -84,18 +84,18 @@ export const rosterApi = {
 }
 
 export const availabilityApi = {
-  getAll: (params?: any) => api.get('/api/v1/availability', { params }),
+  getAll: (params?: any) => api.get('/api/v1/availability/', { params }),
   getById: (id: number) => api.get(`/api/v1/availability/${id}`),
-  create: (data: any) => api.post('/api/v1/availability', data),
+  create: (data: any) => api.post('/api/v1/availability/', data),
   update: (id: number, data: any) => api.put(`/api/v1/availability/${id}`, data),
   delete: (id: number) => api.delete(`/api/v1/availability/${id}`),
 }
 
 export const certificationsApi = {
-  getAll: (params?: any) => api.get('/api/v1/certifications', { params }),
+  getAll: (params?: any) => api.get('/api/v1/certifications/', { params }),
   getExpiring: (days?: number) => api.get('/api/v1/certifications/expiring', { params: { days } }),
   getById: (id: number) => api.get(`/api/v1/certifications/${id}`),
-  create: (data: any) => api.post('/api/v1/certifications', data),
+  create: (data: any) => api.post('/api/v1/certifications/', data),
   update: (id: number, data: any) => api.put(`/api/v1/certifications/${id}`, data),
   delete: (id: number) => api.delete(`/api/v1/certifications/${id}`),
 }
