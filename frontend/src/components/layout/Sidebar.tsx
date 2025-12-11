@@ -266,6 +266,7 @@ export default function Sidebar() {
       <div className="mb-1">
         {/* Group Header */}
         <button
+          type="button"
           onClick={() => toggleGroup(group.id)}
           className={`
             w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200
