@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { getApiUrl } from '@/lib/config'
+import { toast } from '@/context/ToastContext'
 
 // Create axios instance - uses Vercel rewrites in production (same-origin)
 // In dev, uses localhost:8001
@@ -37,12 +38,15 @@ api.interceptors.response.use(
       // Clear auth state
       localStorage.removeItem('access_token')
 
-      // Redirect to login with notification
+      // Show toast notification and redirect to login
       if (typeof window !== 'undefined') {
         // Don't redirect if already on login page
         if (!window.location.pathname.includes('/login')) {
-          alert('Your session has expired. Please log in again.')
-          window.location.href = '/login'
+          toast.warning('Session Expired', 'Your session has expired. Redirecting to login...')
+          // Small delay to show toast before redirect
+          setTimeout(() => {
+            window.location.href = '/login'
+          }, 1500)
         }
       }
     }

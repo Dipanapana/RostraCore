@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/context/AuthContext'
 import { ThemeProvider } from '@/context/ThemeContext'
+import { ToastProvider } from '@/context/ToastContext'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import PWAInstaller from '@/components/PWAInstaller'
 import TrialBanner from '@/components/TrialBanner'
@@ -55,11 +56,13 @@ export default function RootLayout({
       <body className={inter.className}>
         <ErrorBoundary>
           <ThemeProvider>
-            <AuthProvider>
-              <TrialBanner />
-              {children}
-              <PWAInstaller />
-            </AuthProvider>
+            <ToastProvider>
+              <AuthProvider>
+                <TrialBanner />
+                {children}
+                <PWAInstaller />
+              </AuthProvider>
+            </ToastProvider>
           </ThemeProvider>
         </ErrorBoundary>
       </body>
