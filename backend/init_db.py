@@ -73,6 +73,23 @@ def init_database():
             except Exception as e:
                 print(f"[init_db] organizations.managed_client_ids column: {e}")
 
+            # CRITICAL: Set is_owner = TRUE for admin users so they keep full access
+            # Without this, existing admins would have no access to any data
+            try:
+                result = conn.execute(text("UPDATE users SET is_owner = TRUE WHERE role = 'admin' AND is_owner = FALSE"))
+                conn.commit()
+                print(f"[init_db] Set is_owner=TRUE for admin users (affected: {result.rowcount})")
+            except Exception as e:
+                print(f"[init_db] Update admin is_owner: {e}")
+
+            # Also set is_owner = TRUE for company_admin users
+            try:
+                result = conn.execute(text("UPDATE users SET is_owner = TRUE WHERE role = 'company_admin' AND is_owner = FALSE"))
+                conn.commit()
+                print(f"[init_db] Set is_owner=TRUE for company_admin users (affected: {result.rowcount})")
+            except Exception as e:
+                print(f"[init_db] Update company_admin is_owner: {e}")
+
         # List created tables
         from sqlalchemy import inspect
         inspector = inspect(engine)
