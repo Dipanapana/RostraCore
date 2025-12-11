@@ -12,7 +12,7 @@ import string
 from app.database import get_db
 from app.api.deps import get_current_user
 from app.models.user import User
-from app.models.employee import Employee
+from app.models.employee import Employee, EmployeeRole, EmployeeStatus, Gender
 from app.models.site import Site
 from app.models.client import Client
 from app.models.shift import Shift
@@ -187,7 +187,8 @@ async def generate_test_data(
         for i in range(num_employees):
             first_name = random.choice(SA_FIRST_NAMES)
             last_name = random.choice(SA_SURNAMES)
-            gender = "Male" if first_name in SA_FIRST_NAMES[:24] else "Female"
+            is_male = first_name in SA_FIRST_NAMES[:24]
+            gender_enum = Gender.MALE if is_male else Gender.FEMALE
 
             birth_year = random.randint(1970, 2000)
             birth_month = random.randint(1, 12)
@@ -198,23 +199,21 @@ async def generate_test_data(
                 first_name=first_name,
                 last_name=last_name,
                 email=f"{first_name.lower()}.{last_name.lower()}{i}@email.co.za",
-                phone=f"07{random.randint(1, 9)}-{random.randint(100, 999)}-{random.randint(1000, 9999)}",
-                id_number=generate_sa_id_number(birth_date, gender),
+                phone=f"07{random.randint(1, 9)}{random.randint(1000000, 9999999)}",
+                id_number=generate_sa_id_number(birth_date, "Male" if is_male else "Female"),
                 org_id=org_id,
-                is_active=True,
-                date_of_birth=birth_date,
-                gender=gender,
-                employment_type=random.choice(["Full-time", "Part-time", "Contract"]),
-                job_title="Security Officer",
+                status=EmployeeStatus.ACTIVE,
+                role=random.choice([EmployeeRole.ARMED, EmployeeRole.UNARMED]),
+                gender=gender_enum,
                 hourly_rate=random.uniform(35.0, 55.0),
                 psira_number=generate_psira_number(),
-                psira_expiry=date.today() + timedelta(days=random.randint(30, 730)),
+                psira_expiry_date=date.today() + timedelta(days=random.randint(30, 730)),
                 address=f"{random.randint(1, 999)} {random.choice(['Main', 'Church', 'Park', 'Long', 'High'])} Street, {random.choice(['Johannesburg', 'Pretoria', 'Soweto', 'Sandton'])}, Gauteng",
                 emergency_contact_name=f"{random.choice(SA_FIRST_NAMES)} {last_name}",
-                emergency_contact_phone=f"07{random.randint(1, 9)}-{random.randint(100, 999)}-{random.randint(1000, 9999)}",
+                emergency_contact_phone=f"07{random.randint(1, 9)}{random.randint(1000000, 9999999)}",
                 bank_name=random.choice(["FNB", "Standard Bank", "Absa", "Nedbank", "Capitec"]),
-                bank_account_number=f"{random.randint(1000000000, 9999999999)}",
-                bank_branch_code=random.choice(["250655", "051001", "632005", "198765", "470010"]),
+                account_number=f"{random.randint(1000000000, 9999999999)}",
+                branch_code=random.choice(["250655", "051001", "632005", "198765", "470010"]),
                 tax_number=f"{random.randint(1000000000, 9999999999)}"
             )
             db.add(employee)
