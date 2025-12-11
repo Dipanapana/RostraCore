@@ -198,7 +198,7 @@ async def generate_test_data(
             employee = Employee(
                 first_name=first_name,
                 last_name=last_name,
-                email=f"{first_name.lower()}.{last_name.lower()}{i}@email.co.za",
+                email=f"{first_name.lower()}.{last_name.lower().replace(' ', '')}{i}@email.co.za",
                 phone=f"07{random.randint(1, 9)}{random.randint(1000000, 9999999)}",
                 id_number=generate_sa_id_number(birth_date, "Male" if is_male else "Female"),
                 org_id=org_id,
