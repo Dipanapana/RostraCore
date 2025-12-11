@@ -142,10 +142,10 @@ async def generate_test_data(
             client = Client(
                 client_name=company_name,
                 contact_person=f"{random.choice(SA_FIRST_NAMES)} {random.choice(SA_SURNAMES)}",
-                email=f"security@{company_name.lower().replace(' ', '')}.co.za",
-                phone=f"011-{random.randint(100, 999)}-{random.randint(1000, 9999)}",
+                contact_email=f"security@{company_name.lower().replace(' ', '')}.co.za",
+                contact_phone=f"011-{random.randint(100, 999)}-{random.randint(1000, 9999)}",
                 org_id=org_id,
-                is_active=True
+                status="active"
             )
             db.add(client)
             db.flush()
@@ -161,19 +161,21 @@ async def generate_test_data(
                 site_name = f"{site_name} {i // len(GAUTENG_LOCATIONS) + 1}"
 
             client = random.choice(created_clients)
+            coords = location[2].split(",")
+            min_staff = random.randint(2, 6)
 
             site = Site(
                 site_name=site_name,
+                client_name=client.client_name,
                 address=f"{random.randint(1, 500)} {location[1]} Drive, {location[1]}, Gauteng",
-                coordinates=location[2],
+                city=location[1],
+                province="Gauteng",
+                gps_lat=float(coords[0]),
+                gps_lng=float(coords[1]),
                 client_id=client.client_id,
                 org_id=org_id,
-                is_active=True,
-                # Contract details
-                contract_start_date=date.today() - timedelta(days=365),
-                contract_end_date=date.today() + timedelta(days=365),
                 billing_rate=random.uniform(45.0, 85.0),
-                required_guards=random.randint(2, 6)
+                min_staff=min_staff
             )
             db.add(site)
             db.flush()
@@ -229,26 +231,33 @@ async def generate_test_data(
         while current_date <= end_date:
             # Create shifts for each site
             for site in created_sites:
+                required_staff = site.min_staff or 2
+
                 # Day shift (06:00 - 18:00)
+                day_start = datetime.combine(current_date, datetime.strptime("06:00", "%H:%M").time())
+                day_end = datetime.combine(current_date, datetime.strptime("18:00", "%H:%M").time())
+
                 day_shift = Shift(
                     site_id=site.site_id,
-                    shift_date=current_date,
-                    start_time=datetime.strptime("06:00", "%H:%M").time(),
-                    end_time=datetime.strptime("18:00", "%H:%M").time(),
-                    required_guards=site.required_guards or 2,
+                    start_time=day_start,
+                    end_time=day_end,
+                    required_staff=required_staff,
                     org_id=org_id
                 )
                 db.add(day_shift)
                 db.flush()
                 results["shifts_created"] += 1
 
-                # Night shift (18:00 - 06:00)
+                # Night shift (18:00 - 06:00 next day)
+                night_start = datetime.combine(current_date, datetime.strptime("18:00", "%H:%M").time())
+                night_end = datetime.combine(current_date + timedelta(days=1), datetime.strptime("06:00", "%H:%M").time())
+                night_staff = max(1, required_staff - 1)
+
                 night_shift = Shift(
                     site_id=site.site_id,
-                    shift_date=current_date,
-                    start_time=datetime.strptime("18:00", "%H:%M").time(),
-                    end_time=datetime.strptime("06:00", "%H:%M").time(),
-                    required_guards=max(1, (site.required_guards or 2) - 1),
+                    start_time=night_start,
+                    end_time=night_end,
+                    required_staff=night_staff,
                     org_id=org_id
                 )
                 db.add(night_shift)
@@ -258,34 +267,36 @@ async def generate_test_data(
                 # Create assignments for past shifts (completed)
                 if current_date < today:
                     # Assign employees to day shift
-                    day_employees = random.sample(created_employees, min(day_shift.required_guards, len(created_employees)))
+                    day_employees = random.sample(created_employees, min(day_shift.required_staff, len(created_employees)))
                     for emp in day_employees:
                         assignment = ShiftAssignment(
                             shift_id=day_shift.shift_id,
                             employee_id=emp.employee_id,
-                            status="COMPLETED",
+                            status="completed",
                             assigned_at=datetime.combine(current_date, datetime.strptime("05:00", "%H:%M").time()),
-                            checked_in_at=datetime.combine(current_date, datetime.strptime("05:55", "%H:%M").time()),
-                            checked_out_at=datetime.combine(current_date, datetime.strptime("18:05", "%H:%M").time()),
-                            hours_worked=12.17,
-                            org_id=org_id
+                            check_in_time=datetime.combine(current_date, datetime.strptime("05:55", "%H:%M").time()),
+                            check_out_time=datetime.combine(current_date, datetime.strptime("18:05", "%H:%M").time()),
+                            checked_in=True,
+                            checked_out=True,
+                            regular_hours=12.0
                         )
                         db.add(assignment)
                         results["assignments_created"] += 1
 
                     # Assign employees to night shift
-                    night_employees = random.sample(created_employees, min(night_shift.required_guards, len(created_employees)))
+                    night_employees = random.sample(created_employees, min(night_shift.required_staff, len(created_employees)))
                     for emp in night_employees:
                         checkout_date = current_date + timedelta(days=1)
                         assignment = ShiftAssignment(
                             shift_id=night_shift.shift_id,
                             employee_id=emp.employee_id,
-                            status="COMPLETED",
+                            status="completed",
                             assigned_at=datetime.combine(current_date, datetime.strptime("17:00", "%H:%M").time()),
-                            checked_in_at=datetime.combine(current_date, datetime.strptime("17:55", "%H:%M").time()),
-                            checked_out_at=datetime.combine(checkout_date, datetime.strptime("06:05", "%H:%M").time()),
-                            hours_worked=12.17,
-                            org_id=org_id
+                            check_in_time=datetime.combine(current_date, datetime.strptime("17:55", "%H:%M").time()),
+                            check_out_time=datetime.combine(checkout_date, datetime.strptime("06:05", "%H:%M").time()),
+                            checked_in=True,
+                            checked_out=True,
+                            regular_hours=12.0
                         )
                         db.add(assignment)
                         results["assignments_created"] += 1
@@ -328,7 +339,12 @@ async def clear_test_data(
 
     try:
         # Delete in order of dependencies
-        assignments_deleted = db.query(ShiftAssignment).filter(ShiftAssignment.org_id == org_id).delete()
+        # First get shift IDs for this org to delete assignments
+        org_shift_ids = [s.shift_id for s in db.query(Shift.shift_id).filter(Shift.org_id == org_id).all()]
+        assignments_deleted = 0
+        if org_shift_ids:
+            assignments_deleted = db.query(ShiftAssignment).filter(ShiftAssignment.shift_id.in_(org_shift_ids)).delete(synchronize_session=False)
+
         shifts_deleted = db.query(Shift).filter(Shift.org_id == org_id).delete()
         employees_deleted = db.query(Employee).filter(Employee.org_id == org_id).delete()
         sites_deleted = db.query(Site).filter(Site.org_id == org_id).delete()
