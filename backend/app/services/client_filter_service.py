@@ -46,10 +46,15 @@ class ClientFilterService:
             # Owners get org-level access (no additional restrictions)
             return org_accessible
 
-        # Non-owners: must have explicit client assignments
-        user_clients = user.managed_client_ids if user.managed_client_ids else []
+        # Non-owners: check managed_client_ids
+        # NULL = unrestricted (backwards compatible - legacy users not yet assigned)
+        # Empty list [] = explicitly restricted to nothing
+        if user.managed_client_ids is None:
+            return org_accessible  # User unrestricted, use org-level access
+
+        user_clients = user.managed_client_ids
         if not user_clients:
-            return []  # Non-owner with no assignments = no access
+            return []  # Explicitly restricted to no clients
 
         # Intersect user's clients with org-level access
         if org_accessible is None:

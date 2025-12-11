@@ -76,15 +76,20 @@ class User(Base):
         Get list of client IDs this user can access.
 
         Returns:
-            - None: User is owner with full access (no filtering needed)
-            - []: User is non-owner with no assignments (sees nothing)
+            - None: Full access (owner, or legacy users not yet restricted)
             - [1,2,3]: User sees only these specific clients
         """
         if self.is_owner:
             # Owners get full access - return None to indicate no filtering
             return None
-        # Non-owners must have explicit client assignments
-        return self.managed_client_ids if self.managed_client_ids else []
+
+        # Non-owners: check managed_client_ids
+        # NULL means unrestricted (backwards compatible - legacy users)
+        # Empty list [] means explicitly restricted to nothing
+        if self.managed_client_ids is None:
+            return None  # Unrestricted - hasn't been assigned specific clients yet
+
+        return self.managed_client_ids  # Return the explicit list (could be [] for no access)
 
     def __repr__(self):
         return f"<User {self.user_id}: {self.username} ({self.role.value})>"
