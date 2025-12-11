@@ -90,6 +90,14 @@ def init_database():
             except Exception as e:
                 print(f"[init_db] Update company_admin is_owner: {e}")
 
+            # Fix any employee emails with spaces (from test data with surnames like "van der Merwe")
+            try:
+                result = conn.execute(text("UPDATE employees SET email = REPLACE(email, ' ', '') WHERE email LIKE '% %'"))
+                conn.commit()
+                print(f"[init_db] Fixed invalid employee emails (affected: {result.rowcount})")
+            except Exception as e:
+                print(f"[init_db] Fix employee emails: {e}")
+
         # List created tables
         from sqlalchemy import inspect
         inspector = inspect(engine)

@@ -366,3 +366,42 @@ async def clear_test_data(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error clearing test data: {str(e)}")
+
+
+@router.post("/fix-invalid-emails")
+async def fix_invalid_emails(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Fix any employees with invalid emails (containing spaces).
+    Removes spaces from email addresses.
+
+    Only accessible by organization admins.
+    """
+
+    if current_user.role not in ["admin", "superadmin"]:
+        raise HTTPException(status_code=403, detail="Only admins can fix data")
+
+    if current_user.org_id is None and current_user.role != "superadmin":
+        raise HTTPException(status_code=400, detail="User must belong to an organization")
+
+    try:
+        from sqlalchemy import text
+
+        # For superadmin, fix all orgs; otherwise just user's org
+        if current_user.role == "superadmin":
+            result = db.execute(text("UPDATE employees SET email = REPLACE(email, ' ', '') WHERE email LIKE '% %'"))
+        else:
+            result = db.execute(text("UPDATE employees SET email = REPLACE(email, ' ', '') WHERE email LIKE '% %' AND org_id = :org_id"), {"org_id": current_user.org_id})
+
+        db.commit()
+
+        return {
+            "success": True,
+            "message": f"Fixed {result.rowcount} invalid email addresses"
+        }
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error fixing emails: {str(e)}")
