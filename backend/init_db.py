@@ -37,6 +37,42 @@ def init_database():
         Base.metadata.create_all(bind=engine)
         print("[init_db] Tables created successfully!")
 
+        # Add missing columns if they don't exist (for schema updates without full migration)
+        print("[init_db] Checking for missing columns...")
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            # Add is_owner column to users if missing
+            try:
+                conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_owner BOOLEAN DEFAULT FALSE NOT NULL"))
+                conn.commit()
+                print("[init_db] Added is_owner column to users")
+            except Exception as e:
+                print(f"[init_db] is_owner column: {e}")
+
+            # Add managed_client_ids column to users if missing
+            try:
+                conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS managed_client_ids INTEGER[]"))
+                conn.commit()
+                print("[init_db] Added managed_client_ids column to users")
+            except Exception as e:
+                print(f"[init_db] managed_client_ids column: {e}")
+
+            # Add client_management_mode column to organizations if missing
+            try:
+                conn.execute(text("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS client_management_mode VARCHAR(20) DEFAULT 'all' NOT NULL"))
+                conn.commit()
+                print("[init_db] Added client_management_mode column to organizations")
+            except Exception as e:
+                print(f"[init_db] client_management_mode column: {e}")
+
+            # Add managed_client_ids column to organizations if missing
+            try:
+                conn.execute(text("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS managed_client_ids INTEGER[]"))
+                conn.commit()
+                print("[init_db] Added managed_client_ids column to organizations")
+            except Exception as e:
+                print(f"[init_db] organizations.managed_client_ids column: {e}")
+
         # List created tables
         from sqlalchemy import inspect
         inspector = inspect(engine)
