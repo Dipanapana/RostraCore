@@ -6,18 +6,19 @@ import { getApiUrl } from '@/lib/config'
 import ExportButtons from '@/components/ExportButtons'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import DatePicker from '@/components/DatePicker'
+import { Client, RosterGenerateResponse, RosterAssignment } from '@/types'
 
 
 export default function RosterPage() {
   const [startDate, setStartDate] = useState<Date | null>(null)
   const [endDate, setEndDate] = useState<Date | null>(null)
   const [selectedClients, setSelectedClients] = useState<number[]>([])
-  const [clients, setClients] = useState<any[]>([])
+  const [clients, setClients] = useState<Client[]>([])
   const [clientDropdownOpen, setClientDropdownOpen] = useState(false)
   const clientDropdownRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(false)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
-  const [result, setResult] = useState<any>(null)
+  const [result, setResult] = useState<RosterGenerateResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -163,14 +164,30 @@ export default function RosterPage() {
         const token = localStorage.getItem('access_token')
         const pdfUrl = `${getApiUrl()}${response.data.pdf_url}`
 
-        // Create a temporary link and trigger download
-        const link = document.createElement('a')
-        link.href = pdfUrl
-        link.target = '_blank'
-        link.download = `roster_${new Date().toISOString().split('T')[0]}.pdf`
+        // Secure PDF download using fetch with Authorization header
+        try {
+          const pdfResponse = await fetch(pdfUrl, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          })
 
-        // Add auth header by opening in new window with token
-        window.open(pdfUrl + `&token=${token}`, '_blank')
+          if (pdfResponse.ok) {
+            const blob = await pdfResponse.blob()
+            const blobUrl = window.URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = blobUrl
+            link.download = `roster_${new Date().toISOString().split('T')[0]}.pdf`
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            window.URL.revokeObjectURL(blobUrl)
+          } else {
+            console.error('Failed to download PDF:', pdfResponse.status)
+          }
+        } catch (pdfErr) {
+          console.error('PDF download error:', pdfErr)
+        }
       }
 
       alert('Roster confirmed successfully! PDF report is downloading...')
@@ -304,7 +321,7 @@ export default function RosterPage() {
                           Clear All
                         </button>
                       </div>
-                      {clients.map((client: any) => (
+                      {clients.map((client: Client) => (
                         <label
                           key={client.client_id}
                           className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer"
@@ -443,7 +460,7 @@ export default function RosterPage() {
                         <tbody className="bg-white divide-y divide-gray-200">
                           {result.assignments
                             .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-                            .map((assignment: any, index: number) => (
+                            .map((assignment: RosterAssignment, index: number) => (
                               <tr key={index} className="hover:bg-gray-50">
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <div className="text-sm font-medium text-gray-900">

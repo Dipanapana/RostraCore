@@ -245,3 +245,97 @@ export interface Client {
   status: 'active' | 'inactive' | 'suspended'
   billing_rate?: number
 }
+
+// Roster Generation Types
+export type ConstraintLevel = 'HARD' | 'SOFT' | 'WARNING' | 'DISABLED'
+export type RosterAlgorithm = 'auto' | 'production' | 'milp'
+export type RosterStatus = 'optimal' | 'feasible' | 'infeasible' | 'error'
+export type WarningType = 'psira_compliance' | 'firearm_competency' | 'skill_mismatch' | 'availability_conflict' | 'client_assignment' | 'bcea_violation' | 'other'
+export type WarningSeverity = 'warning' | 'error'
+
+export interface RosterConstraints {
+  psira_compliance?: ConstraintLevel
+  firearm_competency?: ConstraintLevel
+  skill_matching?: ConstraintLevel
+  availability?: ConstraintLevel
+  client_assignment?: ConstraintLevel
+  max_hours_per_week?: number
+  min_rest_hours?: number
+  max_consecutive_days?: number
+  max_consecutive_nights?: number
+}
+
+export interface RosterPreferences {
+  fairness_weight?: number  // 0-1, higher = more fair distribution
+  prefer_client_experience?: boolean
+  prefer_site_experience?: boolean
+  minimize_travel?: boolean
+}
+
+export interface RosterGenerateRequest {
+  start_date: string
+  end_date: string
+  site_ids?: number[]
+  client_ids?: number[]
+  budget_limit?: number
+  budget_per_client?: Record<number, number>
+  budget_per_site?: Record<number, number>
+  constraints?: RosterConstraints
+  preferences?: RosterPreferences
+}
+
+export interface RosterAssignment {
+  employee_id: number
+  employee_name?: string
+  shift_id: number
+  cost: number
+  start_time: string
+  end_time: string
+  site_id: number
+  site_name?: string
+  client_id?: number
+  client_name?: string
+}
+
+export interface RosterGenerateSummary {
+  total_cost: number
+  total_shifts: number
+  total_shifts_filled: number
+  fill_rate: number
+  employees_utilized: number
+  total_warnings: number
+  average_cost_per_shift?: number
+}
+
+export interface RosterWarning {
+  employee_id?: number
+  employee_name?: string
+  shift_id?: number
+  site_id?: number
+  site_name?: string
+  warning_type: WarningType
+  message: string
+  severity: WarningSeverity
+}
+
+export interface UnfilledShift {
+  shift_id: number
+  site_id: number
+  site_name?: string
+  client_id?: number
+  client_name?: string
+  start_time: string
+  end_time: string
+  required_skill?: string
+  reason?: string
+}
+
+export interface RosterGenerateResponse {
+  assignments: RosterAssignment[]
+  summary: RosterGenerateSummary
+  unfilled_shifts: UnfilledShift[]
+  warnings: RosterWarning[]
+  status: RosterStatus
+  algorithm_used: string
+  generation_time_ms?: number
+}
