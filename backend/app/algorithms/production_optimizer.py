@@ -19,7 +19,7 @@ from ortools.sat.python import cp_model
 from typing import List, Dict, Tuple, Optional, Set
 from datetime import datetime, timedelta, date
 from sqlalchemy.orm import Session, joinedload
-from app.models.employee import Employee, EmployeeStatus, EmployeeRole
+from app.models.employee import Employee, EmployeeStatus, EmployeeRole, WorkPatternType
 from app.models.shift import Shift, ShiftStatus
 from app.models.site import Site
 from app.models.certification import Certification, PSIRAGrade, FirearmCompetencyType
@@ -385,9 +385,18 @@ class ProductionRosterOptimizer:
             current_date += timedelta(days=1)
 
         # Load active employees (filtered by organization if multi-tenancy is enabled)
+        # Phase 1: Only load shift-based employees for roster optimization
+        # Office staff, contractors, consultants excluded from shift roster
         # Use joinedload to eagerly load certifications and availability (prevents N+1 queries)
+        from sqlalchemy import or_
+
         employee_query = self.db.query(Employee).filter(
-            Employee.status == EmployeeStatus.ACTIVE
+            Employee.status == EmployeeStatus.ACTIVE,
+            # Only shift-based employees OR legacy employees (NULL work_pattern_type defaults to shift_based)
+            or_(
+                Employee.work_pattern_type == WorkPatternType.SHIFT_BASED,
+                Employee.work_pattern_type.is_(None)  # Legacy employees without work_pattern_type
+            )
         ).options(
             joinedload(Employee.certifications),
             joinedload(Employee.availability)
@@ -398,7 +407,25 @@ class ProductionRosterOptimizer:
             logger.info(f"Filtering employees by organization ID: {self.org_id}")
 
         self.employees = employee_query.all()
-        logger.info(f"Loaded {len(self.employees)} active employees with eager-loaded relationships")
+
+        # Log how many non-shift employees were excluded (Phase 1 transparency)
+        non_shift_query = self.db.query(Employee).filter(
+            Employee.status == EmployeeStatus.ACTIVE,
+            Employee.work_pattern_type.in_([
+                WorkPatternType.OFFICE_HOURS,
+                WorkPatternType.PROJECT_BASED,
+                WorkPatternType.FLEXIBLE,
+                WorkPatternType.CUSTOM
+            ])
+        )
+        if self.org_id is not None:
+            non_shift_query = non_shift_query.filter(Employee.org_id == self.org_id)
+
+        non_shift_count = non_shift_query.count()
+
+        logger.info(f"Loaded {len(self.employees)} shift-based employees for roster optimization")
+        if non_shift_count > 0:
+            logger.info(f"Excluded {non_shift_count} non-shift employees (office staff, contractors, consultants) from shift roster")
 
         # Build cached lookup dictionaries (prevents N+1 queries in feasibility checks)
         for emp in self.employees:

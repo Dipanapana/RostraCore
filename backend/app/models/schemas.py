@@ -3,7 +3,7 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List
 from datetime import datetime, date, time
-from app.models.employee import EmployeeRole, EmployeeStatus, Gender
+from app.models.employee import EmployeeRole, EmployeeStatus, Gender, EmploymentType, WorkPatternType
 from app.models.shift import ShiftStatus
 from app.models.certification import PSIRAGrade, FirearmCompetencyType
 
@@ -40,6 +40,35 @@ class EmployeeCreate(EmployeeBase):
     # Tax details
     tax_number: Optional[str] = None  # SA tax reference number
 
+    # Phase 1: Multi-type HR platform fields (all optional for backward compatibility)
+    employment_type: Optional[EmploymentType] = EmploymentType.PERMANENT
+    work_pattern_type: Optional[WorkPatternType] = WorkPatternType.SHIFT_BASED
+
+    # Contractor/Consultant specific
+    contract_start_date: Optional[date] = None
+    contract_end_date: Optional[date] = None
+    daily_rate: Optional[float] = Field(default=None, gt=0)  # Alternative to hourly_rate
+    project_name: Optional[str] = Field(default=None, max_length=200)
+    invoicing_frequency: Optional[str] = Field(default=None, max_length=50)  # weekly, monthly, milestone
+
+    # Skills and organization
+    skills: Optional[List[str]] = None  # ["Excel", "Python", "Project Management"]
+    department: Optional[str] = Field(default=None, max_length=100)  # HR, Finance, IT, Operations
+    job_title: Optional[str] = Field(default=None, max_length=100)  # "Office Manager", "IT Consultant"
+
+    # Part-time specific
+    max_hours_month: Optional[int] = Field(default=None, ge=0, le=744)  # Monthly hour limit (31 days * 24h)
+    preferred_days: Optional[List[str]] = None  # ["Monday", "Wednesday", "Friday"]
+
+    # Office hours specific
+    standard_work_hours_start: Optional[str] = Field(default=None, max_length=5, pattern=r'^\d{2}:\d{2}$')  # "09:00"
+    standard_work_hours_end: Optional[str] = Field(default=None, max_length=5, pattern=r'^\d{2}:\d{2}$')  # "17:00"
+    core_hours_start: Optional[str] = Field(default=None, max_length=5, pattern=r'^\d{2}:\d{2}$')  # For flexible
+    core_hours_end: Optional[str] = Field(default=None, max_length=5, pattern=r'^\d{2}:\d{2}$')  # For flexible
+
+    # Tax classification (SARS compliance)
+    is_independent_contractor: Optional[bool] = False  # True for consultants (no PAYE)
+
 
 class EmployeeUpdate(BaseModel):
     first_name: Optional[str] = None
@@ -67,6 +96,35 @@ class EmployeeUpdate(BaseModel):
     # Tax details
     tax_number: Optional[str] = None
 
+    # Phase 1: Multi-type HR platform fields (all optional for partial updates)
+    employment_type: Optional[EmploymentType] = None
+    work_pattern_type: Optional[WorkPatternType] = None
+
+    # Contractor/Consultant specific
+    contract_start_date: Optional[date] = None
+    contract_end_date: Optional[date] = None
+    daily_rate: Optional[float] = None
+    project_name: Optional[str] = None
+    invoicing_frequency: Optional[str] = None
+
+    # Skills and organization
+    skills: Optional[List[str]] = None
+    department: Optional[str] = None
+    job_title: Optional[str] = None
+
+    # Part-time specific
+    max_hours_month: Optional[int] = None
+    preferred_days: Optional[List[str]] = None
+
+    # Office hours specific
+    standard_work_hours_start: Optional[str] = None
+    standard_work_hours_end: Optional[str] = None
+    core_hours_start: Optional[str] = None
+    core_hours_end: Optional[str] = None
+
+    # Tax classification
+    is_independent_contractor: Optional[bool] = None
+
 
 class EmployeeResponse(EmployeeBase):
     employee_id: int
@@ -88,6 +146,25 @@ class EmployeeResponse(EmployeeBase):
     shift_pattern_id: Optional[int] = None
     rotation_group: Optional[str] = None  # A, B, C, D
     pattern_start_date: Optional[date] = None
+
+    # Phase 1: Multi-type HR platform fields
+    employment_type: Optional[EmploymentType] = None
+    work_pattern_type: Optional[WorkPatternType] = None
+    contract_start_date: Optional[date] = None
+    contract_end_date: Optional[date] = None
+    daily_rate: Optional[float] = None
+    project_name: Optional[str] = None
+    invoicing_frequency: Optional[str] = None
+    skills: Optional[List[str]] = None
+    department: Optional[str] = None
+    job_title: Optional[str] = None
+    max_hours_month: Optional[int] = None
+    preferred_days: Optional[List[str]] = None
+    standard_work_hours_start: Optional[str] = None
+    standard_work_hours_end: Optional[str] = None
+    core_hours_start: Optional[str] = None
+    core_hours_end: Optional[str] = None
+    is_independent_contractor: Optional[bool] = None
 
     class Config:
         from_attributes = True

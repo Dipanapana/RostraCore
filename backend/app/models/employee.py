@@ -8,10 +8,34 @@ import enum
 
 
 class EmployeeRole(str, enum.Enum):
-    """Employee role enum."""
+    """Employee role enum - Extended for Phase 1 multi-type HR."""
+    # Existing roles (keep unchanged for backward compatibility)
     ARMED = "armed"
     UNARMED = "unarmed"
     SUPERVISOR = "supervisor"
+
+    # New roles (Phase 1: Multi-type HR platform)
+    OFFICE_STAFF = "office_staff"
+    CONTRACTOR = "contractor"
+    CONSULTANT = "consultant"
+
+
+class EmploymentType(str, enum.Enum):
+    """Employment contract type classification."""
+    PERMANENT = "permanent"
+    CONTRACT = "contract"           # Fixed-term employment contract
+    CONSULTANT = "consultant"       # Independent contractor (SARS rules)
+    PART_TIME = "part_time"
+    TEMPORARY = "temporary"         # Seasonal/casual workers
+
+
+class WorkPatternType(str, enum.Enum):
+    """Work scheduling pattern type."""
+    SHIFT_BASED = "shift_based"     # Existing: 4-on-4-off, 2-2-3, etc.
+    OFFICE_HOURS = "office_hours"   # Standard business hours (M-F 9-5)
+    PROJECT_BASED = "project_based" # No fixed schedule, deliverable-based
+    FLEXIBLE = "flexible"           # Core hours + flex time
+    CUSTOM = "custom"               # Organization-specific pattern
 
 
 class EmployeeStatus(str, enum.Enum):
@@ -89,6 +113,36 @@ class Employee(Base):
     shift_pattern_id = Column(Integer, ForeignKey("shift_pattern_templates.template_id", ondelete="SET NULL"), nullable=True)
     rotation_group = Column(String(1), nullable=True)  # A, B, C, D - position in rotation cycle
     pattern_start_date = Column(Date, nullable=True)  # When their rotation cycle started
+
+    # Phase 1: Multi-type HR platform fields (all nullable for backward compatibility)
+    # Employment classification
+    employment_type = Column(SQLEnum(EmploymentType), nullable=True, default=EmploymentType.PERMANENT)
+    work_pattern_type = Column(SQLEnum(WorkPatternType), nullable=True, default=WorkPatternType.SHIFT_BASED)
+
+    # Contractor/Consultant specific fields
+    contract_start_date = Column(Date, nullable=True)
+    contract_end_date = Column(Date, nullable=True)
+    daily_rate = Column(Numeric(10, 2), nullable=True)  # For consultants (alternative to hourly_rate)
+    project_name = Column(String(200), nullable=True)  # Current project assignment
+    invoicing_frequency = Column(String(50), nullable=True)  # weekly, monthly, milestone
+
+    # Skills/specialization (beyond security certifications)
+    skills = Column(ARRAY(String), nullable=True)  # ["Excel", "Python", "Project Management"]
+    department = Column(String(100), nullable=True)  # HR, Finance, IT, Operations
+    job_title = Column(String(100), nullable=True)  # "Office Manager", "IT Consultant"
+
+    # Part-time specific
+    max_hours_month = Column(Integer, nullable=True)  # Monthly hour limit for part-time workers
+    preferred_days = Column(ARRAY(String), nullable=True)  # ["Monday", "Wednesday", "Friday"]
+
+    # Office hours specific
+    standard_work_hours_start = Column(String(5), nullable=True)  # e.g., "09:00"
+    standard_work_hours_end = Column(String(5), nullable=True)    # e.g., "17:00"
+    core_hours_start = Column(String(5), nullable=True)           # For flexible schedules
+    core_hours_end = Column(String(5), nullable=True)             # For flexible schedules
+
+    # Tax classification (SARS compliance)
+    is_independent_contractor = Column(Boolean, default=False)  # True for consultants (no PAYE withholding)
 
     # Relationships (MVP core only)
     organization = relationship("Organization", back_populates="employees")
