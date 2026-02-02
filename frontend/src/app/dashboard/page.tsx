@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { api } from "@/services/api";
+import { api, employeesApi } from "@/services/api";
 import { getApiUrl } from "@/lib/config";
 import Link from "next/link";
 import {
@@ -10,8 +10,10 @@ import {
   Activity,
   TrendingUp,
   Calendar,
-  RefreshCw
+  RefreshCw,
+  Briefcase
 } from "lucide-react";
+import { EmployeeTypesSummary } from "@/types";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import MetricCard from "@/components/dashboard/MetricCard";
 import UtilizationChart from "@/components/dashboard/UtilizationChart";
@@ -57,6 +59,7 @@ export default function DashboardPage() {
   const [costTrends, setCostTrends] = useState<CostTrend[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [employeeTypes, setEmployeeTypes] = useState<EmployeeTypesSummary | null>(null);
 
   // Derived Metrics
   const [orsScore, setOrsScore] = useState(0);
@@ -71,16 +74,18 @@ export default function DashboardPage() {
       setLoading(true);
     }
     try {
-        const [metricsRes, shiftsRes, trendsRes] = await Promise.all([
+        const [metricsRes, shiftsRes, trendsRes, typesRes] = await Promise.all([
           api.get(`${getApiUrl()}/api/v1/dashboard/metrics`),
           api.get(`${getApiUrl()}/api/v1/dashboard/upcoming-shifts?limit=5`),
           api.get(`${getApiUrl()}/api/v1/dashboard/cost-trends?days=7`),
+          employeesApi.getTypesSummary(),
         ]);
 
         const metricsData = metricsRes.data;
         setMetrics(metricsData);
         setUpcomingShifts(shiftsRes.data);
         setCostTrends(trendsRes.data.trend || []);
+        setEmployeeTypes(typesRes.data);
 
         // Calculate real certification compliance data
         // Use actual certification counts from backend, not assumed from employees
@@ -335,6 +340,124 @@ export default function DashboardPage() {
           <UpcomingShiftsCard shifts={upcomingShifts} delay={700} />
           <AlertsCard metrics={metrics} delay={800} />
         </div>
+
+        {/* Workforce Composition Widget */}
+        {employeeTypes && (
+          <div className="animate-slide-up" style={{ animationDelay: "900ms" }}>
+            <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Briefcase className="w-5 h-5 text-blue-500" />
+                    Workforce Composition
+                  </h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                    Employee breakdown by type, role, and department
+                  </p>
+                </div>
+                <div className="text-right">
+                  <div className="text-3xl font-bold text-slate-900 dark:text-white">
+                    {employeeTypes.total_employees}
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">Total Employees</div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* By Employment Type */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+                    Employment Type
+                  </h4>
+                  <div className="space-y-2">
+                    {Object.entries(employeeTypes.by_employment_type).map(([type, count]) => (
+                      <div key={type} className="flex items-center justify-between p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                        <span className="text-sm text-slate-600 dark:text-slate-400 capitalize">
+                          {type.replace('_', ' ')}
+                        </span>
+                        <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                          {count}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* By Role */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+                    By Role
+                  </h4>
+                  <div className="space-y-2">
+                    {Object.entries(employeeTypes.by_role).map(([role, count]) => {
+                      const colors = {
+                        armed: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+                        unarmed: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+                        supervisor: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+                        office_staff: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+                        contractor: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
+                        consultant: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
+                      };
+                      const colorClass = colors[role as keyof typeof colors] || 'bg-slate-100 text-slate-800';
+
+                      return (
+                        <div key={role} className="flex items-center justify-between p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${colorClass}`}>
+                            {role.replace('_', ' ').toUpperCase()}
+                          </span>
+                          <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                            {count}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* By Department + Contractor Split */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+                    Tax Classification
+                  </h4>
+                  <div className="space-y-2">
+                    <div className="p-3 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
+                        {employeeTypes.contractors_vs_employees.employees}
+                      </div>
+                      <div className="text-xs text-blue-600 dark:text-blue-500 font-medium">
+                        Employees (PAYE/UIF/SDL)
+                      </div>
+                    </div>
+                    <div className="p-3 bg-gradient-to-r from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                      <div className="text-2xl font-bold text-amber-700 dark:text-amber-400">
+                        {employeeTypes.contractors_vs_employees.independent_contractors}
+                      </div>
+                      <div className="text-xs text-amber-600 dark:text-amber-500 font-medium">
+                        Independent Contractors
+                      </div>
+                    </div>
+                  </div>
+
+                  {Object.keys(employeeTypes.by_department).length > 0 && (
+                    <>
+                      <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide mt-4">
+                        Departments
+                      </h4>
+                      <div className="space-y-1 text-xs">
+                        {Object.entries(employeeTypes.by_department).slice(0, 3).map(([dept, count]) => (
+                          <div key={dept} className="flex justify-between text-slate-600 dark:text-slate-400">
+                            <span>{dept || 'Unassigned'}</span>
+                            <span className="font-semibold">{count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
