@@ -244,6 +244,89 @@ class SAPayrollService:
         }
 
     @staticmethod
+    def calculate_contractor_payment(
+        gross_amount: Decimal,
+        is_independent_contractor: bool = True
+    ) -> Dict[str, Decimal]:
+        """
+        Calculate payment for independent contractors.
+
+        SARS Classification:
+        - Independent contractors are NOT employees
+        - No PAYE withholding (they handle their own provisional tax)
+        - No UIF contributions (not eligible)
+        - No SDL levy (only for employees)
+
+        Contractor is responsible for:
+        - Provisional tax payments to SARS
+        - Their own tax returns
+        - VAT registration (if turnover > R1M)
+
+        Args:
+            gross_amount: Gross amount to pay contractor
+            is_independent_contractor: Confirm contractor status
+
+        Returns:
+            Payment breakdown (no deductions for independent contractors)
+        """
+        gross = Decimal(str(gross_amount))
+
+        if not is_independent_contractor:
+            # Not a contractor - this shouldn't be called
+            raise ValueError(
+                "calculate_contractor_payment should only be used for independent contractors. "
+                "Use calculate_net_pay for employees."
+            )
+
+        return {
+            "gross_pay": gross.quantize(Decimal("0.01")),
+            "paye": Decimal("0"),  # No PAYE withholding for contractors
+            "uif_employee": Decimal("0"),  # No UIF for contractors
+            "uif_employer": Decimal("0"),  # No UIF for contractors
+            "sdl": Decimal("0"),  # No SDL for contractors
+            "total_deductions": Decimal("0"),
+            "net_pay": gross.quantize(Decimal("0.01")),  # Full amount paid to contractor
+            "tax_note": (
+                "Independent contractor - no tax withholding. "
+                "You are responsible for provisional tax payments to SARS."
+            ),
+            "sars_classification": "Independent Contractor",
+            "is_employee": False
+        }
+
+    @staticmethod
+    def calculate_payment_with_employee_check(
+        gross_amount: Decimal,
+        is_independent_contractor: bool,
+        age: int = 35,
+        other_deductions: Decimal = Decimal("0")
+    ) -> Dict[str, Decimal]:
+        """
+        Calculate payment with automatic employee vs contractor check.
+
+        This is the main method to use when calculating any payment.
+        It automatically routes to the correct calculation based on employment status.
+
+        Args:
+            gross_amount: Gross amount/salary
+            is_independent_contractor: True for contractors, False for employees
+            age: Employee age (for PAYE rebates, ignored for contractors)
+            other_deductions: Other deductions (employees only)
+
+        Returns:
+            Payment breakdown with appropriate deductions
+        """
+        if is_independent_contractor:
+            return SAPayrollService.calculate_contractor_payment(gross_amount, True)
+        else:
+            return SAPayrollService.calculate_net_pay(
+                gross_amount,
+                age=age,
+                include_uif=True,
+                other_deductions=other_deductions
+            )
+
+    @staticmethod
     def calculate_cost_to_company(
         gross_monthly: Decimal,
         total_monthly_payroll: Decimal = Decimal("0"),

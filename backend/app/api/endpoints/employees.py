@@ -14,7 +14,7 @@ from app.services.excel_import_service import ExcelImportService
 from app.services.client_filter_service import ClientFilterService
 from app.api.deps import get_current_user
 from app.models.user import User
-from app.models.employee import Employee, EmployeeStatus
+from app.models.employee import Employee, EmployeeStatus, EmploymentType, WorkPatternType, EmployeeRole
 from app.models.certification import Certification
 
 router = APIRouter()
@@ -153,31 +153,169 @@ async def get_employees(
     skip: int = 0,
     limit: int = 100,
     status_filter: Optional[str] = None,
+    # Phase 1: Multi-type HR filtering parameters
+    employment_type: Optional[EmploymentType] = Query(None, description="Filter by employment type (permanent, contract, consultant, part_time, temporary)"),
+    work_pattern_type: Optional[WorkPatternType] = Query(None, description="Filter by work pattern (shift_based, office_hours, project_based, flexible, custom)"),
+    role: Optional[EmployeeRole] = Query(None, description="Filter by role (armed, unarmed, supervisor, office_staff, contractor, consultant)"),
+    department: Optional[str] = Query(None, description="Filter by department (HR, Finance, IT, etc.)"),
+    is_independent_contractor: Optional[bool] = Query(None, description="Filter by contractor status"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
-    Get all employees with optional status filter.
+    Get all employees with optional filtering.
 
     Filtering:
     - Organization: Only employees in user's organization
     - Client Access: If user has managed_client_ids, only employees assigned to those clients
                      (or unassigned employees) are visible
+    - Employment Type: permanent, contract, consultant, part_time, temporary
+    - Work Pattern: shift_based, office_hours, project_based, flexible, custom
+    - Role: armed, unarmed, supervisor, office_staff, contractor, consultant
+    - Department: HR, Finance, IT, Operations, etc.
+    - Contractor Status: Independent contractors vs employees
     """
     org_id = _get_org_id_or_403(current_user)
 
     # Get accessible clients for client-level filtering
     accessible_clients = ClientFilterService.get_accessible_clients_for_user(db, current_user)
 
-    employees = EmployeeService.get_all(
-        db,
-        skip=skip,
-        limit=limit,
-        status=status_filter,
-        org_id=org_id,
-        accessible_client_ids=accessible_clients
-    )
+    # Build query with all filters
+    query = db.query(Employee).filter(Employee.org_id == org_id)
+
+    # Status filter
+    if status_filter:
+        query = query.filter(Employee.status == status_filter)
+
+    # Phase 1: Type filters
+    if employment_type:
+        query = query.filter(Employee.employment_type == employment_type)
+
+    if work_pattern_type:
+        query = query.filter(Employee.work_pattern_type == work_pattern_type)
+
+    if role:
+        query = query.filter(Employee.role == role)
+
+    if department:
+        query = query.filter(Employee.department == department)
+
+    if is_independent_contractor is not None:
+        query = query.filter(Employee.is_independent_contractor == is_independent_contractor)
+
+    # Client-level access control
+    if accessible_clients is not None:
+        # User has client restrictions - only show employees assigned to accessible clients or unassigned
+        query = query.filter(
+            or_(
+                Employee.assigned_client_id.in_(accessible_clients),
+                Employee.assigned_client_id.is_(None),
+                # Also check multi-client array
+                func.array_length(Employee.assigned_client_ids, 1).is_(None),  # Empty array
+                Employee.assigned_client_ids.overlap(accessible_clients)  # Has at least one accessible client
+            )
+        )
+
+    # Pagination
+    employees = query.offset(skip).limit(limit).all()
     return employees
+
+
+@router.get("/types/summary")
+async def get_employee_types_summary(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get summary statistics of employees by type for dashboard widgets.
+
+    Returns breakdown by:
+    - Employment type (permanent, contract, consultant, part_time, temporary)
+    - Work pattern (shift_based, office_hours, project_based, flexible, custom)
+    - Role (armed, unarmed, supervisor, office_staff, contractor, consultant)
+    - Contractor status (independent contractors vs employees)
+    """
+    org_id = _get_org_id_or_403(current_user)
+
+    # Base query for active employees in this org
+    base_query = db.query(Employee).filter(
+        Employee.org_id == org_id,
+        Employee.status == EmployeeStatus.ACTIVE
+    )
+
+    # Get accessible clients for client-level filtering
+    accessible_clients = ClientFilterService.get_accessible_clients_for_user(db, current_user)
+
+    if accessible_clients is not None:
+        # Apply client-level filtering
+        base_query = base_query.filter(
+            or_(
+                Employee.assigned_client_id.in_(accessible_clients),
+                Employee.assigned_client_id.is_(None),
+                func.array_length(Employee.assigned_client_ids, 1).is_(None),
+                Employee.assigned_client_ids.overlap(accessible_clients)
+            )
+        )
+
+    # Count by employment type
+    by_employment_type = {}
+    for emp_type in EmploymentType:
+        count = base_query.filter(Employee.employment_type == emp_type).count()
+        by_employment_type[emp_type.value] = count
+
+    # Handle legacy NULL employment types (default to permanent)
+    null_employment_count = base_query.filter(Employee.employment_type.is_(None)).count()
+    by_employment_type['permanent'] += null_employment_count
+
+    # Count by work pattern
+    by_work_pattern = {}
+    for work_pattern in WorkPatternType:
+        count = base_query.filter(Employee.work_pattern_type == work_pattern).count()
+        by_work_pattern[work_pattern.value] = count
+
+    # Handle legacy NULL work patterns (default to shift_based)
+    null_pattern_count = base_query.filter(Employee.work_pattern_type.is_(None)).count()
+    by_work_pattern['shift_based'] += null_pattern_count
+
+    # Count by role
+    by_role = {}
+    for role in EmployeeRole:
+        count = base_query.filter(Employee.role == role).count()
+        by_role[role.value] = count
+
+    # Count by department (top 10)
+    department_counts = (
+        db.query(Employee.department, func.count(Employee.employee_id))
+        .filter(
+            Employee.org_id == org_id,
+            Employee.status == EmployeeStatus.ACTIVE,
+            Employee.department.isnot(None)
+        )
+        .group_by(Employee.department)
+        .order_by(func.count(Employee.employee_id).desc())
+        .limit(10)
+        .all()
+    )
+    by_department = {dept: count for dept, count in department_counts}
+
+    # Count contractors vs employees
+    contractor_count = base_query.filter(Employee.is_independent_contractor == True).count()
+    employee_count = base_query.filter(Employee.is_independent_contractor == False).count()
+
+    # Total count
+    total_employees = base_query.count()
+
+    return {
+        "total_employees": total_employees,
+        "by_employment_type": by_employment_type,
+        "by_work_pattern": by_work_pattern,
+        "by_role": by_role,
+        "by_department": by_department,
+        "contractors_vs_employees": {
+            "independent_contractors": contractor_count,
+            "employees": employee_count
+        }
+    }
 
 
 @router.get("/{employee_id}", response_model=EmployeeResponse)
