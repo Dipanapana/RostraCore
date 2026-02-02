@@ -1,6 +1,21 @@
 /** @type {import('next').NextConfig} */
+
+// Desktop app mode: static export for Electron
+const isDesktopBuild = process.env.BUILD_MODE === 'desktop';
+
 const nextConfig = {
   reactStrictMode: true,
+
+  // Desktop app: Enable static export
+  ...(isDesktopBuild && {
+    output: 'export',
+    // Disable image optimization for static export
+    images: {
+      unoptimized: true,
+    },
+    // Disable trailing slashes for static files
+    trailingSlash: true,
+  }),
 
   // Generate unique build ID for cache busting
   generateBuildId: async () => {
