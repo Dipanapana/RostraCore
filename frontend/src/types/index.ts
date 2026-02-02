@@ -1,12 +1,17 @@
 export type Gender = 'male' | 'female' | 'other'
 export type AccountType = 'savings' | 'cheque' | 'current' | 'transmission'
 
+// Phase 1: Multi-type HR platform types
+export type EmploymentType = 'permanent' | 'contract' | 'consultant' | 'part_time' | 'temporary'
+export type WorkPatternType = 'shift_based' | 'office_hours' | 'project_based' | 'flexible' | 'custom'
+export type EmployeeRole = 'armed' | 'unarmed' | 'supervisor' | 'office_staff' | 'contractor' | 'consultant'
+
 export interface Employee {
   employee_id: number
   first_name: string
   last_name: string
   id_number: string
-  role: 'armed' | 'unarmed' | 'supervisor'
+  role: EmployeeRole  // Extended to include office staff, contractors
   hourly_rate: number
   max_hours_week: number
   cert_level?: string
@@ -32,7 +37,7 @@ export interface Employee {
   // Tax details
   tax_number?: string
 
-  // PSIRA details
+  // PSIRA details (for security guards)
   psira_number?: string
   psira_grade?: string
   psira_expiry_date?: string
@@ -43,6 +48,48 @@ export interface Employee {
 
   // Flags
   is_supervisor?: boolean
+
+  // Phase 1: Multi-type HR platform fields
+  employment_type?: EmploymentType
+  work_pattern_type?: WorkPatternType
+
+  // Contractor/Consultant specific
+  contract_start_date?: string
+  contract_end_date?: string
+  daily_rate?: number  // Alternative to hourly_rate for consultants
+  project_name?: string
+  invoicing_frequency?: string  // weekly, monthly, milestone
+
+  // Skills & organization
+  skills?: string[]  // ["Excel", "Python", "Project Management"]
+  department?: string  // HR, Finance, IT, Operations
+  job_title?: string  // "Office Manager", "IT Consultant"
+
+  // Part-time specific
+  max_hours_month?: number  // Monthly hour limit for part-time workers
+  preferred_days?: string[]  // ["Monday", "Wednesday", "Friday"]
+
+  // Office hours specific
+  standard_work_hours_start?: string  // "09:00"
+  standard_work_hours_end?: string  // "17:00"
+  core_hours_start?: string  // For flexible schedules
+  core_hours_end?: string
+
+  // Tax classification (SARS compliance)
+  is_independent_contractor?: boolean  // True for consultants (no PAYE withholding)
+}
+
+// Phase 1: Employee type summary for dashboard
+export interface EmployeeTypesSummary {
+  total_employees: number
+  by_employment_type: Record<EmploymentType, number>
+  by_work_pattern: Record<WorkPatternType, number>
+  by_role: Record<EmployeeRole, number>
+  by_department: Record<string, number>
+  contractors_vs_employees: {
+    independent_contractors: number
+    employees: number
+  }
 }
 
 export interface Site {

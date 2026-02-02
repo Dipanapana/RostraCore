@@ -56,7 +56,17 @@ api.interceptors.response.use(
 
 // API endpoints
 export const employeesApi = {
-  getAll: (params?: { status?: string; skip?: number; limit?: number }) => api.get('/api/v1/employees/', { params }),
+  getAll: (params?: {
+    status?: string
+    skip?: number
+    limit?: number
+    // Phase 1: Multi-type HR platform filters
+    employment_type?: string
+    work_pattern_type?: string
+    role?: string
+    department?: string
+    is_independent_contractor?: boolean
+  }) => api.get('/api/v1/employees/', { params }),
   getById: (id: number) => api.get(`/api/v1/employees/${id}`),
   create: (data: any) => api.post('/api/v1/employees/', data),
   update: (id: number, data: any) => api.put(`/api/v1/employees/${id}`, data),
@@ -67,6 +77,8 @@ export const employeesApi = {
     },
   }),
   getDataQualityDashboard: () => api.get('/api/v1/employees/dashboard/data-quality'),
+  // Phase 1: Employee types summary for dashboard
+  getTypesSummary: () => api.get('/api/v1/employees/types/summary'),
 }
 
 export const clientsApi = {
