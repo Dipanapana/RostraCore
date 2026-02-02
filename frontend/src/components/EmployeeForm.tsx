@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Employee, Client, Gender, AccountType } from '@/types'
+import { Employee, Client, Gender, AccountType, EmploymentType, WorkPatternType, EmployeeRole } from '@/types'
 import { employeesApi, clientsApi, organizationSettingsApi } from '@/services/api'
 
 interface EmployeeFormProps {
@@ -15,7 +15,7 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
     first_name: '',
     last_name: '',
     id_number: '',
-    role: 'unarmed' as 'armed' | 'unarmed' | 'supervisor',
+    role: 'unarmed' as EmployeeRole,
     hourly_rate: '',
     max_hours_week: '48',
     cert_level: '',
@@ -40,7 +40,25 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
     psira_number: '',
     // Emergency contact
     emergency_contact_name: '',
-    emergency_contact_phone: ''
+    emergency_contact_phone: '',
+    // Phase 1: Multi-type HR platform fields
+    employment_type: 'permanent' as EmploymentType,
+    work_pattern_type: 'shift_based' as WorkPatternType,
+    contract_start_date: '',
+    contract_end_date: '',
+    daily_rate: '',
+    project_name: '',
+    invoicing_frequency: '',
+    skills: [] as string[],
+    department: '',
+    job_title: '',
+    max_hours_month: '',
+    preferred_days: [] as string[],
+    standard_work_hours_start: '',
+    standard_work_hours_end: '',
+    core_hours_start: '',
+    core_hours_end: '',
+    is_independent_contractor: false
   })
 
   const [clients, setClients] = useState<Client[]>([])
@@ -125,7 +143,25 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
         psira_number: employee.psira_number || '',
         // Emergency contact
         emergency_contact_name: employee.emergency_contact_name || '',
-        emergency_contact_phone: employee.emergency_contact_phone || ''
+        emergency_contact_phone: employee.emergency_contact_phone || '',
+        // Phase 1: Multi-type HR platform fields
+        employment_type: employee.employment_type || 'permanent',
+        work_pattern_type: employee.work_pattern_type || 'shift_based',
+        contract_start_date: employee.contract_start_date || '',
+        contract_end_date: employee.contract_end_date || '',
+        daily_rate: employee.daily_rate?.toString() || '',
+        project_name: employee.project_name || '',
+        invoicing_frequency: employee.invoicing_frequency || '',
+        skills: employee.skills || [],
+        department: employee.department || '',
+        job_title: employee.job_title || '',
+        max_hours_month: employee.max_hours_month?.toString() || '',
+        preferred_days: employee.preferred_days || [],
+        standard_work_hours_start: employee.standard_work_hours_start || '',
+        standard_work_hours_end: employee.standard_work_hours_end || '',
+        core_hours_start: employee.core_hours_start || '',
+        core_hours_end: employee.core_hours_end || '',
+        is_independent_contractor: employee.is_independent_contractor || false
       })
     }
   }, [employee])
@@ -183,7 +219,25 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
         psira_number: formData.psira_number || undefined,
         // Emergency contact
         emergency_contact_name: formData.emergency_contact_name || undefined,
-        emergency_contact_phone: formData.emergency_contact_phone || undefined
+        emergency_contact_phone: formData.emergency_contact_phone || undefined,
+        // Phase 1: Multi-type HR platform fields
+        employment_type: formData.employment_type,
+        work_pattern_type: formData.work_pattern_type,
+        contract_start_date: formData.contract_start_date || undefined,
+        contract_end_date: formData.contract_end_date || undefined,
+        daily_rate: formData.daily_rate ? parseFloat(formData.daily_rate) : undefined,
+        project_name: formData.project_name || undefined,
+        invoicing_frequency: formData.invoicing_frequency || undefined,
+        skills: formData.skills.length > 0 ? formData.skills : undefined,
+        department: formData.department || undefined,
+        job_title: formData.job_title || undefined,
+        max_hours_month: formData.max_hours_month ? parseInt(formData.max_hours_month) : undefined,
+        preferred_days: formData.preferred_days.length > 0 ? formData.preferred_days : undefined,
+        standard_work_hours_start: formData.standard_work_hours_start || undefined,
+        standard_work_hours_end: formData.standard_work_hours_end || undefined,
+        core_hours_start: formData.core_hours_start || undefined,
+        core_hours_end: formData.core_hours_end || undefined,
+        is_independent_contractor: formData.is_independent_contractor
       }
 
       if (employee) {
@@ -275,6 +329,44 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Employment Type <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="employment_type"
+                  value={formData.employment_type}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="permanent">Permanent</option>
+                  <option value="contract">Fixed-Term Contract</option>
+                  <option value="consultant">Consultant / Independent Contractor</option>
+                  <option value="part_time">Part-Time</option>
+                  <option value="temporary">Temporary</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Work Pattern <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="work_pattern_type"
+                  value={formData.work_pattern_type}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="shift_based">Shift-Based (4-on-4-off, 12-hour, etc.)</option>
+                  <option value="office_hours">Office Hours (Mon-Fri 9-5)</option>
+                  <option value="project_based">Project-Based (No fixed schedule)</option>
+                  <option value="flexible">Flexible (Core hours + flex)</option>
+                  <option value="custom">Custom Schedule</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Role <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -284,11 +376,20 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="unarmed">Unarmed</option>
-                  <option value="armed">Armed</option>
-                  <option value="supervisor">Supervisor</option>
+                  <optgroup label="Security Personnel">
+                    <option value="unarmed">Unarmed Security Officer</option>
+                    <option value="armed">Armed Security Officer</option>
+                    <option value="supervisor">Security Supervisor</option>
+                  </optgroup>
+                  <optgroup label="Other Roles">
+                    <option value="office_staff">Office Staff</option>
+                    <option value="contractor">Contractor</option>
+                    <option value="consultant">Consultant</option>
+                  </optgroup>
                 </select>
               </div>
+
+              <div></div> {/* Spacer for grid alignment */}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -401,6 +502,202 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+
+              {/* Consultant/Contractor Specific Fields */}
+              {formData.employment_type === 'consultant' && (
+                <>
+                  <div className="md:col-span-2 border-t pt-4 mt-2">
+                    <h3 className="text-lg font-medium text-gray-900 mb-3">Consultant Details</h3>
+                    {formData.is_independent_contractor && (
+                      <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded mb-3 text-sm">
+                        <strong>Independent Contractor:</strong> No PAYE, UIF, or SDL withholding. Responsible for own provisional tax (SARS).
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Contract Start Date <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      name="contract_start_date"
+                      value={formData.contract_start_date}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Contract End Date <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      name="contract_end_date"
+                      value={formData.contract_end_date}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Daily Rate (ZAR)
+                    </label>
+                    <input
+                      type="number"
+                      name="daily_rate"
+                      value={formData.daily_rate}
+                      onChange={handleChange}
+                      step="0.01"
+                      min="0"
+                      placeholder="Alternative to hourly rate"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Invoicing Frequency
+                    </label>
+                    <select
+                      name="invoicing_frequency"
+                      value={formData.invoicing_frequency}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select Frequency</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                      <option value="milestone">Milestone-Based</option>
+                    </select>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Project Name
+                    </label>
+                    <input
+                      type="text"
+                      name="project_name"
+                      value={formData.project_name}
+                      onChange={handleChange}
+                      placeholder="Project or engagement name"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        name="is_independent_contractor"
+                        checked={formData.is_independent_contractor}
+                        onChange={(e) => setFormData(prev => ({ ...prev, is_independent_contractor: e.target.checked }))}
+                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">Independent Contractor (SARS - No PAYE/UIF/SDL)</span>
+                    </label>
+                    <p className="text-xs text-gray-500 mt-1 ml-6">
+                      Check this if the consultant is responsible for their own tax (no employee deductions)
+                    </p>
+                  </div>
+                </>
+              )}
+
+              {/* Office Hours Specific Fields */}
+              {formData.work_pattern_type === 'office_hours' && (
+                <>
+                  <div className="md:col-span-2 border-t pt-4 mt-2">
+                    <h3 className="text-lg font-medium text-gray-900 mb-3">Office Work Details</h3>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Department
+                    </label>
+                    <input
+                      type="text"
+                      name="department"
+                      value={formData.department}
+                      onChange={handleChange}
+                      placeholder="HR, Finance, IT, Operations"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Job Title
+                    </label>
+                    <input
+                      type="text"
+                      name="job_title"
+                      value={formData.job_title}
+                      onChange={handleChange}
+                      placeholder="Office Manager, Accountant, etc."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Work Hours Start
+                    </label>
+                    <input
+                      type="time"
+                      name="standard_work_hours_start"
+                      value={formData.standard_work_hours_start}
+                      onChange={handleChange}
+                      placeholder="09:00"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Work Hours End
+                    </label>
+                    <input
+                      type="time"
+                      name="standard_work_hours_end"
+                      value={formData.standard_work_hours_end}
+                      onChange={handleChange}
+                      placeholder="17:00"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Part-Time Specific Fields */}
+              {formData.employment_type === 'part_time' && (
+                <>
+                  <div className="md:col-span-2 border-t pt-4 mt-2">
+                    <h3 className="text-lg font-medium text-gray-900 mb-3">Part-Time Details</h3>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Max Hours per Month
+                    </label>
+                    <input
+                      type="number"
+                      name="max_hours_month"
+                      value={formData.max_hours_month}
+                      onChange={handleChange}
+                      min="0"
+                      placeholder="e.g., 80"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div></div> {/* Spacer */}
+                </>
+              )}
 
               {/* Additional Personal Details */}
               <div>
