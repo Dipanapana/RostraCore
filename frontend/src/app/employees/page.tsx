@@ -11,6 +11,8 @@ import Modal from '@/components/ui/Modal'
 import { Plus, Pencil, Trash2, Upload, Download, Calendar } from 'lucide-react'
 import EmployeeAvailabilityPatterns from '@/components/EmployeeAvailabilityPatterns'
 
+type EmployeeFilter = 'all' | 'security' | 'office' | 'contractors' | 'consultants'
+
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
@@ -22,6 +24,7 @@ export default function EmployeesPage() {
   const [importing, setImporting] = useState(false)
   const [importResult, setImportResult] = useState<any>(null)
   const [availabilityEmployee, setAvailabilityEmployee] = useState<Employee | null>(null)
+  const [activeFilter, setActiveFilter] = useState<EmployeeFilter>('all')
 
   useEffect(() => {
     fetchEmployees()
@@ -115,6 +118,33 @@ export default function EmployeesPage() {
     setError(null)
   }
 
+  // Filter employees based on active tab
+  const filteredEmployees = useMemo(() => {
+    switch (activeFilter) {
+      case 'security':
+        return employees.filter(emp =>
+          emp.role === 'armed' || emp.role === 'unarmed' || emp.role === 'supervisor'
+        )
+      case 'office':
+        return employees.filter(emp => emp.role === 'office_staff')
+      case 'contractors':
+        return employees.filter(emp => emp.role === 'contractor')
+      case 'consultants':
+        return employees.filter(emp => emp.role === 'consultant' || emp.employment_type === 'consultant')
+      default:
+        return employees
+    }
+  }, [employees, activeFilter])
+
+  // Calculate counts for each category
+  const employeeCounts = useMemo(() => ({
+    all: employees.length,
+    security: employees.filter(emp => emp.role === 'armed' || emp.role === 'unarmed' || emp.role === 'supervisor').length,
+    office: employees.filter(emp => emp.role === 'office_staff').length,
+    contractors: employees.filter(emp => emp.role === 'contractor').length,
+    consultants: employees.filter(emp => emp.role === 'consultant' || emp.employment_type === 'consultant').length,
+  }), [employees])
+
   const columns: Column<Employee>[] = [
     {
       header: 'ID',
@@ -140,15 +170,29 @@ export default function EmployeesPage() {
       header: 'Role',
       cell: (emp) => (
         <span
-          className={`px-2.5 py-0.5 inline-flex text-xs font-medium rounded-full ${emp.role === 'armed'
-            ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-            : emp.role === 'unarmed'
-              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-              : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-            }`}
+          className={`px-2.5 py-0.5 inline-flex text-xs font-medium rounded-full ${
+            emp.role === 'armed'
+              ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+              : emp.role === 'unarmed'
+                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                : emp.role === 'supervisor'
+                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+                  : emp.role === 'office_staff'
+                    ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400'
+                    : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'
+          }`}
         >
-          {emp.role.toUpperCase()}
+          {emp.role.replace('_', ' ').toUpperCase()}
         </span>
+      ),
+    },
+    {
+      header: 'Type',
+      cell: (emp) => (
+        <div className="text-xs text-slate-600 dark:text-slate-400">
+          <div className="font-medium">{emp.employment_type || 'Permanent'}</div>
+          <div className="text-slate-500 dark:text-slate-500">{(emp.work_pattern_type || 'shift_based').replace('_', ' ')}</div>
+        </div>
       ),
     },
     {
@@ -214,6 +258,101 @@ export default function EmployeesPage() {
           </div>
         </div>
 
+        {/* Filter Tabs */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-1">
+          <div className="flex gap-1 overflow-x-auto">
+            <button
+              onClick={() => setActiveFilter('all')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${
+                activeFilter === 'all'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+              }`}
+            >
+              All Employees
+              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                activeFilter === 'all'
+                  ? 'bg-white/20 text-white'
+                  : 'bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-300'
+              }`}>
+                {employeeCounts.all}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveFilter('security')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${
+                activeFilter === 'security'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+              }`}
+            >
+              Security Guards
+              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                activeFilter === 'security'
+                  ? 'bg-white/20 text-white'
+                  : 'bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-300'
+              }`}>
+                {employeeCounts.security}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveFilter('office')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${
+                activeFilter === 'office'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+              }`}
+            >
+              Office Staff
+              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                activeFilter === 'office'
+                  ? 'bg-white/20 text-white'
+                  : 'bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-300'
+              }`}>
+                {employeeCounts.office}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveFilter('contractors')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${
+                activeFilter === 'contractors'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+              }`}
+            >
+              Contractors
+              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                activeFilter === 'contractors'
+                  ? 'bg-white/20 text-white'
+                  : 'bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-300'
+              }`}>
+                {employeeCounts.contractors}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveFilter('consultants')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${
+                activeFilter === 'consultants'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+              }`}
+            >
+              Consultants
+              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                activeFilter === 'consultants'
+                  ? 'bg-white/20 text-white'
+                  : 'bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-300'
+              }`}>
+                {employeeCounts.consultants}
+              </span>
+            </button>
+          </div>
+        </div>
+
         {error && (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl animate-in fade-in slide-in-from-top-2">
             {error}
@@ -222,9 +361,9 @@ export default function EmployeesPage() {
 
         {/* Data Table */}
         <DataTable
-          data={employees}
+          data={filteredEmployees}
           columns={columns}
-          searchKeys={['first_name', 'last_name', 'id_number', 'role', 'status']}
+          searchKeys={['first_name', 'last_name', 'id_number', 'role', 'status', 'employment_type', 'department', 'job_title']}
           actions={(emp) => (
             <>
               <button
