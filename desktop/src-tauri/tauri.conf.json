@@ -10,29 +10,7 @@
     "frontendDist": "../frontend/out"
   },
   "bundle": {
-    "active": true,
-    "targets": ["nsis", "msi"],
-    "icon": [
-      "icons/32x32.png",
-      "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
-    ],
-    "windows": {
-      "certificateThumbprint": null,
-      "digestAlgorithm": "sha256",
-      "timestampUrl": "",
-      "wix": {
-        "language": "en-US"
-      },
-      "nsis": {
-        "installerIcon": "icons/icon.ico",
-        "installMode": "perUser",
-        "languages": ["en-US"],
-        "displayLanguageSelector": false
-      }
-    }
+    "active": false
   },
   "app": {
     "windows": [
@@ -55,11 +33,7 @@
     }
   },
   "plugins": {
-    "store": {
-      "enabled": true
-    },
     "shell": {
-      "enabled": true,
       "open": true
     }
   }
