@@ -5,16 +5,25 @@
  * Wraps Next.js static export for desktop deployment.
  */
 
+// Handle Squirrel events on Windows (must be first)
+// Commenting out temporarily to debug module loading issue
+// const squirrelStartup = require('electron-squirrel-startup');
+// if (squirrelStartup) {
+//   process.exit(0);
+// }
+
+// Import electron properly for ES modules
 import { app, BrowserWindow, ipcMain, Menu } from 'electron';
 import * as path from 'path';
-import { setupAutoUpdater } from './auto-updater';
+// Temporarily comment out auto-updater to isolate issue
+// import { setupAutoUpdater } from './auto-updater';
 import Store from 'electron-store';
 
 // Initialize electron-store for local data persistence
 const store = new Store();
 
 // Keep a global reference to prevent garbage collection
-let mainWindow: BrowserWindow | null = null;
+let mainWindow: any = null;
 
 // Development mode check
 const isDevelopment = !app.isPackaged;
@@ -133,10 +142,10 @@ function setupMenu(): void {
 app.whenReady().then(() => {
   createWindow();
 
-  // Setup auto-updater (production only)
-  if (!isDevelopment) {
-    setupAutoUpdater(mainWindow);
-  }
+  // Setup auto-updater (production only) - TEMPORARILY DISABLED FOR DEBUGGING
+  // if (!isDevelopment) {
+  //   setupAutoUpdater(mainWindow);
+  // }
 
   // macOS: Re-create window when dock icon clicked
   app.on('activate', () => {
@@ -161,18 +170,18 @@ app.on('window-all-closed', () => {
  */
 
 // Get stored data from electron-store
-ipcMain.handle('get-stored-data', async (event, key: string) => {
+ipcMain.handle('get-stored-data', async (_event: any, key: string) => {
   return store.get(key);
 });
 
 // Set stored data to electron-store
-ipcMain.handle('set-stored-data', async (event, key: string, value: any) => {
+ipcMain.handle('set-stored-data', async (_event: any, key: string, value: any) => {
   store.set(key, value);
   return true;
 });
 
 // Delete stored data
-ipcMain.handle('delete-stored-data', async (event, key: string) => {
+ipcMain.handle('delete-stored-data', async (_event: any, key: string) => {
   store.delete(key);
   return true;
 });

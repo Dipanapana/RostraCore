@@ -7,31 +7,14 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "start": "electron .",
-    "dev": "tsc && electron .",
-    "build:ts": "tsc",
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build",
     "build:frontend": "cd ../frontend && npm run build:desktop",
-    "build:all": "npm run build:frontend && npm run build:ts",
-    "package": "electron-forge package",
-    "make": "electron-forge make",
-    "publish": "electron-forge publish",
-    "clean": "rimraf dist out"
-  },
-  "dependencies": {
-    "electron-squirrel-startup": "^1.0.0",
-    "electron-store": "^8.1.0",
-    "electron-updater": "^6.1.7"
+    "clean": "rimraf dist out src-tauri/target"
   },
   "devDependencies": {
-    "@electron-forge/cli": "^7.2.0",
-    "@electron-forge/maker-squirrel": "^7.2.0",
-    "@electron-forge/maker-zip": "^7.2.0",
-    "@types/node": "^20.10.6",
-    "electron": "^28.1.0",
-    "rimraf": "^5.0.5",
-    "typescript": "^5.3.3"
-  },
-  "config": {
-    "forge": "./forge.config.js"
+    "@tauri-apps/cli": "^2.10.0",
+    "rimraf": "^5.0.5"
   }
 }

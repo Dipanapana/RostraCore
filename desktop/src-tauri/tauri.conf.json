@@ -1,0 +1,66 @@
+{
+  "$schema": "https://schema.tauri.app/config/2.0",
+  "productName": "RostraCore Desktop",
+  "version": "1.0.0",
+  "identifier": "com.rostracore.desktop",
+  "build": {
+    "beforeDevCommand": "cd ../frontend && npm run dev",
+    "beforeBuildCommand": "cd ../frontend && npm run build:desktop",
+    "devUrl": "http://localhost:3000",
+    "frontendDist": "../frontend/out"
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "msi"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": "",
+      "wix": {
+        "language": "en-US"
+      },
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "installMode": "perUser",
+        "languages": ["en-US"],
+        "displayLanguageSelector": false
+      }
+    }
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "RostraCore - HR & Risk Management",
+        "width": 1400,
+        "height": 900,
+        "minWidth": 1024,
+        "minHeight": 768,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true,
+        "transparent": false,
+        "alwaysOnTop": false,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' http://localhost:* https://*"
+    }
+  },
+  "plugins": {
+    "store": {
+      "enabled": true
+    },
+    "shell": {
+      "enabled": true,
+      "open": true
+    }
+  }
+}
