@@ -1,0 +1,128 @@
+{
+  "version": "1.0",
+  "industry": "logistics",
+  "display_name": "Logistics (Transport, Warehousing, Delivery)",
+  "roles": [
+    {
+      "id": "driver",
+      "display_name": "Delivery Driver",
+      "default_permissions": ["clock_in", "view_schedule", "deliver_packages"],
+      "hourly_rate_min": 35.00,
+      "hourly_rate_max": 65.00,
+      "certifications_required": ["drivers_license", "prdp"]
+    },
+    {
+      "id": "warehouse_worker",
+      "display_name": "Warehouse Worker",
+      "default_permissions": ["clock_in", "view_schedule", "manage_stock"],
+      "hourly_rate_min": 28.00,
+      "hourly_rate_max": 50.00,
+      "certifications_required": ["forklift_certification"]
+    },
+    {
+      "id": "dispatcher",
+      "display_name": "Dispatcher",
+      "default_permissions": ["clock_in", "view_schedule", "coordinate_deliveries"],
+      "hourly_rate_min": 40.00,
+      "hourly_rate_max": 70.00,
+      "certifications_required": []
+    },
+    {
+      "id": "logistics_manager",
+      "display_name": "Logistics Manager",
+      "default_permissions": ["clock_in", "view_schedule", "manage_operations", "approve_routes"],
+      "hourly_rate_min": 70.00,
+      "hourly_rate_max": 130.00,
+      "certifications_required": []
+    },
+    {
+      "id": "fleet_coordinator",
+      "display_name": "Fleet Coordinator",
+      "default_permissions": ["clock_in", "view_schedule", "manage_vehicles"],
+      "hourly_rate_min": 45.00,
+      "hourly_rate_max": 85.00,
+      "certifications_required": []
+    }
+  ],
+  "shift_patterns": [
+    {
+      "id": "early_morning",
+      "name": "Early Morning Delivery",
+      "start_time": "05:00",
+      "end_time": "13:00",
+      "duration_hours": 8,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 30, "after_hours": 4}
+      ]
+    },
+    {
+      "id": "day_shift",
+      "name": "Day Shift",
+      "start_time": "08:00",
+      "end_time": "16:00",
+      "duration_hours": 8,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 45, "after_hours": 4}
+      ]
+    },
+    {
+      "id": "afternoon_shift",
+      "name": "Afternoon Shift",
+      "start_time": "13:00",
+      "end_time": "21:00",
+      "duration_hours": 8,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 30, "after_hours": 4}
+      ]
+    },
+    {
+      "id": "flexible_delivery",
+      "name": "Flexible Delivery Route",
+      "start_time": "07:00",
+      "end_time": "17:00",
+      "duration_hours": 10,
+      "break_pattern": [
+        {"type": "rest_break", "duration_minutes": 15, "after_hours": 3},
+        {"type": "meal_break", "duration_minutes": 45, "after_hours": 5}
+      ]
+    }
+  ],
+  "compliance_rules": {
+    "certifications": [
+      {
+        "id": "drivers_license",
+        "name": "Driver's License (Code 8/10/14)",
+        "renewal_months": 60,
+        "required_for_roles": ["driver"]
+      },
+      {
+        "id": "prdp",
+        "name": "Professional Driving Permit (PrDP)",
+        "renewal_months": 12,
+        "required_for_roles": ["driver"]
+      },
+      {
+        "id": "forklift_certification",
+        "name": "Forklift Operation Certificate",
+        "renewal_months": 36,
+        "required_for_roles": ["warehouse_worker"]
+      }
+    ],
+    "labor_law": {
+      "max_hours_week": 45,
+      "max_overtime_week": 10,
+      "min_rest_hours_between_shifts": 12,
+      "meal_break_required_after_hours": 5
+    }
+  },
+  "hierarchy_template": {
+    "suggested_levels": ["organization", "hub", "route"],
+    "example": "FastCourier.JohannesburgHub.NorthRoute"
+  },
+  "metrics": [
+    "deliveries_completed",
+    "on_time_percentage",
+    "fuel_efficiency",
+    "customer_rating"
+  ]
+}

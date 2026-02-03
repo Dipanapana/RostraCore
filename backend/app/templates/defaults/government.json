@@ -1,0 +1,108 @@
+{
+  "version": "1.0",
+  "industry": "government",
+  "display_name": "Government & Municipality",
+  "roles": [
+    {
+      "id": "administrator",
+      "display_name": "Administrator",
+      "default_permissions": ["clock_in", "view_schedule", "process_documents"],
+      "hourly_rate_min": 35.00,
+      "hourly_rate_max": 60.00,
+      "certifications_required": []
+    },
+    {
+      "id": "clerk",
+      "display_name": "Clerk",
+      "default_permissions": ["clock_in", "view_schedule", "serve_citizens"],
+      "hourly_rate_min": 30.00,
+      "hourly_rate_max": 50.00,
+      "certifications_required": []
+    },
+    {
+      "id": "department_head",
+      "display_name": "Department Head",
+      "default_permissions": ["clock_in", "view_schedule", "manage_team", "approve_documents"],
+      "hourly_rate_min": 80.00,
+      "hourly_rate_max": 150.00,
+      "certifications_required": ["government_security_clearance"]
+    },
+    {
+      "id": "director",
+      "display_name": "Director",
+      "default_permissions": ["clock_in", "view_schedule", "manage_department", "approve_budgets"],
+      "hourly_rate_min": 120.00,
+      "hourly_rate_max": 250.00,
+      "certifications_required": ["government_security_clearance"]
+    },
+    {
+      "id": "field_officer",
+      "display_name": "Field Officer",
+      "default_permissions": ["clock_in", "view_schedule", "conduct_inspections"],
+      "hourly_rate_min": 40.00,
+      "hourly_rate_max": 70.00,
+      "certifications_required": []
+    }
+  ],
+  "shift_patterns": [
+    {
+      "id": "office_hours",
+      "name": "Standard Office Hours",
+      "start_time": "08:00",
+      "end_time": "16:30",
+      "duration_hours": 8,
+      "break_pattern": [
+        {"type": "tea_break", "duration_minutes": 15, "after_hours": 2},
+        {"type": "meal_break", "duration_minutes": 45, "after_hours": 4},
+        {"type": "tea_break", "duration_minutes": 15, "after_hours": 6}
+      ]
+    },
+    {
+      "id": "extended_service",
+      "name": "Extended Service Hours",
+      "start_time": "07:30",
+      "end_time": "17:00",
+      "duration_hours": 9,
+      "break_pattern": [
+        {"type": "tea_break", "duration_minutes": 15, "after_hours": 2},
+        {"type": "meal_break", "duration_minutes": 60, "after_hours": 4.5}
+      ]
+    },
+    {
+      "id": "field_work",
+      "name": "Field Work Schedule",
+      "start_time": "07:00",
+      "end_time": "15:00",
+      "duration_hours": 8,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 30, "after_hours": 4}
+      ]
+    }
+  ],
+  "compliance_rules": {
+    "certifications": [
+      {
+        "id": "government_security_clearance",
+        "name": "Government Security Clearance",
+        "renewal_months": 60,
+        "required_for_roles": ["department_head", "director"]
+      }
+    ],
+    "labor_law": {
+      "max_hours_week": 40,
+      "max_overtime_week": 10,
+      "min_rest_hours_between_shifts": 12,
+      "meal_break_required_after_hours": 5
+    }
+  },
+  "hierarchy_template": {
+    "suggested_levels": ["organization", "department", "section"],
+    "example": "MunicipalityName.HomeAffairs.DocumentProcessing"
+  },
+  "metrics": [
+    "citizen_requests_processed",
+    "compliance_score",
+    "service_delivery_rating",
+    "backlog_reduction"
+  ]
+}

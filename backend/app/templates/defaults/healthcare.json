@@ -1,0 +1,157 @@
+{
+  "version": "1.0",
+  "industry": "healthcare",
+  "display_name": "Healthcare (Hospitals, Clinics, Nursing)",
+  "roles": [
+    {
+      "id": "nurse",
+      "display_name": "Registered Nurse",
+      "default_permissions": ["clock_in", "view_schedule", "patient_care"],
+      "hourly_rate_min": 60.00,
+      "hourly_rate_max": 120.00,
+      "certifications_required": ["nursing_license", "bls_certification"]
+    },
+    {
+      "id": "doctor",
+      "display_name": "Medical Doctor",
+      "default_permissions": ["clock_in", "view_schedule", "diagnose_treat"],
+      "hourly_rate_min": 200.00,
+      "hourly_rate_max": 500.00,
+      "certifications_required": ["medical_license", "hpcsa_registration"]
+    },
+    {
+      "id": "receptionist",
+      "display_name": "Medical Receptionist",
+      "default_permissions": ["clock_in", "view_schedule", "manage_appointments"],
+      "hourly_rate_min": 30.00,
+      "hourly_rate_max": 50.00,
+      "certifications_required": []
+    },
+    {
+      "id": "administrator",
+      "display_name": "Healthcare Administrator",
+      "default_permissions": ["clock_in", "view_schedule", "manage_records"],
+      "hourly_rate_min": 40.00,
+      "hourly_rate_max": 80.00,
+      "certifications_required": []
+    },
+    {
+      "id": "paramedic",
+      "display_name": "Paramedic",
+      "default_permissions": ["clock_in", "view_schedule", "emergency_response"],
+      "hourly_rate_min": 70.00,
+      "hourly_rate_max": 130.00,
+      "certifications_required": ["paramedic_license", "als_certification"]
+    }
+  ],
+  "shift_patterns": [
+    {
+      "id": "day_shift_8h",
+      "name": "Day Shift (8 hours)",
+      "start_time": "07:00",
+      "end_time": "15:00",
+      "duration_hours": 8,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 30, "after_hours": 4}
+      ]
+    },
+    {
+      "id": "afternoon_shift_8h",
+      "name": "Afternoon Shift (8 hours)",
+      "start_time": "15:00",
+      "end_time": "23:00",
+      "duration_hours": 8,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 30, "after_hours": 4}
+      ]
+    },
+    {
+      "id": "night_shift_8h",
+      "name": "Night Shift (8 hours)",
+      "start_time": "23:00",
+      "end_time": "07:00",
+      "duration_hours": 8,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 30, "after_hours": 4}
+      ]
+    },
+    {
+      "id": "day_shift_12h",
+      "name": "Day Shift (12 hours)",
+      "start_time": "07:00",
+      "end_time": "19:00",
+      "duration_hours": 12,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 45, "after_hours": 4},
+        {"type": "rest_break", "duration_minutes": 15, "after_hours": 8}
+      ]
+    },
+    {
+      "id": "night_shift_12h",
+      "name": "Night Shift (12 hours)",
+      "start_time": "19:00",
+      "end_time": "07:00",
+      "duration_hours": 12,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 45, "after_hours": 4},
+        {"type": "rest_break", "duration_minutes": 15, "after_hours": 8}
+      ]
+    }
+  ],
+  "compliance_rules": {
+    "certifications": [
+      {
+        "id": "nursing_license",
+        "name": "Nursing License (SANC)",
+        "renewal_months": 12,
+        "required_for_roles": ["nurse"]
+      },
+      {
+        "id": "medical_license",
+        "name": "Medical Practitioner License",
+        "renewal_months": 12,
+        "required_for_roles": ["doctor"]
+      },
+      {
+        "id": "hpcsa_registration",
+        "name": "HPCSA Registration",
+        "renewal_months": 12,
+        "required_for_roles": ["doctor"]
+      },
+      {
+        "id": "bls_certification",
+        "name": "Basic Life Support (BLS)",
+        "renewal_months": 24,
+        "required_for_roles": ["nurse"]
+      },
+      {
+        "id": "als_certification",
+        "name": "Advanced Life Support (ALS)",
+        "renewal_months": 24,
+        "required_for_roles": ["paramedic"]
+      },
+      {
+        "id": "paramedic_license",
+        "name": "Paramedic License",
+        "renewal_months": 12,
+        "required_for_roles": ["paramedic"]
+      }
+    ],
+    "labor_law": {
+      "max_hours_week": 45,
+      "max_overtime_week": 10,
+      "min_rest_hours_between_shifts": 12,
+      "meal_break_required_after_hours": 5
+    }
+  },
+  "hierarchy_template": {
+    "suggested_levels": ["organization", "facility", "department"],
+    "example": "HealthcarePlus.CapeTownCentral.EmergencyDept"
+  },
+  "metrics": [
+    "patients_seen",
+    "patient_satisfaction",
+    "wait_time_minutes",
+    "bed_occupancy_rate"
+  ]
+}

@@ -1,0 +1,130 @@
+{
+  "version": "1.0",
+  "industry": "manufacturing",
+  "display_name": "Manufacturing (Factories, Production Lines)",
+  "roles": [
+    {
+      "id": "operator",
+      "display_name": "Machine Operator",
+      "default_permissions": ["clock_in", "view_schedule", "operate_equipment"],
+      "hourly_rate_min": 30.00,
+      "hourly_rate_max": 55.00,
+      "certifications_required": ["safety_certification"]
+    },
+    {
+      "id": "technician",
+      "display_name": "Maintenance Technician",
+      "default_permissions": ["clock_in", "view_schedule", "repair_equipment"],
+      "hourly_rate_min": 45.00,
+      "hourly_rate_max": 80.00,
+      "certifications_required": ["equipment_license", "safety_certification"]
+    },
+    {
+      "id": "shift_lead",
+      "display_name": "Shift Lead",
+      "default_permissions": ["clock_in", "view_schedule", "manage_team", "approve_production"],
+      "hourly_rate_min": 55.00,
+      "hourly_rate_max": 90.00,
+      "certifications_required": ["safety_certification"]
+    },
+    {
+      "id": "plant_manager",
+      "display_name": "Plant Manager",
+      "default_permissions": ["clock_in", "view_schedule", "manage_operations", "approve_budgets"],
+      "hourly_rate_min": 100.00,
+      "hourly_rate_max": 200.00,
+      "certifications_required": []
+    },
+    {
+      "id": "quality_inspector",
+      "display_name": "Quality Control Inspector",
+      "default_permissions": ["clock_in", "view_schedule", "inspect_products"],
+      "hourly_rate_min": 35.00,
+      "hourly_rate_max": 65.00,
+      "certifications_required": ["quality_certification"]
+    }
+  ],
+  "shift_patterns": [
+    {
+      "id": "morning_shift",
+      "name": "Morning Shift",
+      "start_time": "06:00",
+      "end_time": "14:00",
+      "duration_hours": 8,
+      "break_pattern": [
+        {"type": "rest_break", "duration_minutes": 15, "after_hours": 2},
+        {"type": "meal_break", "duration_minutes": 30, "after_hours": 4}
+      ]
+    },
+    {
+      "id": "afternoon_shift",
+      "name": "Afternoon Shift",
+      "start_time": "14:00",
+      "end_time": "22:00",
+      "duration_hours": 8,
+      "break_pattern": [
+        {"type": "rest_break", "duration_minutes": 15, "after_hours": 2},
+        {"type": "meal_break", "duration_minutes": 30, "after_hours": 4}
+      ]
+    },
+    {
+      "id": "night_shift",
+      "name": "Night Shift",
+      "start_time": "22:00",
+      "end_time": "06:00",
+      "duration_hours": 8,
+      "break_pattern": [
+        {"type": "rest_break", "duration_minutes": 15, "after_hours": 2},
+        {"type": "meal_break", "duration_minutes": 30, "after_hours": 4}
+      ]
+    },
+    {
+      "id": "maintenance_shift",
+      "name": "Maintenance Window",
+      "start_time": "00:00",
+      "end_time": "08:00",
+      "duration_hours": 8,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 30, "after_hours": 4}
+      ]
+    }
+  ],
+  "compliance_rules": {
+    "certifications": [
+      {
+        "id": "safety_certification",
+        "name": "Occupational Health & Safety Certification",
+        "renewal_months": 12,
+        "required_for_roles": ["operator", "technician", "shift_lead"]
+      },
+      {
+        "id": "equipment_license",
+        "name": "Heavy Equipment License",
+        "renewal_months": 36,
+        "required_for_roles": ["technician"]
+      },
+      {
+        "id": "quality_certification",
+        "name": "Quality Control Certification (ISO 9001)",
+        "renewal_months": 24,
+        "required_for_roles": ["quality_inspector"]
+      }
+    ],
+    "labor_law": {
+      "max_hours_week": 45,
+      "max_overtime_week": 10,
+      "min_rest_hours_between_shifts": 12,
+      "meal_break_required_after_hours": 5
+    }
+  },
+  "hierarchy_template": {
+    "suggested_levels": ["organization", "plant", "production_line"],
+    "example": "ManufactureCo.DurbanPlant.AssemblyLine1"
+  },
+  "metrics": [
+    "units_produced",
+    "quality_score",
+    "downtime_hours",
+    "efficiency_percentage"
+  ]
+}

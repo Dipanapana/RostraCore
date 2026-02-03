@@ -1,0 +1,117 @@
+{
+  "version": "1.0",
+  "industry": "security",
+  "display_name": "Security Services",
+  "roles": [
+    {
+      "id": "armed_guard",
+      "display_name": "Armed Guard",
+      "default_permissions": ["clock_in", "view_schedule", "submit_incident_report"],
+      "hourly_rate_min": 35.00,
+      "hourly_rate_max": 55.00,
+      "certifications_required": ["psira_armed", "firearm_competency"]
+    },
+    {
+      "id": "unarmed_guard",
+      "display_name": "Unarmed Guard",
+      "default_permissions": ["clock_in", "view_schedule", "submit_incident_report"],
+      "hourly_rate_min": 25.00,
+      "hourly_rate_max": 40.00,
+      "certifications_required": ["psira_unarmed"]
+    },
+    {
+      "id": "supervisor",
+      "display_name": "Security Supervisor",
+      "default_permissions": ["clock_in", "view_schedule", "manage_team", "approve_incidents"],
+      "hourly_rate_min": 45.00,
+      "hourly_rate_max": 70.00,
+      "certifications_required": ["psira_supervisor"]
+    },
+    {
+      "id": "control_room_operator",
+      "display_name": "Control Room Operator",
+      "default_permissions": ["clock_in", "view_schedule", "monitor_cameras", "dispatch_guards"],
+      "hourly_rate_min": 30.00,
+      "hourly_rate_max": 50.00,
+      "certifications_required": ["psira_unarmed"]
+    }
+  ],
+  "shift_patterns": [
+    {
+      "id": "day_shift_12h",
+      "name": "Day Shift (12 hours)",
+      "start_time": "06:00",
+      "end_time": "18:00",
+      "duration_hours": 12,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 30, "after_hours": 4},
+        {"type": "rest_break", "duration_minutes": 15, "after_hours": 8}
+      ]
+    },
+    {
+      "id": "night_shift_12h",
+      "name": "Night Shift (12 hours)",
+      "start_time": "18:00",
+      "end_time": "06:00",
+      "duration_hours": 12,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 30, "after_hours": 4},
+        {"type": "rest_break", "duration_minutes": 15, "after_hours": 8}
+      ]
+    },
+    {
+      "id": "day_shift_8h",
+      "name": "Day Shift (8 hours)",
+      "start_time": "08:00",
+      "end_time": "16:00",
+      "duration_hours": 8,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 30, "after_hours": 4}
+      ]
+    }
+  ],
+  "compliance_rules": {
+    "certifications": [
+      {
+        "id": "psira_armed",
+        "name": "PSIRA Armed Registration",
+        "renewal_months": 12,
+        "required_for_roles": ["armed_guard"]
+      },
+      {
+        "id": "psira_unarmed",
+        "name": "PSIRA Unarmed Registration",
+        "renewal_months": 12,
+        "required_for_roles": ["unarmed_guard", "control_room_operator"]
+      },
+      {
+        "id": "psira_supervisor",
+        "name": "PSIRA Supervisor Registration",
+        "renewal_months": 12,
+        "required_for_roles": ["supervisor"]
+      },
+      {
+        "id": "firearm_competency",
+        "name": "Firearm Competency Certificate",
+        "renewal_months": 60,
+        "required_for_roles": ["armed_guard"]
+      }
+    ],
+    "labor_law": {
+      "max_hours_week": 45,
+      "max_overtime_week": 10,
+      "min_rest_hours_between_shifts": 12,
+      "meal_break_required_after_hours": 5
+    }
+  },
+  "hierarchy_template": {
+    "suggested_levels": ["organization", "region", "site"],
+    "example": "SecuriCo.Gauteng.SandtonMall"
+  },
+  "metrics": [
+    "guards_deployed",
+    "incidents_reported",
+    "patrol_completion_rate",
+    "response_time_minutes"
+  ]
+}

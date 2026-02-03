@@ -1,0 +1,121 @@
+{
+  "version": "1.0",
+  "industry": "retail",
+  "display_name": "Retail (Petrol Stations, Shops, Supermarkets)",
+  "roles": [
+    {
+      "id": "cashier",
+      "display_name": "Cashier",
+      "default_permissions": ["clock_in", "view_schedule", "process_sales"],
+      "hourly_rate_min": 25.00,
+      "hourly_rate_max": 40.00,
+      "certifications_required": ["cash_handling"]
+    },
+    {
+      "id": "stock_clerk",
+      "display_name": "Stock Clerk",
+      "default_permissions": ["clock_in", "view_schedule", "manage_inventory"],
+      "hourly_rate_min": 25.00,
+      "hourly_rate_max": 38.00,
+      "certifications_required": []
+    },
+    {
+      "id": "floor_supervisor",
+      "display_name": "Floor Supervisor",
+      "default_permissions": ["clock_in", "view_schedule", "manage_team", "approve_returns"],
+      "hourly_rate_min": 40.00,
+      "hourly_rate_max": 65.00,
+      "certifications_required": []
+    },
+    {
+      "id": "store_manager",
+      "display_name": "Store Manager",
+      "default_permissions": ["clock_in", "view_schedule", "manage_team", "approve_timesheets", "manage_inventory"],
+      "hourly_rate_min": 60.00,
+      "hourly_rate_max": 100.00,
+      "certifications_required": []
+    },
+    {
+      "id": "fuel_attendant",
+      "display_name": "Fuel Attendant",
+      "default_permissions": ["clock_in", "view_schedule", "dispense_fuel"],
+      "hourly_rate_min": 25.00,
+      "hourly_rate_max": 38.00,
+      "certifications_required": ["fuel_handling"]
+    }
+  ],
+  "shift_patterns": [
+    {
+      "id": "morning_shift",
+      "name": "Morning Shift",
+      "start_time": "06:00",
+      "end_time": "14:00",
+      "duration_hours": 8,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 30, "after_hours": 4}
+      ]
+    },
+    {
+      "id": "afternoon_shift",
+      "name": "Afternoon Shift",
+      "start_time": "14:00",
+      "end_time": "22:00",
+      "duration_hours": 8,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 30, "after_hours": 4}
+      ]
+    },
+    {
+      "id": "closing_shift",
+      "name": "Closing Shift",
+      "start_time": "16:00",
+      "end_time": "00:00",
+      "duration_hours": 8,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 30, "after_hours": 4}
+      ]
+    },
+    {
+      "id": "full_day",
+      "name": "Full Day",
+      "start_time": "09:00",
+      "end_time": "17:00",
+      "duration_hours": 8,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 45, "after_hours": 4}
+      ]
+    }
+  ],
+  "compliance_rules": {
+    "certifications": [
+      {
+        "id": "cash_handling",
+        "name": "Cash Handling Certification",
+        "renewal_months": 12,
+        "required_for_roles": ["cashier"]
+      },
+      {
+        "id": "fuel_handling",
+        "name": "Fuel Handling Safety Certificate",
+        "renewal_months": 24,
+        "required_for_roles": ["fuel_attendant"]
+      }
+    ],
+    "labor_law": {
+      "max_hours_week": 45,
+      "max_overtime_week": 10,
+      "min_rest_hours_between_shifts": 12,
+      "meal_break_required_after_hours": 5
+    }
+  },
+  "hierarchy_template": {
+    "suggested_levels": ["organization", "region", "store"],
+    "example": "QuickMart.Johannesburg.RosebankStore"
+  },
+  "metrics": [
+    "sales_per_hour",
+    "inventory_accuracy",
+    "customer_service_rating",
+    "shrinkage_percentage"
+  ]
+}

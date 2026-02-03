@@ -1,0 +1,122 @@
+{
+  "version": "1.0",
+  "industry": "professional",
+  "display_name": "Professional Services (Consulting, IT, Legal)",
+  "roles": [
+    {
+      "id": "consultant",
+      "display_name": "Consultant",
+      "default_permissions": ["clock_in", "view_schedule", "log_billable_hours"],
+      "hourly_rate_min": 80.00,
+      "hourly_rate_max": 250.00,
+      "certifications_required": ["professional_certification"]
+    },
+    {
+      "id": "analyst",
+      "display_name": "Analyst",
+      "default_permissions": ["clock_in", "view_schedule", "analyze_data"],
+      "hourly_rate_min": 60.00,
+      "hourly_rate_max": 150.00,
+      "certifications_required": []
+    },
+    {
+      "id": "project_manager",
+      "display_name": "Project Manager",
+      "default_permissions": ["clock_in", "view_schedule", "manage_projects", "approve_deliverables"],
+      "hourly_rate_min": 100.00,
+      "hourly_rate_max": 300.00,
+      "certifications_required": ["pmp_certification"]
+    },
+    {
+      "id": "partner",
+      "display_name": "Partner",
+      "default_permissions": ["clock_in", "view_schedule", "manage_clients", "approve_contracts"],
+      "hourly_rate_min": 200.00,
+      "hourly_rate_max": 600.00,
+      "certifications_required": ["professional_certification"]
+    },
+    {
+      "id": "associate",
+      "display_name": "Associate",
+      "default_permissions": ["clock_in", "view_schedule", "support_projects"],
+      "hourly_rate_min": 50.00,
+      "hourly_rate_max": 120.00,
+      "certifications_required": []
+    }
+  ],
+  "shift_patterns": [
+    {
+      "id": "standard_office",
+      "name": "Standard Office Hours",
+      "start_time": "08:00",
+      "end_time": "17:00",
+      "duration_hours": 9,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 60, "after_hours": 4.5}
+      ]
+    },
+    {
+      "id": "flexible_hours",
+      "name": "Flexible Hours",
+      "start_time": "09:00",
+      "end_time": "17:00",
+      "duration_hours": 8,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 60, "after_hours": 4}
+      ]
+    },
+    {
+      "id": "client_hours",
+      "name": "Client Site Hours",
+      "start_time": "08:00",
+      "end_time": "18:00",
+      "duration_hours": 10,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 60, "after_hours": 5}
+      ]
+    },
+    {
+      "id": "project_crunch",
+      "name": "Project Deadline Schedule",
+      "start_time": "07:00",
+      "end_time": "19:00",
+      "duration_hours": 12,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 45, "after_hours": 4},
+        {"type": "rest_break", "duration_minutes": 15, "after_hours": 8}
+      ]
+    }
+  ],
+  "compliance_rules": {
+    "certifications": [
+      {
+        "id": "professional_certification",
+        "name": "Professional Certification (CPA, CA, etc.)",
+        "renewal_months": 12,
+        "required_for_roles": ["consultant", "partner"]
+      },
+      {
+        "id": "pmp_certification",
+        "name": "Project Management Professional (PMP)",
+        "renewal_months": 36,
+        "required_for_roles": ["project_manager"]
+      }
+    ],
+    "labor_law": {
+      "max_hours_week": 45,
+      "max_overtime_week": 10,
+      "min_rest_hours_between_shifts": 12,
+      "meal_break_required_after_hours": 5
+    }
+  },
+  "hierarchy_template": {
+    "suggested_levels": ["organization", "practice_area", "team"],
+    "example": "ConsultCo.Strategy.FinanceTeam"
+  },
+  "metrics": [
+    "billable_hours",
+    "client_satisfaction",
+    "utilization_rate",
+    "revenue_per_consultant"
+  ]
+}

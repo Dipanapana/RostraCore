@@ -1,0 +1,127 @@
+{
+  "version": "1.0",
+  "industry": "hospitality",
+  "display_name": "Hospitality (Restaurants, Hotels, Catering)",
+  "roles": [
+    {
+      "id": "waiter",
+      "display_name": "Waiter/Waitress",
+      "default_permissions": ["clock_in", "view_schedule", "take_orders"],
+      "hourly_rate_min": 25.00,
+      "hourly_rate_max": 45.00,
+      "certifications_required": ["food_handler"]
+    },
+    {
+      "id": "chef",
+      "display_name": "Chef",
+      "default_permissions": ["clock_in", "view_schedule", "manage_kitchen"],
+      "hourly_rate_min": 50.00,
+      "hourly_rate_max": 120.00,
+      "certifications_required": ["food_handler", "chef_qualification"]
+    },
+    {
+      "id": "bartender",
+      "display_name": "Bartender",
+      "default_permissions": ["clock_in", "view_schedule", "manage_bar"],
+      "hourly_rate_min": 30.00,
+      "hourly_rate_max": 60.00,
+      "certifications_required": ["rsa_certificate"]
+    },
+    {
+      "id": "manager",
+      "display_name": "Restaurant Manager",
+      "default_permissions": ["clock_in", "view_schedule", "manage_team", "approve_timesheets"],
+      "hourly_rate_min": 70.00,
+      "hourly_rate_max": 150.00,
+      "certifications_required": []
+    },
+    {
+      "id": "host",
+      "display_name": "Host/Hostess",
+      "default_permissions": ["clock_in", "view_schedule", "manage_reservations"],
+      "hourly_rate_min": 25.00,
+      "hourly_rate_max": 40.00,
+      "certifications_required": []
+    }
+  ],
+  "shift_patterns": [
+    {
+      "id": "breakfast_shift",
+      "name": "Breakfast Shift",
+      "start_time": "06:00",
+      "end_time": "14:00",
+      "duration_hours": 8,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 30, "after_hours": 4}
+      ]
+    },
+    {
+      "id": "lunch_shift",
+      "name": "Lunch Shift",
+      "start_time": "10:00",
+      "end_time": "18:00",
+      "duration_hours": 8,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 30, "after_hours": 4}
+      ]
+    },
+    {
+      "id": "dinner_shift",
+      "name": "Dinner Shift",
+      "start_time": "14:00",
+      "end_time": "22:00",
+      "duration_hours": 8,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 30, "after_hours": 4}
+      ]
+    },
+    {
+      "id": "split_shift",
+      "name": "Split Shift (Lunch & Dinner)",
+      "start_time": "11:00",
+      "end_time": "15:00",
+      "duration_hours": 6,
+      "break_pattern": [
+        {"type": "rest_break", "duration_minutes": 15, "after_hours": 3}
+      ]
+    }
+  ],
+  "compliance_rules": {
+    "certifications": [
+      {
+        "id": "food_handler",
+        "name": "Food Handler Certificate",
+        "renewal_months": 24,
+        "required_for_roles": ["waiter", "chef"]
+      },
+      {
+        "id": "chef_qualification",
+        "name": "Professional Chef Qualification",
+        "renewal_months": 0,
+        "required_for_roles": ["chef"]
+      },
+      {
+        "id": "rsa_certificate",
+        "name": "Responsible Service of Alcohol",
+        "renewal_months": 36,
+        "required_for_roles": ["bartender"]
+      }
+    ],
+    "labor_law": {
+      "max_hours_week": 45,
+      "max_overtime_week": 10,
+      "min_rest_hours_between_shifts": 12,
+      "meal_break_required_after_hours": 5
+    }
+  },
+  "hierarchy_template": {
+    "suggested_levels": ["organization", "location", "department"],
+    "example": "TastyBites.Sandton.FrontOfHouse"
+  },
+  "metrics": [
+    "tables_served",
+    "customer_satisfaction",
+    "order_accuracy",
+    "table_turnover_rate"
+  ]
+}

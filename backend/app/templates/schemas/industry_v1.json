@@ -1,0 +1,192 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Industry Template Schema v1.0",
+  "description": "Schema for RostraCore industry templates defining workforce management defaults",
+  "type": "object",
+  "required": ["version", "industry", "display_name", "roles", "shift_patterns", "compliance_rules"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$",
+      "description": "Schema version (e.g., '1.0')"
+    },
+    "industry": {
+      "type": "string",
+      "description": "Industry identifier matching template_id"
+    },
+    "display_name": {
+      "type": "string",
+      "description": "Human-readable industry name"
+    },
+    "roles": {
+      "type": "array",
+      "description": "Default roles for this industry",
+      "items": {
+        "type": "object",
+        "required": ["id", "display_name", "default_permissions"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Role identifier (e.g., 'waiter', 'guard')"
+          },
+          "display_name": {
+            "type": "string",
+            "description": "Human-readable role name"
+          },
+          "default_permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Default permissions for this role"
+          },
+          "hourly_rate_min": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Minimum hourly rate (ZAR)"
+          },
+          "hourly_rate_max": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Maximum hourly rate (ZAR)"
+          },
+          "certifications_required": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Required certification IDs"
+          }
+        }
+      }
+    },
+    "shift_patterns": {
+      "type": "array",
+      "description": "Default shift patterns for this industry",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "start_time", "end_time", "duration_hours"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Shift pattern identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable pattern name"
+          },
+          "start_time": {
+            "type": "string",
+            "pattern": "^[0-2][0-9]:[0-5][0-9]$",
+            "description": "Start time (HH:MM)"
+          },
+          "end_time": {
+            "type": "string",
+            "pattern": "^[0-2][0-9]:[0-5][0-9]$",
+            "description": "End time (HH:MM)"
+          },
+          "duration_hours": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Shift duration in hours"
+          },
+          "break_pattern": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["type", "duration_minutes", "after_hours"],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["meal_break", "rest_break", "tea_break"]
+                },
+                "duration_minutes": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "after_hours": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Hours into shift before break"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "compliance_rules": {
+      "type": "object",
+      "description": "Labor law and certification compliance rules",
+      "properties": {
+        "certifications": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "name"],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "renewal_months": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "required_for_roles": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "labor_law": {
+          "type": "object",
+          "properties": {
+            "max_hours_week": {
+              "type": "number",
+              "minimum": 0
+            },
+            "max_overtime_week": {
+              "type": "number",
+              "minimum": 0
+            },
+            "min_rest_hours_between_shifts": {
+              "type": "number",
+              "minimum": 0
+            },
+            "meal_break_required_after_hours": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "hierarchy_template": {
+      "type": "object",
+      "properties": {
+        "suggested_levels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "type": "string"
+        }
+      }
+    },
+    "metrics": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Industry-specific metrics to track"
+    }
+  }
+}

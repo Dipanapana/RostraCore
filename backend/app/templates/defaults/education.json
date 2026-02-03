@@ -1,0 +1,135 @@
+{
+  "version": "1.0",
+  "industry": "education",
+  "display_name": "Education (Schools, Universities, Training)",
+  "roles": [
+    {
+      "id": "teacher",
+      "display_name": "Teacher",
+      "default_permissions": ["clock_in", "view_schedule", "teach_classes"],
+      "hourly_rate_min": 60.00,
+      "hourly_rate_max": 150.00,
+      "certifications_required": ["teaching_qualification", "sace_registration"]
+    },
+    {
+      "id": "administrator",
+      "display_name": "School Administrator",
+      "default_permissions": ["clock_in", "view_schedule", "manage_students"],
+      "hourly_rate_min": 40.00,
+      "hourly_rate_max": 80.00,
+      "certifications_required": []
+    },
+    {
+      "id": "support_staff",
+      "display_name": "Support Staff",
+      "default_permissions": ["clock_in", "view_schedule", "assist_students"],
+      "hourly_rate_min": 30.00,
+      "hourly_rate_max": 55.00,
+      "certifications_required": []
+    },
+    {
+      "id": "principal",
+      "display_name": "Principal/Headmaster",
+      "default_permissions": ["clock_in", "view_schedule", "manage_school", "approve_budgets"],
+      "hourly_rate_min": 100.00,
+      "hourly_rate_max": 200.00,
+      "certifications_required": ["teaching_qualification", "education_management"]
+    },
+    {
+      "id": "librarian",
+      "display_name": "Librarian",
+      "default_permissions": ["clock_in", "view_schedule", "manage_library"],
+      "hourly_rate_min": 35.00,
+      "hourly_rate_max": 65.00,
+      "certifications_required": ["library_science"]
+    }
+  ],
+  "shift_patterns": [
+    {
+      "id": "school_hours",
+      "name": "Standard School Hours",
+      "start_time": "07:30",
+      "end_time": "15:00",
+      "duration_hours": 7.5,
+      "break_pattern": [
+        {"type": "rest_break", "duration_minutes": 15, "after_hours": 2.5},
+        {"type": "meal_break", "duration_minutes": 30, "after_hours": 4.5}
+      ]
+    },
+    {
+      "id": "extended_hours",
+      "name": "Extended Day (with extracurriculars)",
+      "start_time": "07:30",
+      "end_time": "17:00",
+      "duration_hours": 9,
+      "break_pattern": [
+        {"type": "rest_break", "duration_minutes": 15, "after_hours": 2.5},
+        {"type": "meal_break", "duration_minutes": 45, "after_hours": 4.5}
+      ]
+    },
+    {
+      "id": "admin_hours",
+      "name": "Administrative Hours",
+      "start_time": "08:00",
+      "end_time": "16:00",
+      "duration_hours": 8,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 45, "after_hours": 4}
+      ]
+    },
+    {
+      "id": "evening_classes",
+      "name": "Evening Classes",
+      "start_time": "17:00",
+      "end_time": "21:00",
+      "duration_hours": 4,
+      "break_pattern": [
+        {"type": "rest_break", "duration_minutes": 15, "after_hours": 2}
+      ]
+    }
+  ],
+  "compliance_rules": {
+    "certifications": [
+      {
+        "id": "teaching_qualification",
+        "name": "Teaching Qualification (B.Ed/PGCE)",
+        "renewal_months": 0,
+        "required_for_roles": ["teacher", "principal"]
+      },
+      {
+        "id": "sace_registration",
+        "name": "SACE Registration",
+        "renewal_months": 12,
+        "required_for_roles": ["teacher"]
+      },
+      {
+        "id": "education_management",
+        "name": "Education Management Qualification",
+        "renewal_months": 0,
+        "required_for_roles": ["principal"]
+      },
+      {
+        "id": "library_science",
+        "name": "Library Science Qualification",
+        "renewal_months": 0,
+        "required_for_roles": ["librarian"]
+      }
+    ],
+    "labor_law": {
+      "max_hours_week": 45,
+      "max_overtime_week": 10,
+      "min_rest_hours_between_shifts": 12,
+      "meal_break_required_after_hours": 5
+    }
+  },
+  "hierarchy_template": {
+    "suggested_levels": ["organization", "campus", "department"],
+    "example": "SpringfieldSchool.PrimaryCampus.Math"
+  },
+  "metrics": [
+    "students_taught",
+    "attendance_rate",
+    "pass_rate",
+    "parent_satisfaction"
+  ]
+}

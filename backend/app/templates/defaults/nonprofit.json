@@ -1,0 +1,113 @@
+{
+  "version": "1.0",
+  "industry": "nonprofit",
+  "display_name": "Non-Profit & NGO",
+  "roles": [
+    {
+      "id": "volunteer",
+      "display_name": "Volunteer",
+      "default_permissions": ["clock_in", "view_schedule", "log_hours"],
+      "hourly_rate_min": 0.00,
+      "hourly_rate_max": 0.00,
+      "certifications_required": []
+    },
+    {
+      "id": "coordinator",
+      "display_name": "Program Coordinator",
+      "default_permissions": ["clock_in", "view_schedule", "manage_volunteers", "track_donations"],
+      "hourly_rate_min": 40.00,
+      "hourly_rate_max": 80.00,
+      "certifications_required": []
+    },
+    {
+      "id": "program_manager",
+      "display_name": "Program Manager",
+      "default_permissions": ["clock_in", "view_schedule", "manage_team", "approve_budgets"],
+      "hourly_rate_min": 60.00,
+      "hourly_rate_max": 120.00,
+      "certifications_required": []
+    },
+    {
+      "id": "director",
+      "display_name": "Executive Director",
+      "default_permissions": ["clock_in", "view_schedule", "manage_organization", "approve_grants"],
+      "hourly_rate_min": 100.00,
+      "hourly_rate_max": 200.00,
+      "certifications_required": []
+    },
+    {
+      "id": "field_worker",
+      "display_name": "Field Worker",
+      "default_permissions": ["clock_in", "view_schedule", "serve_beneficiaries"],
+      "hourly_rate_min": 30.00,
+      "hourly_rate_max": 60.00,
+      "certifications_required": ["first_aid"]
+    }
+  ],
+  "shift_patterns": [
+    {
+      "id": "standard_hours",
+      "name": "Standard Office Hours",
+      "start_time": "08:00",
+      "end_time": "16:00",
+      "duration_hours": 8,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 45, "after_hours": 4}
+      ]
+    },
+    {
+      "id": "community_outreach",
+      "name": "Community Outreach",
+      "start_time": "09:00",
+      "end_time": "17:00",
+      "duration_hours": 8,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 30, "after_hours": 4}
+      ]
+    },
+    {
+      "id": "flexible_volunteer",
+      "name": "Flexible Volunteer Hours",
+      "start_time": "10:00",
+      "end_time": "14:00",
+      "duration_hours": 4,
+      "break_pattern": []
+    },
+    {
+      "id": "evening_program",
+      "name": "Evening Program",
+      "start_time": "14:00",
+      "end_time": "20:00",
+      "duration_hours": 6,
+      "break_pattern": [
+        {"type": "meal_break", "duration_minutes": 30, "after_hours": 3}
+      ]
+    }
+  ],
+  "compliance_rules": {
+    "certifications": [
+      {
+        "id": "first_aid",
+        "name": "First Aid Certificate",
+        "renewal_months": 36,
+        "required_for_roles": ["field_worker"]
+      }
+    ],
+    "labor_law": {
+      "max_hours_week": 45,
+      "max_overtime_week": 10,
+      "min_rest_hours_between_shifts": 12,
+      "meal_break_required_after_hours": 5
+    }
+  },
+  "hierarchy_template": {
+    "suggested_levels": ["organization", "program", "location"],
+    "example": "FeedSA.SoupKitchen.Johannesburg"
+  },
+  "metrics": [
+    "volunteer_hours",
+    "beneficiaries_served",
+    "donations_received",
+    "program_impact_score"
+  ]
+}
