@@ -11,6 +11,7 @@ from app.models.shift_template import ShiftTemplate
 from app.models.roster import Roster
 from app.models.shift_assignment import ShiftAssignment
 from app.models.organization import Organization
+from app.models.industry_template import IndustryTemplate
 from app.models.client import Client
 from app.models.subscription_plan import SubscriptionPlan
 from app.models.client_invoice import ClientInvoice, InvoiceLineItem
@@ -35,6 +36,7 @@ __all__ = [
     "Roster",
     "ShiftAssignment",
     "Organization",
+    "IndustryTemplate",
     "Client",
     "SubscriptionPlan",
     "ClientInvoice",

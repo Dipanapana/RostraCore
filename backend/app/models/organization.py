@@ -1,6 +1,6 @@
 """Organization (tenant) model for multi-tenancy."""
 
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, JSON, Numeric, ARRAY
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, JSON, Numeric, ARRAY, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -25,13 +25,17 @@ class SubscriptionStatus(str, enum.Enum):
 
 
 class Organization(Base):
-    """Organization entity representing a security company tenant."""
+    """Organization entity representing a workforce management tenant."""
     __tablename__ = "organizations"
 
     org_id = Column(Integer, primary_key=True, index=True)
     org_code = Column(String(20), unique=True, nullable=False, index=True)
     company_name = Column(String(200), nullable=False)
     psira_company_registration = Column(String(50), nullable=True)
+
+    # Industry template configuration
+    industry_template_id = Column(String(50), ForeignKey('industry_templates.template_id'), nullable=False, default="security")
+    template_overrides = Column(JSON, nullable=True)
 
     # Subscription details
     subscription_tier = Column(String(20), nullable=False, default="starter")
@@ -91,6 +95,7 @@ class Organization(Base):
     is_active = Column(Boolean, default=True, nullable=False)
 
     # Relationships (MVP core only)
+    industry_template = relationship("IndustryTemplate")
     users = relationship("User", back_populates="organization")
     employees = relationship("Employee", back_populates="organization")
     clients = relationship("Client", back_populates="organization")
