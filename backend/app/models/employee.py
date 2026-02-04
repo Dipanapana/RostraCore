@@ -62,6 +62,15 @@ class Employee(Base):
     # Multi-tenancy: Employee belongs to an organization
     org_id = Column(Integer, ForeignKey("organizations.org_id", ondelete="CASCADE"), nullable=False, index=True)
 
+    # Hierarchy assignment: employee belongs to this location/department
+    # NULL = not assigned to specific node (legacy behavior)
+    node_id = Column(
+        Integer,
+        ForeignKey("org_hierarchy_nodes.node_id", ondelete="SET NULL"),
+        nullable=True,
+        index=True
+    )
+
     # Client assignment: Employee can be assigned to specific client(s)
     # NULL/empty = can work for any client in the organization
     # Legacy single-client field (kept for backward compatibility)
@@ -147,6 +156,7 @@ class Employee(Base):
     # Relationships (MVP core only)
     organization = relationship("Organization", back_populates="employees")
     assigned_client = relationship("Client", foreign_keys=[assigned_client_id])
+    hierarchy_node = relationship("OrgHierarchyNode", foreign_keys=[node_id])
     certifications = relationship("Certification", back_populates="employee")
     availability = relationship("Availability", back_populates="employee")
     payroll_summary = relationship("PayrollSummary", back_populates="employee")

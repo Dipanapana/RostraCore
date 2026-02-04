@@ -34,6 +34,15 @@ class User(Base):
     # Organization link
     org_id = Column(Integer, ForeignKey("organizations.org_id"), nullable=True)
 
+    # Hierarchy-scoped access: user can only manage employees under this node (and descendants)
+    # NULL = organization-wide access (legacy behavior)
+    assigned_node_id = Column(
+        Integer,
+        ForeignKey("org_hierarchy_nodes.node_id", ondelete="SET NULL"),
+        nullable=True,
+        index=True
+    )
+
     # Owner and client access control
     is_owner = Column(Boolean, default=False, nullable=False)  # Can manage users and see all clients
     managed_client_ids = Column(ARRAY(Integer), nullable=True)  # Specific clients this user can access
@@ -65,6 +74,7 @@ class User(Base):
 
     # Relationships
     organization = relationship("Organization", back_populates="users")
+    assigned_node = relationship("OrgHierarchyNode", foreign_keys=[assigned_node_id])
 
     @property
     def is_superadmin(self) -> bool:

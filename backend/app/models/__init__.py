@@ -2,6 +2,7 @@
 
 from app.models.user import User
 from app.models.employee import Employee
+from app.models.org_hierarchy import OrgHierarchyNode, HierarchyNodeType
 from app.models.site import Site
 from app.models.shift import Shift
 from app.models.availability import Availability
@@ -37,6 +38,8 @@ __all__ = [
     "ShiftAssignment",
     "Organization",
     "IndustryTemplate",
+    "OrgHierarchyNode",
+    "HierarchyNodeType",
     "Client",
     "SubscriptionPlan",
     "ClientInvoice",
