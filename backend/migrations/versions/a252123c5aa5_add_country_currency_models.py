@@ -46,6 +46,12 @@ def upgrade():
         sa.PrimaryKeyConstraint('currency_code')
     )
 
+    # Seed country_configs table with ZA (South Africa) as default
+    op.execute("""
+        INSERT INTO country_configs (country_code, country_name, is_active, config_json, config_version) VALUES
+        ('ZA', 'South Africa', true, '{"currency": "ZAR", "tax_year_start": "03-01", "labor_law": {"max_hours_week": 45, "max_overtime_week": 10}}', '1.0')
+    """)
+
     # Seed currencies table
     op.execute("""
         INSERT INTO currencies (currency_code, currency_name, symbol, decimal_places, display_locale, is_active) VALUES
