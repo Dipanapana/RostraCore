@@ -1,6 +1,11 @@
 import { useSyncExternalStore } from 'react'
 
 function subscribe(callback: () => void) {
+  // Guard against SSR where window is undefined
+  if (typeof window === 'undefined') {
+    return () => {}
+  }
+
   window.addEventListener('online', callback)
   window.addEventListener('offline', callback)
   return () => {
@@ -10,6 +15,10 @@ function subscribe(callback: () => void) {
 }
 
 function getSnapshot() {
+  // Guard against SSR where navigator is undefined
+  if (typeof navigator === 'undefined') {
+    return true
+  }
   return navigator.onLine
 }
 
