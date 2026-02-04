@@ -86,12 +86,13 @@ Plans:
   4. Payroll calculates correctly for 5+ countries (verified via test cases)
   5. UI displays in user's language (auto-detect browser language, allow manual override)
   6. Adding new country = upload JSON config (no code changes)
-**Plans**: 3 plans
+**Plans**: 4 plans
 
 Plans:
-- [ ] 00.2-01: Multi-currency + exchange rate API (Steve leads)
-- [ ] 00.2-02: Multi-tax engine + labor law rules (Refilwe + Steve lead)
-- [ ] 00.2-03: Internationalization (i18n) framework (Prince leads)
+- [ ] 00.2-01: Country config foundation + DB models + currency formatting (Wave 1)
+- [ ] 00.2-02: Internationalization (i18n) framework with next-intl (Wave 1)
+- [ ] 00.2-03: Tax engine + labor law engine TDD (Wave 2, depends on 00.2-01)
+- [ ] 00.2-04: Exchange rate service + payroll integration (Wave 2, depends on 00.2-01)
 
 ---
 
@@ -393,7 +394,7 @@ Phases execute in numeric order: 0 → 0.1 → 0.2 → 1 → 2 → 3... → 15
 |-------|----------------|--------|-----------|
 | 0. Universal Foundation | 3/3 | Complete | 2026-02-04 |
 | 0.1. Mobile-First | 0/3 | Not started | - |
-| 0.2. Localization | 0/3 | Not started | - |
+| 0.2. Localization | 0/4 | Not started | - |
 | 1. Biometric Integration | 0/4 | Not started | - |
 | 2. Ghost Worker Detection | 0/4 | Not started | - |
 | 3. Org Structure | 0/2 | Not started | - |
