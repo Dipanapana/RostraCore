@@ -13,15 +13,15 @@ See: [.planning/PROJECT.md](.planning/PROJECT.md) (updated 2026-02-04)
 
 **Goal**: Support ANY country's currency, tax system, labor laws, language. Not just South Africa.
 
-**Status**: In Progress (1/4 plans complete) 🔄
+**Status**: In Progress (2/4 plans complete) 🔄
 
 **Plans:**
 - [x] 00.2-01: Country config foundation + DB models + currency formatting - ✅ Completed 2026-02-04
-- [ ] 00.2-02: Internationalization (i18n) framework with next-intl
+- [x] 00.2-02: Internationalization (i18n) framework with next-intl - ✅ Completed 2026-02-04
 - [ ] 00.2-03: Tax engine + labor law engine TDD
 - [ ] 00.2-04: Exchange rate service + payroll integration
 
-**Progress:** █████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ (9/45 plans = 20%)
+**Progress:** ██████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ (10/45 plans = 22%)
 
 ## Recent Activity
 
@@ -42,14 +42,15 @@ See: [.planning/PROJECT.md](.planning/PROJECT.md) (updated 2026-02-04)
 - ✅ **Plan 00.1-05 completed**: Offline UI components (status banner, sync button, wrappers) (4min)
 - ✅ **Phase 0.1 COMPLETE**: Desktop-First Architecture milestone achieved
 - ✅ **Plan 00.2-01 completed**: Country config foundation with 5 JSON configs (ZA/US/GB/NG/KE), CountryService, currency.ts (2h 15min)
+- ✅ **Plan 00.2-02 completed**: Internationalization framework with next-intl, 3 languages (en/af/zu), LanguageSelector component (45min)
 
 ## Next Steps
 
 1. **Immediate (Next Session)**:
-   - Continue Phase 0.2: Plan 00.2-02 (Internationalization framework)
-   - Implement next-intl for UI language switching
-   - Create translation files for English, Afrikaans, Zulu
-   - Auto-detect browser language, allow manual override
+   - Continue Phase 0.2: Plan 00.2-03 (Tax engine + labor law engine)
+   - Implement TDD-based tax calculation engine
+   - Create labor law compliance checker
+   - Use country JSON configs from Plan 00.2-01
 
 2. **This Week**:
    - Complete Phase 0.2 (Localization)
@@ -104,10 +105,13 @@ None currently.
 | 00.2   | 01   | Origin-country locale for currency | ZAR always displays as "R 1 234,56" (SA format), not user's locale |
 | 00.2   | 01   | Numeric(12,2) for monetary amounts | Prevents floating-point rounding errors in payroll calculations |
 | 00.2   | 01   | Intl.NumberFormat for formatting | Native browser API, no dependencies, handles all locales |
+| 00.2   | 02   | next-intl "without routing" pattern | Locale from cookie/localStorage, no URL changes, works with static export |
+| 00.2   | 02   | Cookie + localStorage dual storage | Cookie for SSR, localStorage for Tauri desktop fallback |
+| 00.2   | 02   | router.refresh() for language switch | Instant switching without full page reload, preserves form state |
+| 00.2   | 02   | Natural translations not machine-translated | Proper Afrikaans and isiZulu using SA workforce terminology |
 
 **Decision Pending**:
 - Which exchange rate API to use for multi-currency (Phase 0.2-04)? Options: Open Exchange Rates, CurrencyLayer, Fixer.io, Frankfurter
-- Which i18n library for Next.js (Phase 0.2-02)? Leaning toward next-intl (App Router native)
 
 **Team Coordination**:
 - Weekly sync meetings: Mondays 10:00 AM SAST
@@ -123,11 +127,11 @@ None currently.
 
 ## Session Continuity
 
-**Last session:** 2026-02-04 ~19:15 UTC
-**Stopped at:** Completed 00.2-01-PLAN.md (Country config foundation)
+**Last session:** 2026-02-04 ~20:05 UTC
+**Stopped at:** Completed 00.2-02-PLAN.md (Internationalization framework)
 **Resume file:** None
-**Phase status:** Phase 0.2 In Progress (1/4 plans complete) - Ready for Plan 00.2-02 (i18n framework)
+**Phase status:** Phase 0.2 In Progress (2/4 plans complete) - Ready for Plan 00.2-03 (Tax engine)
 
 ---
 
-*Last updated: 2026-02-04 after completing Plan 00.2-01*
+*Last updated: 2026-02-04 after completing Plan 00.2-02*
