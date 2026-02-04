@@ -5,22 +5,22 @@
 See: [.planning/PROJECT.md](.planning/PROJECT.md) (updated 2026-02-04)
 
 **Core value:** Every person on every payroll must be verified, real, and working at the right location
-**Current focus:** Phase 0 - Universal Foundation & Industry Templates
+**Current focus:** Phase 0.1 - Desktop-First Architecture
 
 ## Current Phase
 
-**Phase 0: Universal Foundation & Industry Templates**
+**Phase 0.1: Desktop-First Architecture**
 
-**Goal**: Make system work for ANY business type (restaurant, petrol station, factory, NGO, municipality, etc.), not just security companies
+**Goal**: Optimize frontend for Tauri desktop app with offline-first data persistence and native OS integration
 
-**Status**: Complete (3/3 plans complete)
+**Status**: In Progress (1/3 plans complete)
 
 **Plans:**
-- [x] 00-01: Industry template engine & database schema (Steve + Refilwe lead) - ✅ Completed 2026-02-04
-- [x] 00-02: Setup wizard UI with industry selection (Prince leads) - ✅ Completed 2026-02-04
-- [x] 00-03: Multi-level tenancy architecture (Steve leads) - ✅ Completed 2026-02-04
+- [ ] 00.1-01: Desktop manifest and window configuration
+- [x] 00.1-02: React Query with IndexedDB persistence - ✅ Completed 2026-02-04
+- [ ] 00.1-03: Service worker for offline asset caching
 
-**Progress:** ███░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ (3/45 plans = 7%)
+**Progress:** ████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ (4/45 plans = 9%)
 
 ## Recent Activity
 
@@ -34,24 +34,25 @@ See: [.planning/PROJECT.md](.planning/PROJECT.md) (updated 2026-02-04)
 - ✅ **Plan 00-02 completed**: Setup wizard UI with 5-step onboarding flow
 - ✅ **Plan 00-03 completed**: Multi-level org hierarchy with adjacency list (18min)
 - ✅ **Phase 0 COMPLETE**: Universal Foundation & Industry Templates milestone achieved
+- ✅ **Plan 00.1-02 completed**: React Query persistence with IndexedDB (2h 19min)
 
 ## Next Steps
 
 1. **Immediate (Next Session)**:
-   - Begin Phase 0.1: Mobile-First Architecture
-   - Convert frontend to PWA with offline-first capability
-   - Implement service workers for asset caching
-   - Add responsive mobile layouts for dashboard and roster
+   - Complete Phase 0.1: Desktop-First Architecture
+   - Plan 00.1-01: Desktop manifest and window configuration
+   - Plan 00.1-03: Service worker for offline asset caching
+   - Test offline functionality with IndexedDB persistence
 
 2. **This Week**:
-   - Complete Phase 0.1 (Mobile-First) and Phase 0.2 (Localization)
-   - Test PWA offline functionality on mobile devices
+   - Complete Phase 0.1 (Desktop-First) and start Phase 0.2 (Localization)
+   - Test desktop app offline functionality
    - Add multi-currency support (ZAR, USD, EUR)
    - Implement i18n for English, Afrikaans, Zulu
 
 3. **This Month (Milestone v0.5)**:
-   - Complete Phases 0, 0.1, 0.2 (Universal Foundation + Mobile-First + Localization)
-   - Deploy PWA with offline-first architecture
+   - Complete Phases 0, 0.1, 0.2 (Universal Foundation + Desktop-First + Localization)
+   - Deploy desktop app with offline-first architecture
    - Implement phone camera facial recognition (TensorFlow.js)
    - Add multi-currency and multi-tax engine
    - Launch with 10+ industry templates
@@ -76,6 +77,10 @@ None currently.
 | 00     | 03   | Adjacency list over nested sets | Simpler writes, sufficient for <10k nodes, can migrate to ltree if needed |
 | 00     | 03   | Nullable hierarchy foreign keys | Backward compatible - existing users/employees get org-wide access by default |
 | 00     | 03   | Soft delete with cascade | Preserves audit trail while removing nodes from active queries |
+| 00.1   | 02   | Use idb-keyval instead of raw IndexedDB API | Simpler promise-based API, only 500 bytes gzipped, sufficient for cache persistence |
+| 00.1   | 02   | 7-day cache retention (gcTime) and 5-minute staleness | Balances offline capability with data freshness for desktop users |
+| 00.1   | 02   | offlineFirst network mode for queries | Desktop users expect instant loads - show cached data immediately, update in background |
+| 00.1   | 02   | online network mode for mutations | Mutations should pause when offline, resume when connection restored |
 
 **Decision Pending**:
 - Which exchange rate API to use for multi-currency (Phase 0.2)? Options: Open Exchange Rates, CurrencyLayer, Fixer.io
@@ -95,10 +100,10 @@ None currently.
 
 ## Session Continuity
 
-**Last session:** 2026-02-04 00:20:16 UTC
-**Stopped at:** Completed 00-03-PLAN.md (Phase 0 complete)
+**Last session:** 2026-02-04 12:49:48 UTC
+**Stopped at:** Completed 00.1-02-PLAN.md (React Query persistence)
 **Resume file:** None
 
 ---
 
-*Last updated: 2026-02-04 after completing Phase 0*
+*Last updated: 2026-02-04 after completing Plan 00.1-02*
