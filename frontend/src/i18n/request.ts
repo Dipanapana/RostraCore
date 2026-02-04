@@ -3,6 +3,17 @@ import { cookies } from 'next/headers';
 import { SUPPORTED_LOCALES, DEFAULT_LOCALE } from './config';
 import type { SupportedLocale } from './config';
 
+// Import message files statically so Next.js can resolve them at build time
+import enMessages from '../messages/en.json';
+import afMessages from '../messages/af.json';
+import zuMessages from '../messages/zu.json';
+
+const messages = {
+  en: enMessages,
+  af: afMessages,
+  zu: zuMessages,
+};
+
 export default getRequestConfig(async () => {
   // Read locale from cookie (set by LanguageSelector)
   let locale: SupportedLocale = DEFAULT_LOCALE;
@@ -20,6 +31,6 @@ export default getRequestConfig(async () => {
 
   return {
     locale,
-    messages: (await import(`../../messages/${locale}.json`)).default,
+    messages: messages[locale],
   };
 });
