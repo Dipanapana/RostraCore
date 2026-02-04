@@ -27,6 +27,8 @@ from app.models.refresh_token import RefreshToken
 from app.models.country import CountryConfig
 from app.models.currency import Currency
 from app.models.exchange_rate import ExchangeRate
+from app.models.biometric import BiometricTemplate, EnrollmentSession, VerificationAttempt
+from app.models.attendance import AttendanceRecord, SiteGeofence
 
 __all__ = [
     "User",
@@ -66,5 +68,10 @@ __all__ = [
     "RefreshToken",
     "CountryConfig",
     "Currency",
-    "ExchangeRate"
+    "ExchangeRate",
+    "BiometricTemplate",
+    "EnrollmentSession",
+    "VerificationAttempt",
+    "AttendanceRecord",
+    "SiteGeofence"
 ]
