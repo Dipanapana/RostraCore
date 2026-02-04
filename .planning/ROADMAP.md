@@ -97,24 +97,26 @@ Plans:
 ---
 
 ### Phase 1: Biometric Integration Foundation (Hardware + Phone)
-**Goal**: Integrate fingerprint scanners, facial recognition terminals, AND phone-based facial recognition (no hardware) with attendance system
-**Depends on**: Phase 0.1 (mobile architecture with phone biometrics)
+**Goal**: Multi-modal attendance verification with phone-based facial recognition, hardware fingerprint (WebAuthn), and GPS-only geofence validation. HR enrolls employees, employees clock in with adaptive thresholds, attendance tracked with confidence scores.
+**Depends on**: Phase 0.1 (desktop architecture), Phase 0.2 (localization)
 **Requirements**: BIOMETRIC-01, BIOMETRIC-02, BIOMETRIC-03, BIOMETRIC-04
 **Success Criteria** (what must be TRUE):
   1. **Hardware option**: Guard clocks in using fingerprint scanner at designated site (< 2 sec verification)
   2. **Phone option**: Waiter clocks in using phone camera facial recognition (< 3 sec verification)
   3. **Budget option**: Cashier clocks in using phone app + GPS only (no biometric, geofence validation)
-  4. GPS coordinates validate employee is within 15-meter geofence
+  4. GPS coordinates validate employee is within geofence (200m radius with accuracy buffer)
   5. Attendance event logged with timestamp, biometric confidence, GPS, device type
   6. Payroll system pulls verified attendance (not manual sheets)
   7. Works for: Security guard, restaurant waiter, petrol station cashier, factory worker, NGO volunteer
-**Plans**: 4 plans
+**Plans**: 6 plans
 
 Plans:
-- [ ] 01-01: Biometric device REST API - hardware terminals (John leads)
-- [ ] 01-02: Phone biometric integration - camera-based facial recognition (already in Phase 0.1, verify integration)
-- [ ] 01-03: Attendance verification service - unified (hardware + phone + GPS-only) (Steve leads)
-- [ ] 01-04: Real-time attendance dashboard - mobile + desktop (Prince leads)
+- [ ] 01-01-PLAN.md — DB models (biometric templates, attendance records, geofences) + Alembic migration + geofence utility (Wave 1)
+- [ ] 01-02-PLAN.md — Verification engine + adaptive thresholds TDD (Wave 2, depends on 01-01)
+- [ ] 01-03-PLAN.md — Enrollment service with DeepFace + pgcrypto encryption + liveness detection (Wave 2, depends on 01-01)
+- [ ] 01-04-PLAN.md — Clock-in API endpoints + attendance endpoints + Pydantic schemas (Wave 3, depends on 01-02, 01-03)
+- [ ] 01-05-PLAN.md — Frontend enrollment UI with face-api.js + real-time quality feedback (Wave 4, depends on 01-04)
+- [ ] 01-06-PLAN.md — Frontend clock-in flow + geolocation + attendance dashboard + HR review queue (Wave 4, depends on 01-04)
 
 ---
 
@@ -395,7 +397,7 @@ Phases execute in numeric order: 0 → 0.1 → 0.2 → 1 → 2 → 3... → 15
 | 0. Universal Foundation | 3/3 | Complete | 2026-02-04 |
 | 0.1. Desktop-First | 5/5 | Complete | 2026-02-04 |
 | 0.2. Localization | 4/4 | Complete | 2026-02-05 |
-| 1. Biometric Integration | 0/4 | Not started | - |
+| 1. Biometric Integration | 0/6 | Not started | - |
 | 2. Ghost Worker Detection | 0/4 | Not started | - |
 | 3. Org Structure | 0/2 | Not started | - |
 | 4. Risk Management | 0/3 | Not started | - |
@@ -413,6 +415,6 @@ Phases execute in numeric order: 0 → 0.1 → 0.2 → 1 → 2 → 3... → 15
 
 ---
 
-*Roadmap Version*: 1.2
+*Roadmap Version*: 1.3
 *Created*: 2026-02-04
 *Last Updated*: 2026-02-05
