@@ -13,16 +13,16 @@ See: [.planning/PROJECT.md](.planning/PROJECT.md) (updated 2026-02-04)
 
 **Goal**: Optimize frontend for Tauri desktop app with offline-first data persistence and native OS integration
 
-**Status**: In Progress (1/5 plans complete)
+**Status**: In Progress (3/5 plans complete)
 
 **Plans:**
 - [x] 00.1-01: SQLite local database with tauri-plugin-sql - ✅ Completed 2026-02-04
-- [ ] 00.1-02: React Query offline-aware hooks with local fallback
-- [ ] 00.1-03: Offline mutation queue and sync manager
-- [ ] 00.1-04: Desktop UI adaptations and offline status banner
+- [x] 00.1-02: React Query offline-aware hooks with local fallback - ✅ Completed 2026-02-04
+- [ ] 00.1-03: Offline data hooks with SQLite fallback (in progress)
+- [x] 00.1-04: Mutation queue and sync manager - ✅ Completed 2026-02-04
 - [ ] 00.1-05: Testing offline scenarios and edge cases
 
-**Progress:** ████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ (4/45 plans = 9%)
+**Progress:** ██████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ (6/45 plans = 13%)
 
 ## Recent Activity
 
@@ -37,14 +37,16 @@ See: [.planning/PROJECT.md](.planning/PROJECT.md) (updated 2026-02-04)
 - ✅ **Plan 00-03 completed**: Multi-level org hierarchy with adjacency list (18min)
 - ✅ **Phase 0 COMPLETE**: Universal Foundation & Industry Templates milestone achieved
 - ✅ **Plan 00.1-01 completed**: SQLite local database with tauri-plugin-sql (43min)
+- ✅ **Plan 00.1-02 completed**: React Query offline-aware persistence setup
+- ✅ **Plan 00.1-04 completed**: Mutation queue and sync manager (9min)
 
 ## Next Steps
 
 1. **Immediate (Next Session)**:
    - Continue Phase 0.1: Desktop-First Architecture
-   - Plan 00.1-02: React Query offline-aware hooks with local fallback
-   - Plan 00.1-03: Offline mutation queue and sync manager
-   - Test offline data caching with SQLite
+   - Plan 00.1-03: Complete offline data hooks with SQLite fallback
+   - Plan 00.1-05: Testing offline scenarios and edge cases
+   - Test mutation queue sync with network disconnect/reconnect
 
 2. **This Week**:
    - Complete Phase 0.1 (Desktop-First) and start Phase 0.2 (Localization)
@@ -84,6 +86,10 @@ None currently.
 | 00.1   | 01   | Enable WAL mode in Migration 1 | Allows concurrent reads/writes, critical for background sync performance |
 | 00.1   | 01   | INSERT OR REPLACE pattern for caching | Simpler than ON CONFLICT UPDATE, server_id UNIQUE constraint makes it safe |
 | 00.1   | 01   | Fix frontendDist path to ../../frontend/out | Was ../frontend/out (incorrect), frontend is at root level from desktop/src-tauri/ |
+| 00.1   | 04   | Install @tauri-apps/api for Tauri invoke() | Required to call Tauri commands from frontend, official API package |
+| 00.1   | 04   | Use useSyncExternalStore for sync status | React 18+ built-in hook for external store subscription, cleaner than useState |
+| 00.1   | 04   | 5-minute auto-sync interval as default | Balance between timely sync and avoiding excessive network requests |
+| 00.1   | 04   | Queue mutations when offline, call API when online | Reduces latency when online, enables offline work with later sync |
 
 **Decision Pending**:
 - Which exchange rate API to use for multi-currency (Phase 0.2)? Options: Open Exchange Rates, CurrencyLayer, Fixer.io
@@ -103,10 +109,10 @@ None currently.
 
 ## Session Continuity
 
-**Last session:** 2026-02-04 11:13:58 UTC
-**Stopped at:** Completed 00.1-01-PLAN.md (SQLite local database)
+**Last session:** 2026-02-04 12:54:00 UTC
+**Stopped at:** Completed 00.1-04-PLAN.md (Mutation queue and sync manager)
 **Resume file:** None
 
 ---
 
-*Last updated: 2026-02-04 after completing Plan 00.1-01*
+*Last updated: 2026-02-04 after completing Plan 00.1-04*
