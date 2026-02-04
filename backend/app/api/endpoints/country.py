@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from app.database import get_db
 from app.auth.security import get_current_org_id
 from app.services.country_service import CountryService
-from app.models.country import Country
+from app.models.country import CountryConfig
 
 router = APIRouter()
 
@@ -21,11 +21,7 @@ router = APIRouter()
 class CountryResponse(BaseModel):
     """Country configuration response."""
     country_code: str
-    name: str
-    currency_code: str
-    currency_symbol: str
-    currency_decimal_places: int
-    display_locale: str
+    country_name: str
     is_active: bool
 
     class Config:
@@ -62,7 +58,7 @@ def list_countries(
     Returns:
         List of countries with currency and active status
     """
-    countries = db.query(Country).order_by(Country.name).all()
+    countries = db.query(CountryConfig).order_by(CountryConfig.country_name).all()
     return countries
 
 
