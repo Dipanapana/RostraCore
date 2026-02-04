@@ -1,0 +1,101 @@
+{
+  "country_code": "KE",
+  "country_name": "Kenya",
+  "currency": {
+    "code": "KES",
+    "symbol": "KSh",
+    "decimal_places": 2,
+    "display_locale": "en-KE",
+    "rounding_mode": "ROUND_HALF_UP"
+  },
+  "tax_rules": {
+    "tax_year_start": "01-01",
+    "tax_year_end": "12-31",
+    "income_tax": {
+      "type": "bracket",
+      "brackets": [
+        { "from": 0, "to": 288000, "rate": 0.10, "base": 0 },
+        { "from": 288001, "to": 388000, "rate": 0.25, "base": 28800 },
+        { "from": 388001, "to": 6000000, "rate": 0.30, "base": 53800 },
+        { "from": 6000001, "to": 9600000, "rate": 0.325, "base": 1737160 },
+        { "from": 9600001, "to": null, "rate": 0.35, "base": 2907160 }
+      ],
+      "rebates": [
+        { "name": "personal_relief", "amount": 28800 }
+      ],
+      "thresholds": [
+        { "name": "tax_free_threshold", "amount": 288000 }
+      ]
+    },
+    "social_contributions": [
+      {
+        "name": "NSSF",
+        "type": "percentage",
+        "employee_rate": 0.06,
+        "employer_rate": 0.06,
+        "max_earnings": 36000,
+        "description": "National Social Security Fund"
+      },
+      {
+        "name": "NHIF",
+        "type": "tiered",
+        "employee_rate_table": [
+          { "from": 0, "to": 5999, "amount": 150 },
+          { "from": 6000, "to": 7999, "amount": 300 },
+          { "from": 8000, "to": 11999, "amount": 400 },
+          { "from": 12000, "to": 14999, "amount": 500 },
+          { "from": 15000, "to": 19999, "amount": 600 },
+          { "from": 20000, "to": 24999, "amount": 750 },
+          { "from": 25000, "to": 29999, "amount": 850 },
+          { "from": 30000, "to": 34999, "amount": 900 },
+          { "from": 35000, "to": 39999, "amount": 950 },
+          { "from": 40000, "to": 44999, "amount": 1000 },
+          { "from": 45000, "to": 49999, "amount": 1100 },
+          { "from": 50000, "to": 59999, "amount": 1200 },
+          { "from": 60000, "to": 69999, "amount": 1300 },
+          { "from": 70000, "to": 79999, "amount": 1400 },
+          { "from": 80000, "to": 89999, "amount": 1500 },
+          { "from": 90000, "to": 99999, "amount": 1600 },
+          { "from": 100000, "to": null, "amount": 1700 }
+        ],
+        "employer_rate": 0,
+        "description": "National Hospital Insurance Fund"
+      }
+    ]
+  },
+  "labor_laws": {
+    "source": "Kenya Employment Act 2007",
+    "max_weekly_hours": { "shift_based": 52, "office": 52 },
+    "max_daily_hours": { "shift_based": 12, "office": 12 },
+    "min_rest_hours_between_shifts": 12,
+    "max_consecutive_days": 6,
+    "meal_break_required_after_hours": 5,
+    "meal_break_duration_minutes": 60,
+    "overtime_multiplier": 1.5,
+    "sunday_multiplier": 2.0,
+    "public_holiday_multiplier": 2.0,
+    "night_shift_premium": 0.125,
+    "annual_leave_days": 21,
+    "sick_leave_days_per_cycle": 7,
+    "sick_leave_cycle_months": 12,
+    "public_holidays": [
+      { "name": "New Year's Day", "date": "01-01" },
+      { "name": "Good Friday", "date": "04-07", "floating": true },
+      { "name": "Easter Monday", "date": "04-10", "floating": true },
+      { "name": "Labour Day", "date": "05-01" },
+      { "name": "Madaraka Day", "date": "06-01" },
+      { "name": "Eid al-Fitr", "date": "04-21", "floating": true },
+      { "name": "Mashujaa Day", "date": "10-20" },
+      { "name": "Jamhuri Day", "date": "12-12" },
+      { "name": "Christmas Day", "date": "12-25" },
+      { "name": "Boxing Day", "date": "12-26" }
+    ],
+    "rules": [
+      { "id": "max_weekly", "description": "Maximum weekly hours exceeded (52h)", "severity": "warn" },
+      { "id": "max_daily", "description": "Maximum daily hours exceeded (12h)", "severity": "warn" },
+      { "id": "min_rest", "description": "Insufficient rest between shifts (12h)", "severity": "block" },
+      { "id": "overtime", "description": "Overtime threshold reached", "severity": "info" }
+    ]
+  },
+  "vat_rate": 0.16
+}

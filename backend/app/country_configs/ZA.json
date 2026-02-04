@@ -1,0 +1,91 @@
+{
+  "country_code": "ZA",
+  "country_name": "South Africa",
+  "currency": {
+    "code": "ZAR",
+    "symbol": "R",
+    "decimal_places": 2,
+    "display_locale": "en-ZA",
+    "rounding_mode": "ROUND_HALF_UP"
+  },
+  "tax_rules": {
+    "tax_year_start": "03-01",
+    "tax_year_end": "02-28",
+    "income_tax": {
+      "type": "bracket",
+      "brackets": [
+        { "from": 0, "to": 237100, "rate": 0.18, "base": 0 },
+        { "from": 237101, "to": 370500, "rate": 0.26, "base": 42678 },
+        { "from": 370501, "to": 512800, "rate": 0.31, "base": 77362 },
+        { "from": 512801, "to": 673000, "rate": 0.36, "base": 121475 },
+        { "from": 673001, "to": 857900, "rate": 0.39, "base": 179147 },
+        { "from": 857901, "to": 1817000, "rate": 0.41, "base": 251258 },
+        { "from": 1817001, "to": null, "rate": 0.45, "base": 644489 }
+      ],
+      "rebates": [
+        { "name": "primary", "max_age": 64, "amount": 17235 },
+        { "name": "secondary", "min_age": 65, "max_age": 74, "amount": 9444 },
+        { "name": "tertiary", "min_age": 75, "amount": 3145 }
+      ],
+      "thresholds": [
+        { "name": "under_65", "max_age": 64, "amount": 95750 },
+        { "name": "65_to_74", "min_age": 65, "max_age": 74, "amount": 148217 },
+        { "name": "75_plus", "min_age": 75, "amount": 165689 }
+      ]
+    },
+    "social_contributions": [
+      {
+        "name": "UIF",
+        "type": "percentage",
+        "employee_rate": 0.01,
+        "employer_rate": 0.01,
+        "max_earnings": 17712,
+        "description": "Unemployment Insurance Fund"
+      },
+      {
+        "name": "SDL",
+        "type": "percentage",
+        "employee_rate": 0,
+        "employer_rate": 0.01,
+        "threshold_annual": 500000,
+        "description": "Skills Development Levy"
+      }
+    ]
+  },
+  "labor_laws": {
+    "source": "BCEA",
+    "max_weekly_hours": { "shift_based": 48, "office": 45 },
+    "max_daily_hours": { "shift_based": 12, "office": 9 },
+    "min_rest_hours_between_shifts": 12,
+    "max_consecutive_days": 6,
+    "meal_break_required_after_hours": 5,
+    "meal_break_duration_minutes": 60,
+    "overtime_multiplier": 1.5,
+    "sunday_multiplier": 1.5,
+    "public_holiday_multiplier": 2.0,
+    "night_shift_premium": 0.10,
+    "annual_leave_days": 15,
+    "sick_leave_days_per_cycle": 30,
+    "sick_leave_cycle_months": 36,
+    "public_holidays": [
+      { "name": "New Year's Day", "date": "01-01" },
+      { "name": "Human Rights Day", "date": "03-21" },
+      { "name": "Freedom Day", "date": "04-27" },
+      { "name": "Workers' Day", "date": "05-01" },
+      { "name": "Youth Day", "date": "06-16" },
+      { "name": "National Women's Day", "date": "08-09" },
+      { "name": "Heritage Day", "date": "09-24" },
+      { "name": "Day of Reconciliation", "date": "12-16" },
+      { "name": "Christmas Day", "date": "12-25" },
+      { "name": "Day of Goodwill", "date": "12-26" }
+    ],
+    "rules": [
+      { "id": "max_weekly", "description": "Maximum weekly hours exceeded", "severity": "block" },
+      { "id": "min_rest", "description": "Insufficient rest between shifts", "severity": "block" },
+      { "id": "max_consecutive", "description": "Maximum consecutive days exceeded", "severity": "warn" },
+      { "id": "meal_break", "description": "Meal break required", "severity": "warn" },
+      { "id": "overtime", "description": "Overtime threshold reached", "severity": "info" }
+    ]
+  },
+  "vat_rate": 0.15
+}

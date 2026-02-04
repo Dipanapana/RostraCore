@@ -1,0 +1,90 @@
+{
+  "country_code": "NG",
+  "country_name": "Nigeria",
+  "currency": {
+    "code": "NGN",
+    "symbol": "₦",
+    "decimal_places": 2,
+    "display_locale": "en-NG",
+    "rounding_mode": "ROUND_HALF_UP"
+  },
+  "tax_rules": {
+    "tax_year_start": "01-01",
+    "tax_year_end": "12-31",
+    "income_tax": {
+      "type": "bracket",
+      "brackets": [
+        { "from": 0, "to": 300000, "rate": 0.07, "base": 0 },
+        { "from": 300001, "to": 600000, "rate": 0.11, "base": 21000 },
+        { "from": 600001, "to": 1100000, "rate": 0.15, "base": 54000 },
+        { "from": 1100001, "to": 1600000, "rate": 0.19, "base": 129000 },
+        { "from": 1600001, "to": 3200000, "rate": 0.21, "base": 224000 },
+        { "from": 3200001, "to": null, "rate": 0.24, "base": 560000 }
+      ],
+      "rebates": [
+        { "name": "consolidated_relief_allowance", "type": "percentage", "rate": 0.01, "min_amount": 200000 }
+      ],
+      "thresholds": [
+        { "name": "minimum_tax_threshold", "amount": 300000 }
+      ]
+    },
+    "social_contributions": [
+      {
+        "name": "Pension",
+        "type": "percentage",
+        "employee_rate": 0.08,
+        "employer_rate": 0.10,
+        "description": "Pension Contribution (mandatory)"
+      },
+      {
+        "name": "NHF",
+        "type": "percentage",
+        "employee_rate": 0.025,
+        "employer_rate": 0,
+        "description": "National Housing Fund"
+      },
+      {
+        "name": "NSITF",
+        "type": "percentage",
+        "employee_rate": 0,
+        "employer_rate": 0.01,
+        "description": "Nigeria Social Insurance Trust Fund"
+      }
+    ]
+  },
+  "labor_laws": {
+    "source": "Nigerian Labour Act",
+    "max_weekly_hours": { "shift_based": 40, "office": 40 },
+    "max_daily_hours": { "shift_based": 8, "office": 8 },
+    "min_rest_hours_between_shifts": 8,
+    "max_consecutive_days": 6,
+    "meal_break_required_after_hours": 5,
+    "meal_break_duration_minutes": 60,
+    "overtime_multiplier": 1.5,
+    "sunday_multiplier": 1.0,
+    "public_holiday_multiplier": 2.0,
+    "night_shift_premium": 0.10,
+    "annual_leave_days": 12,
+    "sick_leave_days_per_cycle": 12,
+    "sick_leave_cycle_months": 12,
+    "public_holidays": [
+      { "name": "New Year's Day", "date": "01-01" },
+      { "name": "Good Friday", "date": "04-07", "floating": true },
+      { "name": "Easter Monday", "date": "04-10", "floating": true },
+      { "name": "Workers' Day", "date": "05-01" },
+      { "name": "Democracy Day", "date": "06-12" },
+      { "name": "Eid al-Fitr", "date": "04-21", "floating": true },
+      { "name": "Eid al-Adha", "date": "06-28", "floating": true },
+      { "name": "Independence Day", "date": "10-01" },
+      { "name": "Christmas Day", "date": "12-25" },
+      { "name": "Boxing Day", "date": "12-26" }
+    ],
+    "rules": [
+      { "id": "max_weekly", "description": "Maximum weekly hours exceeded (40h)", "severity": "block" },
+      { "id": "max_daily", "description": "Maximum daily hours exceeded (8h)", "severity": "block" },
+      { "id": "min_rest", "description": "Insufficient rest between shifts (8h)", "severity": "block" },
+      { "id": "overtime", "description": "Overtime threshold reached", "severity": "info" }
+    ]
+  },
+  "vat_rate": 0.075
+}

@@ -1,0 +1,78 @@
+{
+  "country_code": "GB",
+  "country_name": "United Kingdom",
+  "currency": {
+    "code": "GBP",
+    "symbol": "£",
+    "decimal_places": 2,
+    "display_locale": "en-GB",
+    "rounding_mode": "ROUND_HALF_UP"
+  },
+  "tax_rules": {
+    "tax_year_start": "04-06",
+    "tax_year_end": "04-05",
+    "income_tax": {
+      "type": "bracket",
+      "brackets": [
+        { "from": 0, "to": 12570, "rate": 0, "base": 0 },
+        { "from": 12571, "to": 50270, "rate": 0.20, "base": 0 },
+        { "from": 50271, "to": 125140, "rate": 0.40, "base": 7540 },
+        { "from": 125141, "to": null, "rate": 0.45, "base": 37488 }
+      ],
+      "rebates": [],
+      "thresholds": [
+        { "name": "personal_allowance", "amount": 12570 }
+      ]
+    },
+    "social_contributions": [
+      {
+        "name": "National Insurance Class 1",
+        "type": "percentage",
+        "employee_rate": 0.12,
+        "employer_rate": 0.138,
+        "threshold_annual": 12570,
+        "description": "NI contributions for employees"
+      },
+      {
+        "name": "National Insurance Class 1 (upper)",
+        "type": "percentage",
+        "employee_rate": 0.02,
+        "employer_rate": 0.138,
+        "threshold_annual": 50270,
+        "description": "NI contributions above upper threshold"
+      }
+    ]
+  },
+  "labor_laws": {
+    "source": "Working Time Directive",
+    "max_weekly_hours": { "shift_based": 48, "office": 48 },
+    "max_daily_hours": { "shift_based": null, "office": null },
+    "min_rest_hours_between_shifts": 11,
+    "max_consecutive_days": null,
+    "meal_break_required_after_hours": 6,
+    "meal_break_duration_minutes": 20,
+    "overtime_multiplier": 1.0,
+    "sunday_multiplier": 1.0,
+    "public_holiday_multiplier": 1.0,
+    "night_shift_premium": 0,
+    "annual_leave_days": 28,
+    "sick_leave_days_per_cycle": null,
+    "sick_leave_cycle_months": null,
+    "public_holidays": [
+      { "name": "New Year's Day", "date": "01-01" },
+      { "name": "Good Friday", "date": "04-07", "floating": true },
+      { "name": "Easter Monday", "date": "04-10", "floating": true },
+      { "name": "Early May Bank Holiday", "date": "05-01", "floating": true },
+      { "name": "Spring Bank Holiday", "date": "05-29", "floating": true },
+      { "name": "Summer Bank Holiday", "date": "08-28", "floating": true },
+      { "name": "Christmas Day", "date": "12-25" },
+      { "name": "Boxing Day", "date": "12-26" }
+    ],
+    "rules": [
+      { "id": "max_weekly", "description": "Maximum weekly hours exceeded (48h with opt-out)", "severity": "warn" },
+      { "id": "min_rest", "description": "Insufficient rest between shifts (11h)", "severity": "block" },
+      { "id": "meal_break", "description": "Break required after 6 hours", "severity": "warn" }
+    ]
+  },
+  "vat_rate": 0.20
+}
