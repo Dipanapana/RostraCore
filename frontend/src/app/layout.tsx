@@ -4,6 +4,7 @@ import './globals.css'
 import { AuthProvider } from '@/context/AuthContext'
 import { ThemeProvider } from '@/context/ThemeContext'
 import { ToastProvider } from '@/context/ToastContext'
+import { QueryProvider } from '@/providers/QueryProvider'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import PWAInstaller from '@/components/PWAInstaller'
 import TrialBanner from '@/components/TrialBanner'
@@ -54,17 +55,19 @@ export default function RootLayout({
         `}} />
       </head>
       <body className={inter.className}>
-        <ErrorBoundary>
-          <ThemeProvider>
-            <ToastProvider>
-              <AuthProvider>
-                <TrialBanner />
-                {children}
-                <PWAInstaller />
-              </AuthProvider>
-            </ToastProvider>
-          </ThemeProvider>
-        </ErrorBoundary>
+        <QueryProvider>
+          <ErrorBoundary>
+            <ThemeProvider>
+              <ToastProvider>
+                <AuthProvider>
+                  <TrialBanner />
+                  {children}
+                  <PWAInstaller />
+                </AuthProvider>
+              </ToastProvider>
+            </ThemeProvider>
+          </ErrorBoundary>
+        </QueryProvider>
       </body>
     </html>
   )
