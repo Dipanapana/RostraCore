@@ -17,7 +17,10 @@ from app.models.shift import Shift
 from app.models.shift_assignment import ShiftAssignment
 from app.models.client import Client
 from app.models.site import Site
+from app.models.organization import Organization
 from app.services.sa_payroll_service import SAPayrollService
+from app.services.country_service import CountryService
+from app.services.tax_engine import TaxEngine
 
 
 class PayrollPeriod:
@@ -167,6 +170,22 @@ class PayrollGeneratorService:
                 "message": "No active employees found for this organization"
             }
 
+        # Get organization and load country config for tax calculations
+        org = db.query(Organization).filter(Organization.org_id == org_id).first()
+        if not org:
+            return {
+                "status": "error",
+                "message": "Organization not found"
+            }
+
+        try:
+            country_config = CountryService.load_config(org.country_code)
+        except FileNotFoundError:
+            return {
+                "status": "error",
+                "message": f"Country configuration not found for {org.country_code}"
+            }
+
         # Get site IDs if filtering by client
         site_ids = None
         if client_ids:
@@ -184,7 +203,8 @@ class PayrollGeneratorService:
                 start_date=start_date,
                 end_date=end_date,
                 site_ids=site_ids,
-                include_deductions=include_deductions
+                include_deductions=include_deductions,
+                country_config=country_config
             )
 
             # Only include employees who worked at least one shift
@@ -204,7 +224,7 @@ class PayrollGeneratorService:
             }
 
         # Calculate summary
-        summary = cls._calculate_summary(payroll_records)
+        summary = cls._calculate_summary(payroll_records, country_config)
 
         # Generate payroll ID
         payroll_id = f"PAY-ORG{str(org_id).zfill(3)}-{start_date.strftime('%Y%m')}-001"
@@ -231,7 +251,8 @@ class PayrollGeneratorService:
         start_date: date,
         end_date: date,
         site_ids: Optional[List[int]] = None,
-        include_deductions: bool = True
+        include_deductions: bool = True,
+        country_config: Optional[dict] = None
     ) -> PayrollEmployeeRecord:
         """Process payroll for a single employee."""
 
@@ -333,7 +354,7 @@ class PayrollGeneratorService:
 
         # Calculate deductions if requested
         if include_deductions:
-            cls._calculate_deductions(record)
+            cls._calculate_deductions(record, country_config)
 
         # Net salary
         record.net_salary = (record.gross_salary - record.total_deductions).quantize(Decimal("0.01"))
@@ -341,16 +362,16 @@ class PayrollGeneratorService:
         return record
 
     @classmethod
-    def _calculate_deductions(cls, record: PayrollEmployeeRecord):
-        """Calculate all SA deductions for an employee."""
+    def _calculate_deductions(cls, record: PayrollEmployeeRecord, country_config: Optional[dict] = None):
+        """
+        Calculate deductions for an employee using TaxEngine.
 
+        Args:
+            record: Employee payroll record
+            country_config: Country configuration dict (if None, defaults to SA using SAPayrollService)
+        """
         gross = record.gross_salary
 
-        # UIF (1% of gross, capped at R177.12)
-        uif_result = SAPayrollService.calculate_uif(gross)
-        record.uif = uif_result["employee_contribution"]
-
-        # PAYE (based on annualized salary)
         # Estimate age from ID number if available
         age = 35  # Default
         if record.id_number and len(record.id_number) >= 6:
@@ -362,14 +383,53 @@ class PayrollGeneratorService:
             except:
                 pass
 
-        paye_result = SAPayrollService.calculate_paye(gross, age)
-        record.paye = paye_result["paye"]
+        # Use TaxEngine if country_config provided, otherwise fall back to SAPayrollService
+        if country_config:
+            # Use generic config-driven TaxEngine
+            tax_engine = TaxEngine(country_config)
 
-        # PSIRA deduction (example fixed amount)
-        record.psira_deduction = Decimal("50")  # Adjust based on actual rates
+            # Calculate tax and social contributions using TaxEngine
+            net_pay_result = tax_engine.calculate_net_pay(
+                gross_monthly=gross,
+                age=age,
+                other_deductions=Decimal("0"),  # Will add other deductions separately
+                total_org_payroll_annual=Decimal("0")  # TODO: Calculate org total if needed for thresholds
+            )
 
-        # Bargaining Council (example)
-        record.bargaining_council = Decimal("25")
+            # Map TaxEngine results to record fields
+            record.paye = net_pay_result["income_tax"]
+
+            # Extract social contributions by name
+            for contribution in net_pay_result["social_contributions"]:
+                contrib_name = contribution["name"].upper()
+                employee_amount = contribution["employee_amount"]
+
+                if "UIF" in contrib_name:
+                    record.uif = employee_amount
+                elif "FICA" in contrib_name or "SOCIAL SECURITY" in contrib_name:
+                    # US FICA or other social security contributions
+                    record.uif += employee_amount  # Combine into UIF field for now
+                elif "MEDICARE" in contrib_name:
+                    record.uif += employee_amount  # Combine into UIF field
+                elif "NATIONAL INSURANCE" in contrib_name or "NI" in contrib_name:
+                    # UK National Insurance
+                    record.uif += employee_amount  # Combine into UIF field
+                # Add more mappings as needed for other countries
+
+        else:
+            # Fallback to hardcoded SA calculations for backwards compatibility
+            uif_result = SAPayrollService.calculate_uif(gross)
+            record.uif = uif_result["employee_contribution"]
+
+            paye_result = SAPayrollService.calculate_paye(gross, age)
+            record.paye = paye_result["paye"]
+
+        # Other deductions (country-agnostic, company-specific)
+        # PSIRA deduction (SA-specific, example fixed amount)
+        record.psira_deduction = Decimal("50") if not country_config or country_config.get("country_code") == "ZA" else Decimal("0")
+
+        # Bargaining Council (SA-specific, example)
+        record.bargaining_council = Decimal("25") if not country_config or country_config.get("country_code") == "ZA" else Decimal("0")
 
         # Provident Fund (example 5% of gross)
         record.provident_fund = (gross * Decimal("0.05")).quantize(Decimal("0.01"))
@@ -406,9 +466,14 @@ class PayrollGeneratorService:
         return False
 
     @classmethod
-    def _calculate_summary(cls, records: List[PayrollEmployeeRecord]) -> Dict:
-        """Calculate summary totals for all payroll records."""
+    def _calculate_summary(cls, records: List[PayrollEmployeeRecord], country_config: Optional[dict] = None) -> Dict:
+        """
+        Calculate summary totals for all payroll records.
 
+        Args:
+            records: List of employee payroll records
+            country_config: Country configuration dict (if None, defaults to SA calculations)
+        """
         total_gross = sum(r.gross_salary for r in records)
         total_deductions = sum(r.total_deductions for r in records)
         total_net = sum(r.net_salary for r in records)
@@ -418,8 +483,23 @@ class PayrollGeneratorService:
         total_sunday_hours = sum(r.sunday_hours for r in records)
         total_holiday_hours = sum(r.holiday_hours for r in records)
 
-        # Employer contributions
-        total_employer_uif = sum(SAPayrollService.calculate_uif(r.gross_salary)["employer_contribution"] for r in records)
+        # Employer contributions using TaxEngine if config available
+        if country_config:
+            tax_engine = TaxEngine(country_config)
+            total_employer_contributions = Decimal("0")
+
+            for record in records:
+                social_contribs = tax_engine.calculate_social_contributions(
+                    record.gross_salary,
+                    total_org_payroll_annual=Decimal("0")  # TODO: Calculate if needed
+                )
+                employer_total = sum(c["employer_amount"] for c in social_contribs)
+                total_employer_contributions += employer_total
+
+            total_employer_uif = float(total_employer_contributions)
+        else:
+            # Fallback to SA calculations
+            total_employer_uif = sum(SAPayrollService.calculate_uif(r.gross_salary)["employer_contribution"] for r in records)
 
         return {
             "total_employees": len(records),

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { billingApi } from '@/services/api'
+import { formatCurrency as formatCurrencyUtil } from '@/lib/currency'
 
 interface SubscriptionStatus {
   subscription_status: string
@@ -108,10 +109,9 @@ export default function BillingPage() {
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-ZA', {
-      style: 'currency',
-      currency: 'ZAR',
-    }).format(amount)
+    // Use organization's currency from status, default to ZAR
+    const currency = status?.currency || 'ZAR'
+    return formatCurrencyUtil(amount, currency)
   }
 
   if (loading) {

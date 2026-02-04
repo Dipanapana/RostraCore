@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api.endpoints import employees, sites, shifts, availability, certifications, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, organization_approval, organization_users, organization_settings, clients, payments, superadmin_analytics, subscriptions, subscription_plans, dashboards, superadmin_auth, invoices, reports, roster_preferences, superadmin, staffing_profiles, availability_patterns, system_settings, shift_patterns, leave, payroll_deductions, test_data, setup_wizard, org_hierarchy
+from app.api.endpoints import employees, sites, shifts, availability, certifications, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, organization_approval, organization_users, organization_settings, clients, payments, superadmin_analytics, subscriptions, subscription_plans, dashboards, superadmin_auth, invoices, reports, roster_preferences, superadmin, staffing_profiles, availability_patterns, system_settings, shift_patterns, leave, payroll_deductions, test_data, setup_wizard, org_hierarchy, country, exchange_rates
 from app.middleware import RateLimitMiddleware, ForceHTTPSRedirectMiddleware
 
 # Initialize Sentry for error tracking and performance monitoring
@@ -132,6 +132,10 @@ app.include_router(availability_patterns.router, prefix=settings.API_V1_PREFIX, 
 app.include_router(shift_patterns.router, prefix=f"{settings.API_V1_PREFIX}/shift-patterns", tags=["shift-patterns"])
 app.include_router(leave.router, prefix=f"{settings.API_V1_PREFIX}/leave", tags=["leave"])
 app.include_router(exports.router, prefix=settings.API_V1_PREFIX, tags=["exports"])
+
+# Multi-Country Support
+app.include_router(country.router, prefix=f"{settings.API_V1_PREFIX}/countries", tags=["countries"])
+app.include_router(exchange_rates.router, prefix=f"{settings.API_V1_PREFIX}/exchange-rates", tags=["exchange-rates"])
 
 # Subscriptions & Payments
 app.include_router(subscriptions.router, prefix=f"{settings.API_V1_PREFIX}/subscriptions", tags=["subscriptions"])

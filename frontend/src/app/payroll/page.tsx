@@ -6,6 +6,7 @@ import { getApiUrl } from "@/lib/config";
 import Link from "next/link";
 import { FileSpreadsheet, FileText, Download, Users, User } from "lucide-react";
 import { OnlineOnlyWrapper } from "@/components/offline/OnlineOnlyWrapper";
+import { formatCurrency } from "@/lib/currency";
 
 interface PayrollRecord {
   payroll_id: number;
@@ -54,6 +55,7 @@ export default function PayrollPage() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [payrollSummary, setPayrollSummary] = useState<ComprehensivePayrollResponse["summary"] | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [organizationCurrency, setOrganizationCurrency] = useState("ZAR"); // TODO: Fetch from org settings
 
   // Date range filter state
   const [filterStartDate, setFilterStartDate] = useState("");
@@ -452,27 +454,27 @@ export default function PayrollPage() {
             </div>
             <div className="bg-white shadow rounded-lg p-4">
               <p className="text-xs text-gray-500 uppercase">Total Gross</p>
-              <p className="text-xl font-bold text-gray-900">R {(payrollSummary.total_gross ?? 0).toLocaleString()}</p>
+              <p className="text-xl font-bold text-gray-900">{formatCurrency(payrollSummary.total_gross ?? 0, organizationCurrency)}</p>
             </div>
             <div className="bg-white shadow rounded-lg p-4">
               <p className="text-xs text-gray-500 uppercase">PAYE</p>
-              <p className="text-xl font-bold text-red-600">R {(payrollSummary.total_paye ?? 0).toLocaleString()}</p>
+              <p className="text-xl font-bold text-red-600">{formatCurrency(payrollSummary.total_paye ?? 0, organizationCurrency)}</p>
             </div>
             <div className="bg-white shadow rounded-lg p-4">
               <p className="text-xs text-gray-500 uppercase">UIF (Employee)</p>
-              <p className="text-xl font-bold text-red-600">R {(payrollSummary.total_uif_employee ?? 0).toLocaleString()}</p>
+              <p className="text-xl font-bold text-red-600">{formatCurrency(payrollSummary.total_uif_employee ?? 0, organizationCurrency)}</p>
             </div>
             <div className="bg-white shadow rounded-lg p-4">
               <p className="text-xs text-gray-500 uppercase">UIF (Employer)</p>
-              <p className="text-xl font-bold text-orange-600">R {(payrollSummary.total_uif_employer ?? 0).toLocaleString()}</p>
+              <p className="text-xl font-bold text-orange-600">{formatCurrency(payrollSummary.total_uif_employer ?? 0, organizationCurrency)}</p>
             </div>
             <div className="bg-white shadow rounded-lg p-4">
               <p className="text-xs text-gray-500 uppercase">SDL</p>
-              <p className="text-xl font-bold text-orange-600">R {(payrollSummary.total_sdl ?? 0).toLocaleString()}</p>
+              <p className="text-xl font-bold text-orange-600">{formatCurrency(payrollSummary.total_sdl ?? 0, organizationCurrency)}</p>
             </div>
             <div className="bg-white shadow rounded-lg p-4">
               <p className="text-xs text-gray-500 uppercase">Total Net</p>
-              <p className="text-xl font-bold text-green-600">R {(payrollSummary.total_net ?? 0).toLocaleString()}</p>
+              <p className="text-xl font-bold text-green-600">{formatCurrency(payrollSummary.total_net ?? 0, organizationCurrency)}</p>
             </div>
           </div>
         )}
@@ -544,16 +546,16 @@ export default function PayrollPage() {
                       <div className="text-xs text-gray-500">OT: {payroll.overtime_hours.toFixed(1)}h</div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      R {payroll.gross_pay.toFixed(2)}
+                      {formatCurrency(payroll.gross_pay, organizationCurrency)}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-red-600">
-                      R {(payroll.paye || 0).toFixed(2)}
+                      {formatCurrency(payroll.paye || 0, organizationCurrency)}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-red-600">
-                      R {(payroll.uif_employee || 0).toFixed(2)}
+                      {formatCurrency(payroll.uif_employee || 0, organizationCurrency)}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-green-700">
-                      R {payroll.net_pay.toFixed(2)}
+                      {formatCurrency(payroll.net_pay, organizationCurrency)}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
