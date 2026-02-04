@@ -1,11 +1,14 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { getSyncStatus, subscribeToSync, performSync, startAutoSync } from '@/lib/sync/syncManager'
 
+// Cache the server snapshot to prevent warnings
+const getServerSnapshot = () => ({ status: 'idle' as const, lastSyncTime: null })
+
 export function useSyncStatus() {
   const { status, lastSyncTime } = useSyncExternalStore(
     subscribeToSync,
     getSyncStatus,
-    () => ({ status: 'idle' as const, lastSyncTime: null })
+    getServerSnapshot
   )
 
   // Start auto-sync on mount

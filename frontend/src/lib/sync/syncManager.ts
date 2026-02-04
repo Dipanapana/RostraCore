@@ -6,8 +6,15 @@ let syncStatus: SyncStatus = 'idle'
 let lastSyncTime: Date | null = null
 let listeners: Set<() => void> = new Set()
 
+// Cache the snapshot to prevent infinite re-renders
+let cachedSnapshot = { status: syncStatus, lastSyncTime }
+
 function notifyListeners() {
   listeners.forEach(fn => fn())
+}
+
+function updateCachedSnapshot() {
+  cachedSnapshot = { status: syncStatus, lastSyncTime }
 }
 
 export async function performSync(): Promise<boolean> {
@@ -19,16 +26,19 @@ export async function performSync(): Promise<boolean> {
   }
 
   syncStatus = 'syncing'
+  updateCachedSnapshot()
   notifyListeners()
 
   try {
     const result = await replayQueue()
     lastSyncTime = new Date()
     syncStatus = result.failed > 0 ? 'error' : 'idle'
+    updateCachedSnapshot()
     console.log(`[Sync] Complete: ${result.success} success, ${result.failed} failed`)
     return true
   } catch (error) {
     syncStatus = 'error'
+    updateCachedSnapshot()
     console.error('[Sync] Error:', error)
     return false
   } finally {
@@ -37,7 +47,7 @@ export async function performSync(): Promise<boolean> {
 }
 
 export function getSyncStatus() {
-  return { status: syncStatus, lastSyncTime }
+  return cachedSnapshot
 }
 
 export function subscribeToSync(callback: () => void) {
