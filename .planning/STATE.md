@@ -13,16 +13,16 @@ See: [.planning/PROJECT.md](.planning/PROJECT.md) (updated 2026-02-04)
 
 **Goal**: Optimize frontend for Tauri desktop app with offline-first data persistence and native OS integration
 
-**Status**: In Progress (4/5 plans complete)
+**Status**: Complete (5/5 plans complete) ✅
 
 **Plans:**
 - [x] 00.1-01: SQLite local database with tauri-plugin-sql - ✅ Completed 2026-02-04
 - [x] 00.1-02: React Query offline-aware hooks with local fallback - ✅ Completed 2026-02-04
 - [x] 00.1-03: Offline data hooks with SQLite fallback - ✅ Completed 2026-02-04
 - [x] 00.1-04: Mutation queue and sync manager - ✅ Completed 2026-02-04
-- [ ] 00.1-05: Testing offline scenarios and edge cases
+- [x] 00.1-05: Offline UI components (status banner, sync button, wrappers) - ✅ Completed 2026-02-04
 
-**Progress:** ███████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ (7/45 plans = 16%)
+**Progress:** ████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ (8/45 plans = 18%)
 
 ## Recent Activity
 
@@ -40,27 +40,29 @@ See: [.planning/PROJECT.md](.planning/PROJECT.md) (updated 2026-02-04)
 - ✅ **Plan 00.1-02 completed**: React Query offline-aware persistence setup (2h 19min)
 - ✅ **Plan 00.1-03 completed**: Offline data hooks with SQLite fallback (9min)
 - ✅ **Plan 00.1-04 completed**: Mutation queue and sync manager (9min)
+- ✅ **Plan 00.1-05 completed**: Offline UI components (status banner, sync button, wrappers) (4min)
+- ✅ **Phase 0.1 COMPLETE**: Desktop-First Architecture milestone achieved
 
 ## Next Steps
 
 1. **Immediate (Next Session)**:
-   - Continue Phase 0.1: Desktop-First Architecture
-   - Plan 00.1-05: Testing offline scenarios and edge cases
-   - Test offline data hooks (useEmployees, useRosters) with network disconnect
-   - Test mutation queue sync with network disconnect/reconnect
+   - Start Phase 0.2: Localization & Regional Compliance
+   - Multi-currency support (ZAR, USD, EUR, GBP)
+   - Implement i18n for English, Afrikaans, Zulu
+   - Multi-tax engine (SA PAYE/UIF/SDL, UK PAYE/NI, US Federal/State)
 
 2. **This Week**:
-   - Complete Phase 0.1 (Desktop-First) and start Phase 0.2 (Localization)
-   - Test desktop app offline functionality
-   - Add multi-currency support (ZAR, USD, EUR)
-   - Implement i18n for English, Afrikaans, Zulu
+   - Complete Phase 0.2 (Localization)
+   - Test desktop app offline functionality end-to-end
+   - Validate currency conversion and tax calculations
+   - Test i18n translations across all pages
 
 3. **This Month (Milestone v0.5)**:
    - Complete Phases 0, 0.1, 0.2 (Universal Foundation + Desktop-First + Localization)
    - Deploy desktop app with offline-first architecture
-   - Implement phone camera facial recognition (TensorFlow.js)
-   - Add multi-currency and multi-tax engine
    - Launch with 10+ industry templates
+   - Multi-currency and multi-tax engine operational
+   - Begin Phase 1: Biometric Authentication (phone camera facial recognition)
 
 ## Blockers
 
@@ -95,6 +97,9 @@ None currently.
 | 00.1   | 04   | Use useSyncExternalStore for sync status | React 18+ built-in hook for external store subscription, cleaner than useState |
 | 00.1   | 04   | 5-minute auto-sync interval as default | Balance between timely sync and avoiding excessive network requests |
 | 00.1   | 04   | Queue mutations when offline, call API when online | Reduces latency when online, enables offline work with later sync |
+| 00.1   | 05   | Banner hidden when online and idle | Avoids visual clutter when connection normal, only shows when user needs feedback |
+| 00.1   | 05   | Payroll page fully blocked offline | Payroll processing requires server-side calculations, no value showing cached records |
+| 00.1   | 05   | Employee list viewable offline | Leverages offline-first hooks, users can view cached data without add/edit |
 
 **Decision Pending**:
 - Which exchange rate API to use for multi-currency (Phase 0.2)? Options: Open Exchange Rates, CurrencyLayer, Fixer.io
@@ -114,10 +119,11 @@ None currently.
 
 ## Session Continuity
 
-**Last session:** 2026-02-04 11:30:27 UTC
-**Stopped at:** Completed 00.1-03-PLAN.md (Offline data hooks with SQLite fallback)
+**Last session:** 2026-02-04 11:37:51 UTC
+**Stopped at:** Completed 00.1-05-PLAN.md (Offline UI components)
 **Resume file:** None
+**Phase status:** Phase 0.1 Complete - Ready for Phase 0.2 (Localization)
 
 ---
 
-*Last updated: 2026-02-04 after completing Plan 00.1-03*
+*Last updated: 2026-02-04 after completing Plan 00.1-05 and Phase 0.1*
