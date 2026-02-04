@@ -13,12 +13,14 @@ See: [.planning/PROJECT.md](.planning/PROJECT.md) (updated 2026-02-04)
 
 **Goal**: Optimize frontend for Tauri desktop app with offline-first data persistence and native OS integration
 
-**Status**: In Progress (1/3 plans complete)
+**Status**: In Progress (1/5 plans complete)
 
 **Plans:**
-- [ ] 00.1-01: Desktop manifest and window configuration
-- [x] 00.1-02: React Query with IndexedDB persistence - ✅ Completed 2026-02-04
-- [ ] 00.1-03: Service worker for offline asset caching
+- [x] 00.1-01: SQLite local database with tauri-plugin-sql - ✅ Completed 2026-02-04
+- [ ] 00.1-02: React Query offline-aware hooks with local fallback
+- [ ] 00.1-03: Offline mutation queue and sync manager
+- [ ] 00.1-04: Desktop UI adaptations and offline status banner
+- [ ] 00.1-05: Testing offline scenarios and edge cases
 
 **Progress:** ████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ (4/45 plans = 9%)
 
@@ -34,15 +36,15 @@ See: [.planning/PROJECT.md](.planning/PROJECT.md) (updated 2026-02-04)
 - ✅ **Plan 00-02 completed**: Setup wizard UI with 5-step onboarding flow
 - ✅ **Plan 00-03 completed**: Multi-level org hierarchy with adjacency list (18min)
 - ✅ **Phase 0 COMPLETE**: Universal Foundation & Industry Templates milestone achieved
-- ✅ **Plan 00.1-02 completed**: React Query persistence with IndexedDB (2h 19min)
+- ✅ **Plan 00.1-01 completed**: SQLite local database with tauri-plugin-sql (43min)
 
 ## Next Steps
 
 1. **Immediate (Next Session)**:
-   - Complete Phase 0.1: Desktop-First Architecture
-   - Plan 00.1-01: Desktop manifest and window configuration
-   - Plan 00.1-03: Service worker for offline asset caching
-   - Test offline functionality with IndexedDB persistence
+   - Continue Phase 0.1: Desktop-First Architecture
+   - Plan 00.1-02: React Query offline-aware hooks with local fallback
+   - Plan 00.1-03: Offline mutation queue and sync manager
+   - Test offline data caching with SQLite
 
 2. **This Week**:
    - Complete Phase 0.1 (Desktop-First) and start Phase 0.2 (Localization)
@@ -77,10 +79,11 @@ None currently.
 | 00     | 03   | Adjacency list over nested sets | Simpler writes, sufficient for <10k nodes, can migrate to ltree if needed |
 | 00     | 03   | Nullable hierarchy foreign keys | Backward compatible - existing users/employees get org-wide access by default |
 | 00     | 03   | Soft delete with cascade | Preserves audit trail while removing nodes from active queries |
-| 00.1   | 02   | Use idb-keyval instead of raw IndexedDB API | Simpler promise-based API, only 500 bytes gzipped, sufficient for cache persistence |
-| 00.1   | 02   | 7-day cache retention (gcTime) and 5-minute staleness | Balances offline capability with data freshness for desktop users |
-| 00.1   | 02   | offlineFirst network mode for queries | Desktop users expect instant loads - show cached data immediately, update in background |
-| 00.1   | 02   | online network mode for mutations | Mutations should pause when offline, resume when connection restored |
+| 00.1   | 01   | Use sqlx directly instead of tauri-plugin-sql Pool API | v2 API changed, sqlx gives direct control over connection pooling |
+| 00.1   | 01   | Store full JSON in data_json column | Preserves all API fields without requiring schema migrations when backend changes |
+| 00.1   | 01   | Enable WAL mode in Migration 1 | Allows concurrent reads/writes, critical for background sync performance |
+| 00.1   | 01   | INSERT OR REPLACE pattern for caching | Simpler than ON CONFLICT UPDATE, server_id UNIQUE constraint makes it safe |
+| 00.1   | 01   | Fix frontendDist path to ../../frontend/out | Was ../frontend/out (incorrect), frontend is at root level from desktop/src-tauri/ |
 
 **Decision Pending**:
 - Which exchange rate API to use for multi-currency (Phase 0.2)? Options: Open Exchange Rates, CurrencyLayer, Fixer.io
@@ -100,10 +103,10 @@ None currently.
 
 ## Session Continuity
 
-**Last session:** 2026-02-04 12:49:48 UTC
-**Stopped at:** Completed 00.1-02-PLAN.md (React Query persistence)
+**Last session:** 2026-02-04 11:13:58 UTC
+**Stopped at:** Completed 00.1-01-PLAN.md (SQLite local database)
 **Resume file:** None
 
 ---
 
-*Last updated: 2026-02-04 after completing Plan 00.1-02*
+*Last updated: 2026-02-04 after completing Plan 00.1-01*
