@@ -37,6 +37,11 @@ class Organization(Base):
     industry_template_id = Column(String(50), ForeignKey('industry_templates.template_id'), nullable=False, default="security")
     template_overrides = Column(JSON, nullable=True)
 
+    # Country and currency configuration
+    country_code = Column(String(2), ForeignKey("country_configs.country_code"), nullable=False, server_default='ZA')
+    primary_currency = Column(String(3), ForeignKey("currencies.currency_code"), nullable=False, server_default='ZAR')
+    multi_currency_enabled = Column(Boolean, default=False, nullable=False)
+
     # Subscription details
     subscription_tier = Column(String(20), nullable=False, default="starter")
     # Tiers: starter, professional, business, enterprise
