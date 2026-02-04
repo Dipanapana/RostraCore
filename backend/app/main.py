@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api.endpoints import employees, sites, shifts, availability, certifications, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, organization_approval, organization_users, organization_settings, clients, payments, superadmin_analytics, subscriptions, subscription_plans, dashboards, superadmin_auth, invoices, reports, roster_preferences, superadmin, staffing_profiles, availability_patterns, system_settings, shift_patterns, leave, payroll_deductions, test_data, setup_wizard
+from app.api.endpoints import employees, sites, shifts, availability, certifications, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, organization_approval, organization_users, organization_settings, clients, payments, superadmin_analytics, subscriptions, subscription_plans, dashboards, superadmin_auth, invoices, reports, roster_preferences, superadmin, staffing_profiles, availability_patterns, system_settings, shift_patterns, leave, payroll_deductions, test_data, setup_wizard, org_hierarchy
 from app.middleware import RateLimitMiddleware, ForceHTTPSRedirectMiddleware
 
 # Initialize Sentry for error tracking and performance monitoring
@@ -108,6 +108,7 @@ app.include_router(organizations.router, prefix=f"{settings.API_V1_PREFIX}/organ
 app.include_router(organization_approval.router, prefix=f"{settings.API_V1_PREFIX}/organizations", tags=["organization-approval"])
 app.include_router(organization_users.router, prefix=f"{settings.API_V1_PREFIX}/organization", tags=["organization-users"])
 app.include_router(organization_settings.router, prefix=f"{settings.API_V1_PREFIX}/organization-settings", tags=["organization-settings"])
+app.include_router(org_hierarchy.router)
 app.include_router(employees.router, prefix=f"{settings.API_V1_PREFIX}/employees", tags=["employees"])
 app.include_router(certifications.router, prefix=f"{settings.API_V1_PREFIX}/certifications", tags=["certifications"])
 app.include_router(clients.router, prefix=f"{settings.API_V1_PREFIX}/clients", tags=["clients"])
