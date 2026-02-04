@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 0: Universal Foundation & Industry Templates** - Make system work for ANY business type
 - [x] **Phase 0.1: Desktop-First Architecture** - Desktop Tauri app with full offline mode (COMPLETE 2026-02-04)
-- [ ] **Phase 0.2: Localization & Multi-Country Compliance** - Support ANY country's currency, tax, labor laws, language
+- [x] **Phase 0.2: Localization & Multi-Country Compliance** - Support ANY country's currency, tax, labor laws, language (COMPLETE 2026-02-05)
 - [ ] **Phase 1: Biometric Integration Foundation** - Hardware terminals + phone-based facial recognition
 - [ ] **Phase 2: Ghost Worker Detection Engine** - Anomaly detection algorithms to flag ghost employees
 - [ ] **Phase 3: Organizational Structure & Hierarchy** - Multi-level org structures, departments, reporting lines
@@ -89,10 +89,10 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 00.2-01: Country config foundation + DB models + currency formatting (Wave 1)
-- [ ] 00.2-02: Internationalization (i18n) framework with next-intl (Wave 1)
-- [ ] 00.2-03: Tax engine + labor law engine TDD (Wave 2, depends on 00.2-01)
-- [ ] 00.2-04: Exchange rate service + payroll integration (Wave 2, depends on 00.2-01)
+- [x] 00.2-01: Country config foundation + DB models + currency formatting (Wave 1)
+- [x] 00.2-02: Internationalization (i18n) framework with next-intl (Wave 1)
+- [x] 00.2-03: Tax engine + labor law engine TDD (Wave 2, depends on 00.2-01)
+- [x] 00.2-04: Exchange rate service + payroll integration (Wave 2, depends on 00.2-01)
 
 ---
 
@@ -393,8 +393,8 @@ Phases execute in numeric order: 0 → 0.1 → 0.2 → 1 → 2 → 3... → 15
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 0. Universal Foundation | 3/3 | Complete | 2026-02-04 |
-| 0.1. Mobile-First | 0/3 | Not started | - |
-| 0.2. Localization | 0/4 | Not started | - |
+| 0.1. Desktop-First | 5/5 | Complete | 2026-02-04 |
+| 0.2. Localization | 4/4 | Complete | 2026-02-05 |
 | 1. Biometric Integration | 0/4 | Not started | - |
 | 2. Ghost Worker Detection | 0/4 | Not started | - |
 | 3. Org Structure | 0/2 | Not started | - |
@@ -413,6 +413,6 @@ Phases execute in numeric order: 0 → 0.1 → 0.2 → 1 → 2 → 3... → 15
 
 ---
 
-*Roadmap Version*: 1.1
+*Roadmap Version*: 1.2
 *Created*: 2026-02-04
-*Last Updated*: 2026-02-04
+*Last Updated*: 2026-02-05
