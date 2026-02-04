@@ -1,7 +1,8 @@
 // Prevents additional console window on Windows in release mode
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use tauri::Manager;
+mod db;
+
 use tauri_plugin_store::StoreExt;
 
 // IPC Commands for renderer process communication
@@ -46,16 +47,40 @@ async fn is_development() -> Result<bool, String> {
 }
 
 fn main() {
+    // Get migrations for SQLite setup
+    let migrations = db::migrations::get_migrations();
+
     tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_shell::init())
+        .plugin(
+            tauri_plugin_sql::Builder::default()
+                .add_migrations("sqlite:rostracore.db", migrations)
+                .build(),
+        )
+        .setup(|_app| {
+            // Initialize database module
+            db::init_db()?;
+            println!("SQLite database initialized at app startup");
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             get_stored_data,
             set_stored_data,
             delete_stored_data,
             clear_stored_data,
             get_app_version,
-            is_development
+            is_development,
+            db::commands::cache_employees,
+            db::commands::get_cached_employees,
+            db::commands::cache_rosters,
+            db::commands::get_cached_rosters,
+            db::commands::cache_attendance,
+            db::commands::get_cached_attendance,
+            db::commands::queue_mutation,
+            db::commands::get_offline_queue,
+            db::commands::remove_from_queue,
+            db::commands::increment_retry_count
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
