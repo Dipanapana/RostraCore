@@ -9,6 +9,8 @@ import ErrorBoundary from '@/components/ErrorBoundary'
 import PWAInstaller from '@/components/PWAInstaller'
 import TrialBanner from '@/components/TrialBanner'
 import { OfflineStatusBanner } from '@/components/offline/OfflineStatusBanner'
+import { NextIntlClientProvider } from 'next-intl'
+import { getLocale, getMessages } from 'next-intl/server'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -33,13 +35,16 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="en">
+    <html lang={locale}>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#2563eb" />
@@ -57,18 +62,20 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <QueryProvider>
-          <ErrorBoundary>
-            <ThemeProvider>
-              <ToastProvider>
-                <AuthProvider>
-                  <OfflineStatusBanner />
-                  <TrialBanner />
-                  {children}
-                  <PWAInstaller />
-                </AuthProvider>
-              </ToastProvider>
-            </ThemeProvider>
-          </ErrorBoundary>
+          <NextIntlClientProvider messages={messages}>
+            <ErrorBoundary>
+              <ThemeProvider>
+                <ToastProvider>
+                  <AuthProvider>
+                    <OfflineStatusBanner />
+                    <TrialBanner />
+                    {children}
+                    <PWAInstaller />
+                  </AuthProvider>
+                </ToastProvider>
+              </ThemeProvider>
+            </ErrorBoundary>
+          </NextIntlClientProvider>
         </QueryProvider>
       </body>
     </html>

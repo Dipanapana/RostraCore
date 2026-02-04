@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 
+const createNextIntlPlugin = require('next-intl/plugin');
+const withNextIntl = createNextIntlPlugin();
+
 // Desktop app mode: static export for Electron
 const isDesktopBuild = process.env.BUILD_MODE === 'desktop';
 
@@ -86,7 +89,7 @@ const sentryWebpackPluginOptions = {
 // Only wrap with Sentry if DSN is configured
 if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
   const { withSentryConfig } = require('@sentry/nextjs');
-  module.exports = withSentryConfig(nextConfig, sentryWebpackPluginOptions);
+  module.exports = withSentryConfig(withNextIntl(nextConfig), sentryWebpackPluginOptions);
 } else {
-  module.exports = nextConfig;
+  module.exports = withNextIntl(nextConfig);
 }
