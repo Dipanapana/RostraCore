@@ -69,6 +69,10 @@ None currently.
 | 00     | 01   | Use deepmerge for template resolution | Allows orgs to extend templates (add roles) vs just replace |
 | 00     | 01   | Default existing orgs to 'security' template | Backward compatibility for existing deployments |
 | 00     | 01   | SA labor law as universal default (BCEA) | RostraCore is SA-focused, 45h week/10h OT required |
+| 00     | 02   | Draft persistence via setup_wizard_data JSON | Wizard state survives browser refresh, users can resume incomplete setups |
+| 00     | 02   | Auto-login after wizard completion | Better UX - users go straight to dashboard with JWT token |
+| 00     | 02   | Hierarchy setup optional in wizard | Full builder deferred, users can skip Step 3 and configure later |
+| 00     | 02   | Industry preview shows first 3 roles | Informed selection without overwhelming UI |
 | 00     | 03   | Adjacency list over nested sets | Simpler writes, sufficient for <10k nodes, can migrate to ltree if needed |
 | 00     | 03   | Nullable hierarchy foreign keys | Backward compatible - existing users/employees get org-wide access by default |
 | 00     | 03   | Soft delete with cascade | Preserves audit trail while removing nodes from active queries |
