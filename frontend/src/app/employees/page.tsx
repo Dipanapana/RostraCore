@@ -10,10 +10,12 @@ import DataTable, { Column } from '@/components/ui/DataTable'
 import Modal from '@/components/ui/Modal'
 import { Plus, Pencil, Trash2, Upload, Download, Calendar } from 'lucide-react'
 import EmployeeAvailabilityPatterns from '@/components/EmployeeAvailabilityPatterns'
+import { useOfflineStatus } from '@/hooks/useOfflineStatus'
 
 type EmployeeFilter = 'all' | 'security' | 'office' | 'contractors' | 'consultants'
 
 export default function EmployeesPage() {
+  const { isOffline } = useOfflineStatus()
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -243,14 +245,18 @@ export default function EmployeesPage() {
             <ExportButtons type="employees" />
             <button
               onClick={() => setShowImportModal(true)}
-              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-green-500/20 transition-all hover:scale-105 active:scale-95"
+              disabled={isOffline}
+              title={isOffline ? 'Requires internet connection' : 'Import employees from Excel'}
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-green-500/20 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               <Upload className="w-5 h-5" />
               Import Excel
             </button>
             <button
               onClick={() => setShowForm(true)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95"
+              disabled={isOffline}
+              title={isOffline ? 'Requires internet connection' : 'Add new employee'}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               <Plus className="w-5 h-5" />
               Add Employee

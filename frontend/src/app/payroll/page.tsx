@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getApiUrl } from "@/lib/config";
 import Link from "next/link";
 import { FileSpreadsheet, FileText, Download, Users, User } from "lucide-react";
+import { OnlineOnlyWrapper } from "@/components/offline/OnlineOnlyWrapper";
 
 interface PayrollRecord {
   payroll_id: number;
@@ -344,9 +345,10 @@ export default function PayrollPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow">
+    <OnlineOnlyWrapper message="Payroll processing requires an internet connection">
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex justify-between items-center">
             <div>
@@ -706,6 +708,7 @@ export default function PayrollPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </OnlineOnlyWrapper>
   );
 }

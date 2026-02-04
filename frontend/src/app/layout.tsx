@@ -8,6 +8,7 @@ import { QueryProvider } from '@/providers/QueryProvider'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import PWAInstaller from '@/components/PWAInstaller'
 import TrialBanner from '@/components/TrialBanner'
+import { OfflineStatusBanner } from '@/components/offline/OfflineStatusBanner'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -60,6 +61,7 @@ export default function RootLayout({
             <ThemeProvider>
               <ToastProvider>
                 <AuthProvider>
+                  <OfflineStatusBanner />
                   <TrialBanner />
                   {children}
                   <PWAInstaller />
