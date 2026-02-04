@@ -13,7 +13,7 @@ Transformation from specialized security guard rostering platform to universal w
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 0: Universal Foundation & Industry Templates** - Make system work for ANY business type
-- [ ] **Phase 0.1: Mobile-First Architecture & Phone Biometrics** - Mobile app is PRIMARY, phone camera = biometric device
+- [x] **Phase 0.1: Desktop-First Architecture** - Desktop Tauri app with full offline mode (COMPLETE 2026-02-04)
 - [ ] **Phase 0.2: Localization & Multi-Country Compliance** - Support ANY country's currency, tax, labor laws, language
 - [ ] **Phase 1: Biometric Integration Foundation** - Hardware terminals + phone-based facial recognition
 - [ ] **Phase 2: Ghost Worker Detection Engine** - Anomaly detection algorithms to flag ghost employees
@@ -53,23 +53,25 @@ Plans:
 
 ---
 
-### Phase 0.1: Mobile-First Architecture & Phone Biometrics
-**Goal**: Mobile app is PRIMARY interface (not desktop). Phone camera = biometric device (no hardware required).
+### Phase 0.1: Desktop-First Architecture
+**Goal**: Desktop Tauri app with full offline mode for office-based users. Roster changes and attendance approval work without internet.
 **Depends on**: Phase 0
-**Requirements**: MOBILE-01, MOBILE-02, MOBILE-03, MOBILE-04, MOBILE-05, MOBILE-06
+**Requirements**: DESKTOP-01, DESKTOP-02, DESKTOP-03, DESKTOP-04, DESKTOP-05
 **Success Criteria** (what must be TRUE):
-  1. Employee clocks in using phone camera (facial recognition, no fingerprint scanner needed)
-  2. System verifies face within 3 seconds, logs attendance with GPS
-  3. App works offline (remote petrol station, no internet for 2 days) → Syncs when online
-  4. Manager approves timesheet on phone (not desktop)
-  5. Restaurant manager submits incident report from floor (photo, voice note, GPS)
-  6. 80%+ of daily interactions happen on mobile (analytics prove this)
-**Plans**: 3 plans
+  1. Desktop app caches employee, roster, and attendance data to local SQLite database
+  2. Roster changes (reassign shifts) work offline and queue for sync when connection returns
+  3. Attendance approval works offline and syncs automatically
+  4. UI shows clear offline/online status with yellow banner when offline
+  5. Employee changes and payroll processing blocked when offline (require connection)
+  6. Manual "Sync Now" button triggers immediate queue replay
+**Plans**: 5 plans
 
 Plans:
-- [ ] 00.1-01: PWA with offline-first architecture (Steve + Prince lead)
-- [ ] 00.1-02: Phone camera facial recognition (John + Sizwe lead)
-- [ ] 00.1-03: Mobile UI for all workflows (Prince leads)
+- [x] 00.1-01: SQLite local database with tauri-plugin-sql (Wave 1)
+- [x] 00.1-02: React Query offline-aware persistence (Wave 1)
+- [x] 00.1-03: Offline data hooks with SQLite fallback (Wave 2, depends on 00.1-01, 00.1-02)
+- [x] 00.1-04: Mutation queue and sync manager (Wave 2, depends on 00.1-01, 00.1-02)
+- [x] 00.1-05: Offline UI components (Wave 3, depends on 00.1-03, 00.1-04)
 
 ---
 
