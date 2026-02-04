@@ -5,24 +5,23 @@
 See: [.planning/PROJECT.md](.planning/PROJECT.md) (updated 2026-02-04)
 
 **Core value:** Every person on every payroll must be verified, real, and working at the right location
-**Current focus:** Phase 0.1 - Desktop-First Architecture
+**Current focus:** Phase 0.2 - Localization & Multi-Country Compliance
 
 ## Current Phase
 
-**Phase 0.1: Desktop-First Architecture**
+**Phase 0.2: Localization & Multi-Country Compliance**
 
-**Goal**: Optimize frontend for Tauri desktop app with offline-first data persistence and native OS integration
+**Goal**: Support ANY country's currency, tax system, labor laws, language. Not just South Africa.
 
-**Status**: Complete (5/5 plans complete) ✅
+**Status**: In Progress (1/4 plans complete) 🔄
 
 **Plans:**
-- [x] 00.1-01: SQLite local database with tauri-plugin-sql - ✅ Completed 2026-02-04
-- [x] 00.1-02: React Query offline-aware hooks with local fallback - ✅ Completed 2026-02-04
-- [x] 00.1-03: Offline data hooks with SQLite fallback - ✅ Completed 2026-02-04
-- [x] 00.1-04: Mutation queue and sync manager - ✅ Completed 2026-02-04
-- [x] 00.1-05: Offline UI components (status banner, sync button, wrappers) - ✅ Completed 2026-02-04
+- [x] 00.2-01: Country config foundation + DB models + currency formatting - ✅ Completed 2026-02-04
+- [ ] 00.2-02: Internationalization (i18n) framework with next-intl
+- [ ] 00.2-03: Tax engine + labor law engine TDD
+- [ ] 00.2-04: Exchange rate service + payroll integration
 
-**Progress:** ████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ (8/45 plans = 18%)
+**Progress:** █████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ (9/45 plans = 20%)
 
 ## Recent Activity
 
@@ -42,14 +41,15 @@ See: [.planning/PROJECT.md](.planning/PROJECT.md) (updated 2026-02-04)
 - ✅ **Plan 00.1-04 completed**: Mutation queue and sync manager (9min)
 - ✅ **Plan 00.1-05 completed**: Offline UI components (status banner, sync button, wrappers) (4min)
 - ✅ **Phase 0.1 COMPLETE**: Desktop-First Architecture milestone achieved
+- ✅ **Plan 00.2-01 completed**: Country config foundation with 5 JSON configs (ZA/US/GB/NG/KE), CountryService, currency.ts (2h 15min)
 
 ## Next Steps
 
 1. **Immediate (Next Session)**:
-   - Start Phase 0.2: Localization & Regional Compliance
-   - Multi-currency support (ZAR, USD, EUR, GBP)
-   - Implement i18n for English, Afrikaans, Zulu
-   - Multi-tax engine (SA PAYE/UIF/SDL, UK PAYE/NI, US Federal/State)
+   - Continue Phase 0.2: Plan 00.2-02 (Internationalization framework)
+   - Implement next-intl for UI language switching
+   - Create translation files for English, Afrikaans, Zulu
+   - Auto-detect browser language, allow manual override
 
 2. **This Week**:
    - Complete Phase 0.2 (Localization)
@@ -100,10 +100,14 @@ None currently.
 | 00.1   | 05   | Banner hidden when online and idle | Avoids visual clutter when connection normal, only shows when user needs feedback |
 | 00.1   | 05   | Payroll page fully blocked offline | Payroll processing requires server-side calculations, no value showing cached records |
 | 00.1   | 05   | Employee list viewable offline | Leverages offline-first hooks, users can view cached data without add/edit |
+| 00.2   | 01   | Country configs as JSON files | Enables adding new countries without code changes (just upload JSON) |
+| 00.2   | 01   | Origin-country locale for currency | ZAR always displays as "R 1 234,56" (SA format), not user's locale |
+| 00.2   | 01   | Numeric(12,2) for monetary amounts | Prevents floating-point rounding errors in payroll calculations |
+| 00.2   | 01   | Intl.NumberFormat for formatting | Native browser API, no dependencies, handles all locales |
 
 **Decision Pending**:
-- Which exchange rate API to use for multi-currency (Phase 0.2)? Options: Open Exchange Rates, CurrencyLayer, Fixer.io
-- Which i18n library for Next.js? Options: next-i18next, next-intl, lingui
+- Which exchange rate API to use for multi-currency (Phase 0.2-04)? Options: Open Exchange Rates, CurrencyLayer, Fixer.io, Frankfurter
+- Which i18n library for Next.js (Phase 0.2-02)? Leaning toward next-intl (App Router native)
 
 **Team Coordination**:
 - Weekly sync meetings: Mondays 10:00 AM SAST
@@ -119,11 +123,11 @@ None currently.
 
 ## Session Continuity
 
-**Last session:** 2026-02-04 11:37:51 UTC
-**Stopped at:** Completed 00.1-05-PLAN.md (Offline UI components)
+**Last session:** 2026-02-04 ~19:15 UTC
+**Stopped at:** Completed 00.2-01-PLAN.md (Country config foundation)
 **Resume file:** None
-**Phase status:** Phase 0.1 Complete - Ready for Phase 0.2 (Localization)
+**Phase status:** Phase 0.2 In Progress (1/4 plans complete) - Ready for Plan 00.2-02 (i18n framework)
 
 ---
 
-*Last updated: 2026-02-04 after completing Plan 00.1-05 and Phase 0.1*
+*Last updated: 2026-02-04 after completing Plan 00.2-01*
