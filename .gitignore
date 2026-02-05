@@ -23,11 +23,15 @@ build/
 dist/
 .turbo/
 
-# Environment variables
+# Environment variables (local only)
 .env
 .env.local
-.env.production
 .env.*.local
+
+# Keep templates in repo for deployment reference
+!.env.production
+!.env.development
+!.env.example
 
 # Database
 *.db
