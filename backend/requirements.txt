@@ -27,3 +27,4 @@ flower==2.0.1
 sentry-sdk[fastapi]==2.14.0
 deepmerge==1.1.1
 deepface>=0.0.89
+tf-keras>=2.20.0

@@ -189,7 +189,18 @@
       "Bash(git -C \"c:/Users/USER/Documents/Master Plan/RostraCore\" commit -m \"$(cat <<''EOF''\nfix: Add missing requests dependency\n\nThe payment_service.py uses the requests library for HTTP calls\nbut it wasn''t in requirements.txt.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(copy:*)",
       "Bash(del vercel.json)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "Bash(npm run build:ts:*)",
+      "Bash(ping:*)",
+      "Bash(npm start)",
+      "Bash(npm uninstall:*)",
+      "Bash(node_modules.binelectron test-electron.js)",
+      "Bash(npx electron test-electron.js)",
+      "WebFetch(domain:tauri.app)",
+      "Bash(powershell.exe:*)",
+      "Bash(export PATH=\"$HOME/.cargo/bin:$PATH\")",
+      "Bash(tee:*)",
+      "Bash(powershell:*)"
     ],
     "deny": [],
     "ask": []

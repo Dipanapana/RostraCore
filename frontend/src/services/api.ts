@@ -3,7 +3,7 @@ import { getApiUrl } from '@/lib/config'
 import { toast } from '@/context/ToastContext'
 
 // Create axios instance - uses Vercel rewrites in production (same-origin)
-// In dev, uses localhost:8001
+// In dev, uses localhost:8000
 export const api = axios.create({
   baseURL: '', // Empty = same-origin requests, Vercel rewrites to Railway
   headers: {

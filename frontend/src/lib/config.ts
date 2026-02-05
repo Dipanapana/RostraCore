@@ -24,7 +24,7 @@ if (typeof window !== 'undefined') {
 export function getApiUrl(): string {
   // ONLY use localhost in development - check hostname directly
   if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return 'http://localhost:8001';
+    return 'http://localhost:8000';
   }
 
   // ALWAYS return empty string in production
