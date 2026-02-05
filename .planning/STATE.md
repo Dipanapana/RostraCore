@@ -5,25 +5,33 @@
 See: [.planning/PROJECT.md](.planning/PROJECT.md) (updated 2026-02-04)
 
 **Core value:** Every person on every payroll must be verified, real, and working at the right location
-**Current focus:** Phase 0.2 - Localization & Multi-Country Compliance
+**Current focus:** Phase 01 - Biometric Integration Foundation
 
 ## Current Phase
 
-**Phase 0.2: Localization & Multi-Country Compliance**
+**Phase 01: Biometric Integration Foundation**
 
-**Goal**: Support ANY country's currency, tax system, labor laws, language. Not just South Africa.
+**Goal**: Multi-modal attendance verification system (hardware fingerprint, phone facial recognition, GPS-only).
 
-**Status**: In Progress (3/4 plans complete) 🔄
+**Status**: In Progress (1/5 plans complete) 🔄
 
 **Plans:**
-- [x] 00.2-01: Country config foundation + DB models + currency formatting - ✅ Completed 2026-02-04
-- [x] 00.2-02: Internationalization (i18n) framework with next-intl - ✅ Completed 2026-02-04
-- [x] 00.2-03: Tax engine + labor law engine TDD - ✅ Completed 2026-02-04
-- [ ] 00.2-04: Exchange rate service + payroll integration
+- [x] 01-01: Database models + geofence validation - ✅ Completed 2026-02-05
+- [ ] 01-02: Enrollment service API with template encryption
+- [ ] 01-03: Facial recognition service (FaceNet512)
+- [ ] 01-04: Verification service with adaptive thresholds
+- [ ] 01-05: Clock-in API with GPS validation
 
-**Progress:** ███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ (11/45 plans = 24%)
+**Progress:** ████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ (12/45 plans = 27%)
 
 ## Recent Activity
+
+**2026-02-05:**
+- ✅ **Plan 01-01 completed**: Biometric database models + Alembic migration + geofence validation utility (62min)
+  - Created BiometricTemplate, EnrollmentSession, VerificationAttempt, AttendanceRecord, SiteGeofence models
+  - Migration with pgcrypto extension for encrypted template storage
+  - Haversine geofence validation with GPS accuracy buffering
+  - Fixed bug in previous migration (missing country_configs seed data)
 
 **2026-02-04:**
 - ✅ Comprehensive transformation plan created and approved (v3.0)
@@ -47,23 +55,22 @@ See: [.planning/PROJECT.md](.planning/PROJECT.md) (updated 2026-02-04)
 ## Next Steps
 
 1. **Immediate (Next Session)**:
-   - Continue Phase 0.2: Plan 00.2-03 (Tax engine + labor law engine)
-   - Implement TDD-based tax calculation engine
-   - Create labor law compliance checker
-   - Use country JSON configs from Plan 00.2-01
+   - Continue Phase 01: Plan 01-02 (Enrollment service API)
+   - Implement biometric enrollment workflow
+   - Template encryption using pgcrypto
+   - Quality score validation and grace period enforcement
 
 2. **This Week**:
-   - Complete Phase 0.2 (Localization)
-   - Test desktop app offline functionality end-to-end
-   - Validate currency conversion and tax calculations
-   - Test i18n translations across all pages
+   - Complete Phase 01 biometric foundation (5 plans)
+   - Enrollment service + facial recognition + verification + clock-in API
+   - Test end-to-end biometric attendance flow
+   - Validate geofence accuracy across multiple test sites
 
 3. **This Month (Milestone v0.5)**:
-   - Complete Phases 0, 0.1, 0.2 (Universal Foundation + Desktop-First + Localization)
-   - Deploy desktop app with offline-first architecture
-   - Launch with 10+ industry templates
-   - Multi-currency and multi-tax engine operational
-   - Begin Phase 1: Biometric Authentication (phone camera facial recognition)
+   - Complete Phases 0, 0.1, 0.2, 01 (Foundation + Localization + Biometric)
+   - Deploy biometric attendance system with multi-modal verification
+   - Test phone camera facial recognition accuracy
+   - Ghost worker detection foundation in place
 
 ## Blockers
 
@@ -109,6 +116,13 @@ None currently.
 | 00.2   | 02   | Cookie + localStorage dual storage | Cookie for SSR, localStorage for Tauri desktop fallback |
 | 00.2   | 02   | router.refresh() for language switch | Instant switching without full page reload, preserves form state |
 | 00.2   | 02   | Natural translations not machine-translated | Proper Afrikaans and isiZulu using SA workforce terminology |
+| 01     | 01   | Numeric(10,7) for GPS coordinates | 7 decimal places = ~1.1cm precision per GPS standards |
+| 01     | 01   | Default geofence radius 200m | 100m site + 2×50m GPS error buffer per research |
+| 01     | 01   | Raise ValueError if GPS accuracy > 50m | Too imprecise for reliable geofence validation |
+| 01     | 01   | String enums for status fields | Simpler migrations than SQLAlchemy Enum |
+| 01     | 01   | UNIQUE constraint (employee_id, template_type) | One template per biometric type per employee |
+| 01     | 01   | Composite index (employee_id, created_at) | Optimizes adaptive threshold queries |
+| 01     | 01   | pgcrypto extension for encrypted templates | PostgreSQL native encryption for LargeBinary column |
 
 **Decision Pending**:
 - Which exchange rate API to use for multi-currency (Phase 0.2-04)? Options: Open Exchange Rates, CurrencyLayer, Fixer.io, Frankfurter
@@ -127,11 +141,11 @@ None currently.
 
 ## Session Continuity
 
-**Last session:** 2026-02-04 ~20:05 UTC
-**Stopped at:** Completed 00.2-02-PLAN.md (Internationalization framework)
+**Last session:** 2026-02-05 ~00:03 UTC
+**Stopped at:** Completed 01-01-PLAN.md (Biometric database models + geofence validation)
 **Resume file:** None
-**Phase status:** Phase 0.2 In Progress (2/4 plans complete) - Ready for Plan 00.2-03 (Tax engine)
+**Phase status:** Phase 01 In Progress (1/5 plans complete) - Ready for Plan 01-02 (Enrollment service)
 
 ---
 
-*Last updated: 2026-02-04 after completing Plan 00.2-02*
+*Last updated: 2026-02-05 after completing Plan 01-01*
