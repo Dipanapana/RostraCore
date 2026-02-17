@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Employee, Client, Gender, AccountType } from '@/types'
+import { Employee, Client, Gender, AccountType, PayType, EmployeeRole } from '@/types'
 import { employeesApi, clientsApi, organizationSettingsApi } from '@/services/api'
 
 interface EmployeeFormProps {
@@ -10,13 +10,65 @@ interface EmployeeFormProps {
   onSuccess: () => void
 }
 
+const STEP_LABELS = ['Basic Info', 'Compensation', 'Contact & Banking', 'Assignments & Review']
+
+const INPUT_CLASS =
+  'w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500'
+
+const LABEL_CLASS = 'block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1'
+
+const ROLE_OPTIONS: { value: EmployeeRole; label: string }[] = [
+  { value: 'armed', label: 'Armed' },
+  { value: 'unarmed', label: 'Unarmed' },
+  { value: 'supervisor', label: 'Supervisor' },
+  { value: 'manager', label: 'Manager' },
+  { value: 'admin', label: 'Admin' },
+  { value: 'office_staff', label: 'Office Staff' },
+  { value: 'field_worker', label: 'Field Worker' },
+  { value: 'contractor', label: 'Contractor' },
+  { value: 'other', label: 'Other' },
+]
+
+const PSIRA_ELIGIBLE_ROLES: EmployeeRole[] = ['armed', 'unarmed', 'supervisor']
+
+const SA_PROVINCES = [
+  'Gauteng',
+  'Western Cape',
+  'KwaZulu-Natal',
+  'Eastern Cape',
+  'Free State',
+  'Mpumalanga',
+  'Limpopo',
+  'North West',
+  'Northern Cape',
+]
+
+const SA_BANKS = [
+  'ABSA',
+  'FNB',
+  'Standard Bank',
+  'Nedbank',
+  'Capitec',
+  'African Bank',
+  'TymeBank',
+  'Discovery Bank',
+  'Investec',
+  'Old Mutual',
+  'Other',
+]
+
 export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeFormProps) {
+  const [currentStep, setCurrentStep] = useState(1)
+  const [stepErrors, setStepErrors] = useState<Record<number, string[]>>({})
+
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
     id_number: '',
-    role: 'unarmed' as 'armed' | 'unarmed' | 'supervisor',
+    role: 'unarmed' as EmployeeRole,
+    pay_type: 'hourly' as PayType,
     hourly_rate: '',
+    monthly_salary: '',
     max_hours_week: '48',
     cert_level: '',
     home_location: '',
@@ -24,23 +76,18 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
     email: '',
     phone: '',
     assigned_client_ids: [] as number[],
-    // Personal details
     gender: '' as Gender | '',
     address: '',
     province: '',
     employee_number: '',
-    // Banking details
     bank_name: '',
     account_number: '',
     branch_code: '',
     account_type: '' as AccountType | '',
-    // Tax details
     tax_number: '',
-    // PSIRA details
     psira_number: '',
-    // Emergency contact
     emergency_contact_name: '',
-    emergency_contact_phone: ''
+    emergency_contact_phone: '',
   })
 
   const [clients, setClients] = useState<Client[]>([])
@@ -49,26 +96,27 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
   const [rateHint, setRateHint] = useState<string | null>(null)
 
   // Lookup default hourly rate when grade or role changes
-  const lookupDefaultRate = useCallback(async (grade: string, role: string) => {
-    if (!grade || !role) return
+  const lookupDefaultRate = useCallback(
+    async (grade: string, role: string) => {
+      if (!grade || !role) return
+      if (employee && employee.hourly_rate && employee.hourly_rate > 0) return
 
-    // Only auto-populate for new employees or if hourly rate is empty/zero
-    if (employee && employee.hourly_rate > 0) return
-
-    try {
-      const response = await organizationSettingsApi.lookupHourlyRate(grade, role)
-      if (response.data.found && response.data.default_hourly_rate) {
-        setFormData(prev => ({
-          ...prev,
-          hourly_rate: response.data.default_hourly_rate.toString()
-        }))
-        setRateHint(`Auto-populated from default rate for Grade ${grade} ${role}`)
-        setTimeout(() => setRateHint(null), 5000)
+      try {
+        const response = await organizationSettingsApi.lookupHourlyRate(grade, role)
+        if (response.data.found && response.data.default_hourly_rate) {
+          setFormData((prev) => ({
+            ...prev,
+            hourly_rate: response.data.default_hourly_rate.toString(),
+          }))
+          setRateHint(`Auto-populated from default rate for Grade ${grade} ${role}`)
+          setTimeout(() => setRateHint(null), 5000)
+        }
+      } catch {
+        console.log('No default rate found')
       }
-    } catch (err) {
-      console.log('No default rate found')
-    }
-  }, [employee])
+    },
+    [employee]
+  )
 
   // Validate Grade E cannot be armed
   const validateGradeRole = (grade: string, role: string): string | null => {
@@ -94,6 +142,7 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
     fetchClients()
   }, [])
 
+  // Populate form when editing
   useEffect(() => {
     if (employee) {
       setFormData({
@@ -101,38 +150,37 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
         last_name: employee.last_name,
         id_number: employee.id_number,
         role: employee.role,
-        hourly_rate: employee.hourly_rate.toString(),
+        pay_type: employee.pay_type || 'hourly',
+        hourly_rate: employee.hourly_rate?.toString() || '',
+        monthly_salary: employee.monthly_salary?.toString() || '',
         max_hours_week: employee.max_hours_week.toString(),
         cert_level: employee.cert_level || '',
         home_location: employee.home_location || '',
         status: employee.status,
         email: employee.email || '',
         phone: employee.phone || '',
-        assigned_client_ids: employee.assigned_client_ids || (employee.assigned_client_id ? [employee.assigned_client_id] : []),
-        // Personal details
+        assigned_client_ids:
+          employee.assigned_client_ids ||
+          (employee.assigned_client_id ? [employee.assigned_client_id] : []),
         gender: employee.gender || '',
         address: employee.address || '',
         province: employee.province || '',
         employee_number: employee.employee_number || '',
-        // Banking details
         bank_name: employee.bank_name || '',
         account_number: employee.account_number || '',
         branch_code: employee.branch_code || '',
         account_type: employee.account_type || '',
-        // Tax details
         tax_number: employee.tax_number || '',
-        // PSIRA details
         psira_number: employee.psira_number || '',
-        // Emergency contact
         emergency_contact_name: employee.emergency_contact_name || '',
-        emergency_contact_phone: employee.emergency_contact_phone || ''
+        emergency_contact_phone: employee.emergency_contact_phone || '',
       })
     }
   }, [employee])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setFormData(prev => {
+    setFormData((prev) => {
       const newData = { ...prev, [name]: value }
 
       // When PSIRA grade changes, lookup default rate
@@ -140,7 +188,7 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
         lookupDefaultRate(value, newData.role)
       }
 
-      // When role changes, lookup default rate
+      // When role changes, lookup default rate if cert_level set
       if (name === 'role' && newData.cert_level) {
         lookupDefaultRate(newData.cert_level, value)
       }
@@ -149,41 +197,94 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
     })
   }
 
-  // Get validation warning for current grade/role combination
   const gradeRoleWarning = validateGradeRole(formData.cert_level, formData.role)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  // Step validation
+  const validateStep = (step: number): string[] => {
+    const errors: string[] = []
+    switch (step) {
+      case 1:
+        if (!formData.first_name.trim()) errors.push('First Name is required')
+        if (!formData.last_name.trim()) errors.push('Last Name is required')
+        if (!formData.id_number.trim()) errors.push('ID Number is required')
+        if (!formData.role) errors.push('Role is required')
+        if (!formData.pay_type) errors.push('Pay Type is required')
+        break
+      case 2:
+        if (formData.pay_type === 'hourly' && !formData.hourly_rate) {
+          errors.push('Hourly Rate is required for hourly pay type')
+        }
+        if (formData.pay_type === 'monthly_fixed' && !formData.monthly_salary) {
+          errors.push('Monthly Salary is required for monthly fixed pay type')
+        }
+        break
+      // Steps 3 and 4 have no required fields
+    }
+    return errors
+  }
+
+  const goToNext = () => {
+    const errors = validateStep(currentStep)
+    if (errors.length > 0) {
+      setStepErrors((prev) => ({ ...prev, [currentStep]: errors }))
+      return
+    }
+    setStepErrors((prev) => ({ ...prev, [currentStep]: [] }))
+    setCurrentStep((s) => Math.min(s + 1, 4))
+  }
+
+  const goToPrevious = () => {
+    setCurrentStep((s) => Math.max(s - 1, 1))
+  }
+
+  const handleSubmit = async () => {
+    // Validate all steps before submitting
+    for (let step = 1; step <= 4; step++) {
+      const errors = validateStep(step)
+      if (errors.length > 0) {
+        setStepErrors((prev) => ({ ...prev, [step]: errors }))
+        setCurrentStep(step)
+        return
+      }
+    }
+
     setLoading(true)
     setError(null)
 
     try {
-      const data = {
-        ...formData,
-        hourly_rate: parseFloat(formData.hourly_rate),
+      const data: Record<string, any> = {
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        id_number: formData.id_number,
+        role: formData.role,
+        pay_type: formData.pay_type,
         max_hours_week: parseInt(formData.max_hours_week),
+        status: formData.status,
         cert_level: formData.cert_level || undefined,
         home_location: formData.home_location || undefined,
         email: formData.email || undefined,
         phone: formData.phone || undefined,
-        assigned_client_ids: formData.assigned_client_ids.length > 0 ? formData.assigned_client_ids : undefined,
-        // Personal details
+        assigned_client_ids:
+          formData.assigned_client_ids.length > 0 ? formData.assigned_client_ids : undefined,
         gender: formData.gender || undefined,
         address: formData.address || undefined,
         province: formData.province || undefined,
         employee_number: formData.employee_number || undefined,
-        // Banking details
         bank_name: formData.bank_name || undefined,
         account_number: formData.account_number || undefined,
         branch_code: formData.branch_code || undefined,
         account_type: formData.account_type || undefined,
-        // Tax details
         tax_number: formData.tax_number || undefined,
-        // PSIRA details
         psira_number: formData.psira_number || undefined,
-        // Emergency contact
         emergency_contact_name: formData.emergency_contact_name || undefined,
-        emergency_contact_phone: formData.emergency_contact_phone || undefined
+        emergency_contact_phone: formData.emergency_contact_phone || undefined,
+      }
+
+      // Send the appropriate compensation field based on pay type
+      if (formData.pay_type === 'hourly') {
+        data.hourly_rate = parseFloat(formData.hourly_rate)
+      } else {
+        data.monthly_salary = parseFloat(formData.monthly_salary)
       }
 
       if (employee) {
@@ -201,139 +302,260 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
     }
   }
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold">
-              {employee ? 'Edit Employee' : 'Add New Employee'}
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-2xl"
-            >
-              &times;
-            </button>
-          </div>
-
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-              {error}
-            </div>
-          )}
-
-          {gradeRoleWarning && (
-            <div className="bg-amber-100 border border-amber-400 text-amber-700 px-4 py-3 rounded mb-4">
-              {gradeRoleWarning}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  First Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="first_name"
-                  value={formData.first_name}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Last Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="last_name"
-                  value={formData.last_name}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  ID Number <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="id_number"
-                  value={formData.id_number}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Role <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="role"
-                  value={formData.role}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="unarmed">Unarmed</option>
-                  <option value="armed">Armed</option>
-                  <option value="supervisor">Supervisor</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Hourly Rate (ZAR) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  name="hourly_rate"
-                  value={formData.hourly_rate}
-                  onChange={handleChange}
-                  required
-                  step="0.01"
-                  min="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                {rateHint && (
-                  <p className="text-xs text-green-600 mt-1">{rateHint}</p>
+  // ---- Step Indicator ----
+  const renderStepIndicator = () => (
+    <div className="flex items-center justify-center mb-8">
+      {STEP_LABELS.map((label, idx) => {
+        const stepNum = idx + 1
+        const isCompleted = stepNum < currentStep
+        const isCurrent = stepNum === currentStep
+        return (
+          <div key={stepNum} className="flex items-center">
+            {/* Circle */}
+            <div className="flex flex-col items-center">
+              <div
+                className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold border-2 transition-colors ${
+                  isCompleted
+                    ? 'bg-green-500 border-green-500 text-white'
+                    : isCurrent
+                      ? 'bg-blue-600 border-blue-600 text-white'
+                      : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-400 dark:text-slate-500'
+                }`}
+              >
+                {isCompleted ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                ) : (
+                  stepNum
                 )}
               </div>
+              <span
+                className={`text-xs mt-1.5 whitespace-nowrap ${
+                  isCurrent
+                    ? 'text-blue-600 dark:text-blue-400 font-medium'
+                    : isCompleted
+                      ? 'text-green-600 dark:text-green-400'
+                      : 'text-slate-400 dark:text-slate-500'
+                }`}
+              >
+                {label}
+              </span>
+            </div>
+            {/* Connecting line */}
+            {stepNum < 4 && (
+              <div
+                className={`w-12 sm:w-20 h-0.5 mx-1 mb-5 ${
+                  stepNum < currentStep
+                    ? 'bg-green-500'
+                    : 'bg-slate-300 dark:bg-slate-600'
+                }`}
+              />
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Max Hours/Week <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  name="max_hours_week"
-                  value={formData.max_hours_week}
-                  onChange={handleChange}
-                  required
-                  min="0"
-                  max="168"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+  // ---- Step 1: Basic Info ----
+  const renderStep1 = () => (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
+        Basic Information
+      </h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className={LABEL_CLASS}>
+            First Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="first_name"
+            value={formData.first_name}
+            onChange={handleChange}
+            className={INPUT_CLASS}
+          />
+        </div>
+        <div>
+          <label className={LABEL_CLASS}>
+            Last Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="last_name"
+            value={formData.last_name}
+            onChange={handleChange}
+            className={INPUT_CLASS}
+          />
+        </div>
+        <div className="md:col-span-2">
+          <label className={LABEL_CLASS}>
+            ID Number <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="id_number"
+            value={formData.id_number}
+            onChange={handleChange}
+            className={INPUT_CLASS}
+          />
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            South African ID: 13 digits (YYMMDD SSSS C A Z)
+          </p>
+        </div>
+        <div>
+          <label className={LABEL_CLASS}>
+            Role <span className="text-red-500">*</span>
+          </label>
+          <select name="role" value={formData.role} onChange={handleChange} className={INPUT_CLASS}>
+            {ROLE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className={LABEL_CLASS}>
+            Pay Type <span className="text-red-500">*</span>
+          </label>
+          <div className="flex items-center gap-6 mt-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="pay_type"
+                value="hourly"
+                checked={formData.pay_type === 'hourly'}
+                onChange={handleChange}
+                className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-slate-700 dark:text-slate-300">Hourly</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="pay_type"
+                value="monthly_fixed"
+                checked={formData.pay_type === 'monthly_fixed'}
+                onChange={handleChange}
+                className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-slate-700 dark:text-slate-300">
+                Monthly Fixed Salary
+              </span>
+            </label>
+          </div>
+        </div>
+        <div>
+          <label className={LABEL_CLASS}>Status</label>
+          <select
+            name="status"
+            value={formData.status}
+            onChange={handleChange}
+            className={INPUT_CLASS}
+          >
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+        <div>
+          <label className={LABEL_CLASS}>Gender</label>
+          <select
+            name="gender"
+            value={formData.gender}
+            onChange={handleChange}
+            className={INPUT_CLASS}
+          >
+            <option value="">Select Gender</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+            <option value="prefer_not_to_say">Prefer not to say</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  )
 
+  // ---- Step 2: Compensation ----
+  const renderStep2 = () => {
+    const showPsira = PSIRA_ELIGIBLE_ROLES.includes(formData.role)
+    return (
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
+          Compensation
+        </h3>
+
+        {gradeRoleWarning && (
+          <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-400 dark:border-amber-600 text-amber-700 dark:text-amber-300 px-4 py-3 rounded-lg mb-4">
+            {gradeRoleWarning}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {formData.pay_type === 'hourly' ? (
+            <div>
+              <label className={LABEL_CLASS}>
+                Hourly Rate (ZAR) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                name="hourly_rate"
+                value={formData.hourly_rate}
+                onChange={handleChange}
+                step="0.01"
+                min="0"
+                className={INPUT_CLASS}
+              />
+              {rateHint && (
+                <p className="text-xs text-green-600 dark:text-green-400 mt-1">{rateHint}</p>
+              )}
+            </div>
+          ) : (
+            <div>
+              <label className={LABEL_CLASS}>
+                Monthly Salary (ZAR) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                name="monthly_salary"
+                value={formData.monthly_salary}
+                onChange={handleChange}
+                step="0.01"
+                min="0"
+                className={INPUT_CLASS}
+              />
+            </div>
+          )}
+
+          <div>
+            <label className={LABEL_CLASS}>Max Hours/Week</label>
+            <input
+              type="number"
+              name="max_hours_week"
+              value={formData.max_hours_week}
+              onChange={handleChange}
+              min="0"
+              max="168"
+              className={INPUT_CLASS}
+            />
+          </div>
+
+          {showPsira && (
+            <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  PSIRA Grade
-                </label>
+                <label className={LABEL_CLASS}>PSIRA Grade</label>
                 <select
                   name="cert_level"
                   value={formData.cert_level}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={INPUT_CLASS}
                 >
                   <option value="">Select PSIRA Grade</option>
                   <option value="A">Grade A - Security Manager / Armed Response</option>
@@ -343,336 +565,493 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
                   <option value="E">Grade E - Security Officer (Basic)</option>
                 </select>
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Status <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="employee@example.com"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone
-                </label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  placeholder="+27 123 456 789"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Home Location
-                </label>
-                <input
-                  type="text"
-                  name="home_location"
-                  value={formData.home_location}
-                  onChange={handleChange}
-                  placeholder="City or GPS coordinates"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* Additional Personal Details */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Gender
-                </label>
-                <select
-                  name="gender"
-                  value={formData.gender}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Gender</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Employee Number
-                </label>
-                <input
-                  type="text"
-                  name="employee_number"
-                  value={formData.employee_number}
-                  onChange={handleChange}
-                  placeholder="Internal employee number"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Province
-                </label>
-                <select
-                  name="province"
-                  value={formData.province}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Province</option>
-                  <option value="Gauteng">Gauteng</option>
-                  <option value="Western Cape">Western Cape</option>
-                  <option value="KwaZulu-Natal">KwaZulu-Natal</option>
-                  <option value="Eastern Cape">Eastern Cape</option>
-                  <option value="Free State">Free State</option>
-                  <option value="Mpumalanga">Mpumalanga</option>
-                  <option value="Limpopo">Limpopo</option>
-                  <option value="North West">North West</option>
-                  <option value="Northern Cape">Northern Cape</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  PSIRA Number
-                </label>
+                <label className={LABEL_CLASS}>PSIRA Number</label>
                 <input
                   type="text"
                   name="psira_number"
                   value={formData.psira_number}
                   onChange={handleChange}
                   placeholder="PSIRA registration number"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={INPUT_CLASS}
                 />
               </div>
+            </>
+          )}
+        </div>
+      </div>
+    )
+  }
 
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Address
-                </label>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  placeholder="Physical address"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+  // ---- Step 3: Contact & Banking ----
+  const renderStep3 = () => (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
+        Contact Details
+      </h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className={LABEL_CLASS}>Email</label>
+          <input
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="employee@example.com"
+            className={INPUT_CLASS}
+          />
+        </div>
+        <div>
+          <label className={LABEL_CLASS}>Phone</label>
+          <input
+            type="tel"
+            name="phone"
+            value={formData.phone}
+            onChange={handleChange}
+            placeholder="+27 123 456 789"
+            className={INPUT_CLASS}
+          />
+        </div>
+        <div>
+          <label className={LABEL_CLASS}>Home Location</label>
+          <input
+            type="text"
+            name="home_location"
+            value={formData.home_location}
+            onChange={handleChange}
+            placeholder="City or GPS coordinates"
+            className={INPUT_CLASS}
+          />
+        </div>
+        <div>
+          <label className={LABEL_CLASS}>Province</label>
+          <select
+            name="province"
+            value={formData.province}
+            onChange={handleChange}
+            className={INPUT_CLASS}
+          >
+            <option value="">Select Province</option>
+            {SA_PROVINCES.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="md:col-span-2">
+          <label className={LABEL_CLASS}>Address</label>
+          <input
+            type="text"
+            name="address"
+            value={formData.address}
+            onChange={handleChange}
+            placeholder="Physical address"
+            className={INPUT_CLASS}
+          />
+        </div>
+        <div>
+          <label className={LABEL_CLASS}>Emergency Contact Name</label>
+          <input
+            type="text"
+            name="emergency_contact_name"
+            value={formData.emergency_contact_name}
+            onChange={handleChange}
+            placeholder="Emergency contact name"
+            className={INPUT_CLASS}
+          />
+        </div>
+        <div>
+          <label className={LABEL_CLASS}>Emergency Contact Phone</label>
+          <input
+            type="tel"
+            name="emergency_contact_phone"
+            value={formData.emergency_contact_phone}
+            onChange={handleChange}
+            placeholder="+27 123 456 789"
+            className={INPUT_CLASS}
+          />
+        </div>
+      </div>
 
-              {/* Banking Details Section */}
-              <div className="md:col-span-2 border-t pt-4 mt-2">
-                <h3 className="text-lg font-medium text-gray-900 mb-3">Banking Details (for Payroll)</h3>
-              </div>
+      {/* Banking Details Divider */}
+      <div className="border-t border-slate-200 dark:border-slate-700 pt-6 mt-6">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
+          Banking Details
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className={LABEL_CLASS}>Bank Name</label>
+            <select
+              name="bank_name"
+              value={formData.bank_name}
+              onChange={handleChange}
+              className={INPUT_CLASS}
+            >
+              <option value="">Select Bank</option>
+              {SA_BANKS.map((b) => (
+                <option key={b} value={b}>
+                  {b === 'FNB' ? 'FNB (First National Bank)' : b}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className={LABEL_CLASS}>Account Type</label>
+            <select
+              name="account_type"
+              value={formData.account_type}
+              onChange={handleChange}
+              className={INPUT_CLASS}
+            >
+              <option value="">Select Account Type</option>
+              <option value="savings">Savings</option>
+              <option value="cheque">Cheque</option>
+              <option value="current">Current</option>
+              <option value="transmission">Transmission</option>
+            </select>
+          </div>
+          <div>
+            <label className={LABEL_CLASS}>Account Number</label>
+            <input
+              type="text"
+              name="account_number"
+              value={formData.account_number}
+              onChange={handleChange}
+              placeholder="Bank account number"
+              className={INPUT_CLASS}
+            />
+          </div>
+          <div>
+            <label className={LABEL_CLASS}>Branch Code</label>
+            <input
+              type="text"
+              name="branch_code"
+              value={formData.branch_code}
+              onChange={handleChange}
+              placeholder="6-digit branch code"
+              className={INPUT_CLASS}
+            />
+          </div>
+          <div>
+            <label className={LABEL_CLASS}>Tax Number</label>
+            <input
+              type="text"
+              name="tax_number"
+              value={formData.tax_number}
+              onChange={handleChange}
+              placeholder="SARS tax reference number"
+              className={INPUT_CLASS}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Bank Name
-                </label>
-                <select
-                  name="bank_name"
-                  value={formData.bank_name}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+  // ---- Step 4: Assignments & Review ----
+  const renderStep4 = () => {
+    const assignedClientNames = clients
+      .filter((c) => formData.assigned_client_ids.includes(c.client_id))
+      .map((c) => c.client_name)
+
+    return (
+      <div className="space-y-6">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
+          Assignments
+        </h3>
+
+        {/* Client Assignment */}
+        <div>
+          <label className={LABEL_CLASS}>Assigned Clients</label>
+          <div className="max-h-40 overflow-y-auto border border-slate-300 dark:border-slate-600 rounded-lg p-2 space-y-1 bg-white dark:bg-slate-800">
+            {clients.length === 0 ? (
+              <p className="text-sm text-slate-500 dark:text-slate-400 p-2">
+                No clients available
+              </p>
+            ) : (
+              clients.map((client) => (
+                <label
+                  key={client.client_id}
+                  className="flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded cursor-pointer"
                 >
-                  <option value="">Select Bank</option>
-                  <option value="ABSA">ABSA</option>
-                  <option value="FNB">FNB (First National Bank)</option>
-                  <option value="Standard Bank">Standard Bank</option>
-                  <option value="Nedbank">Nedbank</option>
-                  <option value="Capitec">Capitec</option>
-                  <option value="African Bank">African Bank</option>
-                  <option value="TymeBank">TymeBank</option>
-                  <option value="Discovery Bank">Discovery Bank</option>
-                  <option value="Investec">Investec</option>
-                  <option value="Old Mutual">Old Mutual</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
+                  <input
+                    type="checkbox"
+                    checked={formData.assigned_client_ids.includes(client.client_id)}
+                    onChange={(e) => {
+                      const clientId = client.client_id
+                      if (e.target.checked) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          assigned_client_ids: [...prev.assigned_client_ids, clientId],
+                        }))
+                      } else {
+                        setFormData((prev) => ({
+                          ...prev,
+                          assigned_client_ids: prev.assigned_client_ids.filter(
+                            (id) => id !== clientId
+                          ),
+                        }))
+                      }
+                    }}
+                    className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-slate-700 dark:text-slate-300">
+                    {client.client_name}
+                  </span>
+                </label>
+              ))
+            )}
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Select which clients this employee can work for. Leave empty to allow all clients.
+          </p>
+        </div>
 
+        {/* Employee Number */}
+        <div className="max-w-sm">
+          <label className={LABEL_CLASS}>Employee Number</label>
+          <input
+            type="text"
+            name="employee_number"
+            value={formData.employee_number}
+            onChange={handleChange}
+            placeholder="Internal employee number"
+            className={INPUT_CLASS}
+          />
+        </div>
+
+        {/* Summary / Review Card */}
+        <div className="border-t border-slate-200 dark:border-slate-700 pt-6 mt-4">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-3">
+            Review Summary
+          </h3>
+          <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-5 space-y-3 text-sm">
+            {/* Row 1: Identity */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Account Type
-                </label>
-                <select
-                  name="account_type"
-                  value={formData.account_type}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Account Type</option>
-                  <option value="savings">Savings</option>
-                  <option value="cheque">Cheque</option>
-                  <option value="current">Current</option>
-                  <option value="transmission">Transmission</option>
-                </select>
+                <span className="text-slate-500 dark:text-slate-400">Name</span>
+                <p className="font-medium text-slate-900 dark:text-slate-100">
+                  {formData.first_name} {formData.last_name}
+                </p>
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Account Number
-                </label>
-                <input
-                  type="text"
-                  name="account_number"
-                  value={formData.account_number}
-                  onChange={handleChange}
-                  placeholder="Bank account number"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                <span className="text-slate-500 dark:text-slate-400">ID Number</span>
+                <p className="font-medium text-slate-900 dark:text-slate-100">
+                  {formData.id_number}
+                </p>
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Branch Code
-                </label>
-                <input
-                  type="text"
-                  name="branch_code"
-                  value={formData.branch_code}
-                  onChange={handleChange}
-                  placeholder="6-digit branch code"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* Tax Details Section */}
-              <div className="md:col-span-2 border-t pt-4 mt-2">
-                <h3 className="text-lg font-medium text-gray-900 mb-3">Tax Details</h3>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tax Number
-                </label>
-                <input
-                  type="text"
-                  name="tax_number"
-                  value={formData.tax_number}
-                  onChange={handleChange}
-                  placeholder="SARS tax reference number"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div></div> {/* Spacer for grid alignment */}
-
-              {/* Emergency Contact Section */}
-              <div className="md:col-span-2 border-t pt-4 mt-2">
-                <h3 className="text-lg font-medium text-gray-900 mb-3">Emergency Contact</h3>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Contact Name
-                </label>
-                <input
-                  type="text"
-                  name="emergency_contact_name"
-                  value={formData.emergency_contact_name}
-                  onChange={handleChange}
-                  placeholder="Emergency contact name"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Contact Phone
-                </label>
-                <input
-                  type="tel"
-                  name="emergency_contact_phone"
-                  value={formData.emergency_contact_phone}
-                  onChange={handleChange}
-                  placeholder="+27 123 456 789"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* Client Assignment */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Assigned Clients
-                </label>
-                <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-md p-2 space-y-1">
-                  {clients.length === 0 ? (
-                    <p className="text-sm text-gray-500 p-2">No clients available</p>
-                  ) : (
-                    clients.map(client => (
-                      <label key={client.client_id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={formData.assigned_client_ids.includes(client.client_id)}
-                          onChange={(e) => {
-                            const clientId = client.client_id
-                            if (e.target.checked) {
-                              setFormData(prev => ({
-                                ...prev,
-                                assigned_client_ids: [...prev.assigned_client_ids, clientId]
-                              }))
-                            } else {
-                              setFormData(prev => ({
-                                ...prev,
-                                assigned_client_ids: prev.assigned_client_ids.filter(id => id !== clientId)
-                              }))
-                            }
-                          }}
-                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="text-sm text-gray-700">{client.client_name}</span>
-                      </label>
-                    ))
-                  )}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Select which clients this guard can work for. Leave empty to allow all clients.
+                <span className="text-slate-500 dark:text-slate-400">Role</span>
+                <p className="font-medium text-slate-900 dark:text-slate-100 capitalize">
+                  {formData.role.replace('_', ' ')}
                 </p>
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 mt-6">
+            {/* Row 2: Compensation */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 border-t border-slate-200 dark:border-slate-600 pt-3">
+              <div>
+                <span className="text-slate-500 dark:text-slate-400">Pay Type</span>
+                <p className="font-medium text-slate-900 dark:text-slate-100">
+                  {formData.pay_type === 'hourly' ? 'Hourly' : 'Monthly Fixed'}
+                </p>
+              </div>
+              <div>
+                <span className="text-slate-500 dark:text-slate-400">
+                  {formData.pay_type === 'hourly' ? 'Hourly Rate' : 'Monthly Salary'}
+                </span>
+                <p className="font-medium text-slate-900 dark:text-slate-100">
+                  {formData.pay_type === 'hourly'
+                    ? formData.hourly_rate
+                      ? `R ${parseFloat(formData.hourly_rate).toFixed(2)}`
+                      : '--'
+                    : formData.monthly_salary
+                      ? `R ${parseFloat(formData.monthly_salary).toFixed(2)}`
+                      : '--'}
+                </p>
+              </div>
+              <div>
+                <span className="text-slate-500 dark:text-slate-400">Status</span>
+                <p className="font-medium text-slate-900 dark:text-slate-100 capitalize">
+                  {formData.status}
+                </p>
+              </div>
+            </div>
+
+            {/* Row 3: Contact */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 border-t border-slate-200 dark:border-slate-600 pt-3">
+              {formData.email && (
+                <div>
+                  <span className="text-slate-500 dark:text-slate-400">Email</span>
+                  <p className="font-medium text-slate-900 dark:text-slate-100">
+                    {formData.email}
+                  </p>
+                </div>
+              )}
+              {formData.phone && (
+                <div>
+                  <span className="text-slate-500 dark:text-slate-400">Phone</span>
+                  <p className="font-medium text-slate-900 dark:text-slate-100">
+                    {formData.phone}
+                  </p>
+                </div>
+              )}
+              {formData.province && (
+                <div>
+                  <span className="text-slate-500 dark:text-slate-400">Province</span>
+                  <p className="font-medium text-slate-900 dark:text-slate-100">
+                    {formData.province}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Row 4: Banking (if any set) */}
+            {formData.bank_name && (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 border-t border-slate-200 dark:border-slate-600 pt-3">
+                <div>
+                  <span className="text-slate-500 dark:text-slate-400">Bank</span>
+                  <p className="font-medium text-slate-900 dark:text-slate-100">
+                    {formData.bank_name}
+                  </p>
+                </div>
+                {formData.account_type && (
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400">Account Type</span>
+                    <p className="font-medium text-slate-900 dark:text-slate-100 capitalize">
+                      {formData.account_type}
+                    </p>
+                  </div>
+                )}
+                {formData.account_number && (
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400">Account No.</span>
+                    <p className="font-medium text-slate-900 dark:text-slate-100">
+                      {'****' + formData.account_number.slice(-4)}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Row 5: Assignments */}
+            {assignedClientNames.length > 0 && (
+              <div className="border-t border-slate-200 dark:border-slate-600 pt-3">
+                <span className="text-slate-500 dark:text-slate-400">Assigned Clients</span>
+                <p className="font-medium text-slate-900 dark:text-slate-100">
+                  {assignedClientNames.join(', ')}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ---- Render current step content ----
+  const renderCurrentStep = () => {
+    switch (currentStep) {
+      case 1:
+        return renderStep1()
+      case 2:
+        return renderStep2()
+      case 3:
+        return renderStep3()
+      case 4:
+        return renderStep4()
+      default:
+        return null
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+        {/* Header */}
+        <div className="p-6 pb-0">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+              {employee ? 'Edit Employee' : 'Enroll New Employee'}
+            </h2>
+            <button
+              onClick={onClose}
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-2xl leading-none"
+            >
+              &times;
+            </button>
+          </div>
+          {renderStepIndicator()}
+        </div>
+
+        {/* Scrollable content area */}
+        <div className="flex-1 overflow-y-auto px-6 pb-2">
+          {/* Global error */}
+          {error && (
+            <div className="bg-red-50 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg mb-4">
+              {error}
+            </div>
+          )}
+
+          {/* Step validation errors */}
+          {stepErrors[currentStep] && stepErrors[currentStep].length > 0 && (
+            <div className="bg-red-50 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg mb-4">
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                {stepErrors[currentStep].map((err, i) => (
+                  <li key={i}>{err}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {renderCurrentStep()}
+        </div>
+
+        {/* Footer navigation */}
+        <div className="p-6 pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
+          <div>
+            {currentStep > 1 && (
               <button
                 type="button"
-                onClick={onClose}
-                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                onClick={goToPrevious}
+                className="px-5 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
               >
-                Cancel
+                Previous
               </button>
+            )}
+          </div>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+            >
+              Cancel
+            </button>
+            {currentStep < 4 ? (
               <button
-                type="submit"
-                disabled={loading}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
+                type="button"
+                onClick={goToNext}
+                className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
-                {loading ? 'Saving...' : (employee ? 'Update' : 'Create')}
+                Next
               </button>
-            </div>
-          </form>
+            ) : (
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={loading}
+                className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
+              >
+                {loading
+                  ? 'Saving...'
+                  : employee
+                    ? 'Update Employee'
+                    : 'Create Employee'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

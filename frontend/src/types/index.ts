@@ -1,13 +1,17 @@
-export type Gender = 'male' | 'female' | 'other'
+export type Gender = 'male' | 'female' | 'other' | 'prefer_not_to_say'
 export type AccountType = 'savings' | 'cheque' | 'current' | 'transmission'
+export type PayType = 'hourly' | 'monthly_fixed'
+export type EmployeeRole = 'armed' | 'unarmed' | 'supervisor' | 'manager' | 'admin' | 'office_staff' | 'field_worker' | 'contractor' | 'other'
 
 export interface Employee {
   employee_id: number
   first_name: string
   last_name: string
   id_number: string
-  role: 'armed' | 'unarmed' | 'supervisor'
-  hourly_rate: number
+  role: EmployeeRole
+  pay_type: PayType
+  hourly_rate?: number
+  monthly_salary?: number
   max_hours_week: number
   cert_level?: string
   home_location?: string
