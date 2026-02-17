@@ -169,6 +169,21 @@ export const billingApi = {
     api.post('/api/v1/payments/extend-trial', null, { params: { org_id: orgId, days } }),
 }
 
+export const invoiceApi = {
+  list: (params?: { client_id?: number; status?: string; skip?: number; limit?: number }) =>
+    api.get('/api/v1/invoices/', { params }),
+  get: (invoiceId: number) => api.get(`/api/v1/invoices/${invoiceId}`),
+  generate: (data: { client_id: number; period_start: string; period_end: string; due_date?: string; notes?: string; payment_terms?: string; purchase_order_number?: string }) =>
+    api.post('/api/v1/invoices/generate', data),
+  updateStatus: (invoiceId: number, status: string, paymentReference?: string) =>
+    api.patch(`/api/v1/invoices/${invoiceId}/status`, null, { params: { new_status: status, payment_reference: paymentReference } }),
+  delete: (invoiceId: number) => api.delete(`/api/v1/invoices/${invoiceId}`),
+  getSummary: (params?: { period_start?: string; period_end?: string }) =>
+    api.get('/api/v1/invoices/stats/summary', { params }),
+  downloadPdf: (invoiceId: number) =>
+    api.get(`/api/v1/invoices/${invoiceId}/pdf`, { responseType: 'blob' }),
+}
+
 export const organizationUsersApi = {
   getAll: () => api.get('/api/v1/organization/users'),
   getById: (userId: number) => api.get(`/api/v1/organization/users/${userId}`),
