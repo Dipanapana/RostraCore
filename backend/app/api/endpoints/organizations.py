@@ -44,6 +44,16 @@ class OrganizationUpdate(BaseModel):
     max_shifts_per_month: Optional[int] = None
     billing_email: Optional[str] = None
     is_active: Optional[bool] = None
+    # Company profile fields
+    registration_number: Optional[str] = Field(None, max_length=50)
+    vat_number: Optional[str] = Field(None, max_length=20)
+    address_line1: Optional[str] = Field(None, max_length=200)
+    address_line2: Optional[str] = Field(None, max_length=200)
+    city: Optional[str] = Field(None, max_length=100)
+    postal_code: Optional[str] = Field(None, max_length=20)
+    phone: Optional[str] = Field(None, max_length=20)
+    logo_url: Optional[str] = Field(None, max_length=500)
+    payslip_template: Optional[str] = Field(None, max_length=50)
 
 
 class OrganizationResponse(OrganizationBase):
@@ -54,6 +64,16 @@ class OrganizationResponse(OrganizationBase):
     features_enabled: Optional[dict] = None
     created_at: str
     is_active: bool
+    # Company profile fields
+    registration_number: Optional[str] = None
+    vat_number: Optional[str] = None
+    address_line1: Optional[str] = None
+    address_line2: Optional[str] = None
+    city: Optional[str] = None
+    postal_code: Optional[str] = None
+    phone: Optional[str] = None
+    logo_url: Optional[str] = None
+    payslip_template: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -70,6 +90,34 @@ class UsageStats(BaseModel):
     employees_percentage: Optional[float] = None
     sites_percentage: Optional[float] = None
     shifts_percentage: Optional[float] = None
+
+
+def _org_to_response(org: Organization) -> OrganizationResponse:
+    """Convert an Organization ORM object to an OrganizationResponse."""
+    return OrganizationResponse(
+        org_id=org.org_id,
+        org_code=org.org_code,
+        company_name=org.company_name,
+        psira_company_registration=org.psira_company_registration,
+        subscription_tier=org.subscription_tier,
+        subscription_status=org.subscription_status,
+        max_employees=org.max_employees,
+        max_sites=org.max_sites,
+        max_shifts_per_month=org.max_shifts_per_month,
+        features_enabled=org.features_enabled,
+        billing_email=org.billing_email,
+        created_at=org.created_at.isoformat() if org.created_at else None,
+        is_active=org.is_active,
+        registration_number=org.registration_number,
+        vat_number=org.vat_number,
+        address_line1=org.address_line1,
+        address_line2=org.address_line2,
+        city=org.city,
+        postal_code=org.postal_code,
+        phone=org.phone,
+        logo_url=org.logo_url,
+        payslip_template=org.payslip_template,
+    )
 
 
 @router.post("/", response_model=OrganizationResponse, status_code=status.HTTP_201_CREATED)
@@ -125,21 +173,7 @@ async def create_organization(
     db.commit()
     db.refresh(new_org)
 
-    return OrganizationResponse(
-        org_id=new_org.org_id,
-        org_code=new_org.org_code,
-        company_name=new_org.company_name,
-        psira_company_registration=new_org.psira_company_registration,
-        subscription_tier=new_org.subscription_tier,
-        subscription_status=new_org.subscription_status,
-        max_employees=new_org.max_employees,
-        max_sites=new_org.max_sites,
-        max_shifts_per_month=new_org.max_shifts_per_month,
-        features_enabled=new_org.features_enabled,
-        billing_email=new_org.billing_email,
-        created_at=new_org.created_at.isoformat() if new_org.created_at else None,
-        is_active=new_org.is_active
-    )
+    return _org_to_response(new_org)
 
 
 @router.get("/current", response_model=OrganizationResponse)
@@ -161,21 +195,7 @@ async def get_current_organization(
             detail="Organization not found"
         )
 
-    return OrganizationResponse(
-        org_id=org.org_id,
-        org_code=org.org_code,
-        company_name=org.company_name,
-        psira_company_registration=org.psira_company_registration,
-        subscription_tier=org.subscription_tier,
-        subscription_status=org.subscription_status,
-        max_employees=org.max_employees,
-        max_sites=org.max_sites,
-        max_shifts_per_month=org.max_shifts_per_month,
-        features_enabled=org.features_enabled,
-        billing_email=org.billing_email,
-        created_at=org.created_at.isoformat() if org.created_at else None,
-        is_active=org.is_active
-    )
+    return _org_to_response(org)
 
 
 @router.put("/current", response_model=OrganizationResponse)
@@ -213,21 +233,7 @@ async def update_current_organization(
     db.commit()
     db.refresh(org)
 
-    return OrganizationResponse(
-        org_id=org.org_id,
-        org_code=org.org_code,
-        company_name=org.company_name,
-        psira_company_registration=org.psira_company_registration,
-        subscription_tier=org.subscription_tier,
-        subscription_status=org.subscription_status,
-        max_employees=org.max_employees,
-        max_sites=org.max_sites,
-        max_shifts_per_month=org.max_shifts_per_month,
-        features_enabled=org.features_enabled,
-        billing_email=org.billing_email,
-        created_at=org.created_at.isoformat() if org.created_at else None,
-        is_active=org.is_active
-    )
+    return _org_to_response(org)
 
 
 @router.get("/current/usage", response_model=UsageStats)
@@ -323,24 +329,7 @@ async def list_organizations(
             Organization.org_id == current_user.org_id
         ).all()
 
-    return [
-        OrganizationResponse(
-            org_id=org.org_id,
-            org_code=org.org_code,
-            company_name=org.company_name,
-            psira_company_registration=org.psira_company_registration,
-            subscription_tier=org.subscription_tier,
-            subscription_status=org.subscription_status,
-            max_employees=org.max_employees,
-            max_sites=org.max_sites,
-            max_shifts_per_month=org.max_shifts_per_month,
-            features_enabled=org.features_enabled,
-            billing_email=org.billing_email,
-            created_at=org.created_at.isoformat() if org.created_at else None,
-            is_active=org.is_active
-        )
-        for org in organizations
-    ]
+    return [_org_to_response(org) for org in organizations]
 
 
 @router.get("/{org_id}", response_model=OrganizationResponse)
@@ -370,18 +359,4 @@ async def get_organization(
             detail=f"Organization with ID {org_id} not found"
         )
 
-    return OrganizationResponse(
-        org_id=org.org_id,
-        org_code=org.org_code,
-        company_name=org.company_name,
-        psira_company_registration=org.psira_company_registration,
-        subscription_tier=org.subscription_tier,
-        subscription_status=org.subscription_status,
-        max_employees=org.max_employees,
-        max_sites=org.max_sites,
-        max_shifts_per_month=org.max_shifts_per_month,
-        features_enabled=org.features_enabled,
-        billing_email=org.billing_email,
-        created_at=org.created_at.isoformat() if org.created_at else None,
-        is_active=org.is_active
-    )
+    return _org_to_response(org)
