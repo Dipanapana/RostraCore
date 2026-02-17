@@ -23,6 +23,13 @@ class Client(Base):
     billing_rate = Column(Numeric(10, 2), nullable=True)  # Hourly rate charged to this client
     status = Column(String(50), nullable=False, default="active")  # active, inactive, suspended
     notes = Column(Text, nullable=True)
+
+    # Invoice/billing fields
+    vat_number = Column(String(20), nullable=True)  # Client's VAT registration number (for SARS full tax invoices)
+    billing_address = Column(Text, nullable=True)  # Separate billing address (may differ from operational address)
+    billing_email = Column(String(255), nullable=True)  # Email for invoice delivery
+    billing_contact_name = Column(String(200), nullable=True)  # Who to address invoices to
+
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 

@@ -1,6 +1,7 @@
 """Client invoice API endpoints - Generate and manage client invoices."""
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, func
 from datetime import date, datetime, timedelta
@@ -13,6 +14,7 @@ from app.models.client import Client
 from app.models.site import Site
 from app.models.shift import Shift
 from app.models.shift_assignment import ShiftAssignment
+from app.models.organization import Organization
 from app.auth.security import get_current_org_id
 
 router = APIRouter()
@@ -35,6 +37,8 @@ class InvoiceCreate(BaseModel):
     period_end: date
     due_date: Optional[date] = None
     notes: Optional[str] = None
+    payment_terms: Optional[str] = None
+    purchase_order_number: Optional[str] = None
 
 
 class InvoiceResponse(BaseModel):
@@ -56,6 +60,8 @@ class InvoiceResponse(BaseModel):
     paid_date: Optional[date]
     payment_reference: Optional[str]
     notes: Optional[str]
+    payment_terms: Optional[str]
+    purchase_order_number: Optional[str]
     created_at: datetime
     updated_at: datetime
 
@@ -156,6 +162,44 @@ async def get_invoice(
     }
 
 
+@router.get("/{invoice_id}/pdf")
+async def get_invoice_pdf(
+    invoice_id: int,
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db)
+):
+    """
+    Generate and return a PDF for the specified invoice.
+    """
+    from app.services.invoice_pdf_generator import generate_invoice_pdf
+
+    invoice = db.query(ClientInvoice).filter(
+        ClientInvoice.invoice_id == invoice_id,
+        ClientInvoice.org_id == org_id
+    ).first()
+
+    if not invoice:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invoice not found"
+        )
+
+    # Load related data
+    client = db.query(Client).filter(Client.client_id == invoice.client_id).first()
+    organization = db.query(Organization).filter(Organization.org_id == org_id).first()
+
+    # Generate PDF
+    pdf_buffer = generate_invoice_pdf(invoice=invoice, client=client, organization=organization, db=db)
+
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{invoice.invoice_number}.pdf"'
+        }
+    )
+
+
 @router.post("/generate", response_model=InvoiceDetailResponse, status_code=status.HTTP_201_CREATED)
 async def generate_invoice(
     invoice_data: InvoiceCreate,
@@ -221,7 +265,9 @@ async def generate_invoice(
         tax_amount=0.0,
         total_amount=0.0,
         status="draft",
-        notes=invoice_data.notes
+        notes=invoice_data.notes,
+        payment_terms=invoice_data.payment_terms or "Net 30",
+        purchase_order_number=invoice_data.purchase_order_number
     )
 
     db.add(invoice)

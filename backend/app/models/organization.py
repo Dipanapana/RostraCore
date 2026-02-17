@@ -70,6 +70,12 @@ class Organization(Base):
     registration_number = Column(String(50), nullable=True)  # CIPC registration
     payslip_template = Column(String(50), default='professional', nullable=False)  # professional, modern, classic
 
+    # Banking details (for invoice payment instructions)
+    bank_name = Column(String(100), nullable=True)
+    bank_account_number = Column(String(50), nullable=True)
+    bank_branch_code = Column(String(20), nullable=True)
+    bank_account_holder = Column(String(200), nullable=True)
+
     # Billing
     billing_email = Column(String(255), nullable=True)
 

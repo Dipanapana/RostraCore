@@ -39,6 +39,10 @@ class ClientInvoice(Base):
     # Notes
     notes = Column(Text, nullable=True)
 
+    # Invoice terms
+    payment_terms = Column(String(50), nullable=True, default="Net 30")  # Payment terms (Net 30, Net 15, etc.)
+    purchase_order_number = Column(String(100), nullable=True)  # Client PO reference
+
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
