@@ -295,7 +295,7 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   required
                   className="block w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-slate-400"
-                  placeholder="Your Security Company Name"
+                  placeholder="Your Company Name"
                   disabled={loading}
                 />
               </div>

@@ -171,7 +171,7 @@ export default function DashboardPage() {
           newActivities.push({
             id: "2",
             type: "warning",
-            message: "No certifications registered - add PSIRA certifications for guards",
+            message: "No certifications registered - add certifications for your employees",
             time: "Real-time"
           });
         } else {
@@ -187,7 +187,7 @@ export default function DashboardPage() {
         newActivities.push({
           id: "3",
           type: "info",
-          message: `${metricsData.employees.active} active guards available for deployment`,
+          message: `${metricsData.employees.active} active employees available for scheduling`,
           time: "Real-time"
         });
 
@@ -285,7 +285,7 @@ export default function DashboardPage() {
             subtitle={`${metrics?.employees.active || 0} Active on Site`}
             icon={Users}
             color="purple"
-            trend={metrics?.employees.active ? { value: metrics.employees.active, label: "active guards", direction: "up" } : undefined}
+            trend={metrics?.employees.active ? { value: metrics.employees.active, label: "active employees", direction: "up" } : undefined}
             delay={100}
           />
           <MetricCard

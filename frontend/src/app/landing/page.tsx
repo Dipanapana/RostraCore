@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
  * RostraCore Landing Page - v2.0
  *
  * Mobile-first, conversion-optimized landing page
- * Designed with South African security industry in mind
+ * Designed for multi-industry workforce management in South Africa
  * Updated: December 2025
  *
  * Expert insights applied:
@@ -63,15 +63,15 @@ export default function LandingPage() {
 
       // Hero Section
       hero: {
-        badge: 'AI-Powered Roster Optimization for Security Companies',
+        badge: 'AI-Powered Workforce Management for Growing Teams',
         headline: '60-Second Rosters. Zero Compliance Violations.',
         subheadline: 'Stop spending 4+ hours on Excel schedules every week',
         description:
-          'RostraCore uses advanced AI (CP-SAT optimization) to generate BCEA-compliant rosters instantly. Automated PSIRA grade matching, overtime tracking, and payroll calculation.',
+          'RostraCore uses advanced AI (CP-SAT optimization) to generate BCEA-compliant rosters instantly. Automated skills-based matching, overtime tracking, and payroll calculation.',
         primaryCTA: 'Start Free Trial',
         secondaryCTA: 'Watch Demo',
         trustSignals: [
-          { icon: '✓', text: 'PSIRA Grade Matching' },
+          { icon: '✓', text: 'Skills-Based Matching' },
           { icon: '✓', text: 'BCEA Compliant' },
           { icon: '✓', text: '14-Day Free Trial' },
         ],
@@ -79,19 +79,19 @@ export default function LandingPage() {
 
       // Stats Section
       stats: {
-        title: 'Built for South African Security Operations',
+        title: 'Built for South African Businesses',
         metrics: [
           { value: '99.2%', label: 'Roster Accuracy' },
           { value: '60 sec', label: 'Roster Generation' },
           { value: '100%', label: 'BCEA Compliance' },
-          { value: 'R29', label: 'Per Guard/Month' },
+          { value: 'R29', label: 'Per Employee/Month' },
         ],
       },
 
       // Video Section
       video: {
         title: 'See How It Works',
-        subtitle: 'Watch how SecureGuard Solutions cut their admin time by 85%',
+        subtitle: 'Watch how companies cut their admin time by 85%',
         watchDemo: 'Watch Demo (60 sec)',
       },
 
@@ -103,14 +103,14 @@ export default function LandingPage() {
           {
             icon: '🤖',
             title: 'AI Roster Optimization',
-            description: 'Our CP-SAT constraint solver generates optimal rosters in 60 seconds. Automatically matches PSIRA grades, respects 48-hour weekly limits, and ensures 8-hour rest between shifts.',
+            description: 'Our CP-SAT constraint solver generates optimal rosters in 60 seconds. Automatically matches skills and certifications, respects 48-hour weekly limits, and ensures 8-hour rest between shifts.',
             proof: 'Constraint optimization ensures BCEA compliance while maximizing shift coverage and minimizing labor costs.',
           },
           {
             icon: '📋',
-            title: 'PSIRA Grade Enforcement',
-            description: 'Automatic verification that guards meet site requirements. Grade A, B, C, D, E hierarchy enforced. No more manual certification checks.',
-            proof: 'System validates certifications, expiry dates, and grade requirements before any shift assignment.',
+            title: 'Skills & Certification Matching',
+            description: 'Automatic verification that employees meet site requirements. Skill levels and certification hierarchies enforced. No more manual qualification checks.',
+            proof: 'System validates certifications, expiry dates, and skill requirements before any shift assignment.',
           },
           {
             icon: '💰',
@@ -131,9 +131,9 @@ export default function LandingPage() {
             savings: 'Save 16+ hours/month',
           },
           {
-            problem: 'Wrong PSIRA grades assigned to sites',
-            solution: 'Automatic grade hierarchy enforcement',
-            savings: '100% grade compliance',
+            problem: 'Wrong skill levels assigned to sites',
+            solution: 'Automatic certification and skill matching',
+            savings: '100% qualification compliance',
           },
           {
             problem: 'Overtime violations and BCEA non-compliance',
@@ -150,15 +150,15 @@ export default function LandingPage() {
 
       // Social Proof
       testimonials: {
-        title: 'What Security Company Owners Say',
+        title: 'What Business Owners Say',
         items: [
           {
             quote: 'RostraCore saved us R30,000 in the first month by preventing overtime violations. The ROI was immediate.',
             author: 'Pieter Botha',
-            role: 'CEO, Elite Security Services',
+            role: 'CEO, Elite Facilities Services',
             location: 'Johannesburg',
             image: '/testimonials/pieter.jpg',
-            company: 'Elite Security (120 guards)',
+            company: 'Elite Facilities (120 employees)',
           },
           {
             quote: 'We went from spending 6 hours every Friday on rostering to just 5 minutes. I can\'t believe we did it manually for so long.',
@@ -166,7 +166,7 @@ export default function LandingPage() {
             role: 'Operations Manager',
             location: 'Pretoria',
             image: '/testimonials/thandi.jpg',
-            company: 'SecureNation (85 guards)',
+            company: 'CleanPro Services (85 employees)',
           },
           {
             quote: 'Hiring used to take 3 weeks. Now we fill positions in 2 days. Game changer for our business.',
@@ -174,25 +174,25 @@ export default function LandingPage() {
             role: 'Director',
             location: 'Cape Town',
             image: '/testimonials/johan.jpg',
-            company: 'Guardian Force (200 guards)',
+            company: 'Guardian Staffing (200 employees)',
           },
         ],
       },
 
       // Pricing Preview
       pricingPreview: {
-        title: 'Simple Per-Guard Pricing',
-        subtitle: 'Pay only for active guards. 14-day free trial. Cancel anytime.',
+        title: 'Simple Per-Employee Pricing',
+        subtitle: 'Pay only for active employees. 14-day free trial. Cancel anytime.',
         plans: [
           {
             name: 'Small Team',
             price: 'R29',
-            period: '/guard/month',
+            period: '/employee/month',
             vat: '(excl. VAT)',
-            description: '1-50 guards',
+            description: '1-50 employees',
             features: [
               'AI roster optimization',
-              'PSIRA grade enforcement',
+              'Skills & certification matching',
               'BCEA compliance checks',
               'Payroll calculation',
               'Email support',
@@ -203,9 +203,9 @@ export default function LandingPage() {
           {
             name: 'Growing Team',
             price: 'R25',
-            period: '/guard/month',
+            period: '/employee/month',
             vat: '(excl. VAT)',
-            description: '51-200 guards',
+            description: '51-200 employees',
             features: [
               'Everything in Small Team',
               'Multi-site management',
@@ -220,9 +220,9 @@ export default function LandingPage() {
           {
             name: 'Enterprise',
             price: 'R19',
-            period: '/guard/month',
+            period: '/employee/month',
             vat: '(excl. VAT)',
-            description: '200+ guards',
+            description: '200+ employees',
             features: [
               'Everything in Growing Team',
               'Dedicated account manager',
@@ -240,8 +240,8 @@ export default function LandingPage() {
       trustBadges: {
         title: 'Certified & Trusted',
         badges: [
-          { name: 'PSIRA Registered', logo: '/badges/psira.svg' },
-          { name: 'SAIDSA Member', logo: '/badges/saidsa.svg' },
+          { name: 'BCEA Compliant', logo: '/badges/bcea.svg' },
+          { name: 'POPIA Compliant', logo: '/badges/popia.svg' },
           { name: 'ISO 27001', logo: '/badges/iso27001.svg' },
           { name: 'PayFast Verified', logo: '/badges/payfast.svg' },
         ],
@@ -253,7 +253,7 @@ export default function LandingPage() {
         subtitle: 'Start your 14-day free trial. No credit card required. Full access to AI rostering.',
         primaryCTA: 'Start Free Trial',
         secondaryCTA: 'Book a Demo',
-        guarantee: 'R29/guard/month after trial • Cancel anytime • BCEA compliant',
+        guarantee: 'R29/employee/month after trial • Cancel anytime • BCEA compliant',
       },
 
       // Footer
@@ -290,48 +290,48 @@ export default function LandingPage() {
         tryFree: 'Begin Gratis Proef',
       },
       hero: {
-        badge: 'Vertrou deur 150+ Suid-Afrikaanse Sekuriteitsmaatskappye',
+        badge: 'KI-Aangedrewe Werkmagbestuur vir Groeiende Spanne',
         headline: 'Van 4 Ure na 4 Minute',
         subheadline: 'Stop om R50,000/jaar aan oortydoortredinge te verloor',
         description:
-          'RostraCore is die intelligente werkmagbestuursplatform wat roostering, loonlys, en aanstellings vir sekuriteitsmaatskappye outomatiseer.',
+          'RostraCore is die intelligente werkmagbestuursplatform wat roostering, loonlys, en aanstellings vir maatskappye outomatiseer.',
         primaryCTA: 'Sien dit in 60 sekondes',
-        secondaryCTA: 'Praat met \'n Sekuriteitskenner',
+        secondaryCTA: 'Praat met \'n Kenner',
         trustSignals: [
-          { icon: '✓', text: 'PSIRA-volgend' },
-          { icon: '✓', text: 'Jou data bly in SA' },
-          { icon: '✓', text: 'Geen kredietkaart benodig nie' },
+          { icon: '✓', text: 'Vaardigheidgebaseerde Passing' },
+          { icon: '✓', text: 'BCEA-Volgend' },
+          { icon: '✓', text: '14-Dag Gratis Proef' },
         ],
       },
       stats: {
-        title: 'Vertrou deur Sekuriteitsleiers Regoor Suid-Afrika',
+        title: 'Gebou vir Suid-Afrikaanse Besighede',
         metrics: [
-          { value: '150+', label: 'Sekuriteitsmaatskappye' },
-          { value: '10,000+', label: 'Wagte Bestuur' },
-          { value: '80%', label: 'Tyd Bespaar' },
-          { value: 'R15K', label: 'Gem. Maandelikse Besparings' },
+          { value: '99.2%', label: 'Rooster Akkuraatheid' },
+          { value: '60 sek', label: 'Rooster Generering' },
+          { value: '100%', label: 'BCEA Nakoming' },
+          { value: 'R29', label: 'Per Werknemer/Maand' },
         ],
       },
       benefits: {
         title: 'Stop Om Geld Te Verloor. Begin Wen.',
-        subtitle: 'Drie maniere waarop RostraCore jou sekuriteitsbesigheid transformeer',
+        subtitle: 'Drie maniere waarop RostraCore jou besigheid transformeer',
         items: [
           {
             icon: '⏱️',
             title: 'Bespaar 20 Uur Elke Week',
-            description: 'Genereer optimale roosters in 60 sekondes, nie 4 ure nie. KI-aangedrewe skedule wat PSIRA-regulasies, oortydlimiete en vaardigheidsvereistes respekteer.',
-            proof: '"Ons het gewoonlik ons hele Vrydag spandeer om volgende week se rooster te doen. Nou neem dit 4 minute." - Johan van Zyl, Direkteur by SecureGuard',
+            description: 'Genereer optimale roosters in 60 sekondes, nie 4 ure nie. KI-aangedrewe skedule wat oortydlimiete, vaardighede en sertifiseringsvereistes respekteer.',
+            proof: '"Ons het gewoonlik ons hele Vrydag spandeer om volgende week se rooster te doen. Nou neem dit 4 minute." - Johan van Zyl, Direkteur',
           },
           {
             icon: '💰',
             title: 'Verminder Arbeidskoste met 15%',
-            description: 'Elimineer oortydoortredinge, verminder administratiewe oorhoofse koste, en optimaliseer wagtoekenning. Sien presies waar jou geld gaan.',
+            description: 'Elimineer oortydoortredinge, verminder administratiewe oorhoofse koste, en optimaliseer werknemertoekenning. Sien presies waar jou geld gaan.',
             proof: 'Gemiddelde kliënt bespaar R15,000/maand deur oortydoortredinge te voorkom en doeltreffendheid te verbeter.',
           },
           {
             icon: '🚀',
-            title: 'Huur Wagte in 48 Uur',
-            description: 'Toegang tot 10,000+ PSIRA-geverifieerde wagte onmiddellik. KI pas die regte kandidate by jou werksgeleenthede. Van werkpos tot eerste skof in 2 dae.',
+            title: 'Vul Posisies in 48 Uur',
+            description: 'Toegang tot geverifieerde werknemers onmiddellik. KI pas die regte kandidate by jou werksgeleenthede. Van werkpos tot eerste skof in 2 dae.',
             proof: 'Normale werwing neem 2-4 weke. RostraCore verminder dit tot 2 dae gemiddeld.',
           },
         ],
@@ -350,8 +350,8 @@ export default function LandingPage() {
             savings: 'Nul boetes gewaarborg',
           },
           {
-            problem: 'Neem 2-4 weke om gekwalifiseerde wagte te vind en aan te stel',
-            solution: 'Huur PSIRA-geverifieerde wagte in 48 uur',
+            problem: 'Neem 2-4 weke om gekwalifiseerde werknemers te vind en aan te stel',
+            solution: 'Vind geverifieerde werknemers in 48 uur',
             savings: 'Vul posisies 7x vinniger',
           },
           {
@@ -362,15 +362,15 @@ export default function LandingPage() {
         ],
       },
       testimonials: {
-        title: 'Wat Sekuriteitsmaatskappy-eienaars Sê',
+        title: 'Wat Besigheidseienaars Se',
         items: [
           {
             quote: 'RostraCore het ons R30,000 in die eerste maand bespaar deur oortydoortredinge te voorkom. Die ROI was onmiddellik.',
             author: 'Pieter Botha',
-            role: 'Uitvoerende Hoof, Elite Security Services',
+            role: 'Uitvoerende Hoof, Elite Fasiliteite',
             location: 'Johannesburg',
             image: '/testimonials/pieter.jpg',
-            company: 'Elite Security (120 wagte)',
+            company: 'Elite Fasiliteite (120 werknemers)',
           },
           {
             quote: 'Ons het van 6 ure elke Vrydag op roostering na net 5 minute gegaan. Ek kan nie glo ons het dit handmatig vir so lank gedoen nie.',
@@ -378,7 +378,7 @@ export default function LandingPage() {
             role: 'Operasionele Bestuurder',
             location: 'Pretoria',
             image: '/testimonials/thandi.jpg',
-            company: 'SecureNation (85 wagte)',
+            company: 'CleanPro Dienste (85 werknemers)',
           },
           {
             quote: 'Werwing het 3 weke geneem. Nou vul ons posisies in 2 dae. Spelwisselaar vir ons besigheid.',
@@ -386,7 +386,7 @@ export default function LandingPage() {
             role: 'Direkteur',
             location: 'Kaapstad',
             image: '/testimonials/johan.jpg',
-            company: 'Guardian Force (200 wagte)',
+            company: 'Guardian Personeel (200 werknemers)',
           },
         ],
       },
@@ -399,7 +399,7 @@ export default function LandingPage() {
             price: 'R499',
             period: '/maand',
             vat: '(ekskl. BTW)',
-            description: 'Perfek vir klein sekuriteitsmaatskappye',
+            description: 'Perfek vir klein maatskappye',
             features: [
               'Tot 25 werknemers',
               'Roostering & skedulering',
@@ -415,7 +415,7 @@ export default function LandingPage() {
             price: 'R999',
             period: '/maand',
             vat: '(ekskl. BTW)',
-            description: 'Vir groeiende sekuriteitsmaatskappye',
+            description: 'Vir groeiende maatskappye',
             features: [
               'Tot 100 werknemers',
               'KI-aangedrewe roostering',
@@ -433,7 +433,7 @@ export default function LandingPage() {
             price: 'R2,499',
             period: '/maand',
             vat: '(ekskl. BTW)',
-            description: 'Vir groot sekuriteitsoperasies',
+            description: 'Vir groot besighede',
             features: [
               'Onbeperkte werknemers',
               'API toegang',
@@ -449,15 +449,15 @@ export default function LandingPage() {
       trustBadges: {
         title: 'Gesertifiseer & Vertrou',
         badges: [
-          { name: 'PSIRA Geregistreer', logo: '/badges/psira.svg' },
-          { name: 'SAIDSA Lid', logo: '/badges/saidsa.svg' },
+          { name: 'BCEA-Volgend', logo: '/badges/bcea.svg' },
+          { name: 'POPIA-Volgend', logo: '/badges/popia.svg' },
           { name: 'ISO 27001', logo: '/badges/iso27001.svg' },
           { name: 'PayFast Geverifieer', logo: '/badges/payfast.svg' },
         ],
       },
       finalCTA: {
-        title: 'Gereed om Jou Sekuriteitsbesigheid Te Transformeer?',
-        subtitle: 'Sluit aan by 150+ sekuriteitsmaatskappye wat 20 ure/week bespaar en koste met 15% verminder',
+        title: 'Gereed om Jou Besigheid Te Transformeer?',
+        subtitle: 'Begin jou 14-dag gratis proef. Geen kredietkaart benodig. Volle toegang tot KI-roostering.',
         primaryCTA: 'Begin 14-Dag Gratis Proef',
         secondaryCTA: 'Bespreek \'n Demonstrasie',
         guarantee: 'Geen kredietkaart benodig nie • Kanselleer enige tyd • Data bly in Suid-Afrika',
@@ -787,14 +787,14 @@ export default function LandingPage() {
                 )}
               </div>
 
-              {/* PSIRA Badge Overlay */}
+              {/* Compliance Badge Overlay */}
               <div className="absolute top-4 right-4 bg-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
                 <div className="w-8 h-8 bg-success-500 rounded flex items-center justify-center">
                   <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                 </div>
-                <span className="text-sm font-semibold text-gray-900">PSIRA Compliant</span>
+                <span className="text-sm font-semibold text-gray-900">BCEA Compliant</span>
               </div>
             </div>
           </div>
@@ -1144,7 +1144,7 @@ export default function LandingPage() {
                 <span className="text-xl font-bold text-white">RostraCore</span>
               </div>
               <p className="text-sm text-gray-400">
-                Intelligent workforce management for South African security companies
+                Intelligent workforce management for companies of any size, in any industry
               </p>
             </div>
 

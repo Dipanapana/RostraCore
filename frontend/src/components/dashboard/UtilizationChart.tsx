@@ -24,7 +24,7 @@ export default function UtilizationChart({ data }: UtilizationChartProps) {
             <div className="flex items-center justify-between mb-6">
                 <div>
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Workforce Utilization</h3>
-                    <p className="text-slate-600 dark:text-slate-400 text-sm">Guard deployment vs. Capacity</p>
+                    <p className="text-slate-600 dark:text-slate-400 text-sm">Employee deployment vs. Capacity</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1.5">
