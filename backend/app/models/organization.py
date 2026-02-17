@@ -59,6 +59,17 @@ class Organization(Base):
     features_enabled = Column(JSON, nullable=True)
     # Example: {"gps_tracking": true, "client_portal": true, "api_access": false}
 
+    # Company profile (for payslips, invoices, compliance)
+    logo_url = Column(String(500), nullable=True)  # S3-stored company logo
+    address_line1 = Column(String(200), nullable=True)
+    address_line2 = Column(String(200), nullable=True)
+    city = Column(String(100), nullable=True)
+    postal_code = Column(String(20), nullable=True)
+    phone = Column(String(20), nullable=True)
+    vat_number = Column(String(20), nullable=True)
+    registration_number = Column(String(50), nullable=True)  # CIPC registration
+    payslip_template = Column(String(50), default='professional', nullable=False)  # professional, modern, classic
+
     # Billing
     billing_email = Column(String(255), nullable=True)
 

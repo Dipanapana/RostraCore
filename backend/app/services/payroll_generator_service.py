@@ -54,6 +54,14 @@ class PayrollEmployeeRecord:
         self.bank_name = employee.bank_name or ""
         self.account_number = employee.account_number or ""
 
+        # Pay type
+        self.pay_type = getattr(employee, 'pay_type', None)
+        if self.pay_type:
+            self.pay_type = self.pay_type.value if hasattr(self.pay_type, 'value') else str(self.pay_type)
+        else:
+            self.pay_type = "hourly"
+        self.monthly_salary_amount = Decimal(str(employee.monthly_salary or 0))
+
         # Hours tracking
         self.total_days_worked = 0
         self.normal_hours = Decimal("0")
@@ -187,8 +195,10 @@ class PayrollGeneratorService:
                 include_deductions=include_deductions
             )
 
-            # Only include employees who worked at least one shift
-            if record.total_hours_worked > 0:
+            # Salaried employees always included; hourly employees need at least one shift
+            if record.pay_type == "monthly_fixed":
+                payroll_records.append(record)
+            elif record.total_hours_worked > 0:
                 payroll_records.append(record)
             else:
                 employees_with_no_shifts.append(f"{employee.first_name} {employee.last_name}")
@@ -198,7 +208,7 @@ class PayrollGeneratorService:
             return {
                 "status": "error",
                 "message": f"No employees worked shifts in the period {start_date} to {end_date}. "
-                           f"Please create shifts and assign guards first, or select a period with confirmed shifts.",
+                           f"Please create shifts and assign employees first, or select a period with confirmed shifts.",
                 "employees_checked": len(employees),
                 "employees_with_no_shifts": employees_with_no_shifts[:20]  # Show first 20
             }
@@ -321,15 +331,25 @@ class PayrollGeneratorService:
         if employee.is_supervisor:
             record.supervisor_allowance = Decimal("500")  # Fixed supervisor allowance
 
-        # Gross salary
-        record.gross_salary = (
-            record.total_hours_wage +
-            record.night_allowance +
-            record.supervisor_allowance +
-            record.overtime_pay +
-            record.bonus +
-            record.sick_pay
-        ).quantize(Decimal("0.01"))
+        # Gross salary — branch on pay type
+        if record.pay_type == "monthly_fixed":
+            # Fixed monthly salary: hours tracked for compliance only, not for pay
+            record.gross_salary = (
+                record.monthly_salary_amount +
+                record.supervisor_allowance +
+                record.bonus +
+                record.sick_pay
+            ).quantize(Decimal("0.01"))
+        else:
+            # Hourly pay: wage calculated from hours worked
+            record.gross_salary = (
+                record.total_hours_wage +
+                record.night_allowance +
+                record.supervisor_allowance +
+                record.overtime_pay +
+                record.bonus +
+                record.sick_pay
+            ).quantize(Decimal("0.01"))
 
         # Calculate deductions if requested
         if include_deductions:
@@ -351,16 +371,23 @@ class PayrollGeneratorService:
         record.uif = uif_result["employee_contribution"]
 
         # PAYE (based on annualized salary)
-        # Estimate age from ID number if available
-        age = 35  # Default
+        # Derive age from SA ID number (first 6 digits = YYMMDD)
+        age = 35  # Fallback if ID number is invalid or missing
         if record.id_number and len(record.id_number) >= 6:
             try:
                 year_str = record.id_number[:2]
                 year = int(year_str)
-                birth_year = 1900 + year if year > 24 else 2000 + year
-                age = date.today().year - birth_year
-            except:
-                pass
+                current_year_2digit = date.today().year % 100
+                birth_year = 1900 + year if year > current_year_2digit else 2000 + year
+                month = int(record.id_number[2:4])
+                day = int(record.id_number[4:6])
+                birth_date = date(birth_year, month, day)
+                today = date.today()
+                age = today.year - birth_date.year - (
+                    (today.month, today.day) < (birth_date.month, birth_date.day)
+                )
+            except (ValueError, IndexError):
+                pass  # Keep fallback age=35
 
         paye_result = SAPayrollService.calculate_paye(gross, age)
         record.paye = paye_result["paye"]
@@ -460,6 +487,8 @@ class PayrollGeneratorService:
             "account_number": masked_account,  # Masked for security
             "account_number_full": record.account_number,  # For payslip PDF only
             "status": record.status,
+            "pay_type": record.pay_type,
+            "monthly_salary": float(record.monthly_salary_amount),
 
             # Hours
             "total_days_worked": record.total_days_worked,

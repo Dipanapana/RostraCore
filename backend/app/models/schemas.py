@@ -1,9 +1,9 @@
 """Pydantic schemas for API request/response validation - MVP Core Only."""
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, model_validator
 from typing import Optional, List
 from datetime import datetime, date, time
-from app.models.employee import EmployeeRole, EmployeeStatus, Gender
+from app.models.employee import EmployeeRole, EmployeeStatus, Gender, PayType
 from app.models.shift import ShiftStatus
 from app.models.certification import PSIRAGrade, FirearmCompetencyType
 
@@ -14,7 +14,9 @@ class EmployeeBase(BaseModel):
     last_name: str = Field(..., min_length=1, max_length=100)
     id_number: str = Field(..., min_length=1, max_length=50)
     role: EmployeeRole
-    hourly_rate: float = Field(..., gt=0)
+    pay_type: PayType = PayType.HOURLY
+    hourly_rate: Optional[float] = Field(None, gt=0)  # Required when pay_type=hourly
+    monthly_salary: Optional[float] = Field(None, gt=0)  # Required when pay_type=monthly_fixed
     max_hours_week: int = Field(default=48, ge=0, le=168)
     cert_level: Optional[str] = None
     home_location: Optional[str] = None
@@ -24,6 +26,15 @@ class EmployeeBase(BaseModel):
     gender: Optional[Gender] = None
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
+
+    @model_validator(mode='after')
+    def validate_pay_fields(self):
+        """Ensure the correct pay field is provided based on pay_type."""
+        if self.pay_type == PayType.HOURLY and not self.hourly_rate:
+            raise ValueError('hourly_rate is required for hourly employees')
+        if self.pay_type == PayType.MONTHLY_FIXED and not self.monthly_salary:
+            raise ValueError('monthly_salary is required for salaried employees')
+        return self
 
 
 class EmployeeCreate(EmployeeBase):
@@ -45,7 +56,9 @@ class EmployeeUpdate(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     role: Optional[EmployeeRole] = None
+    pay_type: Optional[PayType] = None
     hourly_rate: Optional[float] = None
+    monthly_salary: Optional[float] = None
     max_hours_week: Optional[int] = None
     cert_level: Optional[str] = None
     home_location: Optional[str] = None
@@ -75,6 +88,11 @@ class EmployeeResponse(EmployeeBase):
     assigned_client_ids: Optional[List[int]] = None  # Include multiple client assignment in response
     max_hours_week: Optional[int] = 48  # Override to allow NULL from database
 
+    # Pay fields (override base to make optional in response)
+    pay_type: PayType = PayType.HOURLY
+    hourly_rate: Optional[float] = None
+    monthly_salary: Optional[float] = None
+
     # Banking details (account number is masked for security)
     bank_name: Optional[str] = None
     account_number: Optional[str] = None  # Will be masked in service layer
@@ -91,6 +109,11 @@ class EmployeeResponse(EmployeeBase):
 
     class Config:
         from_attributes = True
+
+    @model_validator(mode='after')
+    def skip_pay_validation_for_response(self):
+        """Skip pay field validation for response objects (data comes from DB)."""
+        return self
 
 
 # Site Schemas

@@ -708,14 +708,16 @@ async def generate_bulk_payslips_pdf(
     # Company information
     company_info = {
         "company_name": org.company_name,
-        "registration_number": "",
+        "registration_number": getattr(org, 'registration_number', '') or "",
         "psira_registration": org.psira_company_registration or "",
-        "vat_number": "",
-        "address_line1": "",
-        "city": "",
-        "postal_code": "",
-        "phone": "",
-        "email": org.billing_email or ""
+        "vat_number": getattr(org, 'vat_number', '') or "",
+        "address_line1": getattr(org, 'address_line1', '') or "",
+        "address_line2": getattr(org, 'address_line2', '') or "",
+        "city": getattr(org, 'city', '') or "",
+        "postal_code": getattr(org, 'postal_code', '') or "",
+        "phone": getattr(org, 'phone', '') or "",
+        "email": org.billing_email or "",
+        "logo_url": getattr(org, 'logo_url', None),
     }
 
     payslips = []
@@ -1054,14 +1056,16 @@ async def get_payslip_pdf_by_payroll_id(
     # Company information
     company_info = {
         "company_name": org.company_name,
-        "registration_number": "",
+        "registration_number": getattr(org, 'registration_number', '') or "",
         "psira_registration": org.psira_company_registration or "",
-        "vat_number": "",
-        "address_line1": "",
-        "city": "",
-        "postal_code": "",
-        "phone": "",
-        "email": org.billing_email or ""
+        "vat_number": getattr(org, 'vat_number', '') or "",
+        "address_line1": getattr(org, 'address_line1', '') or "",
+        "address_line2": getattr(org, 'address_line2', '') or "",
+        "city": getattr(org, 'city', '') or "",
+        "postal_code": getattr(org, 'postal_code', '') or "",
+        "phone": getattr(org, 'phone', '') or "",
+        "email": org.billing_email or "",
+        "logo_url": getattr(org, 'logo_url', None),
     }
 
     # Payment date (7 days after period end)

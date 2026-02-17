@@ -1,17 +1,31 @@
 """Employee model."""
 
-from sqlalchemy import Column, Integer, String, Float, Boolean, Date, Text, DateTime, Numeric, ForeignKey, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, Float, Boolean, Date, Text, DateTime, Numeric, ForeignKey, Enum as SQLEnum, CheckConstraint
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import relationship
 from app.database import Base
 import enum
 
 
+class PayType(str, enum.Enum):
+    """Employee pay type."""
+    HOURLY = "hourly"                # Paid per hour worked (security guards, casual staff)
+    MONTHLY_FIXED = "monthly_fixed"  # Fixed monthly salary (office staff, managers, salaried)
+
+
 class EmployeeRole(str, enum.Enum):
-    """Employee role enum."""
+    """Employee role enum — universal across industries."""
+    # Security-specific
     ARMED = "armed"
     UNARMED = "unarmed"
+    # Universal roles
     SUPERVISOR = "supervisor"
+    MANAGER = "manager"
+    ADMIN = "admin"
+    OFFICE_STAFF = "office_staff"
+    FIELD_WORKER = "field_worker"
+    CONTRACTOR = "contractor"
+    OTHER = "other"
 
 
 class EmployeeStatus(str, enum.Enum):
@@ -49,7 +63,12 @@ class Employee(Base):
     last_name = Column(String(100), nullable=False)
     id_number = Column(String(50), unique=True, nullable=False, index=True)
     role = Column(SQLEnum(EmployeeRole), nullable=False)
-    hourly_rate = Column(Float, nullable=False)
+
+    # Pay configuration
+    pay_type = Column(SQLEnum(PayType), default=PayType.HOURLY, nullable=False)
+    hourly_rate = Column(Float, nullable=True)       # Required when pay_type='hourly'
+    monthly_salary = Column(Numeric(10, 2), nullable=True)  # Required when pay_type='monthly_fixed'
+
     max_hours_week = Column(Integer, default=48)
     cert_level = Column(String(50))
     home_location = Column(String(200))
