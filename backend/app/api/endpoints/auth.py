@@ -485,12 +485,9 @@ def update_current_user(
     if user_update.full_name is not None:
         current_user.full_name = user_update.full_name
 
-    # Only admins can change roles
-    if user_update.role and current_user.role == UserRole.ADMIN:
-        current_user.role = user_update.role
-
-    if user_update.is_active is not None and current_user.role == UserRole.ADMIN:
-        current_user.is_active = user_update.is_active
+    # Role and is_active changes are NOT allowed via /me (self-update).
+    # Use the admin /users/{id} endpoints to manage other users' roles.
+    # This prevents privilege escalation (e.g., admin upgrading to superadmin).
 
     db.commit()
     db.refresh(current_user)

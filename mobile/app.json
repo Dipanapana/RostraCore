@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "RostraCore",
+    "slug": "rostracore",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1e293b"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.rostracore.mobile",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "RostraCore needs your location for shift check-in/out verification.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "RostraCore uses background location for patrol tracking.",
+        "NSCameraUsageDescription": "RostraCore uses the camera for incident photo capture."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1e293b"
+      },
+      "package": "com.rostracore.mobile",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "CAMERA"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-location",
+      "expo-notifications",
+      "expo-secure-store",
+      "expo-camera",
+      "expo-image-picker"
+    ],
+    "scheme": "rostracore"
+  }
+}

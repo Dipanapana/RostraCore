@@ -49,7 +49,7 @@ export interface NavItem {
 // ---------------------------------------------------------------------------
 
 /**
- * The 8 top-level navigation items for RostraCore.
+ * The top-level navigation items for RostraCore (flat list for route matching).
  *
  * Access rules:
  *  - Dashboard   → all roles
@@ -60,6 +60,9 @@ export interface NavItem {
  *  - Payroll     → admin, company_admin, finance, guard (own payslips), superadmin
  *  - Assets      → admin, company_admin, scheduler, superadmin
  *  - Settings    → admin, company_admin, superadmin
+ *
+ * NOTE: The sidebar now uses a grouped structure (see Sidebar.tsx).
+ * This flat list is kept for route permission checks and middleware.
  */
 export const NAV_ITEMS: NavItem[] = [
   {
@@ -71,7 +74,7 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     id: 'people',
-    label: 'People',
+    label: 'Employees',
     icon: 'Users',
     href: '/employees',
     roles: ['admin', 'company_admin', 'scheduler', 'superadmin'],
@@ -115,12 +118,36 @@ export const NAV_ITEMS: NavItem[] = [
     subRoutes: ['/leave', '/availability'],
   },
   {
+    id: 'availability',
+    label: 'Availability',
+    icon: 'CalendarCheck',
+    href: '/availability',
+    roles: ['admin', 'company_admin', 'scheduler', 'guard', 'superadmin'],
+    subRoutes: ['/availability'],
+  },
+  {
     id: 'payroll',
     label: 'Payroll',
     icon: 'Banknote',
     href: '/payroll',
     roles: ['admin', 'company_admin', 'finance', 'guard', 'superadmin'],
-    subRoutes: ['/payroll', '/billing'],
+    subRoutes: ['/payroll', '/billing/subscription'],
+  },
+  {
+    id: 'invoices',
+    label: 'Invoices',
+    icon: 'FileText',
+    href: '/billing/invoices',
+    roles: ['admin', 'company_admin', 'finance', 'superadmin'],
+    subRoutes: ['/billing/invoices'],
+  },
+  {
+    id: 'reports',
+    label: 'Reports',
+    icon: 'BarChart3',
+    href: '/reports',
+    roles: ['admin', 'company_admin', 'finance', 'superadmin'],
+    subRoutes: ['/reports'],
   },
   {
     id: 'assets',
@@ -141,6 +168,8 @@ export const NAV_ITEMS: NavItem[] = [
       '/settings/users',
       '/settings/hourly-rates',
       '/settings/shift-patterns',
+      '/settings/company-profile',
+      '/settings/change-password',
     ],
   },
 ]
@@ -186,14 +215,18 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
   '/payroll': ['admin', 'company_admin', 'finance', 'guard', 'superadmin'],
   '/billing': ['admin', 'company_admin', 'finance', 'superadmin'],
 
+  // Reports
+  '/reports': ['admin', 'company_admin', 'finance', 'superadmin'],
+
   // Documents
   '/documents': ['admin', 'company_admin', 'guard', 'superadmin'],
 
   // Assets
   '/assets': ['admin', 'company_admin', 'scheduler', 'superadmin'],
 
-  // Settings
+  // Settings (change-password is accessible to all authenticated users)
   '/settings': ['admin', 'company_admin', 'superadmin'],
+  '/settings/change-password': ['admin', 'company_admin', 'scheduler', 'finance', 'guard', 'superadmin'],
 
   // Superadmin only
   '/superadmin': ['superadmin'],

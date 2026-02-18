@@ -352,4 +352,39 @@ export const payrollDeductionsApi = {
   getTaxTables: () => api.get('/api/v1/payroll-deductions/tax-tables'),
 }
 
+// Reports API (Financial & Operational Reports)
+export const reportsApi = {
+  // JSON data endpoints
+  profitability: (params: { period_start: string; period_end: string }) =>
+    api.get('/api/v1/reports/profitability', { params }),
+  sitePerformance: (params: { period_start: string; period_end: string }) =>
+    api.get('/api/v1/reports/site-performance', { params }),
+  employeePayroll: (params: { period_start: string; period_end: string }) =>
+    api.get('/api/v1/reports/employee-payroll', { params }),
+  revenueVsCost: (params: { period_start: string; period_end: string; group_by?: string }) =>
+    api.get('/api/v1/reports/revenue-vs-cost', { params }),
+  outstandingInvoices: () =>
+    api.get('/api/v1/reports/outstanding-invoices'),
+
+  // PDF download URLs (open in new tab or download)
+  profitabilityPdf: (params: { period_start: string; period_end: string }) =>
+    api.get('/api/v1/reports/profitability/pdf', { params, responseType: 'blob' }),
+  revenuePdf: (params: { period_start: string; period_end: string }) =>
+    api.get('/api/v1/reports/revenue-by-client/pdf', { params, responseType: 'blob' }),
+  coveragePdf: (params: { period_start: string; period_end: string }) =>
+    api.get('/api/v1/reports/coverage/pdf', { params, responseType: 'blob' }),
+  outstandingInvoicesPdf: () =>
+    api.get('/api/v1/reports/outstanding-invoices/pdf', { responseType: 'blob' }),
+  employeePayrollPdf: (params: { period_start: string; period_end: string }) =>
+    api.get('/api/v1/reports/employee-payroll/pdf', { params, responseType: 'blob' }),
+}
+
+export const authApi = {
+  changePassword: (currentPassword: string, newPassword: string) =>
+    api.post('/api/v1/auth/change-password', {
+      current_password: currentPassword,
+      new_password: newPassword,
+    }),
+}
+
 export default api

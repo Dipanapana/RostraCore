@@ -234,6 +234,24 @@ export default function SettingsPage() {
           <p className="text-gray-600 mt-1">Configure your organization settings</p>
         </div>
 
+        {/* Security Section */}
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-1">Security</h2>
+          <p className="text-sm text-gray-600 mb-4">Manage your account security settings</p>
+          <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+            <div>
+              <h3 className="text-sm font-medium text-gray-900">Change Password</h3>
+              <p className="text-sm text-gray-500 mt-0.5">Update your account password</p>
+            </div>
+            <button
+              onClick={() => router.push('/settings/change-password')}
+              className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+            >
+              Change Password
+            </button>
+          </div>
+        </div>
+
         {/* Client Management Section */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <div className="flex justify-between items-center mb-4">

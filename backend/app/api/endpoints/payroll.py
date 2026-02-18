@@ -18,7 +18,8 @@ from app.models.payroll import PayrollSummary
 from app.models.shift import Shift
 from app.models.shift_assignment import ShiftAssignment
 from app.models.employee import Employee
-from app.auth.security import get_current_org_id
+from app.models.user import User
+from app.auth.security import get_current_org_id, require_finance_access
 from app.services.payroll_generator_service import PayrollGeneratorService, PayrollPeriod
 
 router = APIRouter()
@@ -61,6 +62,7 @@ async def get_payroll(
     month: Optional[int] = None,
     skip: int = 0,
     limit: int = 100,
+    current_user: User = Depends(require_finance_access),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
@@ -106,6 +108,7 @@ async def get_payroll(
 
 @router.get("/current-period")
 async def get_current_period_payroll(
+    current_user: User = Depends(require_finance_access),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
@@ -145,6 +148,7 @@ async def get_current_period_payroll(
 @router.post("/generate")
 async def generate_payroll(
     payroll_data: PayrollCreate,
+    current_user: User = Depends(require_finance_access),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
@@ -261,6 +265,7 @@ async def get_sa_tax_tables():
 @router.get("/{payroll_id}")
 async def get_payroll_detail(
     payroll_id: int,
+    current_user: User = Depends(require_finance_access),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
@@ -295,6 +300,7 @@ async def get_payroll_detail(
 @router.delete("/{payroll_id}")
 async def delete_payroll(
     payroll_id: int,
+    current_user: User = Depends(require_finance_access),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
@@ -320,6 +326,7 @@ async def delete_payroll(
 @router.post("/generate-comprehensive")
 async def generate_comprehensive_payroll(
     request: ComprehensivePayrollRequest,
+    current_user: User = Depends(require_finance_access),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
@@ -369,6 +376,7 @@ async def generate_comprehensive_payroll(
 @router.post("/generate-comprehensive/excel")
 async def generate_payroll_excel(
     request: ComprehensivePayrollRequest,
+    current_user: User = Depends(require_finance_access),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
@@ -534,6 +542,7 @@ async def calculate_employee_payslip(
     employee_id: int,
     start_date: date,
     end_date: date,
+    current_user: User = Depends(require_finance_access),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
@@ -598,6 +607,7 @@ class BulkPayslipPDFRequest(BaseModel):
 @router.post("/payslip/pdf")
 async def generate_payslip_pdf(
     request: PayslipPDFRequest,
+    current_user: User = Depends(require_finance_access),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
@@ -682,6 +692,7 @@ async def generate_payslip_pdf(
 @router.post("/payslips/pdf/bulk")
 async def generate_bulk_payslips_pdf(
     request: BulkPayslipPDFRequest,
+    current_user: User = Depends(require_finance_access),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
@@ -865,6 +876,7 @@ async def preview_payslip(
     employee_id: int,
     start_date: date,
     end_date: date,
+    current_user: User = Depends(require_finance_access),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
@@ -964,6 +976,7 @@ async def preview_payslip(
 @router.get("/{payroll_id}/payslip/pdf")
 async def get_payslip_pdf_by_payroll_id(
     payroll_id: int,
+    current_user: User = Depends(require_finance_access),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):

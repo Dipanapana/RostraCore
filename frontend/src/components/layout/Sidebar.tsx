@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -10,14 +10,25 @@ import {
   CalendarClock,
   Clock,
   Banknote,
+  FileText,
+  BarChart3,
   Package,
   Settings,
   Shield,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Menu,
   X,
   LogOut,
+  Award,
+  CalendarCheck,
+  MapPin,
+  Wallet,
+  UserCog,
+  Building,
+  Gauge,
+  Wrench,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -25,10 +36,6 @@ import { useAuth } from "@/context/AuthContext";
 // Types
 // ---------------------------------------------------------------------------
 
-/**
- * Canonical user roles — matches backend UserRole enum exactly.
- * admin, company_admin, scheduler, guard, finance, superadmin
- */
 export type UserRole =
   | "admin"
   | "company_admin"
@@ -37,130 +44,366 @@ export type UserRole =
   | "finance"
   | "superadmin";
 
-export interface NavItem {
+interface NavChild {
   key: string;
   label: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  /** Roles that can see this item. Empty array = visible to all authenticated users. */
   roles: UserRole[];
 }
 
+interface NavGroup {
+  kind: "group";
+  key: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  children: NavChild[];
+  section: "main" | "system" | "platform";
+}
+
+interface NavStandalone {
+  kind: "standalone";
+  key: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  href: string;
+  roles: UserRole[];
+  section: "main" | "system" | "platform";
+}
+
+type NavEntry = NavGroup | NavStandalone;
+
 // ---------------------------------------------------------------------------
-// Navigation — role-based access matching the plan's permission matrix
-//
-// | Nav Item        | Admin | Company Admin | Scheduler | Finance | Guard | Superadmin |
-// |-----------------|-------|---------------|-----------|---------|-------|------------|
-// | Dashboard       |   Y   |      Y        |     Y     |    Y    |   Y   |     Y      |
-// | People          |   Y   |      Y        |  Y (read) |    -    |   -   |     Y      |
-// | Clients & Sites |   Y   |      Y        |     Y     |    -    |   -   |     Y      |
-// | Schedule        |   Y   |      Y        |     Y     |    -    |   -   |     Y      |
-// | Time & Leave    |   Y   |      Y        |     Y     |    -    | Y own |     Y      |
-// | Payroll         |   Y   |      Y        |     -     |    Y    | Y own |     Y      |
-// | Assets          |   Y   |      Y        |     Y     |    -    |   -   |     Y      |
-// | Settings        |   Y   |      Y        |     -     |    -    |   -   |     Y      |
+// Navigation structure — grouped with role-based children
 // ---------------------------------------------------------------------------
 
-const ALL_ROLES: UserRole[] = ["admin", "company_admin", "scheduler", "finance", "guard", "superadmin"];
+const ALL_ROLES: UserRole[] = [
+  "admin",
+  "company_admin",
+  "scheduler",
+  "finance",
+  "guard",
+  "superadmin",
+];
 
-const ALL_NAV_ITEMS: NavItem[] = [
+const MANAGEMENT_ROLES: UserRole[] = [
+  "admin",
+  "company_admin",
+  "scheduler",
+  "superadmin",
+];
+
+const FINANCE_ROLES: UserRole[] = [
+  "admin",
+  "company_admin",
+  "finance",
+  "superadmin",
+];
+
+const ADMIN_ROLES: UserRole[] = ["admin", "company_admin", "superadmin"];
+
+const NAV_ENTRIES: NavEntry[] = [
+  // ── MAIN ──────────────────────────────────────────────
   {
+    kind: "standalone",
     key: "dashboard",
     label: "Dashboard",
-    href: "/dashboard",
     icon: LayoutDashboard,
+    href: "/dashboard",
     roles: ALL_ROLES,
+    section: "main",
   },
   {
-    key: "people",
-    label: "People",
-    href: "/employees",
+    kind: "group",
+    key: "workforce",
+    label: "Workforce",
     icon: Users,
-    roles: ["admin", "company_admin", "scheduler", "superadmin"],
+    section: "main",
+    children: [
+      {
+        key: "employees",
+        label: "Employees",
+        href: "/employees",
+        icon: Users,
+        roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "certifications",
+        label: "Certifications",
+        href: "/certifications",
+        icon: Award,
+        roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "schedule",
+        label: "Schedule",
+        href: "/roster",
+        icon: CalendarClock,
+        roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "time-leave",
+        label: "Time & Leave",
+        href: "/leave",
+        icon: Clock,
+        roles: [
+          "admin",
+          "company_admin",
+          "scheduler",
+          "guard",
+          "superadmin",
+        ],
+      },
+      {
+        key: "availability",
+        label: "Availability",
+        href: "/availability",
+        icon: CalendarCheck,
+        roles: [
+          "admin",
+          "company_admin",
+          "scheduler",
+          "guard",
+          "superadmin",
+        ],
+      },
+    ],
   },
   {
-    key: "clients",
-    label: "Clients & Sites",
-    href: "/clients",
+    kind: "group",
+    key: "operations",
+    label: "Operations",
     icon: Building2,
-    roles: ["admin", "company_admin", "scheduler", "superadmin"],
+    section: "main",
+    children: [
+      {
+        key: "clients",
+        label: "Clients & Sites",
+        href: "/clients",
+        icon: Building,
+        roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "sites",
+        label: "Sites",
+        href: "/sites",
+        icon: MapPin,
+        roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "assets",
+        label: "Assets",
+        href: "/assets",
+        icon: Package,
+        roles: MANAGEMENT_ROLES,
+      },
+    ],
   },
   {
-    key: "schedule",
-    label: "Schedule",
-    href: "/roster",
-    icon: CalendarClock,
-    roles: ["admin", "company_admin", "scheduler", "superadmin"],
+    kind: "group",
+    key: "finance",
+    label: "Finance",
+    icon: Wallet,
+    section: "main",
+    children: [
+      {
+        key: "payroll",
+        label: "Payroll",
+        href: "/payroll",
+        icon: Banknote,
+        roles: [
+          "admin",
+          "company_admin",
+          "finance",
+          "guard",
+          "superadmin",
+        ],
+      },
+      {
+        key: "invoices",
+        label: "Invoices",
+        href: "/billing/invoices",
+        icon: FileText,
+        roles: FINANCE_ROLES,
+      },
+      {
+        key: "reports",
+        label: "Reports",
+        href: "/reports",
+        icon: BarChart3,
+        roles: FINANCE_ROLES,
+      },
+    ],
   },
+
+  // ── SYSTEM ────────────────────────────────────────────
   {
-    key: "time-leave",
-    label: "Time & Leave",
-    href: "/leave",
-    icon: Clock,
-    roles: ["admin", "company_admin", "scheduler", "guard", "superadmin"],
-  },
-  {
-    key: "payroll",
-    label: "Payroll",
-    href: "/payroll",
-    icon: Banknote,
-    roles: ["admin", "company_admin", "finance", "guard", "superadmin"],
-  },
-  {
-    key: "assets",
-    label: "Assets",
-    href: "/assets",
-    icon: Package,
-    roles: ["admin", "company_admin", "scheduler", "superadmin"],
-  },
-  {
+    kind: "group",
     key: "settings",
     label: "Settings",
-    href: "/settings",
     icon: Settings,
-    roles: ["admin", "company_admin", "superadmin"],
+    section: "system",
+    children: [
+      {
+        key: "settings-general",
+        label: "General",
+        href: "/settings",
+        icon: Settings,
+        roles: ADMIN_ROLES,
+      },
+      {
+        key: "settings-users",
+        label: "Users",
+        href: "/settings/users",
+        icon: UserCog,
+        roles: ADMIN_ROLES,
+      },
+      {
+        key: "settings-company",
+        label: "Company Profile",
+        href: "/settings/company-profile",
+        icon: Building,
+        roles: ADMIN_ROLES,
+      },
+      {
+        key: "settings-rates",
+        label: "Hourly Rates",
+        href: "/settings/hourly-rates",
+        icon: Gauge,
+        roles: ADMIN_ROLES,
+      },
+      {
+        key: "settings-patterns",
+        label: "Shift Patterns",
+        href: "/settings/shift-patterns",
+        icon: Wrench,
+        roles: ADMIN_ROLES,
+      },
+    ],
+  },
+
+  // ── PLATFORM (superadmin only) ────────────────────────
+  {
+    kind: "standalone",
+    key: "platform",
+    label: "Platform Admin",
+    icon: Shield,
+    href: "/superadmin",
+    roles: ["superadmin"],
+    section: "platform",
   },
 ];
 
-const SUPERADMIN_NAV_ITEM: NavItem = {
-  key: "platform",
-  label: "Platform",
-  href: "/superadmin",
-  icon: Shield,
-  roles: ["superadmin"],
+// ---------------------------------------------------------------------------
+// Route-matching helpers
+// ---------------------------------------------------------------------------
+
+const ROUTE_GROUPS: Record<string, string[]> = {
+  "/employees": ["/employees", "/certifications", "/documents"],
+  "/certifications": ["/certifications"],
+  "/clients": ["/clients", "/sites"],
+  "/sites": ["/sites"],
+  "/roster": ["/roster", "/shifts", "/calendar", "/schedule"],
+  "/leave": ["/leave"],
+  "/availability": ["/availability"],
+  "/payroll": ["/payroll", "/billing/subscription"],
+  "/billing/invoices": ["/billing/invoices"],
+  "/reports": ["/reports"],
+  "/assets": ["/assets"],
+  "/settings": ["/settings"],
+  "/superadmin": ["/superadmin"],
 };
+
+function isRouteActive(href: string, pathname: string): boolean {
+  if (href === "/dashboard") return pathname === "/dashboard";
+
+  // Exact match for settings sub-pages
+  if (href.startsWith("/settings/")) {
+    return pathname === href || pathname?.startsWith(href + "/");
+  }
+
+  const group = ROUTE_GROUPS[href];
+  if (group) {
+    return group.some(
+      (route) => pathname === route || pathname?.startsWith(route + "/")
+    );
+  }
+  return pathname === href || pathname?.startsWith(href + "/");
+}
+
+function isGroupActive(children: NavChild[], pathname: string): boolean {
+  return children.some((child) => isRouteActive(child.href, pathname));
+}
 
 // ---------------------------------------------------------------------------
 // Role-based filtering
 // ---------------------------------------------------------------------------
 
-function getFilteredNav(role: string): NavItem[] {
-  const normalizedRole = (role?.toLowerCase() ?? "guard") as UserRole;
-  const isSuperadmin = normalizedRole === "superadmin";
+function getVisibleChildren(
+  children: NavChild[],
+  role: UserRole
+): NavChild[] {
+  return children.filter((child) => child.roles.includes(role));
+}
 
-  const filtered = ALL_NAV_ITEMS.filter((item) =>
-    item.roles.includes(normalizedRole)
-  );
-
-  if (isSuperadmin) {
-    filtered.push(SUPERADMIN_NAV_ITEM);
-  }
-
-  return filtered;
+function getVisibleEntries(role: UserRole): NavEntry[] {
+  return NAV_ENTRIES.filter((entry) => {
+    if (entry.kind === "standalone") {
+      return entry.roles.includes(role);
+    }
+    // Group is visible if at least one child is visible
+    return getVisibleChildren(entry.children, role).length > 0;
+  });
 }
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-const COLLAPSED_WIDTH = 64;   // px
-const EXPANDED_WIDTH = 260;   // px
-const STORAGE_KEY = "sidebar-collapsed";
+const COLLAPSED_WIDTH = 64;
+const EXPANDED_WIDTH = 260;
+const SIDEBAR_COLLAPSED_KEY = "sidebar-collapsed";
+const SIDEBAR_GROUPS_KEY = "sidebar-groups";
 
 // ---------------------------------------------------------------------------
-// Tooltip component for collapsed icons
+// Helpers
 // ---------------------------------------------------------------------------
 
+function getInitials(
+  fullName?: string | null,
+  username?: string | null
+): string {
+  if (fullName) {
+    const parts = fullName.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return parts[0].substring(0, 2).toUpperCase();
+  }
+  if (username) {
+    return username.substring(0, 2).toUpperCase();
+  }
+  return "U";
+}
+
+function getRoleBadgeLabel(role?: string | null): string {
+  if (!role) return "User";
+  const map: Record<string, string> = {
+    superadmin: "Superadmin",
+    admin: "Admin",
+    company_admin: "Company Admin",
+    scheduler: "Scheduler",
+    finance: "Finance",
+    guard: "Guard",
+  };
+  return map[role.toLowerCase()] ?? role;
+}
+
+// ---------------------------------------------------------------------------
+// Sub-components
+// ---------------------------------------------------------------------------
+
+/** Tooltip for collapsed standalone items */
 function NavTooltip({
   label,
   children,
@@ -181,46 +424,116 @@ function NavTooltip({
         "
       >
         {label}
-        {/* Arrow */}
         <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-800" />
       </div>
     </div>
   );
 }
 
-// ---------------------------------------------------------------------------
-// User initials helper
-// ---------------------------------------------------------------------------
+/** Floating popover for collapsed group items — shows children on hover */
+function NavPopover({
+  entry,
+  children: visibleChildren,
+  pathname,
+  onNavigate,
+}: {
+  entry: NavGroup;
+  children: NavChild[];
+  pathname: string;
+  onNavigate: () => void;
+}) {
+  const Icon = entry.icon;
+  const active = isGroupActive(visibleChildren, pathname);
 
-function getInitials(fullName?: string | null, username?: string | null): string {
-  if (fullName) {
-    const parts = fullName.trim().split(/\s+/);
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    }
-    return parts[0].substring(0, 2).toUpperCase();
-  }
-  if (username) {
-    return username.substring(0, 2).toUpperCase();
-  }
-  return "U";
+  return (
+    <div className="relative group/popover">
+      {/* Icon button */}
+      <div
+        className={`
+          flex items-center justify-center px-3 py-2.5 rounded-lg cursor-pointer
+          transition-colors duration-150
+          ${
+            active
+              ? "bg-slate-700/50 text-white"
+              : "text-slate-300 hover:bg-slate-800 hover:text-white"
+          }
+        `}
+      >
+        <Icon
+          className={`w-5 h-5 flex-shrink-0 ${
+            active ? "text-blue-400" : "text-slate-400"
+          }`}
+        />
+      </div>
+
+      {/* Floating popover */}
+      <div
+        className="
+          invisible opacity-0 group-hover/popover:visible group-hover/popover:opacity-100
+          absolute left-full top-0 ml-2 z-50
+          min-w-[180px] py-1.5 rounded-lg
+          bg-slate-800 border border-slate-700 shadow-xl
+          transition-all duration-150 ease-out
+        "
+      >
+        {/* Group header */}
+        <div className="px-3 py-2 border-b border-slate-700">
+          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            {entry.label}
+          </span>
+        </div>
+
+        {/* Children links */}
+        {visibleChildren.map((child) => {
+          const childActive = isRouteActive(child.href, pathname);
+          const ChildIcon = child.icon;
+          return (
+            <Link
+              key={child.key}
+              href={child.href}
+              onClick={onNavigate}
+              className={`
+                flex items-center gap-2.5 px-3 py-2 mx-1.5 rounded-md
+                text-sm transition-colors duration-100
+                ${
+                  childActive
+                    ? "bg-slate-700 text-white"
+                    : "text-slate-300 hover:bg-slate-700/50 hover:text-white"
+                }
+              `}
+            >
+              <ChildIcon
+                className={`w-4 h-4 flex-shrink-0 ${
+                  childActive ? "text-blue-400" : "text-slate-500"
+                }`}
+              />
+              {child.label}
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
-// ---------------------------------------------------------------------------
-// Role badge label helper
-// ---------------------------------------------------------------------------
-
-function getRoleBadgeLabel(role?: string | null): string {
-  if (!role) return "User";
-  const map: Record<string, string> = {
-    superadmin: "Superadmin",
-    admin: "Admin",
-    company_admin: "Company Admin",
-    scheduler: "Scheduler",
-    finance: "Finance",
-    guard: "Guard",
-  };
-  return map[role.toLowerCase()] ?? role;
+/** Section label — hidden when collapsed */
+function SectionLabel({
+  label,
+  collapsed,
+}: {
+  label: string;
+  collapsed: boolean;
+}) {
+  if (collapsed) {
+    return <div className="my-2 mx-3 h-px bg-slate-800" />;
+  }
+  return (
+    <div className="mt-6 mb-2 px-3">
+      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+        {label}
+      </span>
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -231,42 +544,45 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
-  // Desktop collapsed state — persisted to localStorage
+  // Desktop collapsed state
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
-    return localStorage.getItem(STORAGE_KEY) === "true";
+    return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true";
+  });
+
+  // Expanded groups state
+  const [expandedGroups, setExpandedGroups] = useState<
+    Record<string, boolean>
+  >(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const stored = localStorage.getItem(SIDEBAR_GROUPS_KEY);
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
   });
 
   // Mobile drawer state
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  // Track whether we are on mobile (< 1024px)
   const [isMobile, setIsMobile] = useState(false);
-
-  // Ref to detect first render (avoid SSR/hydration mismatch)
   const mounted = useRef(false);
 
   // Derive nav items from role
-  const role = user?.role ?? "guard";
+  const role = (user?.role ?? "guard") as UserRole;
   const isSuperadmin =
     user?.is_superadmin === true || role?.toLowerCase() === "superadmin";
-  const navItems = getFilteredNav(role);
+  const visibleEntries = getVisibleEntries(role);
 
-  // -------------------------------------------------------------------------
-  // Effects
-  // -------------------------------------------------------------------------
+  // ── Effects ────────────────────────────────────────────
 
   useEffect(() => {
     mounted.current = true;
-
     const checkMobile = () => {
       const mobile = window.innerWidth < 1024;
       setIsMobile(mobile);
-      if (mobile) {
-        setMobileOpen(false);
-      }
+      if (mobile) setMobileOpen(false);
     };
-
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
@@ -275,40 +591,42 @@ export default function Sidebar() {
   // Persist collapsed state
   useEffect(() => {
     if (!mounted.current) return;
-    localStorage.setItem(STORAGE_KEY, String(isCollapsed));
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(isCollapsed));
   }, [isCollapsed]);
 
-  // Close mobile drawer when navigating
+  // Persist expanded groups
+  useEffect(() => {
+    if (!mounted.current) return;
+    localStorage.setItem(SIDEBAR_GROUPS_KEY, JSON.stringify(expandedGroups));
+  }, [expandedGroups]);
+
+  // Auto-expand group when navigating to a child route
+  useEffect(() => {
+    for (const entry of NAV_ENTRIES) {
+      if (entry.kind === "group") {
+        const visChildren = getVisibleChildren(entry.children, role);
+        if (isGroupActive(visChildren, pathname)) {
+          setExpandedGroups((prev) => {
+            if (prev[entry.key]) return prev;
+            return { ...prev, [entry.key]: true };
+          });
+        }
+      }
+    }
+  }, [pathname, role]);
+
+  // Close mobile drawer on navigation
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
 
-  // -------------------------------------------------------------------------
-  // Helpers
-  // -------------------------------------------------------------------------
-
-  // Route groups: nav items that should also highlight for related pages
-  const ROUTE_GROUPS: Record<string, string[]> = {
-    "/employees": ["/employees", "/certifications", "/documents"],
-    "/clients": ["/clients", "/sites"],
-    "/roster": ["/roster", "/shifts", "/calendar", "/schedule"],
-    "/leave": ["/leave", "/availability"],
-    "/payroll": ["/payroll", "/billing"],
-    "/settings": ["/settings"],
-  };
-
-  const isActive = (href: string): boolean => {
-    if (href === "/dashboard") return pathname === "/dashboard";
-    const group = ROUTE_GROUPS[href];
-    if (group) {
-      return group.some(
-        (route) => pathname === route || pathname?.startsWith(route + "/")
-      );
-    }
-    return pathname === href || pathname?.startsWith(href + "/");
-  };
+  // ── Handlers ───────────────────────────────────────────
 
   const toggleCollapsed = () => setIsCollapsed((prev) => !prev);
+
+  const toggleGroup = useCallback((key: string) => {
+    setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -318,276 +636,390 @@ export default function Sidebar() {
     if (isMobile) setMobileOpen(false);
   };
 
-  // -------------------------------------------------------------------------
-  // Sub-components (defined inside to access closures cleanly)
-  // -------------------------------------------------------------------------
+  // ── Render helpers ─────────────────────────────────────
 
-  const NavLinkItem = ({
-    item,
-    collapsed,
-  }: {
-    item: NavItem;
-    collapsed: boolean;
-  }) => {
-    const active = isActive(item.href);
-    const Icon = item.icon;
-    const isSuperadminItem = item.key === "platform";
+  const renderStandalone = (
+    entry: NavStandalone,
+    collapsed: boolean
+  ) => {
+    const active = isRouteActive(entry.href, pathname);
+    const Icon = entry.icon;
+    const isPlatform = entry.key === "platform";
 
-    const linkContent = (
+    const link = (
       <Link
-        href={item.href}
+        href={entry.href}
         onClick={handleNavClick}
-        aria-label={item.label}
+        aria-label={entry.label}
         aria-current={active ? "page" : undefined}
         className={`
           relative flex items-center gap-3 px-3 py-2.5 rounded-lg
           transition-colors duration-150 ease-out
-          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-900
-          min-h-[44px] lg:min-h-[40px]
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500
           ${collapsed ? "justify-center" : ""}
           ${
             active
-              ? "bg-slate-700/50 text-white border-l-2 border-blue-500"
-              : isSuperadminItem
-              ? "text-amber-300 hover:bg-amber-500/10 border-l-2 border-transparent"
-              : "text-slate-300 hover:bg-slate-800 hover:text-white border-l-2 border-transparent"
+              ? "bg-slate-700/50 text-white"
+              : isPlatform
+              ? "text-amber-300 hover:bg-amber-500/10"
+              : "text-slate-300 hover:bg-slate-800 hover:text-white"
           }
         `}
       >
-        {/* Active left-border accent already set via border-l-2 on parent — icon */}
         <Icon
-          className={`
-            w-5 h-5 flex-shrink-0 transition-colors duration-150
-            ${active ? "text-blue-400" : isSuperadminItem ? "text-amber-400" : "text-slate-400 group-hover:text-slate-200"}
-          `}
+          className={`w-5 h-5 flex-shrink-0 ${
+            active
+              ? "text-blue-400"
+              : isPlatform
+              ? "text-amber-400"
+              : "text-slate-400"
+          }`}
         />
-
-        {/* Label — hidden when collapsed (desktop) */}
         {!collapsed && (
           <span
-            className={`
-              text-sm font-medium truncate
-              transition-opacity duration-200
-              ${active ? "text-white" : isSuperadminItem ? "text-amber-300" : "text-slate-300"}
-            `}
+            className={`text-sm font-medium truncate ${
+              active
+                ? "text-white"
+                : isPlatform
+                ? "text-amber-300"
+                : "text-slate-300"
+            }`}
           >
-            {item.label}
+            {entry.label}
           </span>
         )}
       </Link>
     );
 
-    // Wrap with tooltip when sidebar is collapsed (desktop only)
     if (collapsed && !isMobile) {
       return (
-        <NavTooltip label={item.label}>
-          {linkContent}
+        <NavTooltip key={entry.key} label={entry.label}>
+          {link}
         </NavTooltip>
       );
     }
 
-    return linkContent;
+    return <div key={entry.key}>{link}</div>;
   };
 
-  // -------------------------------------------------------------------------
-  // Sidebar content (shared between desktop and mobile)
-  // -------------------------------------------------------------------------
+  const renderGroup = (entry: NavGroup, collapsed: boolean) => {
+    const visChildren = getVisibleChildren(entry.children, role);
+    if (visChildren.length === 0) return null;
 
-  const SidebarContent = ({ collapsed }: { collapsed: boolean }) => (
-    <div className="flex flex-col h-full bg-slate-900 border-r border-slate-800">
-      {/* ----------------------------------------------------------------- */}
-      {/* Brand / Logo area                                                   */}
-      {/* ----------------------------------------------------------------- */}
-      <div
-        className={`
-          flex items-center h-16 px-4 border-b border-slate-800 flex-shrink-0
-          ${collapsed ? "justify-center" : "justify-between"}
-        `}
-      >
-        <Link
-          href="/dashboard"
-          onClick={handleNavClick}
-          className="flex items-center gap-2.5 min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
-          aria-label="RostraCore — go to dashboard"
-        >
-          {/* Circular "R" mark — always visible */}
-          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0 shadow-md">
-            <span className="text-white text-sm font-bold leading-none">R</span>
-          </div>
+    const active = isGroupActive(visChildren, pathname);
+    const expanded = expandedGroups[entry.key] ?? false;
+    const Icon = entry.icon;
 
-          {/* Full brand name — hidden when collapsed */}
-          {!collapsed && (
-            <span className="text-white font-semibold text-base tracking-tight truncate">
-              RostraCore
-            </span>
-          )}
-        </Link>
+    // Collapsed mode: show popover on hover
+    if (collapsed && !isMobile) {
+      return (
+        <NavPopover
+          key={entry.key}
+          entry={entry}
+          children={visChildren}
+          pathname={pathname}
+          onNavigate={handleNavClick}
+        />
+      );
+    }
 
-        {/* Mobile close button */}
-        {isMobile && (
-          <button
-            onClick={() => setMobileOpen(false)}
-            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors lg:hidden"
-            aria-label="Close navigation"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        )}
-      </div>
-
-      {/* ----------------------------------------------------------------- */}
-      {/* Navigation items                                                    */}
-      {/* ----------------------------------------------------------------- */}
-      <nav
-        className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-2 space-y-0.5"
-        aria-label="Main navigation"
-      >
-        {/* Superadmin separator */}
-        {isSuperadmin && (
-          <>
-            {navItems
-              .filter((item) => item.key !== "platform")
-              .map((item) => (
-                <NavLinkItem key={item.key} item={item} collapsed={collapsed} />
-              ))}
-
-            {/* Divider before superadmin section */}
-            <div className="my-3 mx-2">
-              <div className="h-px bg-amber-500/20" />
-              {!collapsed && (
-                <p className="mt-2 mb-1 px-1 text-xs font-bold text-amber-500/70 uppercase tracking-widest">
-                  Platform
-                </p>
-              )}
-            </div>
-
-            <NavLinkItem item={SUPERADMIN_NAV_ITEM} collapsed={collapsed} />
-          </>
-        )}
-
-        {/* Non-superadmin: render all items normally */}
-        {!isSuperadmin &&
-          navItems.map((item) => (
-            <NavLinkItem key={item.key} item={item} collapsed={collapsed} />
-          ))}
-      </nav>
-
-      {/* ----------------------------------------------------------------- */}
-      {/* User profile card                                                   */}
-      {/* ----------------------------------------------------------------- */}
-      <div className="flex-shrink-0 border-t border-slate-800">
-        {/* Profile row */}
-        <div
+    // Expanded mode: show inline children
+    return (
+      <div key={entry.key}>
+        {/* Group header — clickable to toggle */}
+        <button
+          onClick={() => toggleGroup(entry.key)}
           className={`
-            flex items-center gap-3 px-3 py-3
-            ${collapsed ? "justify-center" : ""}
+            w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
+            transition-colors duration-150 ease-out text-left
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500
+            ${
+              active && !expanded
+                ? "bg-slate-700/30 text-white"
+                : "text-slate-300 hover:bg-slate-800 hover:text-white"
+            }
           `}
         >
-          {/* Avatar with initials */}
-          <div
-            className={`
-              w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 shadow
-              ${isSuperadmin
-                ? "bg-gradient-to-br from-amber-500 to-orange-600"
-                : "bg-gradient-to-br from-blue-500 to-indigo-600"
-              }
-            `}
-            aria-hidden="true"
+          <Icon
+            className={`w-5 h-5 flex-shrink-0 ${
+              active ? "text-blue-400" : "text-slate-400"
+            }`}
+          />
+          <span
+            className={`flex-1 text-sm font-medium truncate ${
+              active ? "text-white" : "text-slate-300"
+            }`}
           >
-            <span className="text-white font-bold text-sm leading-none">
-              {getInitials(user?.full_name, user?.username)}
-            </span>
+            {entry.label}
+          </span>
+          <ChevronDown
+            className={`w-4 h-4 flex-shrink-0 text-slate-500 transition-transform duration-200 ${
+              expanded ? "rotate-0" : "-rotate-90"
+            }`}
+          />
+        </button>
+
+        {/* Children — animated expand */}
+        <div
+          className={`
+            overflow-hidden transition-all duration-200 ease-out
+            ${expanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"}
+          `}
+        >
+          <div className="ml-4 pl-3 border-l border-slate-800 mt-0.5 mb-1 space-y-0.5">
+            {visChildren.map((child) => {
+              const childActive = isRouteActive(child.href, pathname);
+              const ChildIcon = child.icon;
+              return (
+                <Link
+                  key={child.key}
+                  href={child.href}
+                  onClick={handleNavClick}
+                  aria-current={childActive ? "page" : undefined}
+                  className={`
+                    flex items-center gap-2.5 px-3 py-2 rounded-lg
+                    text-sm transition-colors duration-150
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500
+                    ${
+                      childActive
+                        ? "bg-slate-700/50 text-white"
+                        : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                    }
+                  `}
+                >
+                  <ChildIcon
+                    className={`w-4 h-4 flex-shrink-0 ${
+                      childActive ? "text-blue-400" : "text-slate-500"
+                    }`}
+                  />
+                  <span className="truncate">{child.label}</span>
+                </Link>
+              );
+            })}
           </div>
+        </div>
+      </div>
+    );
+  };
 
-          {/* Name + role — hidden when collapsed */}
-          {!collapsed && (
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate leading-tight">
-                {user?.full_name || user?.username || "User"}
-              </p>
-              <p
-                className={`text-xs truncate leading-tight mt-0.5 ${
-                  isSuperadmin ? "text-amber-400 font-medium" : "text-slate-400"
-                }`}
-              >
-                {getRoleBadgeLabel(user?.role)}
-              </p>
+  // ── SidebarContent ─────────────────────────────────────
+
+  const SidebarContent = ({ collapsed }: { collapsed: boolean }) => {
+    // Group entries by section
+    const mainEntries = visibleEntries.filter((e) => e.section === "main");
+    const systemEntries = visibleEntries.filter(
+      (e) => e.section === "system"
+    );
+    const platformEntries = visibleEntries.filter(
+      (e) => e.section === "platform"
+    );
+
+    return (
+      <div className="flex flex-col h-full bg-slate-900 border-r border-slate-800">
+        {/* Brand / Logo */}
+        <div
+          className={`
+            flex items-center h-16 px-4 border-b border-slate-800 flex-shrink-0
+            ${collapsed ? "justify-center" : "justify-between"}
+          `}
+        >
+          <Link
+            href="/dashboard"
+            onClick={handleNavClick}
+            className="flex items-center gap-2.5 min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+            aria-label="RostraCore — go to dashboard"
+          >
+            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0 shadow-md">
+              <span className="text-white text-sm font-bold leading-none">
+                R
+              </span>
             </div>
-          )}
+            {!collapsed && (
+              <span className="text-white font-semibold text-base tracking-tight truncate">
+                RostraCore
+              </span>
+            )}
+          </Link>
 
-          {/* Logout button — shown as icon-only when not collapsed, always show */}
-          {!collapsed && (
+          {isMobile && (
             <button
-              onClick={handleLogout}
-              title="Log out"
-              aria-label="Log out"
-              className="
-                flex-shrink-0 p-1.5 text-slate-500 hover:text-red-400
-                hover:bg-red-500/10 rounded-lg transition-colors duration-150
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500
-              "
+              onClick={() => setMobileOpen(false)}
+              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors lg:hidden"
+              aria-label="Close navigation"
             >
-              <LogOut className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </button>
           )}
         </div>
 
-        {/* Logout row when collapsed (full-width button with tooltip) */}
-        {collapsed && !isMobile && (
-          <NavTooltip label="Log out">
-            <button
-              onClick={handleLogout}
-              aria-label="Log out"
-              className="
-                w-full flex items-center justify-center py-2.5 px-2
-                text-slate-500 hover:text-red-400 hover:bg-red-500/10
-                transition-colors duration-150
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500
-              "
-            >
-              <LogOut className="w-5 h-5" />
-            </button>
-          </NavTooltip>
-        )}
+        {/* Navigation */}
+        <nav
+          className="flex-1 overflow-y-auto overflow-x-hidden py-2 px-2"
+          aria-label="Main navigation"
+        >
+          {/* MAIN section */}
+          {mainEntries.length > 0 && (
+            <>
+              <SectionLabel label="Main" collapsed={collapsed} />
+              <div className="space-y-0.5">
+                {mainEntries.map((entry) =>
+                  entry.kind === "standalone"
+                    ? renderStandalone(entry, collapsed)
+                    : renderGroup(entry, collapsed)
+                )}
+              </div>
+            </>
+          )}
 
-        {/* ---------------------------------------------------------------- */}
-        {/* Collapse toggle button — desktop only                             */}
-        {/* ---------------------------------------------------------------- */}
-        {!isMobile && (
-          <div className="border-t border-slate-800">
-            <button
-              onClick={toggleCollapsed}
-              aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-              className={`
-                w-full flex items-center py-3 px-3 gap-2
-                text-slate-500 hover:text-slate-200 hover:bg-slate-800
-                transition-colors duration-150 text-xs font-medium
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500
-                ${collapsed ? "justify-center" : "justify-between"}
-              `}
-            >
-              {!collapsed && <span className="select-none">Collapse</span>}
-              {isCollapsed ? (
-                <ChevronRight className="w-4 h-4 flex-shrink-0" />
+          {/* SYSTEM section */}
+          {systemEntries.length > 0 && (
+            <>
+              <SectionLabel label="System" collapsed={collapsed} />
+              <div className="space-y-0.5">
+                {systemEntries.map((entry) =>
+                  entry.kind === "standalone"
+                    ? renderStandalone(entry, collapsed)
+                    : renderGroup(entry, collapsed)
+                )}
+              </div>
+            </>
+          )}
+
+          {/* PLATFORM section (superadmin only) */}
+          {platformEntries.length > 0 && (
+            <>
+              {!collapsed ? (
+                <div className="mt-6 mb-2 px-3">
+                  <div className="h-px bg-amber-500/20 mb-2" />
+                  <span className="text-[10px] font-bold text-amber-500/70 uppercase tracking-widest">
+                    Platform
+                  </span>
+                </div>
               ) : (
-                <ChevronLeft className="w-4 h-4 flex-shrink-0" />
+                <div className="my-2 mx-3 h-px bg-amber-500/20" />
               )}
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+              <div className="space-y-0.5">
+                {platformEntries.map((entry) =>
+                  entry.kind === "standalone"
+                    ? renderStandalone(entry, collapsed)
+                    : renderGroup(entry, collapsed)
+                )}
+              </div>
+            </>
+          )}
+        </nav>
 
-  // -------------------------------------------------------------------------
-  // Render
-  // -------------------------------------------------------------------------
+        {/* User profile card */}
+        <div className="flex-shrink-0 border-t border-slate-800">
+          <div
+            className={`
+              flex items-center gap-3 px-3 py-3
+              ${collapsed ? "justify-center" : ""}
+            `}
+          >
+            <div
+              className={`
+                w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 shadow
+                ${
+                  isSuperadmin
+                    ? "bg-gradient-to-br from-amber-500 to-orange-600"
+                    : "bg-gradient-to-br from-blue-500 to-indigo-600"
+                }
+              `}
+              aria-hidden="true"
+            >
+              <span className="text-white font-bold text-sm leading-none">
+                {getInitials(user?.full_name, user?.username)}
+              </span>
+            </div>
+
+            {!collapsed && (
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-white truncate leading-tight">
+                  {user?.full_name || user?.username || "User"}
+                </p>
+                <p
+                  className={`text-xs truncate leading-tight mt-0.5 ${
+                    isSuperadmin
+                      ? "text-amber-400 font-medium"
+                      : "text-slate-400"
+                  }`}
+                >
+                  {getRoleBadgeLabel(user?.role)}
+                </p>
+              </div>
+            )}
+
+            {!collapsed && (
+              <button
+                onClick={handleLogout}
+                title="Log out"
+                aria-label="Log out"
+                className="
+                  flex-shrink-0 p-1.5 text-slate-500 hover:text-red-400
+                  hover:bg-red-500/10 rounded-lg transition-colors duration-150
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500
+                "
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {collapsed && !isMobile && (
+            <NavTooltip label="Log out">
+              <button
+                onClick={handleLogout}
+                aria-label="Log out"
+                className="
+                  w-full flex items-center justify-center py-2.5 px-2
+                  text-slate-500 hover:text-red-400 hover:bg-red-500/10
+                  transition-colors duration-150
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500
+                "
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            </NavTooltip>
+          )}
+
+          {/* Collapse toggle — desktop only */}
+          {!isMobile && (
+            <div className="border-t border-slate-800">
+              <button
+                onClick={toggleCollapsed}
+                aria-label={
+                  isCollapsed ? "Expand sidebar" : "Collapse sidebar"
+                }
+                className={`
+                  w-full flex items-center py-3 px-3 gap-2
+                  text-slate-500 hover:text-slate-200 hover:bg-slate-800
+                  transition-colors duration-150 text-xs font-medium
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500
+                  ${collapsed ? "justify-center" : "justify-between"}
+                `}
+              >
+                {!collapsed && (
+                  <span className="select-none">Collapse</span>
+                )}
+                {isCollapsed ? (
+                  <ChevronRight className="w-4 h-4 flex-shrink-0" />
+                ) : (
+                  <ChevronLeft className="w-4 h-4 flex-shrink-0" />
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // ── Render ─────────────────────────────────────────────
 
   return (
     <>
-      {/* -------------------------------------------------------------------
-          Mobile hamburger button — fixed top-left, only on mobile
-          ------------------------------------------------------------------- */}
+      {/* Mobile hamburger */}
       <button
         onClick={() => setMobileOpen(true)}
         aria-label="Open navigation"
@@ -603,9 +1035,7 @@ export default function Sidebar() {
         <Menu className="w-5 h-5" />
       </button>
 
-      {/* -------------------------------------------------------------------
-          Mobile overlay backdrop
-          ------------------------------------------------------------------- */}
+      {/* Mobile overlay */}
       {mobileOpen && (
         <div
           className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
@@ -614,9 +1044,7 @@ export default function Sidebar() {
         />
       )}
 
-      {/* -------------------------------------------------------------------
-          Mobile drawer sidebar
-          ------------------------------------------------------------------- */}
+      {/* Mobile drawer */}
       <aside
         aria-label="Navigation drawer"
         className={`
@@ -629,9 +1057,7 @@ export default function Sidebar() {
         <SidebarContent collapsed={false} />
       </aside>
 
-      {/* -------------------------------------------------------------------
-          Desktop sidebar — always visible, collapsible
-          ------------------------------------------------------------------- */}
+      {/* Desktop sidebar */}
       <aside
         aria-label="Main navigation"
         className="
@@ -639,18 +1065,23 @@ export default function Sidebar() {
           fixed top-0 left-0 z-30 h-screen
           transition-[width] duration-300 ease-out will-change-[width]
         "
-        style={{ width: isCollapsed ? `${COLLAPSED_WIDTH}px` : `${EXPANDED_WIDTH}px` }}
+        style={{
+          width: isCollapsed
+            ? `${COLLAPSED_WIDTH}px`
+            : `${EXPANDED_WIDTH}px`,
+        }}
       >
         <SidebarContent collapsed={isCollapsed} />
       </aside>
 
-      {/* -------------------------------------------------------------------
-          Desktop spacer — pushes main content right of sidebar.
-          Matches sidebar width with the same transition.
-          ------------------------------------------------------------------- */}
+      {/* Desktop spacer */}
       <div
         className="hidden lg:block flex-shrink-0 transition-[width] duration-300 ease-out"
-        style={{ width: isCollapsed ? `${COLLAPSED_WIDTH}px` : `${EXPANDED_WIDTH}px` }}
+        style={{
+          width: isCollapsed
+            ? `${COLLAPSED_WIDTH}px`
+            : `${EXPANDED_WIDTH}px`,
+        }}
         aria-hidden="true"
       />
     </>

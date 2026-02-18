@@ -1,11 +1,13 @@
 """Financial and operational reporting endpoints - Payroll, billing, and profitability reports."""
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, func, case
 from datetime import date, datetime, timedelta
 from typing import List, Optional
 from pydantic import BaseModel
+import io
 
 from app.database import get_db
 from app.models.client_invoice import ClientInvoice
@@ -15,7 +17,13 @@ from app.models.shift import Shift
 from app.models.employee import Employee
 from app.models.site import Site
 from app.models.client import Client
-from app.auth.security import get_current_org_id
+from app.models.organization import Organization
+from app.models.user import User
+from app.auth.security import get_current_org_id, require_finance_access
+from app.services.report_generator import (
+    generate_report_pdf,
+    build_company_details_from_org,
+)
 
 router = APIRouter()
 
@@ -58,6 +66,7 @@ class EmployeePayrollSummary(BaseModel):
 async def get_profitability_report(
     period_start: date,
     period_end: date,
+    current_user: User = Depends(require_finance_access),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
@@ -109,6 +118,7 @@ async def get_profitability_report(
 async def get_site_performance_report(
     period_start: date,
     period_end: date,
+    current_user: User = Depends(require_finance_access),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
@@ -171,6 +181,7 @@ async def get_site_performance_report(
 async def get_employee_payroll_report(
     period_start: date,
     period_end: date,
+    current_user: User = Depends(require_finance_access),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
@@ -225,6 +236,7 @@ async def get_revenue_cost_comparison(
     period_start: date,
     period_end: date,
     group_by: str = "month",  # month, week, client
+    current_user: User = Depends(require_finance_access),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
@@ -347,6 +359,7 @@ async def get_revenue_cost_comparison(
 
 @router.get("/outstanding-invoices")
 async def get_outstanding_invoices_report(
+    current_user: User = Depends(require_finance_access),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
@@ -414,3 +427,577 @@ async def get_outstanding_invoices_report(
         "total_invoices": sum(c["invoices_count"] for c in result),
         "clients": result
     }
+
+
+# ==================== PDF REPORT EXPORTS ====================
+
+def _load_org_company_details(db: Session, org_id: int):
+    """Load organization and build CompanyDetails for PDF generation.
+
+    Args:
+        db: Database session.
+        org_id: Organization ID.
+
+    Returns:
+        CompanyDetails dataclass.
+
+    Raises:
+        HTTPException: If organization is not found.
+    """
+    org = db.query(Organization).filter(Organization.org_id == org_id).first()
+    if not org:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Organization not found"
+        )
+    return build_company_details_from_org(org)
+
+
+@router.get("/profitability/pdf")
+async def export_profitability_pdf(
+    period_start: date,
+    period_end: date,
+    group_by: str = "month",
+    current_user: User = Depends(require_finance_access),
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db)
+):
+    """
+    Export Profit & Loss report as PDF.
+
+    Generates a professional PDF with summary metrics and monthly/client breakdown.
+    Uses the same data as the profitability and revenue-vs-cost JSON endpoints.
+
+    Args:
+        period_start: Start of reporting period (YYYY-MM-DD)
+        period_end: End of reporting period (YYYY-MM-DD)
+        group_by: Grouping - 'month', 'week', or 'client'
+        org_id: Organization ID (from auth)
+
+    Returns:
+        PDF file download
+    """
+    try:
+        company = _load_org_company_details(db, org_id)
+
+        # Get profitability totals
+        invoices = db.query(ClientInvoice).filter(
+            and_(
+                ClientInvoice.org_id == org_id,
+                ClientInvoice.period_start >= period_start,
+                ClientInvoice.period_end <= period_end
+            )
+        ).all()
+
+        total_revenue = sum(inv.total_amount for inv in invoices)
+
+        assignments = db.query(ShiftAssignment).join(Shift).filter(
+            and_(
+                Shift.org_id == org_id,
+                Shift.start_time >= datetime.combine(period_start, datetime.min.time()),
+                Shift.end_time <= datetime.combine(period_end, datetime.max.time()),
+                ShiftAssignment.status.in_(["confirmed", "completed"])
+            )
+        ).all()
+
+        total_costs = sum(a.total_cost for a in assignments)
+        gross_profit = total_revenue - total_costs
+        profit_margin = (gross_profit / total_revenue * 100) if total_revenue > 0 else 0.0
+
+        # Build breakdown data (reuse revenue-vs-cost logic)
+        breakdown = []
+        if group_by == "client":
+            clients_data = {}
+            for assignment in assignments:
+                shift = db.query(Shift).filter(Shift.shift_id == assignment.shift_id).first()
+                site = db.query(Site).filter(Site.site_id == shift.site_id).first()
+                client = db.query(Client).filter(Client.client_id == site.client_id).first()
+                client_name = client.client_name if client else "Unknown"
+
+                if client_name not in clients_data:
+                    clients_data[client_name] = {"cost": 0.0, "revenue": 0.0}
+
+                clients_data[client_name]["cost"] += assignment.total_cost
+                billing_rate = float(site.billing_rate) if site.billing_rate else float(client.billing_rate or 120.0)
+                hours = assignment.regular_hours + assignment.overtime_hours
+                clients_data[client_name]["revenue"] += hours * billing_rate
+
+            for name, data in clients_data.items():
+                profit = data["revenue"] - data["cost"]
+                margin = (profit / data["revenue"] * 100) if data["revenue"] > 0 else 0.0
+                breakdown.append({
+                    "group": name,
+                    "revenue": round(data["revenue"], 2),
+                    "cost": round(data["cost"], 2),
+                    "profit": round(profit, 2),
+                    "margin": round(margin, 2),
+                })
+            breakdown.sort(key=lambda x: x["profit"], reverse=True)
+        else:
+            time_data = {}
+            for assignment in assignments:
+                shift = db.query(Shift).filter(Shift.shift_id == assignment.shift_id).first()
+                site = db.query(Site).filter(Site.site_id == shift.site_id).first()
+                client = db.query(Client).filter(Client.client_id == site.client_id).first()
+
+                shift_date = shift.start_time.date()
+                if group_by == "month":
+                    group_key = shift_date.strftime("%Y-%m")
+                else:
+                    group_key = shift_date.strftime("%Y-W%W")
+
+                if group_key not in time_data:
+                    time_data[group_key] = {"cost": 0.0, "revenue": 0.0}
+
+                time_data[group_key]["cost"] += assignment.total_cost
+                billing_rate = float(site.billing_rate) if site.billing_rate else float(client.billing_rate or 120.0)
+                hours = assignment.regular_hours + assignment.overtime_hours
+                time_data[group_key]["revenue"] += hours * billing_rate
+
+            for period_key, data in sorted(time_data.items()):
+                profit = data["revenue"] - data["cost"]
+                margin = (profit / data["revenue"] * 100) if data["revenue"] > 0 else 0.0
+                breakdown.append({
+                    "group": period_key,
+                    "revenue": round(data["revenue"], 2),
+                    "cost": round(data["cost"], 2),
+                    "profit": round(profit, 2),
+                    "margin": round(margin, 2),
+                })
+
+        report_data = {
+            "total_revenue": round(total_revenue, 2),
+            "total_costs": round(total_costs, 2),
+            "gross_profit": round(gross_profit, 2),
+            "profit_margin": round(profit_margin, 2),
+            "breakdown": breakdown,
+        }
+
+        pdf_bytes = generate_report_pdf(
+            report_type="profit_loss",
+            data=report_data,
+            company=company,
+            period_start=period_start,
+            period_end=period_end,
+        )
+
+        return StreamingResponse(
+            io.BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename=profit-loss-{date.today().isoformat()}.pdf"
+            }
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generating profitability PDF: {str(e)}"
+        )
+
+
+@router.get("/revenue-by-client/pdf")
+async def export_revenue_by_client_pdf(
+    period_start: date,
+    period_end: date,
+    current_user: User = Depends(require_finance_access),
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db)
+):
+    """
+    Export Revenue by Client report as PDF.
+
+    Shows revenue breakdown per client with hours, shifts, and percentage of total.
+
+    Args:
+        period_start: Start of reporting period (YYYY-MM-DD)
+        period_end: End of reporting period (YYYY-MM-DD)
+        org_id: Organization ID (from auth)
+
+    Returns:
+        PDF file download
+    """
+    try:
+        company = _load_org_company_details(db, org_id)
+
+        # Get all assignments in the period
+        assignments = db.query(ShiftAssignment).join(Shift).filter(
+            and_(
+                Shift.org_id == org_id,
+                Shift.start_time >= datetime.combine(period_start, datetime.min.time()),
+                Shift.end_time <= datetime.combine(period_end, datetime.max.time()),
+                ShiftAssignment.status.in_(["confirmed", "completed"])
+            )
+        ).all()
+
+        # Group by client
+        clients_data = {}
+        for assignment in assignments:
+            shift = db.query(Shift).filter(Shift.shift_id == assignment.shift_id).first()
+            site = db.query(Site).filter(Site.site_id == shift.site_id).first()
+            client = db.query(Client).filter(Client.client_id == site.client_id).first()
+            client_name = client.client_name if client else "Unknown"
+
+            if client_name not in clients_data:
+                clients_data[client_name] = {"hours": 0.0, "shifts": set(), "revenue": 0.0}
+
+            hours = assignment.regular_hours + assignment.overtime_hours
+            clients_data[client_name]["hours"] += hours
+            clients_data[client_name]["shifts"].add(assignment.shift_id)
+
+            billing_rate = float(site.billing_rate) if site.billing_rate else float(client.billing_rate or 120.0)
+            clients_data[client_name]["revenue"] += hours * billing_rate
+
+        total_revenue = sum(d["revenue"] for d in clients_data.values())
+
+        clients_list = []
+        for name, data in clients_data.items():
+            pct = (data["revenue"] / total_revenue * 100) if total_revenue > 0 else 0.0
+            clients_list.append({
+                "client_name": name,
+                "hours": round(data["hours"], 1),
+                "shifts": len(data["shifts"]),
+                "revenue": round(data["revenue"], 2),
+                "pct_of_total": round(pct, 1),
+            })
+
+        # Sort by revenue descending
+        clients_list.sort(key=lambda x: x["revenue"], reverse=True)
+
+        report_data = {
+            "total_revenue": round(total_revenue, 2),
+            "client_count": len(clients_list),
+            "clients": clients_list,
+        }
+
+        pdf_bytes = generate_report_pdf(
+            report_type="revenue_by_client",
+            data=report_data,
+            company=company,
+            period_start=period_start,
+            period_end=period_end,
+        )
+
+        return StreamingResponse(
+            io.BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename=revenue-by-client-{date.today().isoformat()}.pdf"
+            }
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generating revenue by client PDF: {str(e)}"
+        )
+
+
+@router.get("/coverage/pdf")
+async def export_coverage_pdf(
+    period_start: date,
+    period_end: date,
+    current_user: User = Depends(require_finance_access),
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db)
+):
+    """
+    Export Coverage report as PDF.
+
+    Shows shift fill rates per site with required vs filled counts and hours.
+
+    Args:
+        period_start: Start of reporting period (YYYY-MM-DD)
+        period_end: End of reporting period (YYYY-MM-DD)
+        org_id: Organization ID (from auth)
+
+    Returns:
+        PDF file download
+    """
+    try:
+        company = _load_org_company_details(db, org_id)
+
+        # Get all shifts in the period for this org
+        shifts = db.query(Shift).filter(
+            and_(
+                Shift.org_id == org_id,
+                Shift.start_time >= datetime.combine(period_start, datetime.min.time()),
+                Shift.end_time <= datetime.combine(period_end, datetime.max.time()),
+            )
+        ).all()
+
+        total_shifts = len(shifts)
+
+        # Calculate per-site coverage
+        site_data = {}
+        filled_total = 0
+
+        for shift in shifts:
+            site = db.query(Site).filter(Site.site_id == shift.site_id).first()
+            site_name = site.site_name if site else "Unknown"
+
+            if site_name not in site_data:
+                site_data[site_name] = {"required": 0, "filled": 0, "hours": 0.0}
+
+            site_data[site_name]["required"] += 1
+
+            # Check if shift has active assignments
+            active_assignments = db.query(ShiftAssignment).filter(
+                and_(
+                    ShiftAssignment.shift_id == shift.shift_id,
+                    ShiftAssignment.status.in_(["pending", "confirmed", "completed"])
+                )
+            ).all()
+
+            if active_assignments:
+                site_data[site_name]["filled"] += 1
+                filled_total += 1
+
+                # Calculate hours
+                duration = (shift.end_time - shift.start_time).total_seconds() / 3600
+                site_data[site_name]["hours"] += duration * len(active_assignments)
+
+        fill_rate = (filled_total / total_shifts * 100) if total_shifts > 0 else 0.0
+
+        sites_list = []
+        for name, data in site_data.items():
+            site_fill = (data["filled"] / data["required"] * 100) if data["required"] > 0 else 0.0
+            sites_list.append({
+                "site_name": name,
+                "required": data["required"],
+                "filled": data["filled"],
+                "fill_rate": round(site_fill, 1),
+                "hours": round(data["hours"], 1),
+            })
+
+        # Sort by fill rate ascending (worst first)
+        sites_list.sort(key=lambda x: x["fill_rate"])
+
+        report_data = {
+            "total_shifts": total_shifts,
+            "filled_shifts": filled_total,
+            "fill_rate": round(fill_rate, 1),
+            "sites": sites_list,
+        }
+
+        pdf_bytes = generate_report_pdf(
+            report_type="coverage",
+            data=report_data,
+            company=company,
+            period_start=period_start,
+            period_end=period_end,
+        )
+
+        return StreamingResponse(
+            io.BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename=coverage-report-{date.today().isoformat()}.pdf"
+            }
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generating coverage PDF: {str(e)}"
+        )
+
+
+@router.get("/outstanding-invoices/pdf")
+async def export_outstanding_invoices_pdf(
+    current_user: User = Depends(require_finance_access),
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db)
+):
+    """
+    Export Outstanding Invoices report as PDF.
+
+    Shows all unpaid invoices with amounts, due dates, and overdue status.
+    No period filter required - shows all currently outstanding invoices.
+
+    Args:
+        org_id: Organization ID (from auth)
+
+    Returns:
+        PDF file download
+    """
+    try:
+        company = _load_org_company_details(db, org_id)
+
+        # Get all unpaid invoices
+        invoices = db.query(ClientInvoice).filter(
+            and_(
+                ClientInvoice.org_id == org_id,
+                ClientInvoice.status.in_(["sent", "overdue"])
+            )
+        ).order_by(ClientInvoice.due_date.asc()).all()
+
+        total_outstanding = 0.0
+        num_overdue = 0
+        total_days_overdue = 0
+        overdue_count = 0
+        invoices_list = []
+
+        for invoice in invoices:
+            client = db.query(Client).filter(Client.client_id == invoice.client_id).first()
+            client_name = client.client_name if client else "Unknown"
+
+            days_overdue = 0
+            if invoice.due_date and date.today() > invoice.due_date:
+                days_overdue = (date.today() - invoice.due_date).days
+                num_overdue += 1
+                total_days_overdue += days_overdue
+                overdue_count += 1
+
+            total_outstanding += invoice.total_amount
+
+            invoices_list.append({
+                "invoice_number": invoice.invoice_number,
+                "client_name": client_name,
+                "amount": invoice.total_amount,
+                "due_date": invoice.due_date,
+                "days_overdue": days_overdue,
+                "status": invoice.status,
+            })
+
+        avg_days_overdue = (total_days_overdue / overdue_count) if overdue_count > 0 else 0
+
+        report_data = {
+            "total_outstanding": round(total_outstanding, 2),
+            "num_overdue": num_overdue,
+            "avg_days_overdue": round(avg_days_overdue, 1),
+            "invoices": invoices_list,
+        }
+
+        pdf_bytes = generate_report_pdf(
+            report_type="outstanding_invoices",
+            data=report_data,
+            company=company,
+        )
+
+        return StreamingResponse(
+            io.BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename=outstanding-invoices-{date.today().isoformat()}.pdf"
+            }
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generating outstanding invoices PDF: {str(e)}"
+        )
+
+
+@router.get("/employee-payroll/pdf")
+async def export_employee_payroll_pdf(
+    period_start: date,
+    period_end: date,
+    current_user: User = Depends(require_finance_access),
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db)
+):
+    """
+    Export Employee Payroll Summary as PDF.
+
+    Shows total payroll costs, hours, and per-employee breakdown
+    including regular and overtime pay.
+
+    Args:
+        period_start: Start of reporting period (YYYY-MM-DD)
+        period_end: End of reporting period (YYYY-MM-DD)
+        org_id: Organization ID (from auth)
+
+    Returns:
+        PDF file download
+    """
+    try:
+        company = _load_org_company_details(db, org_id)
+
+        employees = db.query(Employee).filter(Employee.org_id == org_id).all()
+
+        employees_list = []
+        total_payroll = 0.0
+        total_hours = 0.0
+
+        for employee in employees:
+            assignments = db.query(ShiftAssignment).join(Shift).filter(
+                and_(
+                    ShiftAssignment.employee_id == employee.employee_id,
+                    Shift.start_time >= datetime.combine(period_start, datetime.min.time()),
+                    Shift.end_time <= datetime.combine(period_end, datetime.max.time()),
+                    ShiftAssignment.status.in_(["confirmed", "completed"])
+                )
+            ).all()
+
+            if not assignments:
+                continue
+
+            regular_hours = sum(a.regular_hours for a in assignments)
+            overtime_hours = sum(a.overtime_hours for a in assignments)
+            emp_total_hours = regular_hours + overtime_hours
+            gross_pay = sum(a.total_cost for a in assignments)
+
+            # Estimate regular vs overtime pay split
+            hourly_rate = employee.hourly_rate if employee.hourly_rate else 0
+            regular_pay = regular_hours * hourly_rate
+            overtime_pay = gross_pay - regular_pay if gross_pay > regular_pay else 0
+            if overtime_pay < 0:
+                regular_pay = gross_pay
+                overtime_pay = 0
+
+            total_payroll += gross_pay
+            total_hours += emp_total_hours
+
+            employees_list.append({
+                "employee_name": f"{employee.first_name} {employee.last_name}",
+                "total_hours": round(emp_total_hours, 1),
+                "regular_pay": round(regular_pay, 2),
+                "overtime_pay": round(overtime_pay, 2),
+                "gross_pay": round(gross_pay, 2),
+            })
+
+        # Sort by gross_pay descending
+        employees_list.sort(key=lambda x: x["gross_pay"], reverse=True)
+
+        avg_hourly = (total_payroll / total_hours) if total_hours > 0 else 0.0
+
+        report_data = {
+            "total_payroll": round(total_payroll, 2),
+            "total_hours": round(total_hours, 1),
+            "avg_hourly_rate": round(avg_hourly, 2),
+            "employees": employees_list,
+        }
+
+        pdf_bytes = generate_report_pdf(
+            report_type="employee_payroll",
+            data=report_data,
+            company=company,
+            period_start=period_start,
+            period_end=period_end,
+        )
+
+        return StreamingResponse(
+            io.BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename=employee-payroll-{date.today().isoformat()}.pdf"
+            }
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generating employee payroll PDF: {str(e)}"
+        )

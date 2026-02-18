@@ -277,6 +277,25 @@ def is_admin(current_user: User = Depends(get_current_user)) -> User:
     return require_role(UserRole.ADMIN)(current_user)
 
 
+def require_finance_access(current_user: User = Depends(get_current_user)) -> User:
+    """Require admin, company_admin, finance, or superadmin for financial data access."""
+    return require_roles([
+        UserRole.ADMIN,
+        UserRole.COMPANY_ADMIN,
+        UserRole.FINANCE,
+        UserRole.SUPERADMIN,
+    ])(current_user)
+
+
+def require_management_role(current_user: User = Depends(get_current_user)) -> User:
+    """Require admin, company_admin, or superadmin."""
+    return require_roles([
+        UserRole.ADMIN,
+        UserRole.COMPANY_ADMIN,
+        UserRole.SUPERADMIN,
+    ])(current_user)
+
+
 def get_current_org_id(current_user: User = Depends(get_current_user)) -> int:
     """
     Get the org_id of the current authenticated user.
