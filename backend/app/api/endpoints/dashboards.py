@@ -4,7 +4,7 @@ Provides specialized dashboard views for different user personas
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, and_, or_, case
 from typing import Dict, List, Optional
 from datetime import datetime, timedelta
@@ -13,11 +13,14 @@ from decimal import Decimal
 from app.database import get_db
 from app.models.employee import Employee
 from app.models.shift import Shift
+from app.models.shift_assignment import ShiftAssignment, AssignmentStatus
 from app.models.site import Site
 from app.models.payroll import PayrollSummary
 from app.models.organization import Organization
 from app.models.availability import Availability
+from app.models.user import User
 from app.services.cache_service import CacheService
+from app.auth.security import get_current_user, get_current_org_id
 
 router = APIRouter(prefix="/api/v1/dashboards")
 
@@ -683,3 +686,256 @@ async def get_people_analytics_dashboard(
     CacheService.set(cache_key, dashboard_data, ttl=300)
 
     return dashboard_data
+
+
+# ---------------------------------------------------------------------------
+# Guard Dashboard (Mobile App)
+# ---------------------------------------------------------------------------
+
+@router.get("/guard")
+def get_guard_dashboard(
+    current_user: User = Depends(get_current_user),
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db),
+) -> Dict:
+    """
+    Guard-specific dashboard for the mobile app.
+
+    Returns:
+    - Today's shift and check-in status
+    - Upcoming shifts (next 7 days)
+    - Stats for the current month (hours worked, shifts completed)
+    """
+    # Find the employee record linked to this user
+    employee = db.query(Employee).filter(
+        Employee.email == current_user.email,
+        Employee.org_id == org_id,
+    ).first()
+
+    if not employee:
+        return {
+            "employee": None,
+            "today_assignment": None,
+            "upcoming_shifts": [],
+            "monthly_stats": {"shifts_completed": 0, "hours_worked": 0.0},
+        }
+
+    now = datetime.utcnow()
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    today_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    week_end = now + timedelta(days=7)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    # Today's assignment
+    today_assignment = (
+        db.query(ShiftAssignment)
+        .join(Shift, ShiftAssignment.shift_id == Shift.shift_id)
+        .filter(
+            ShiftAssignment.employee_id == employee.employee_id,
+            ShiftAssignment.status != AssignmentStatus.CANCELLED,
+            Shift.start_time >= today_start,
+            Shift.start_time <= today_end,
+        )
+        .order_by(Shift.start_time)
+        .first()
+    )
+
+    # Upcoming shifts (next 7 days, excluding today)
+    upcoming = (
+        db.query(ShiftAssignment)
+        .join(Shift, ShiftAssignment.shift_id == Shift.shift_id)
+        .filter(
+            ShiftAssignment.employee_id == employee.employee_id,
+            ShiftAssignment.status != AssignmentStatus.CANCELLED,
+            Shift.start_time > today_end,
+            Shift.start_time <= week_end,
+        )
+        .order_by(Shift.start_time)
+        .limit(10)
+        .all()
+    )
+
+    # Monthly stats
+    monthly_assignments = (
+        db.query(ShiftAssignment)
+        .join(Shift, ShiftAssignment.shift_id == Shift.shift_id)
+        .filter(
+            ShiftAssignment.employee_id == employee.employee_id,
+            ShiftAssignment.checked_out == True,
+            Shift.start_time >= month_start,
+        )
+        .all()
+    )
+
+    total_minutes = sum(
+        int((a.check_out_time - a.check_in_time).total_seconds() / 60)
+        for a in monthly_assignments
+        if a.check_in_time and a.check_out_time
+    )
+
+    def _format_assignment(a):
+        shift = db.query(Shift).filter(Shift.shift_id == a.shift_id).first()
+        site = db.query(Site).filter(Site.site_id == shift.site_id).first() if shift else None
+        return {
+            "assignment_id": a.assignment_id,
+            "shift_id": a.shift_id,
+            "checked_in": a.checked_in,
+            "check_in_time": a.check_in_time.isoformat() if a.check_in_time else None,
+            "checked_out": a.checked_out,
+            "check_out_time": a.check_out_time.isoformat() if a.check_out_time else None,
+            "attendance_status": a.attendance_status,
+            "shift": {
+                "start_time": shift.start_time.isoformat(),
+                "end_time": shift.end_time.isoformat(),
+                "notes": shift.notes,
+            } if shift else None,
+            "site": {
+                "site_id": site.site_id,
+                "site_name": site.site_name,
+                "address": site.address,
+                "gps_lat": site.gps_lat,
+                "gps_lng": site.gps_lng,
+            } if site else None,
+        }
+
+    return {
+        "employee": {
+            "employee_id": employee.employee_id,
+            "full_name": f"{employee.first_name} {employee.last_name}",
+            "role": employee.role,
+            "profile_photo_url": employee.profile_photo_url,
+        },
+        "today_assignment": _format_assignment(today_assignment) if today_assignment else None,
+        "upcoming_shifts": [_format_assignment(a) for a in upcoming],
+        "monthly_stats": {
+            "shifts_completed": len(monthly_assignments),
+            "hours_worked": round(total_minutes / 60, 1),
+        },
+    }
+
+
+# ---------------------------------------------------------------------------
+# Admin Stats Summary (Mobile App — AdminDashboardScreen)
+# ---------------------------------------------------------------------------
+
+@router.get("/stats")
+def get_admin_stats(
+    current_user: User = Depends(get_current_user),
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db),
+) -> Dict:
+    """
+    Compact stats summary for the mobile admin dashboard.
+
+    Returns key operational metrics: employees, clients, sites, today's shift
+    coverage, monthly financials, pending leave requests, expiring certifications.
+    """
+    from app.models.client import Client
+    from app.models.leave import LeaveRequest
+    from app.models.certification import Certification
+    from app.models.payroll import PayrollSummary
+    from app.models.client_invoice import ClientInvoice
+
+    now = datetime.utcnow()
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    today_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    cert_warn_date = (now + timedelta(days=30)).date()
+
+    # Employees
+    total_employees = db.query(func.count(Employee.employee_id)).filter(
+        Employee.org_id == org_id
+    ).scalar() or 0
+
+    active_employees = db.query(func.count(Employee.employee_id)).filter(
+        Employee.org_id == org_id,
+        Employee.status == 'active',
+    ).scalar() or 0
+
+    # Clients & Sites
+    total_clients = db.query(func.count(Client.client_id)).filter(
+        Client.org_id == org_id
+    ).scalar() or 0
+
+    total_sites = db.query(func.count(Site.site_id)).filter(
+        Site.org_id == org_id
+    ).scalar() or 0
+
+    # Today's shifts
+    today_shifts = db.query(Shift).filter(
+        Shift.org_id == org_id,
+        Shift.start_time >= today_start,
+        Shift.start_time <= today_end,
+    ).all()
+
+    shifts_today = len(today_shifts)
+    shifts_filled = sum(
+        1 for s in today_shifts
+        if db.query(ShiftAssignment).filter(
+            ShiftAssignment.shift_id == s.shift_id,
+            ShiftAssignment.status != AssignmentStatus.CANCELLED,
+        ).count() > 0
+    )
+    shifts_unfilled = shifts_today - shifts_filled
+    fill_rate = round((shifts_filled / shifts_today * 100) if shifts_today > 0 else 0.0, 1)
+
+    # Monthly payroll costs — join through employees to filter by org
+    payroll_rows = (
+        db.query(PayrollSummary)
+        .join(Employee, PayrollSummary.employee_id == Employee.employee_id)
+        .filter(
+            Employee.org_id == org_id,
+            PayrollSummary.period_start >= month_start.date(),
+        )
+        .all()
+    )
+    costs_this_month = sum(float(p.gross_pay or 0) for p in payroll_rows)
+
+    # Revenue = paid invoices this month
+    revenue_rows = db.query(func.sum(ClientInvoice.total_amount)).filter(
+        ClientInvoice.org_id == org_id,
+        ClientInvoice.invoice_date >= month_start.date(),
+        ClientInvoice.status == 'paid',
+    ).scalar()
+    revenue_this_month = float(revenue_rows or 0)
+
+    profit_margin = round(
+        ((revenue_this_month - costs_this_month) / revenue_this_month * 100)
+        if revenue_this_month > 0 else 0.0,
+        1,
+    )
+
+    # Pending leave requests (status stored as plain string)
+    pending_leave_requests = db.query(func.count(LeaveRequest.request_id)).filter(
+        LeaveRequest.org_id == org_id,
+        LeaveRequest.status == 'pending',
+    ).scalar() or 0
+
+    # Certifications expiring in the next 30 days
+    # Certification links to org via Employee — join through employees table
+    expiring_certifications = (
+        db.query(func.count(Certification.cert_id))
+        .join(Employee, Certification.employee_id == Employee.employee_id)
+        .filter(
+            Employee.org_id == org_id,
+            Certification.expiry_date <= cert_warn_date,
+            Certification.expiry_date >= now.date(),
+        )
+        .scalar() or 0
+    )
+
+    return {
+        "total_employees": total_employees,
+        "active_employees": active_employees,
+        "total_clients": total_clients,
+        "total_sites": total_sites,
+        "shifts_today": shifts_today,
+        "shifts_filled": shifts_filled,
+        "shifts_unfilled": shifts_unfilled,
+        "fill_rate": fill_rate,
+        "revenue_this_month": revenue_this_month,
+        "costs_this_month": costs_this_month,
+        "profit_margin": profit_margin,
+        "pending_leave_requests": pending_leave_requests,
+        "expiring_certifications": expiring_certifications,
+    }

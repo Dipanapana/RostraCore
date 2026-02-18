@@ -602,3 +602,143 @@ async def get_bcea_entitlements():
         )
         for lt, info in BCEA_LEAVE_ENTITLEMENTS.items()
     ]
+
+
+# =============================================================================
+# MOBILE ENDPOINTS  (guard self-service — no employee_id required)
+# =============================================================================
+
+class MobileLeaveCreate(BaseModel):
+    """Schema for guard self-service leave creation (no employee_id required)."""
+    leave_type: str
+    start_date: date
+    end_date: date
+    reason: Optional[str] = None
+
+
+@router.get("/my-requests", response_model=List[LeaveRequestResponse])
+async def get_my_leave_requests(
+    current_user: User = Depends(get_current_user),
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db),
+):
+    """
+    Return the logged-in guard's own leave requests.
+
+    Resolves the employee record from the authenticated user's email
+    so the mobile client does not need to pass an employee_id.
+    """
+    employee = db.query(Employee).filter(
+        Employee.email == current_user.email,
+        Employee.org_id == org_id,
+    ).first()
+
+    if not employee:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No employee record found for this user account.",
+        )
+
+    requests = (
+        db.query(LeaveRequest)
+        .filter(LeaveRequest.employee_id == employee.employee_id)
+        .order_by(LeaveRequest.created_at.desc())
+        .all()
+    )
+
+    return [
+        LeaveRequestResponse(
+            leave_id=r.request_id,
+            org_id=r.org_id,
+            employee_id=r.employee_id,
+            employee_name=f"{employee.first_name} {employee.last_name}",
+            leave_type=r.leave_type,
+            start_date=r.start_date,
+            end_date=r.end_date,
+            total_days=float(r.days_requested) if r.days_requested else None,
+            reason=r.reason,
+            status=r.status,
+            reviewed_by=r.approved_by,
+            reviewed_at=r.approval_date,
+            rejection_reason=r.rejection_reason,
+            created_at=r.created_at,
+        )
+        for r in requests
+    ]
+
+
+@router.post("/", response_model=LeaveRequestResponse, status_code=status.HTTP_201_CREATED)
+async def mobile_create_leave_request(
+    request_data: MobileLeaveCreate,
+    current_user: User = Depends(get_current_user),
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db),
+):
+    """
+    Create a leave request from the mobile app.
+
+    The employee record is resolved automatically from the authenticated user's
+    email, so guards do not need to know their own employee_id.
+    """
+    employee = db.query(Employee).filter(
+        Employee.email == current_user.email,
+        Employee.org_id == org_id,
+    ).first()
+
+    if not employee:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No employee record found for this user account.",
+        )
+
+    if request_data.end_date < request_data.start_date:
+        raise HTTPException(status_code=400, detail="End date must be after start date")
+
+    total_days = calculate_working_days(request_data.start_date, request_data.end_date)
+
+    if total_days <= 0:
+        raise HTTPException(status_code=400, detail="Leave period must include at least one working day")
+
+    leave_type_lower = request_data.leave_type.lower()
+    balance = get_or_create_balance(db, employee.employee_id, leave_type_lower)
+
+    if leave_type_lower != "unpaid" and total_days > balance.remaining:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Insufficient {leave_type_lower.replace('_', ' ')} leave. "
+                f"Available: {balance.remaining} days, Requested: {total_days} days"
+            ),
+        )
+
+    leave_request = LeaveRequest(
+        org_id=org_id,
+        employee_id=employee.employee_id,
+        leave_type=request_data.leave_type,
+        start_date=request_data.start_date,
+        end_date=request_data.end_date,
+        days_requested=total_days,
+        reason=request_data.reason,
+        status="pending",
+    )
+
+    db.add(leave_request)
+    db.commit()
+    db.refresh(leave_request)
+
+    return LeaveRequestResponse(
+        leave_id=leave_request.request_id,
+        org_id=leave_request.org_id,
+        employee_id=leave_request.employee_id,
+        employee_name=f"{employee.first_name} {employee.last_name}",
+        leave_type=leave_request.leave_type,
+        start_date=leave_request.start_date,
+        end_date=leave_request.end_date,
+        total_days=float(leave_request.days_requested) if leave_request.days_requested else None,
+        reason=leave_request.reason,
+        status=leave_request.status,
+        reviewed_by=leave_request.approved_by,
+        reviewed_at=leave_request.approval_date,
+        rejection_reason=leave_request.rejection_reason,
+        created_at=leave_request.created_at,
+    )

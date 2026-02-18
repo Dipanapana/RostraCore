@@ -1,7 +1,7 @@
 """Shifts API endpoints."""
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from datetime import datetime, date, timedelta
 from app.database import get_db
@@ -11,12 +11,97 @@ from app.models.schemas import (
     BulkShiftGenerateRequest, BulkShiftGenerateResponse
 )
 from app.models.shift_assignment import ShiftAssignment, AssignmentStatus
+from app.models.shift import Shift
+from app.models.site import Site
+from app.models.employee import Employee
 from app.models.user import User
 from app.services.shift_service import ShiftService
 from app.services.client_filter_service import ClientFilterService
 from app.auth.security import get_current_org_id, get_current_user
 
 router = APIRouter()
+
+
+# ---------------------------------------------------------------------------
+# Mobile: Guard's own upcoming shifts
+# NOTE: This static route must come before /{shift_id} to avoid conflicts.
+# ---------------------------------------------------------------------------
+
+@router.get("/my-shifts")
+def get_my_shifts(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db),
+):
+    """
+    Return the authenticated guard's upcoming shift assignments.
+
+    Matches the current user to an Employee record by email.
+    Used by the mobile app's schedule and home screens.
+    """
+    employee = db.query(Employee).filter(
+        Employee.email == current_user.email,
+        Employee.org_id == org_id,
+    ).first()
+
+    if not employee:
+        return []
+
+    # Date range defaults to today → next 14 days
+    now = datetime.utcnow()
+    start = datetime.fromisoformat(start_date) if start_date else now.replace(hour=0, minute=0, second=0)
+    end = datetime.fromisoformat(end_date) if end_date else now + timedelta(days=14)
+
+    assignments = (
+        db.query(ShiftAssignment)
+        .join(Shift, ShiftAssignment.shift_id == Shift.shift_id)
+        .join(Site, Shift.site_id == Site.site_id)
+        .options(
+            joinedload(ShiftAssignment.shift).joinedload(Shift.site)
+        )
+        .filter(
+            ShiftAssignment.employee_id == employee.employee_id,
+            ShiftAssignment.status != AssignmentStatus.CANCELLED,
+            Shift.start_time >= start,
+            Shift.start_time <= end,
+            Shift.org_id == org_id,
+        )
+        .order_by(Shift.start_time)
+        .all()
+    )
+
+    result = []
+    for a in assignments:
+        shift = a.shift
+        site = shift.site if shift else None
+        result.append({
+            "assignment_id": a.assignment_id,
+            "shift_id": a.shift_id,
+            "status": a.status,
+            "checked_in": a.checked_in,
+            "check_in_time": a.check_in_time.isoformat() if a.check_in_time else None,
+            "checked_out": a.checked_out,
+            "check_out_time": a.check_out_time.isoformat() if a.check_out_time else None,
+            "attendance_status": a.attendance_status,
+            "shift": {
+                "shift_id": shift.shift_id,
+                "start_time": shift.start_time.isoformat(),
+                "end_time": shift.end_time.isoformat(),
+                "status": shift.status,
+                "notes": shift.notes,
+            } if shift else None,
+            "site": {
+                "site_id": site.site_id,
+                "site_name": site.site_name,
+                "address": site.address,
+                "gps_lat": site.gps_lat,
+                "gps_lng": site.gps_lng,
+            } if site else None,
+        })
+
+    return result
 
 
 @router.get("/", response_model=List[ShiftResponse])
