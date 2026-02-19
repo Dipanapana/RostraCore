@@ -23,6 +23,7 @@ from app.models.shift_pattern_template import ShiftPatternTemplate, PatternType 
 from app.models.leave import LeaveRequest, LeaveBalance, LeaveType, LeaveStatus
 from app.models.refresh_token import RefreshToken
 from app.models.performance import EmployeeEvaluation, DisciplinaryCase
+from app.models.shift_exception import ShiftException
 
 __all__ = [
     "User",
@@ -59,4 +60,5 @@ __all__ = [
     "RefreshToken",
     "EmployeeEvaluation",
     "DisciplinaryCase",
+    "ShiftException",
 ]

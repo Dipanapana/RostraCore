@@ -30,6 +30,7 @@ import {
   Gauge,
   Wrench,
   AlertTriangle,
+  AlertCircle,
   Route,
   Calculator,
 } from "lucide-react";
@@ -156,6 +157,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Posting Alerts",
         href: "/roster/alerts",
         icon: AlertTriangle,
+        roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "exceptions",
+        label: "Exception Log",
+        href: "/roster/exceptions",
+        icon: AlertCircle,
         roles: MANAGEMENT_ROLES,
       },
       {
@@ -351,6 +359,7 @@ const ROUTE_GROUPS: Record<string, string[]> = {
   "/sites": ["/sites"],
   "/roster": ["/roster", "/shifts", "/calendar", "/schedule"],
   "/roster/alerts": ["/roster/alerts"],
+  "/roster/exceptions": ["/roster/exceptions"],
   "/roster/forecast": ["/roster/forecast"],
   "/leave": ["/leave"],
   "/availability": ["/availability"],

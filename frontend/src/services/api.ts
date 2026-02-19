@@ -491,4 +491,30 @@ export const employeeDisciplinaryApi = {
     api.delete(`/api/v1/employees/${employeeId}/disciplinary/${caseId}`),
 }
 
+// Exception Workflow API
+export const exceptionsApi = {
+  getSummary: () => api.get('/api/v1/exceptions/summary'),
+  list: (params?: {
+    start_date?: string;
+    end_date?: string;
+    exception_type?: string;
+    status_filter?: string;
+    site_id?: number;
+    employee_id?: number;
+    skip?: number;
+    limit?: number;
+  }) => api.get('/api/v1/exceptions/', { params }),
+  create: (data: {
+    exception_type: string;
+    exception_date: string;
+    employee_id?: number;
+    shift_id?: number;
+    site_id?: number;
+    description?: string;
+  }) => api.post('/api/v1/exceptions/', data),
+  updateStatus: (id: number, data: { status: string; resolution_notes?: string }) =>
+    api.put(`/api/v1/exceptions/${id}/status`, data),
+  remove: (id: number) => api.delete(`/api/v1/exceptions/${id}`),
+}
+
 export default api
