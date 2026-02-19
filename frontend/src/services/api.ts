@@ -108,6 +108,8 @@ export const rosterApi = {
   getEmployeeHours: (params?: any) => api.get('/api/v1/roster/employee-hours', { params }),
   getAssignmentDashboard: (params?: { start_date?: string; end_date?: string; client_id?: number }) =>
     api.get('/api/v1/roster/assignment-dashboard', { params }),
+  getSparePool: (bufferPct?: number) =>
+    api.get('/api/v1/roster/spare-pool', { params: bufferPct !== undefined ? { buffer_pct: bufferPct } : undefined }),
 }
 
 export const availabilityApi = {

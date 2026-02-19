@@ -1182,3 +1182,82 @@ async def delete_roster(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error deleting roster: {str(e)}"
         )
+
+
+@router.get("/spare-pool")
+def get_spare_pool(
+    buffer_pct: float = 0.15,
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db),
+):
+    """
+    Calculate spare/relief guard pool metrics for the next 7 days.
+
+    Returns recommended spare pool size based on the organisation's active guard
+    count and their historical leave rate over the past 30 days, compared against
+    how many guards are currently unscheduled in the next 7-day window.
+
+    buffer_pct: minimum coverage buffer on top of the historical leave rate (default 15%).
+    """
+    import math
+    from sqlalchemy import func, distinct
+    from app.models.employee import Employee, EmployeeStatus
+    from app.models.shift_assignment import ShiftAssignment, AssignmentStatus
+    from app.models.leave import LeaveRequest
+
+    now = datetime.utcnow()
+    window_start = now.replace(hour=0, minute=0, second=0)
+    window_end = window_start + timedelta(days=7)
+    thirty_days_ago = now - timedelta(days=30)
+
+    # Total active guards in the org
+    active_guards = db.query(func.count(Employee.employee_id)).filter(
+        Employee.org_id == org_id,
+        Employee.status == EmployeeStatus.ACTIVE,
+    ).scalar() or 0
+
+    # Guards assigned to at least one non-cancelled shift in the next 7 days
+    guards_with_shifts = db.query(
+        func.count(distinct(ShiftAssignment.employee_id))
+    ).join(
+        Shift, ShiftAssignment.shift_id == Shift.shift_id
+    ).filter(
+        Shift.org_id == org_id,
+        Shift.start_time >= window_start,
+        Shift.start_time <= window_end,
+        ShiftAssignment.status != AssignmentStatus.CANCELLED,
+    ).scalar() or 0
+
+    # Historical leave rate: distinct employees on approved leave in last 30 days
+    on_leave_count = db.query(
+        func.count(distinct(LeaveRequest.employee_id))
+    ).filter(
+        LeaveRequest.org_id == org_id,
+        LeaveRequest.status == "approved",
+        LeaveRequest.start_date >= thirty_days_ago.date(),
+    ).scalar() or 0
+
+    leave_rate = (on_leave_count / active_guards) if active_guards > 0 else 0.0
+    effective_buffer = max(buffer_pct, leave_rate)
+    recommended = max(1, math.ceil(active_guards * effective_buffer)) if active_guards > 0 else 0
+
+    available = max(0, active_guards - guards_with_shifts)
+    shortage = recommended - available
+
+    if shortage > 2:
+        pool_status = "critical"
+    elif shortage > 0:
+        pool_status = "warning"
+    else:
+        pool_status = "ok"
+
+    return {
+        "active_guards": active_guards,
+        "guards_with_shifts": guards_with_shifts,
+        "available_guards": available,
+        "recommended_spare_pool": recommended,
+        "leave_rate_pct": round(leave_rate * 100, 1),
+        "buffer_pct": round(buffer_pct * 100, 1),
+        "shortage": shortage,
+        "status": pool_status,
+    }

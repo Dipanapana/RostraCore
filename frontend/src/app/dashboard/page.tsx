@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { api, incidentsApi, patrolsApi, shiftsApi } from "@/services/api";
+import { api, incidentsApi, patrolsApi, shiftsApi, rosterApi } from "@/services/api";
 import { getApiUrl } from "@/lib/config";
 import Link from "next/link";
 import {
@@ -69,6 +69,7 @@ export default function DashboardPage() {
   const [incidentStats, setIncidentStats] = useState({ open: 0, critical: 0 });
   const [activePatrols, setActivePatrols] = useState(0);
   const [understaffedShifts, setUnderstaffedShifts] = useState<any[]>([]);
+  const [sparePool, setSparePool] = useState<any>(null);
 
   const fetchData = async (isRefresh = false) => {
     if (isRefresh) {
@@ -77,13 +78,14 @@ export default function DashboardPage() {
       setLoading(true);
     }
     try {
-        const [metricsRes, shiftsRes, trendsRes, incidentsRes, patrolRunsRes, coverageGapsRes] = await Promise.all([
+        const [metricsRes, shiftsRes, trendsRes, incidentsRes, patrolRunsRes, coverageGapsRes, sparePoolRes] = await Promise.all([
           api.get(`${getApiUrl()}/api/v1/dashboard/metrics`),
           api.get(`${getApiUrl()}/api/v1/dashboard/upcoming-shifts?limit=5`),
           api.get(`${getApiUrl()}/api/v1/dashboard/cost-trends?days=7`),
           incidentsApi.list({ limit: 200 }).catch(() => ({ data: [] })),
           patrolsApi.listRuns({ run_status: 'in_progress', limit: 50 }).catch(() => ({ data: [] })),
           shiftsApi.getCoverageGaps().catch(() => ({ data: [] })),
+          rosterApi.getSparePool().catch(() => ({ data: null })),
         ]);
 
         const metricsData = metricsRes.data;
@@ -219,6 +221,7 @@ export default function DashboardPage() {
         setIncidentStats({ open: openInc, critical: criticalInc });
         setActivePatrols((patrolRunsRes.data ?? []).length);
         setUnderstaffedShifts(coverageGapsRes.data ?? []);
+        setSparePool(sparePoolRes.data);
 
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -407,10 +410,61 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Bottom Section: Upcoming Shifts & Alerts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* Bottom Section: Upcoming Shifts, Alerts & Spare Pool */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           <UpcomingShiftsCard shifts={upcomingShifts} delay={700} />
           <AlertsCard metrics={metrics} delay={800} />
+
+          {/* Spare Guard Pool Card */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 animate-slide-up" style={{ animationDelay: "900ms" }}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-slate-900 dark:text-white text-sm">Spare Guard Pool</h3>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                sparePool?.status === 'critical' ? 'bg-red-500/15 text-red-400' :
+                sparePool?.status === 'warning'  ? 'bg-amber-500/15 text-amber-400' :
+                                                   'bg-green-500/15 text-green-400'
+              }`}>
+                {sparePool?.status === 'critical' ? 'Critical' : sparePool?.status === 'warning' ? 'Low' : 'Healthy'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Available Now</p>
+                <p className={`text-2xl font-bold ${
+                  (sparePool?.shortage ?? 0) > 0 ? 'text-amber-400' : 'text-green-400'
+                }`}>{sparePool?.available_guards ?? '—'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Recommended</p>
+                <p className="text-2xl font-bold text-slate-700 dark:text-slate-300">
+                  {sparePool?.recommended_spare_pool ?? '—'}
+                </p>
+              </div>
+            </div>
+
+            {sparePool ? (
+              (sparePool.shortage > 0) ? (
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 text-xs text-amber-400">
+                  {sparePool.shortage} guard{sparePool.shortage !== 1 ? 's' : ''} short of recommended relief pool
+                </div>
+              ) : (
+                <div className="bg-green-500/10 border border-green-500/20 rounded-lg px-3 py-2 text-xs text-green-400">
+                  Spare pool meets coverage requirements
+                </div>
+              )
+            ) : (
+              <div className="bg-slate-500/10 border border-slate-500/20 rounded-lg px-3 py-2 text-xs text-slate-500">
+                No data available
+              </div>
+            )}
+
+            {sparePool && (
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-3">
+                {sparePool.leave_rate_pct}% historical leave rate · {sparePool.buffer_pct}% buffer · {sparePool.active_guards} active guards
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </DashboardLayout>
