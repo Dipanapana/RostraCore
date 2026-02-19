@@ -1,9 +1,11 @@
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Bell } from "lucide-react";
 import ThemeToggle from "@/components/ui/ThemeToggle";
+import { notificationsApi } from "@/services/api";
 
 // ---------------------------------------------------------------------------
 // Breadcrumb route labels
@@ -35,6 +37,8 @@ const ROUTE_LABELS: Record<string, string> = {
   "shift-patterns": "Shift Patterns",
   "company-profile": "Company Profile",
   "subscription-plans": "Subscription Plans",
+  notifications: "Notifications",
+  attendance: "Attendance",
 };
 
 function getBreadcrumbs(pathname: string): { label: string; href: string }[] {
@@ -63,6 +67,30 @@ function getBreadcrumbs(pathname: string): { label: string; href: string }[] {
 export default function TopHeader() {
   const pathname = usePathname();
   const breadcrumbs = getBreadcrumbs(pathname);
+
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const res = await notificationsApi.getAll({ unread_only: true, limit: 1 });
+      setUnreadCount(res.data.unread_count ?? 0);
+    } catch {
+      // Non-fatal — badge degrades gracefully
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 60_000);
+    return () => clearInterval(interval);
+  }, [fetchUnreadCount]);
+
+  // Reset badge when user visits the notifications page
+  useEffect(() => {
+    if (pathname === "/notifications") {
+      setUnreadCount(0);
+    }
+  }, [pathname]);
 
   return (
     <header className="sticky top-0 z-20 px-4 sm:px-6 pt-4 pb-2">
@@ -101,6 +129,20 @@ export default function TopHeader() {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+          {/* Notification bell */}
+          <Link
+            href="/notifications"
+            className="relative p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            title="Notifications"
+          >
+            <Bell className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <span className="absolute top-0.5 right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-0.5 text-[9px] font-bold text-white leading-none">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </Link>
+
           <ThemeToggle />
 
           {/* Date display */}
