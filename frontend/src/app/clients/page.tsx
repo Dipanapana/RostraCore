@@ -386,6 +386,12 @@ export default function ClientsPage() {
                         {client.billing_rate ? `R ${client.billing_rate}/hr` : "-"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <Link
+                          href={`/clients/${client.client_id}`}
+                          className="text-violet-600 hover:text-violet-900 mr-4"
+                        >
+                          View
+                        </Link>
                         <button
                           onClick={() => handleEdit(client)}
                           className="text-emerald-600 hover:text-emerald-900 mr-4"
