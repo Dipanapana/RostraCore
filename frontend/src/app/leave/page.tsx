@@ -67,6 +67,9 @@ const LEAVE_TYPE_LABELS: Record<string, string> = {
   study: 'Study Leave',
   unpaid: 'Unpaid',
   compassionate: 'Compassionate',
+  iod: 'IOD (Injury on Duty)',
+  training: 'Training',
+  suspension: 'Suspension',
 }
 
 const LEAVE_TYPE_ENTITLEMENTS: Record<string, string> = {
@@ -78,6 +81,9 @@ const LEAVE_TYPE_ENTITLEMENTS: Record<string, string> = {
   study: 'As agreed',
   unpaid: 'As agreed',
   compassionate: 'As agreed',
+  iod: 'As required (COIDA)',
+  training: 'As required',
+  suspension: 'As required',
 }
 
 const LEAVE_TYPE_COLORS: Record<string, string> = {
@@ -89,7 +95,12 @@ const LEAVE_TYPE_COLORS: Record<string, string> = {
   study: 'bg-teal-500',
   unpaid: 'bg-slate-400',
   compassionate: 'bg-amber-500',
+  iod: 'bg-orange-500',
+  training: 'bg-emerald-500',
+  suspension: 'bg-red-700',
 }
+
+const NON_PRODUCTIVE_TYPES = new Set(['iod', 'training', 'suspension'])
 
 // ---------------------------------------------------------------------------
 // Helper functions
@@ -228,6 +239,14 @@ export default function LeavePage() {
   // Tooltip for rejection reason
   const [tooltipId, setTooltipId] = useState<number | null>(null)
 
+  // Non-productive time summary
+  const [npSummary, setNpSummary] = useState<{
+    iod: Array<{ employee_id: number; employee_name: string; start_date: string; end_date: string }>;
+    training: Array<{ employee_id: number; employee_name: string; start_date: string; end_date: string }>;
+    suspension: Array<{ employee_id: number; employee_name: string; start_date: string; end_date: string }>;
+    total_non_productive: number;
+  } | null>(null)
+
   // -------------------------------------------------------------------------
   // Data fetching
   // -------------------------------------------------------------------------
@@ -239,12 +258,14 @@ export default function LeavePage() {
   const fetchData = async () => {
     try {
       setLoading(true)
-      const [requestsRes, employeesRes] = await Promise.all([
+      const [requestsRes, employeesRes, npRes] = await Promise.allSettled([
         api.get('/api/v1/leave/requests'),
         api.get('/api/v1/employees'),
+        api.get('/api/v1/leave/non-productive-summary'),
       ])
-      setLeaveRequests(requestsRes.data)
-      setEmployees(employeesRes.data)
+      if (requestsRes.status === 'fulfilled') setLeaveRequests(requestsRes.value.data)
+      if (employeesRes.status === 'fulfilled') setEmployees(employeesRes.value.data)
+      if (npRes.status === 'fulfilled') setNpSummary(npRes.value.data)
       setError(null)
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load leave data')
@@ -521,6 +542,42 @@ export default function LeavePage() {
           </div>
         </div>
       </div>
+
+      {/* Non-Productive Time Banner */}
+      {npSummary && npSummary.total_non_productive > 0 && (
+        <div className="bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800 rounded-xl p-4 mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0" />
+            <span className="text-sm font-semibold text-orange-800 dark:text-orange-300">
+              Non-Productive Time Today — {npSummary.total_non_productive} guard{npSummary.total_non_productive !== 1 ? 's' : ''} unavailable
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              { key: 'iod', label: 'IOD', color: 'text-orange-700 dark:text-orange-400', bg: 'bg-orange-100 dark:bg-orange-900/20' },
+              { key: 'training', label: 'Training', color: 'text-emerald-700 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+              { key: 'suspension', label: 'Suspension', color: 'text-red-700 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/20' },
+            ].map(({ key, label, color, bg }) => {
+              const list = npSummary[key as 'iod' | 'training' | 'suspension']
+              if (list.length === 0) return null
+              return (
+                <div key={key} className={`${bg} rounded-lg p-3`}>
+                  <p className={`text-xs font-semibold uppercase tracking-wide ${color} mb-2`}>
+                    {label} ({list.length})
+                  </p>
+                  <ul className="space-y-1">
+                    {list.map((e) => (
+                      <li key={e.employee_id} className="text-xs text-slate-700 dark:text-slate-300">
+                        {e.employee_name}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Filters Row */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">

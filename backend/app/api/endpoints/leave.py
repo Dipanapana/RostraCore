@@ -143,7 +143,11 @@ def get_or_create_balance(db: Session, employee_id: int, leave_type: str) -> Lea
             "parental": 10,
             "study": 0,
             "unpaid": 0,
-            "compassionate": 0
+            "compassionate": 0,
+            # Non-productive time exceptions — no fixed entitlement cap
+            "iod": 0,
+            "training": 0,
+            "suspension": 0,
         }
         entitled = defaults.get(leave_type.lower(), 0)
 
@@ -177,6 +181,57 @@ def get_or_create_balance(db: Session, employee_id: int, leave_type: str) -> Lea
 # =============================================================================
 # LEAVE REQUEST ENDPOINTS
 # =============================================================================
+
+# Non-productive time types — used for exception tracking (IOD, training, suspension)
+NON_PRODUCTIVE_TYPES = {"iod", "training", "suspension"}
+
+
+@router.get("/non-productive-summary")
+async def get_non_productive_summary(
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db),
+):
+    """
+    Return a summary of employees currently on non-productive time (IOD, training, suspension).
+
+    An employee is counted if they have an APPROVED request of that type whose
+    date range includes today.
+    """
+    today = date.today()
+    result = {}
+
+    for np_type in NON_PRODUCTIVE_TYPES:
+        rows = (
+            db.query(LeaveRequest, Employee)
+            .join(Employee, LeaveRequest.employee_id == Employee.employee_id)
+            .filter(
+                LeaveRequest.org_id == org_id,
+                LeaveRequest.leave_type == np_type,
+                LeaveRequest.status == "approved",
+                LeaveRequest.start_date <= today,
+                LeaveRequest.end_date >= today,
+            )
+            .all()
+        )
+        result[np_type] = [
+            {
+                "employee_id": emp.employee_id,
+                "employee_name": f"{emp.first_name} {emp.last_name}",
+                "start_date": req.start_date.isoformat(),
+                "end_date": req.end_date.isoformat(),
+                "reason": req.reason,
+            }
+            for req, emp in rows
+        ]
+
+    return {
+        "date": today.isoformat(),
+        "iod": result["iod"],
+        "training": result["training"],
+        "suspension": result["suspension"],
+        "total_non_productive": sum(len(v) for v in result.values()),
+    }
+
 
 @router.get("/requests", response_model=List[LeaveRequestResponse])
 async def list_leave_requests(
@@ -269,8 +324,9 @@ async def create_leave_request(
     leave_type_lower = request_data.leave_type.lower()
     balance = get_or_create_balance(db, request_data.employee_id, leave_type_lower)
 
-    # Validate sufficient balance (skip for unpaid leave)
-    if leave_type_lower != "unpaid" and total_days > balance.remaining:
+    # Validate sufficient balance (skip for types with no fixed entitlement)
+    _NO_BALANCE_CHECK = {"unpaid", "iod", "training", "suspension"}
+    if leave_type_lower not in _NO_BALANCE_CHECK and total_days > balance.remaining:
         raise HTTPException(
             status_code=400,
             detail=f"Insufficient {leave_type_lower.replace('_', ' ')} leave. Available: {balance.remaining} days, Requested: {total_days} days"
@@ -708,7 +764,8 @@ async def mobile_create_leave_request(
     leave_type_lower = request_data.leave_type.lower()
     balance = get_or_create_balance(db, employee.employee_id, leave_type_lower)
 
-    if leave_type_lower != "unpaid" and total_days > balance.remaining:
+    _NO_BALANCE_CHECK = {"unpaid", "iod", "training", "suspension"}
+    if leave_type_lower not in _NO_BALANCE_CHECK and total_days > balance.remaining:
         raise HTTPException(
             status_code=400,
             detail=(

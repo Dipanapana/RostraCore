@@ -20,6 +20,10 @@ class LeaveType(str, enum.Enum):
     UNPAID = "unpaid"           # No pay
     STUDY = "study"             # If employer policy allows
     COMPASSIONATE = "compassionate"  # Bereavement/family emergency
+    # Non-productive time exceptions
+    IOD = "iod"                 # Injury on Duty — fully paid, claimed from WCA/COIDA
+    TRAINING = "training"       # Paid training / induction time
+    SUSPENSION = "suspension"   # Suspension pending investigation (may be paid or unpaid)
 
 
 class LeaveStatus(str, enum.Enum):
