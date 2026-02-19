@@ -1452,3 +1452,137 @@ def get_cost_forecast(
         "budget_comparison": budget_comparison,
         "sites": sites_result,
     }
+
+
+@router.get("/posting-alerts")
+def get_posting_alerts(
+    start_date: datetime,
+    end_date: datetime,
+    site_id: Optional[int] = None,
+    client_id: Optional[int] = None,
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db),
+):
+    """
+    Return over/under-posting alerts for shifts within the given date range.
+
+    Severity levels:
+    - critical  : 0 guards assigned AND shift starts within 24 hours
+    - warning   : fewer guards than required (but ≥ 1 assigned), or shift is unassigned but not imminent
+    - over       : more guards assigned than required
+    - ok        : exactly the right number assigned
+    """
+    from app.models.shift_assignment import ShiftAssignment, AssignmentStatus
+
+    now = datetime.utcnow()
+    start = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+    end = end_date.replace(hour=23, minute=59, second=59, microsecond=0)
+
+    # Fetch shifts in range (non-cancelled)
+    shift_query = (
+        db.query(Shift)
+        .join(Site, Shift.site_id == Site.site_id)
+        .filter(
+            Shift.org_id == org_id,
+            Shift.start_time >= start,
+            Shift.start_time <= end,
+            Shift.status.notin_(["cancelled", "completed"]),
+        )
+    )
+    if site_id:
+        shift_query = shift_query.filter(Shift.site_id == site_id)
+    if client_id:
+        shift_query = shift_query.filter(Site.client_id == client_id)
+
+    shifts = shift_query.all()
+    if not shifts:
+        return {
+            "as_of": now.isoformat(),
+            "period_start": start.date().isoformat(),
+            "period_end": end.date().isoformat(),
+            "summary": {"critical": 0, "warning": 0, "over_posted": 0, "ok": 0, "total_shifts": 0},
+            "alerts": [],
+        }
+
+    shift_ids = [s.shift_id for s in shifts]
+
+    # Count active assignments per shift
+    active_assignments = (
+        db.query(
+            ShiftAssignment.shift_id,
+            ShiftAssignment.assignment_id,
+        )
+        .filter(
+            ShiftAssignment.shift_id.in_(shift_ids),
+            ShiftAssignment.status.notin_(["cancelled"]),
+        )
+        .all()
+    )
+    assigned_count: dict[int, int] = {}
+    for a in active_assignments:
+        assigned_count[a.shift_id] = assigned_count.get(a.shift_id, 0) + 1
+
+    # Index sites and clients
+    all_sites = {s.site_id: s for s in db.query(Site).filter(Site.org_id == org_id).all()}
+    all_clients: dict[int, Client] = {}
+    for s in all_sites.values():
+        if s.client_id and s.client_id not in all_clients:
+            c = db.query(Client).filter(Client.client_id == s.client_id).first()
+            if c:
+                all_clients[s.client_id] = c
+
+    alerts = []
+    summary = {"critical": 0, "warning": 0, "over_posted": 0, "ok": 0, "total_shifts": len(shifts)}
+
+    for shift in shifts:
+        required = shift.required_staff or 1
+        assigned = assigned_count.get(shift.shift_id, 0)
+        gap = assigned - required  # negative = under, positive = over
+
+        if gap == 0:
+            summary["ok"] += 1
+            continue
+
+        site = all_sites.get(shift.site_id)
+        client = all_clients.get(site.client_id) if site and site.client_id else None
+        hours_until = (shift.start_time - now).total_seconds() / 3600
+
+        if gap < 0:
+            # Under-posted
+            if assigned == 0 and hours_until <= 24:
+                severity = "critical"
+                summary["critical"] += 1
+            else:
+                severity = "warning"
+                summary["warning"] += 1
+        else:
+            # Over-posted
+            severity = "over_posted"
+            summary["over_posted"] += 1
+
+        alerts.append({
+            "shift_id": shift.shift_id,
+            "site_id": shift.site_id,
+            "site_name": site.site_name if site else f"Site {shift.site_id}",
+            "client_id": site.client_id if site else None,
+            "client_name": client.client_name if client else None,
+            "shift_start": shift.start_time.isoformat(),
+            "shift_end": shift.end_time.isoformat(),
+            "required_staff": required,
+            "assigned_staff": assigned,
+            "gap": gap,
+            "severity": severity,
+            "hours_until_start": round(hours_until, 1),
+        })
+
+    # Sort: critical first, then warning, then over_posted; within each by shift start time
+    severity_order = {"critical": 0, "warning": 1, "over_posted": 2}
+    alerts.sort(key=lambda a: (severity_order.get(a["severity"], 9), a["shift_start"]))
+
+    return {
+        "as_of": now.isoformat(),
+        "period_start": start.date().isoformat(),
+        "period_end": end.date().isoformat(),
+        "summary": summary,
+        "alerts": alerts,
+    }

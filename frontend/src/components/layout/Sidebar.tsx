@@ -152,6 +152,13 @@ const NAV_ENTRIES: NavEntry[] = [
         roles: MANAGEMENT_ROLES,
       },
       {
+        key: "posting-alerts",
+        label: "Posting Alerts",
+        href: "/roster/alerts",
+        icon: AlertTriangle,
+        roles: MANAGEMENT_ROLES,
+      },
+      {
         key: "time-leave",
         label: "Time & Leave",
         href: "/leave",
@@ -343,6 +350,7 @@ const ROUTE_GROUPS: Record<string, string[]> = {
   "/clients": ["/clients", "/sites"],
   "/sites": ["/sites"],
   "/roster": ["/roster", "/shifts", "/calendar", "/schedule"],
+  "/roster/alerts": ["/roster/alerts"],
   "/roster/forecast": ["/roster/forecast"],
   "/leave": ["/leave"],
   "/availability": ["/availability"],

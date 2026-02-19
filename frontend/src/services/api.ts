@@ -118,6 +118,12 @@ export const rosterApi = {
     client_id?: number;
     budget_limit?: number;
   }) => api.get('/api/v1/roster/cost-forecast', { params }),
+  getPostingAlerts: (params: {
+    start_date: string;
+    end_date: string;
+    site_id?: number;
+    client_id?: number;
+  }) => api.get('/api/v1/roster/posting-alerts', { params }),
 }
 
 export const availabilityApi = {
