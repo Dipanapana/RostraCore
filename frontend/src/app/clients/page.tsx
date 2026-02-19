@@ -18,6 +18,7 @@ interface Client {
   contract_start_date: string | null;
   contract_end_date: string | null;
   billing_rate: number | null;
+  target_margin_pct: number | null;
   status: string;
   notes: string | null;
   created_at: string;
@@ -40,6 +41,7 @@ export default function ClientsPage() {
     contract_start_date: "",
     contract_end_date: "",
     billing_rate: "",
+    target_margin_pct: "",
     status: "active",
     notes: "",
   });
@@ -145,6 +147,7 @@ export default function ClientsPage() {
           ...formData,
           org_id: 1, // TODO: Get from auth context
           billing_rate: formData.billing_rate ? Number(formData.billing_rate) : null,
+          target_margin_pct: formData.target_margin_pct ? Number(formData.target_margin_pct) : null,
         }),
       });
 
@@ -173,6 +176,7 @@ export default function ClientsPage() {
       contract_start_date: client.contract_start_date?.split('T')[0] || "",
       contract_end_date: client.contract_end_date?.split('T')[0] || "",
       billing_rate: client.billing_rate?.toString() || "",
+      target_margin_pct: client.target_margin_pct?.toString() || "",
       status: client.status,
       notes: client.notes || "",
     });
@@ -214,6 +218,7 @@ export default function ClientsPage() {
       contract_start_date: "",
       contract_end_date: "",
       billing_rate: "",
+      target_margin_pct: "",
       status: "active",
       notes: "",
     });
@@ -344,6 +349,9 @@ export default function ClientsPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Billing Rate
                   </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Target Margin
+                  </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
@@ -352,7 +360,7 @@ export default function ClientsPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredClients.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                       {clients.length === 0
                         ? 'No clients found. Click "Add Client" to create one.'
                         : 'No clients match the selected date range.'}
@@ -384,6 +392,15 @@ export default function ClientsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {client.billing_rate ? `R ${client.billing_rate}/hr` : "-"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {client.target_margin_pct != null ? (
+                          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
+                            {client.target_margin_pct}%
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <Link
@@ -496,6 +513,22 @@ export default function ClientsPage() {
                       step="0.01"
                       value={formData.billing_rate}
                       onChange={(e) => setFormData({ ...formData, billing_rate: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Target Margin % <span className="text-gray-400 font-normal">(wage-to-revenue)</span>
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="100"
+                      value={formData.target_margin_pct}
+                      onChange={(e) => setFormData({ ...formData, target_margin_pct: e.target.value })}
+                      placeholder="e.g. 30"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                     />
                   </div>

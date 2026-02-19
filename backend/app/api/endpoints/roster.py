@@ -1340,6 +1340,7 @@ def get_cost_forecast(
                 "client_id": site.client_id,
                 "client_name": client.client_name if client else None,
                 "billing_rate": billing_rate,
+                "target_margin_pct": float(client.target_margin_pct) if client and client.target_margin_pct else None,
                 "total_shifts": 0,
                 "filled_shifts": 0,
                 "unfilled_shifts": 0,
@@ -1385,7 +1386,8 @@ def get_cost_forecast(
         revenue = sd["projected_revenue"]
         profit = revenue - wage_cost
         margin = round((profit / revenue * 100), 1) if revenue > 0 else 0.0
-        margin_status = "green" if margin >= 30 else "amber" if margin >= 15 else "red"
+        target = sd.get("target_margin_pct") or 30.0
+        margin_status = "green" if margin >= target else "amber" if margin >= target * 0.8 else "red"
         fill_rate = round(sd["filled_shifts"] / sd["total_shifts"] * 100, 1) if sd["total_shifts"] > 0 else 0.0
 
         sites_result.append({
@@ -1407,6 +1409,7 @@ def get_cost_forecast(
             "projected_profit": round(profit, 2),
             "profit_margin_pct": margin,
             "margin_status": margin_status,
+            "target_margin_pct": sd.get("target_margin_pct"),
         })
 
         total_wage_cost += wage_cost

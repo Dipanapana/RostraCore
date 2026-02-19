@@ -25,6 +25,7 @@ class ClientBase(BaseModel):
     contract_start_date: Optional[date] = None
     contract_end_date: Optional[date] = None
     billing_rate: Optional[float] = None
+    target_margin_pct: Optional[float] = None
     status: str = "active"
     notes: Optional[str] = None
 
@@ -98,6 +99,7 @@ async def list_clients(
             "contract_start_date": client.contract_start_date,
             "contract_end_date": client.contract_end_date,
             "billing_rate": client.billing_rate,
+            "target_margin_pct": client.target_margin_pct,
             "status": client.status,
             "notes": client.notes,
             "created_at": client.created_at,
@@ -126,6 +128,7 @@ async def create_client(
         contract_start_date=client_data.contract_start_date,
         contract_end_date=client_data.contract_end_date,
         billing_rate=client_data.billing_rate,
+        target_margin_pct=client_data.target_margin_pct,
         status=client_data.status,
         notes=client_data.notes
     )

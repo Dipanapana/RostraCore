@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Date, Numeric, DateTime, ForeignKey, func
+from sqlalchemy import Column, Integer, String, Text, Date, Numeric, Float, DateTime, ForeignKey, func
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -21,6 +21,7 @@ class Client(Base):
     contract_start_date = Column(Date, nullable=True)
     contract_end_date = Column(Date, nullable=True)
     billing_rate = Column(Numeric(10, 2), nullable=True)  # Hourly rate charged to this client
+    target_margin_pct = Column(Float, nullable=True)  # Target wage-to-revenue margin % for this contract
     status = Column(String(50), nullable=False, default="active")  # active, inactive, suspended
     notes = Column(Text, nullable=True)
 

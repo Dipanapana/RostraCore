@@ -37,6 +37,7 @@ interface SiteForecast {
   projected_profit: number
   profit_margin_pct: number
   margin_status: 'green' | 'amber' | 'red'
+  target_margin_pct: number | null
 }
 
 interface ForecastSummary {
@@ -394,6 +395,11 @@ export default function CostForecastPage() {
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
                             {marginBadge(site.margin_status, site.profit_margin_pct)}
+                            {site.target_margin_pct != null && (
+                              <span className="block text-xs text-slate-400 mt-0.5">
+                                target: {site.target_margin_pct}%
+                              </span>
+                            )}
                           </td>
                         </tr>
                       ))}
