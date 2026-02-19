@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { notificationsApi } from '../services/api';
+import { useNotificationsStore } from '../context/notificationsStore';
 import { Notification } from '../types';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 
@@ -17,6 +18,14 @@ export default function NotificationsScreen() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [markingAll, setMarkingAll] = useState(false);
+
+  const { decrementUnread, resetUnread } = useNotificationsStore();
+
+  // Clear the tab badge when this screen is open
+  useEffect(() => {
+    resetUnread();
+  }, [resetUnread]);
 
   const loadNotifications = useCallback(async () => {
     try {
@@ -40,15 +49,38 @@ export default function NotificationsScreen() {
   };
 
   const markAsRead = async (id: number) => {
+    const isUnread = notifications.find((n) => n.id === id && !n.is_read);
+    if (!isUnread) return;
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)),
+    );
+    decrementUnread(1);
     try {
       await notificationsApi.markRead(id);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)),
-      );
     } catch {
-      // Silently fail
+      // Revert on error
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, is_read: false } : n)),
+      );
     }
   };
+
+  const markAllRead = async () => {
+    const unread = notifications.filter((n) => !n.is_read);
+    if (unread.length === 0) return;
+    setMarkingAll(true);
+    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    resetUnread();
+    try {
+      await notificationsApi.markAllRead();
+    } catch {
+      await loadNotifications(); // Revert by reloading
+    } finally {
+      setMarkingAll(false);
+    }
+  };
+
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   const renderItem = ({ item }: { item: Notification }) => (
     <TouchableOpacity
@@ -81,6 +113,18 @@ export default function NotificationsScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Notifications</Text>
+        {unreadCount > 0 && (
+          <TouchableOpacity
+            onPress={markAllRead}
+            disabled={markingAll}
+            style={styles.markAllBtn}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.markAllText}>
+              {markingAll ? 'Marking…' : 'Mark all read'}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <FlatList
@@ -121,11 +165,25 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: '#1e293b',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   headerTitle: {
     color: '#f8fafc',
     fontSize: 22,
     fontWeight: '700',
+  },
+  markAllBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#4c1d95',
+    borderRadius: 8,
+  },
+  markAllText: {
+    color: '#c4b5fd',
+    fontSize: 12,
+    fontWeight: '600',
   },
   listContent: {
     padding: 16,

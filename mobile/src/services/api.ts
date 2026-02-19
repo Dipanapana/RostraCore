@@ -153,9 +153,11 @@ export const leaveApi = {
 // ---------------------------------------------------------------------------
 
 export const notificationsApi = {
-  getAll: () => api.get('/api/v1/notifications/'),
+  getAll: (params?: { unread_only?: boolean; limit?: number }) =>
+    api.get('/api/v1/notifications/', { params }),
   markRead: (notificationId: number) =>
     api.patch(`/api/v1/notifications/${notificationId}/read`),
+  markAllRead: () => api.patch('/api/v1/notifications/read-all'),
   registerPushToken: (token: string, platform: string) =>
     api.post('/api/v1/notifications/push-token', { token, platform }),
 };

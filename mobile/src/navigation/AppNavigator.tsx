@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, Text, StyleSheet } from 'react-native';
+import { useNotificationsStore } from '../context/notificationsStore';
 import HomeScreen from '../screens/HomeScreen';
 import AdminDashboardScreen from '../screens/AdminDashboardScreen';
 import ScheduleScreen from '../screens/ScheduleScreen';
@@ -60,6 +61,14 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
 const Tab = createBottomTabNavigator();
 
 function TabNavigator() {
+  const { unreadCount, fetchUnreadCount } = useNotificationsStore();
+
+  useEffect(() => {
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 60_000);
+    return () => clearInterval(interval);
+  }, [fetchUnreadCount]);
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -76,7 +85,11 @@ function TabNavigator() {
       <Tab.Screen name="Home" component={HomeRouter} />
       <Tab.Screen name="Schedule" component={ScheduleScreen} />
       <Tab.Screen name="Patrol" component={PatrolScreen} />
-      <Tab.Screen name="Alerts" component={NotificationsScreen} />
+      <Tab.Screen
+        name="Alerts"
+        component={NotificationsScreen}
+        options={{ tabBarBadge: unreadCount > 0 ? unreadCount : undefined }}
+      />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
