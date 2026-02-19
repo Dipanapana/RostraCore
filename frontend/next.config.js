@@ -2,6 +2,13 @@
 const nextConfig = {
   reactStrictMode: true,
 
+  // Prevent Next.js from stripping trailing slashes on API proxy URLs.
+  // FastAPI expects trailing slashes on router-root endpoints (/incidents/).
+  // Without this, Next.js 308-redirects /api/v1/incidents/ → /api/v1/incidents
+  // then FastAPI 307-redirects back — leaking the backend hostname and
+  // dropping the Authorization header on the cross-origin redirect.
+  skipTrailingSlashRedirect: true,
+
   // Generate unique build ID for cache busting
   generateBuildId: async () => {
     return `build-v6-${Date.now()}`
@@ -49,9 +56,19 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
 
-  // REMOVED: Rewrites were causing issues - API route handler is the only proxy now
-  // The rewrite was taking precedence over the API route for unknown reasons
-  // async rewrites() { ... }
+  // Proxy API requests in development to avoid CORS (same-origin)
+  // In production, Vercel rewrites handle this server-to-server
+  async rewrites() {
+    if (process.env.NODE_ENV === 'development') {
+      return [
+        {
+          source: '/api/:path*',
+          destination: 'http://localhost:8000/api/:path*',
+        },
+      ]
+    }
+    return []
+  },
 }
 
 // Inject Sentry config via withSentryConfig if Sentry is enabled

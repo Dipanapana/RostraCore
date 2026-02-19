@@ -458,6 +458,7 @@ def list_runs(
     if tour_id:
         query = query.filter(PatrolRun.tour_id == tour_id)
     if run_status:
-        query = query.filter(PatrolRun.status == run_status)
+        from sqlalchemy import cast, String
+        query = query.filter(cast(PatrolRun.status, String) == run_status)
     runs = query.order_by(PatrolRun.started_at.desc()).offset(skip).limit(limit).all()
     return [_run_to_out(r) for r in runs]

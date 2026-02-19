@@ -15,20 +15,16 @@ if (typeof window !== 'undefined') {
 
 /**
  * Get the API URL base.
- * Returns empty string for production (use same-origin via Vercel rewrites)
- * Returns localhost URL for development
+ * ALWAYS returns empty string (same-origin).
+ * - Production: Vercel rewrites proxy /api/* to Railway
+ * - Development: Next.js rewrites proxy /api/* to localhost:8000
  *
  * IMPORTANT: Do NOT use process.env.NEXT_PUBLIC_API_URL here!
  * Vercel may have an old env var set that would override our empty string.
  */
 export function getApiUrl(): string {
-  // ONLY use localhost in development - check hostname directly
-  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return 'http://localhost:8001';
-  }
-
-  // ALWAYS return empty string in production
-  // This makes requests same-origin, Vercel rewrites handle the rest
+  // Always same-origin — Next.js rewrites (dev) and Vercel rewrites (prod)
+  // handle proxying to the backend
   return '';
 }
 

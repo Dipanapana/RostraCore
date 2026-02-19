@@ -83,14 +83,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log("[AUTH] 2. Login successful");
       console.log("[AUTH] Response:", response.data);
 
-      // Store token in localStorage and state
+      // Store token in localStorage, state, AND as a cookie for Next.js middleware
       if (response.data.access_token) {
         console.log('[AUTH] Storing token:', response.data.access_token.substring(0, 30) + '...');
         localStorage.setItem('access_token', response.data.access_token);
         setToken(response.data.access_token);
-        // Verify it was stored
-        const storedToken = localStorage.getItem('access_token');
-        console.log('[AUTH] Token verified in localStorage:', storedToken ? 'YES' : 'NO');
+        // Set cookie so Next.js middleware can check auth (middleware can't access localStorage)
+        document.cookie = `access_token=${response.data.access_token}; path=/; max-age=${30 * 60}; samesite=lax`;
       } else {
         console.error('[AUTH] No access_token in response!', response.data);
       }
@@ -128,6 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       // Clear token and user state
       localStorage.removeItem('access_token');
+      document.cookie = 'access_token=; path=/; max-age=0'; // Clear middleware cookie
       setToken(null);
       setUser(null);
       router.push("/login");

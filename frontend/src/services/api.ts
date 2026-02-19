@@ -2,10 +2,9 @@ import axios from 'axios'
 import { getApiUrl } from '@/lib/config'
 import { toast } from '@/context/ToastContext'
 
-// Create axios instance - uses Vercel rewrites in production (same-origin)
-// In dev, uses localhost:8001
+// Create axios instance - always same-origin via rewrites (Next.js dev / Vercel prod)
 export const api = axios.create({
-  baseURL: '', // Empty = same-origin requests, Vercel rewrites to Railway
+  baseURL: '', // Empty = same-origin requests, rewrites proxy to backend
   headers: {
     'Content-Type': 'application/json',
   },
@@ -30,24 +29,42 @@ api.interceptors.request.use(
   }
 )
 
-// Response interceptor - handle 401 (session expired) and redirect to login
+// ---------------------------------------------------------------------------
+// Response interceptor — handle 401 (session expired) and redirect to login
+//
+// Guards against the "login-logout loop":
+//   • Skip auth endpoints (login/register/me) — let callers handle errors
+//   • Only redirect if a token was present (user was actually logged in)
+//   • Debounce: ignore duplicate 401s once a redirect is already queued
+// ---------------------------------------------------------------------------
+let _redirectPending = false
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
-      // Clear auth state
-      localStorage.removeItem('access_token')
+    const url = error.config?.url || ''
 
-      // Show toast notification and redirect to login
-      if (typeof window !== 'undefined') {
-        // Don't redirect if already on login page
-        if (!window.location.pathname.includes('/login')) {
-          toast.warning('Session Expired', 'Your session has expired. Redirecting to login...')
-          // Small delay to show toast before redirect
-          setTimeout(() => {
-            window.location.href = '/login'
-          }, 1500)
-        }
+    // 1. Never intercept auth endpoints — let AuthContext handle its own errors
+    if (url.includes('/auth/')) {
+      return Promise.reject(error)
+    }
+
+    if (error.response?.status === 401 && !_redirectPending) {
+      // 2. Only act if we had a token (i.e. the user was logged in)
+      const hadToken = localStorage.getItem('access_token')
+      if (hadToken && typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+        _redirectPending = true
+
+        // Clear auth state
+        localStorage.removeItem('access_token')
+        document.cookie = 'access_token=; path=/; max-age=0'
+
+        toast.warning('Session Expired', 'Your session has expired. Redirecting to login...')
+        setTimeout(() => {
+          window.location.href = '/login'
+          // Reset flag after navigation (in case SPA doesn't fully reload)
+          _redirectPending = false
+        }, 1500)
       }
     }
     return Promise.reject(error)
@@ -429,7 +446,7 @@ export const patrolsApi = {
 
 export const incidentsApi = {
   list: (params?: { site_id?: number; severity?: string; status_filter?: string; skip?: number; limit?: number }) =>
-    api.get('/api/v1/incidents', { params }),
+    api.get('/api/v1/incidents/', { params }),
   get: (id: number) => api.get(`/api/v1/incidents/${id}`),
   updateStatus: (id: number, newStatus: string, resolutionNotes?: string) =>
     api.patch(`/api/v1/incidents/${id}/status`, null, {

@@ -37,11 +37,51 @@ app = FastAPI(
     description="AI-Powered Security Workforce Management System",
     version="1.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
-    # Note: redirect_slashes=True (default) works correctly because
-    # Procfile now has --proxy-headers which tells Uvicorn to trust
-    # X-Forwarded-Proto from Railway, generating correct HTTPS redirects
+    redoc_url="/redoc",
+    redirect_slashes=False,
 )
+
+
+# ---------------------------------------------------------------------------
+# Trailing-slash middleware — silently add trailing slash for API routes.
+#
+# When behind a reverse proxy (Next.js dev rewrites, Vercel), the proxy may
+# strip trailing slashes from URLs. FastAPI's built-in redirect_slashes would
+# reply with a 307 containing the *backend* hostname, causing the browser to
+# redirect cross-origin and drop the Authorization header.
+#
+# This middleware silently rewrites the path in-process (no redirect) so
+# router-root endpoints like @router.get("/") match correctly.
+# ---------------------------------------------------------------------------
+from starlette.types import ASGIApp, Receive, Scope, Send
+from starlette.routing import Match
+
+
+class TrailingSlashMiddleware:
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] == "http":
+            path = scope["path"]
+            # Only process paths that don't already end with / and don't look
+            # like a file (no dot in the last segment).
+            if (
+                not path.endswith("/")
+                and "." not in path.rsplit("/", 1)[-1]
+                and path.startswith("/api/")
+            ):
+                # Check if the path-with-slash would match a route
+                slash_path = path + "/"
+                for route in app.routes:
+                    match, _ = route.matches({"type": "http", "path": slash_path, "method": scope.get("method", "GET")})
+                    if match == Match.FULL:
+                        scope = dict(scope, path=slash_path)
+                        break
+        await self.app(scope, receive, send)
+
+
+app.add_middleware(TrailingSlashMiddleware)
 
 # CORS middleware
 app.add_middleware(

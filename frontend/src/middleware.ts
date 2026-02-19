@@ -62,22 +62,27 @@ export function middleware(request: NextRequest) {
 
   // ------------------------------------------------------------------
   // 5. Authentication check
-  //    The API sets an httpOnly cookie named `access_token` on login.
-  //    We cannot reach localStorage from middleware (edge runtime), so
-  //    the cookie is the sole source of truth here.
+  //    In production, the httpOnly cookie is set by the backend via
+  //    Vercel rewrites (same-origin). In development, Next.js rewrites
+  //    proxy API calls but don't forward Set-Cookie headers reliably.
+  //
+  //    The client-side AuthContext handles auth state via localStorage
+  //    and redirects unauthenticated users to /login. The middleware
+  //    acts as an additional guard when the cookie is available.
   // ------------------------------------------------------------------
   const token = request.cookies.get('access_token')?.value
 
   if (!token) {
-    // Preserve the originally-requested path so the login page can
-    // redirect back after a successful sign-in.
-    const loginUrl = new URL('/login', request.url)
+    // In development, skip redirect — let client-side AuthContext handle auth.
+    // In production, the httpOnly cookie is always set via same-origin Vercel rewrites.
+    if (process.env.NODE_ENV === 'development') {
+      return NextResponse.next()
+    }
 
-    // Only set a redirect param for non-root paths to keep the URL clean.
+    const loginUrl = new URL('/login', request.url)
     if (pathname !== '/') {
       loginUrl.searchParams.set('redirect', pathname)
     }
-
     return NextResponse.redirect(loginUrl)
   }
 

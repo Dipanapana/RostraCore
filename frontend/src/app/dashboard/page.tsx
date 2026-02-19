@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { api, incidentsApi, patrolsApi, shiftsApi, rosterApi, reportsApi } from "@/services/api";
-import { getApiUrl } from "@/lib/config";
 import Link from "next/link";
 import {
   Users,
@@ -80,9 +79,9 @@ export default function DashboardPage() {
     }
     try {
         const [metricsRes, shiftsRes, trendsRes, incidentsRes, patrolRunsRes, coverageGapsRes, sparePoolRes, profitabilityRes] = await Promise.all([
-          api.get(`${getApiUrl()}/api/v1/dashboard/metrics`),
-          api.get(`${getApiUrl()}/api/v1/dashboard/upcoming-shifts?limit=5`),
-          api.get(`${getApiUrl()}/api/v1/dashboard/cost-trends?days=7`),
+          api.get(`/api/v1/dashboard/metrics`).catch(() => ({ data: null })),
+          api.get(`/api/v1/dashboard/upcoming-shifts?limit=5`).catch(() => ({ data: [] })),
+          api.get(`/api/v1/dashboard/cost-trends?days=7`).catch(() => ({ data: { trend: [] } })),
           incidentsApi.list({ limit: 200 }).catch(() => ({ data: [] })),
           patrolsApi.listRuns({ run_status: 'in_progress', limit: 50 }).catch(() => ({ data: [] })),
           shiftsApi.getCoverageGaps().catch(() => ({ data: [] })),
@@ -90,10 +89,16 @@ export default function DashboardPage() {
           reportsApi.clientProfitability().catch(() => ({ data: { clients: [] } })),
         ]);
 
-        const metricsData = metricsRes.data;
+        const metricsData = metricsRes.data ?? {
+          users: { total: 0, active: 0 },
+          employees: { total: 0, active: 0, inactive: 0 },
+          shifts: { total: 0, upcoming: 0, assigned: 0, unassigned: 0, this_week: 0, fill_rate: 0 },
+          sites: { total: 0 },
+          certifications: { total: 0, expiring_soon: 0, expired: 0 },
+        };
         setMetrics(metricsData);
-        setUpcomingShifts(shiftsRes.data);
-        setCostTrends(trendsRes.data.trend || []);
+        setUpcomingShifts(shiftsRes.data ?? []);
+        setCostTrends(trendsRes.data?.trend || []);
 
         // Calculate real certification compliance data
         // Use actual certification counts from backend, not assumed from employees

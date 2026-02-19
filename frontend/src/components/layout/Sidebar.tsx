@@ -216,7 +216,7 @@ const NAV_ENTRIES: NavEntry[] = [
         roles: ADMIN_ROLES,
       },
       {
-        key: "compliance",
+        key: "workforce-compliance",
         label: "Compliance",
         href: "/employees/compliance",
         icon: ShieldAlert,
