@@ -377,6 +377,8 @@ export const reportsApi = {
     api.get('/api/v1/reports/outstanding-invoices/pdf', { responseType: 'blob' }),
   employeePayrollPdf: (params: { period_start: string; period_end: string }) =>
     api.get('/api/v1/reports/employee-payroll/pdf', { params, responseType: 'blob' }),
+  psiraCompliancePdf: () =>
+    api.get('/api/v1/reports/psira-compliance/pdf', { responseType: 'blob' }),
 }
 
 export const authApi = {

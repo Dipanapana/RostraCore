@@ -804,6 +804,14 @@ export default function ReportsPage() {
                     file: `employee-payroll-${periodStart}.pdf`,
                     color: "bg-indigo-500",
                   },
+                  {
+                    key: "psira",
+                    title: "PSIRA Compliance Report",
+                    desc: "Guard certifications, grades, and expiry status",
+                    fn: () => reportsApi.psiraCompliancePdf(),
+                    file: `psira-compliance-${new Date().toISOString().split("T")[0]}.pdf`,
+                    color: "bg-rose-500",
+                  },
                 ].map((report) => (
                   <button
                     key={report.key}
