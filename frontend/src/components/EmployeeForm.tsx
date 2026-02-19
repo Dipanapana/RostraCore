@@ -88,6 +88,8 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
     psira_number: '',
     emergency_contact_name: '',
     emergency_contact_phone: '',
+    hire_date: '',
+    termination_date: '',
   })
 
   const [clients, setClients] = useState<Client[]>([])
@@ -174,6 +176,8 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
         psira_number: employee.psira_number || '',
         emergency_contact_name: employee.emergency_contact_name || '',
         emergency_contact_phone: employee.emergency_contact_phone || '',
+        hire_date: employee.hire_date || '',
+        termination_date: employee.termination_date || '',
       })
     }
   }, [employee])
@@ -278,6 +282,8 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
         psira_number: formData.psira_number || undefined,
         emergency_contact_name: formData.emergency_contact_name || undefined,
         emergency_contact_phone: formData.emergency_contact_phone || undefined,
+        hire_date: formData.hire_date || undefined,
+        termination_date: formData.termination_date || undefined,
       }
 
       // Send the appropriate compensation field based on pay type
@@ -478,6 +484,26 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
             <option value="other">Other</option>
             <option value="prefer_not_to_say">Prefer not to say</option>
           </select>
+        </div>
+        <div>
+          <label className={LABEL_CLASS}>Hire Date</label>
+          <input
+            type="date"
+            name="hire_date"
+            value={formData.hire_date}
+            onChange={handleChange}
+            className={INPUT_CLASS}
+          />
+        </div>
+        <div>
+          <label className={LABEL_CLASS}>Termination Date</label>
+          <input
+            type="date"
+            name="termination_date"
+            value={formData.termination_date}
+            onChange={handleChange}
+            className={INPUT_CLASS}
+          />
         </div>
       </div>
     </div>

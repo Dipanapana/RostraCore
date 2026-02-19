@@ -519,6 +519,8 @@ export default function EmployeeDetailPage() {
             <InfoRow label="Tax Number" value={employee.tax_number} />
             <InfoRow label="Emergency Contact" value={employee.emergency_contact_name} />
             <InfoRow label="Emergency Phone" value={employee.emergency_contact_phone} />
+            {employee.hire_date && <InfoRow label="Hire Date" value={fmtDate(employee.hire_date)} />}
+            {employee.termination_date && <InfoRow label="Termination Date" value={fmtDate(employee.termination_date)} />}
             {!employee.address && !employee.gender && !employee.tax_number && (
               <p className="text-sm text-slate-400 py-2">No additional personal details recorded.</p>
             )}

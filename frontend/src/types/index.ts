@@ -45,6 +45,10 @@ export interface Employee {
   emergency_contact_name?: string
   emergency_contact_phone?: string
 
+  // Employment dates
+  hire_date?: string
+  termination_date?: string
+
   // Flags
   is_supervisor?: boolean
 }
