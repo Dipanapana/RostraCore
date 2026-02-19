@@ -39,6 +39,16 @@ function getShiftDayLabel(dateStr: string): string {
   return format(date, 'EEE, d MMM');
 }
 
+function getCheckInAction(shift: Shift): 'check-in' | 'check-out' | null {
+  if (!shift.assignment_id) return null;
+  if (shift.assignment_status === 'checked_in') return 'check-out';
+  if (
+    shift.assignment_status === 'pending' ||
+    shift.assignment_status === 'confirmed'
+  ) return 'check-in';
+  return null;
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -87,6 +97,18 @@ export default function HomeScreen() {
   };
 
   const firstName = user?.full_name?.split(' ')[0] || user?.username || 'Guard';
+
+  const handleShiftTap = (shift: Shift) => {
+    const action = getCheckInAction(shift);
+    if (!action) return;
+    navigation.navigate('CheckIn', {
+      assignmentId: shift.assignment_id,
+      siteName: shift.site_name,
+      siteLatitude: shift.site_latitude,
+      siteLongitude: shift.site_longitude,
+      action,
+    });
+  };
 
   if (loading) {
     return (
@@ -184,39 +206,55 @@ export default function HomeScreen() {
             </Text>
           </View>
         ) : (
-          upcomingShifts.slice(0, 5).map((shift) => (
-            <TouchableOpacity key={shift.shift_id} style={styles.shiftCard}>
-              <View style={styles.shiftHeader}>
-                <Text style={styles.shiftDay}>
-                  {getShiftDayLabel(shift.start_time)}
-                </Text>
-                <View
-                  style={[
-                    styles.statusBadge,
-                    shift.assignment_status === 'confirmed'
-                      ? styles.statusConfirmed
-                      : shift.assignment_status === 'checked_in'
-                      ? styles.statusActive
-                      : styles.statusPending,
-                  ]}
-                >
-                  <Text style={styles.statusText}>
-                    {shift.assignment_status === 'checked_in'
-                      ? 'On Duty'
-                      : shift.assignment_status ?? 'Pending'}
+          upcomingShifts.slice(0, 5).map((shift) => {
+            const action = getCheckInAction(shift);
+            const isActionable = action !== null;
+            return (
+              <TouchableOpacity
+                key={shift.shift_id}
+                style={[styles.shiftCard, isActionable && styles.shiftCardActionable]}
+                onPress={() => handleShiftTap(shift)}
+                activeOpacity={isActionable ? 0.75 : 1}
+              >
+                <View style={styles.shiftHeader}>
+                  <Text style={styles.shiftDay}>
+                    {getShiftDayLabel(shift.start_time)}
                   </Text>
+                  <View
+                    style={[
+                      styles.statusBadge,
+                      shift.assignment_status === 'confirmed'
+                        ? styles.statusConfirmed
+                        : shift.assignment_status === 'checked_in'
+                        ? styles.statusActive
+                        : styles.statusPending,
+                    ]}
+                  >
+                    <Text style={styles.statusText}>
+                      {shift.assignment_status === 'checked_in'
+                        ? 'On Duty'
+                        : shift.assignment_status ?? 'Pending'}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-              <Text style={styles.shiftSite}>{shift.site_name}</Text>
-              {shift.client_name && (
-                <Text style={styles.shiftClient}>{shift.client_name}</Text>
-              )}
-              <Text style={styles.shiftTime}>
-                {formatShiftTime(shift.start_time, shift.end_time)} •{' '}
-                {shift.duration_hours?.toFixed(1)}h
-              </Text>
-            </TouchableOpacity>
-          ))
+                <Text style={styles.shiftSite}>{shift.site_name}</Text>
+                {shift.client_name && (
+                  <Text style={styles.shiftClient}>{shift.client_name}</Text>
+                )}
+                <Text style={styles.shiftTime}>
+                  {formatShiftTime(shift.start_time, shift.end_time)} •{' '}
+                  {shift.duration_hours?.toFixed(1)}h
+                </Text>
+                {isActionable && (
+                  <View style={styles.checkInCta}>
+                    <Text style={styles.checkInCtaText}>
+                      {action === 'check-out' ? 'Tap to Check Out →' : 'Tap to Check In →'}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })
         )}
       </ScrollView>
     </SafeAreaView>
@@ -395,5 +433,21 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     fontSize: 13,
     marginTop: 6,
+  },
+  shiftCardActionable: {
+    borderColor: '#7c3aed',
+    borderWidth: 1.5,
+  },
+  checkInCta: {
+    marginTop: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#334155',
+  },
+  checkInCtaText: {
+    color: '#a78bfa',
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
   },
 });

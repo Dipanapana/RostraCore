@@ -9,15 +9,39 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { shiftsApi } from '../services/api';
 import { Shift } from '../types';
-import { format, startOfWeek, endOfWeek, addWeeks, parseISO, isSameDay } from 'date-fns';
+import { format, startOfWeek, endOfWeek, addWeeks, parseISO, isSameDay, isToday } from 'date-fns';
+
+function getCheckInAction(shift: Shift): 'check-in' | 'check-out' | null {
+  if (!shift.assignment_id) return null;
+  if (shift.assignment_status === 'checked_in') return 'check-out';
+  if (
+    shift.assignment_status === 'pending' ||
+    shift.assignment_status === 'confirmed'
+  ) return 'check-in';
+  return null;
+}
 
 export default function ScheduleScreen() {
+  const navigation = useNavigation<any>();
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [weekOffset, setWeekOffset] = useState(0);
+
+  const handleShiftTap = (shift: Shift) => {
+    const action = getCheckInAction(shift);
+    if (!action) return;
+    navigation.navigate('CheckIn', {
+      assignmentId: shift.assignment_id,
+      siteName: shift.site_name,
+      siteLatitude: shift.site_latitude,
+      siteLongitude: shift.site_longitude,
+      action,
+    });
+  };
 
   const weekStart = startOfWeek(addWeeks(new Date(), weekOffset), { weekStartsOn: 1 });
   const weekEnd = endOfWeek(addWeeks(new Date(), weekOffset), { weekStartsOn: 1 });
@@ -123,30 +147,50 @@ export default function ScheduleScreen() {
                     <Text style={styles.noShiftText}>No shifts</Text>
                   </View>
                 ) : (
-                  dayShifts.map((shift) => (
-                    <View key={shift.shift_id} style={styles.shiftCard}>
-                      <View style={styles.shiftTimeColumn}>
-                        <Text style={styles.shiftStartTime}>
-                          {format(parseISO(shift.start_time), 'HH:mm')}
-                        </Text>
-                        <View style={styles.timeLine} />
-                        <Text style={styles.shiftEndTime}>
-                          {format(parseISO(shift.end_time), 'HH:mm')}
-                        </Text>
-                      </View>
-                      <View style={styles.shiftDetails}>
-                        <Text style={styles.shiftSite}>{shift.site_name}</Text>
-                        {shift.client_name && (
-                          <Text style={styles.shiftClient}>
-                            {shift.client_name}
-                          </Text>
-                        )}
-                        <Text style={styles.shiftDuration}>
-                          {shift.duration_hours?.toFixed(1)}h shift
-                        </Text>
-                      </View>
-                    </View>
-                  ))
+                  dayShifts.map((shift) => {
+                    const action = isToday(date) ? getCheckInAction(shift) : null;
+                    return (
+                      <TouchableOpacity
+                        key={shift.shift_id}
+                        style={[styles.shiftCard, action && styles.shiftCardActionable]}
+                        onPress={() => handleShiftTap(shift)}
+                        activeOpacity={action ? 0.75 : 1}
+                      >
+                        <View style={styles.shiftRow}>
+                          <View style={styles.shiftTimeColumn}>
+                            <Text style={styles.shiftStartTime}>
+                              {format(parseISO(shift.start_time), 'HH:mm')}
+                            </Text>
+                            <View style={styles.timeLine} />
+                            <Text style={styles.shiftEndTime}>
+                              {format(parseISO(shift.end_time), 'HH:mm')}
+                            </Text>
+                          </View>
+                          <View style={styles.shiftDetails}>
+                            <Text style={styles.shiftSite}>{shift.site_name}</Text>
+                            {shift.client_name && (
+                              <Text style={styles.shiftClient}>
+                                {shift.client_name}
+                              </Text>
+                            )}
+                            <Text style={styles.shiftDuration}>
+                              {shift.duration_hours?.toFixed(1)}h shift
+                            </Text>
+                          </View>
+                          {action && (
+                            <View style={[
+                              styles.actionBadge,
+                              action === 'check-out' ? styles.actionBadgeOut : styles.actionBadgeIn,
+                            ]}>
+                              <Text style={styles.actionBadgeText}>
+                                {action === 'check-out' ? 'OUT' : 'IN'}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })
                 )}
               </View>
             );
@@ -256,9 +300,36 @@ const styles = StyleSheet.create({
     padding: 14,
     borderWidth: 1,
     borderColor: '#334155',
+    marginBottom: 8,
+  },
+  shiftCardActionable: {
+    borderColor: '#7c3aed',
+    borderWidth: 1.5,
+  },
+  shiftRow: {
     flexDirection: 'row',
     gap: 14,
-    marginBottom: 8,
+    alignItems: 'center',
+  },
+  actionBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 44,
+  },
+  actionBadgeIn: {
+    backgroundColor: '#14532d',
+  },
+  actionBadgeOut: {
+    backgroundColor: '#450a0a',
+  },
+  actionBadgeText: {
+    color: '#f1f5f9',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   shiftTimeColumn: {
     alignItems: 'center',
