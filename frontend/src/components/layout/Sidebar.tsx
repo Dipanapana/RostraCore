@@ -30,6 +30,7 @@ import {
   Gauge,
   Wrench,
   AlertTriangle,
+  Route,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -189,6 +190,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Sites",
         href: "/sites",
         icon: MapPin,
+        roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "patrols",
+        label: "Patrols",
+        href: "/patrols",
+        icon: Route,
         roles: MANAGEMENT_ROLES,
       },
       {

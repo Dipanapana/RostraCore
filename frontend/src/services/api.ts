@@ -381,6 +381,15 @@ export const reportsApi = {
     api.get('/api/v1/reports/psira-compliance/pdf', { responseType: 'blob' }),
 }
 
+export const patrolsApi = {
+  listTours: (params?: { site_id?: number }) =>
+    api.get('/api/v1/patrols/tours', { params }),
+  getTour: (tourId: number) =>
+    api.get(`/api/v1/patrols/tours/${tourId}`),
+  listRuns: (params?: { tour_id?: number; run_status?: string; limit?: number }) =>
+    api.get('/api/v1/patrols/runs', { params }),
+}
+
 export const incidentsApi = {
   list: (params?: { site_id?: number; severity?: string; status_filter?: string; skip?: number; limit?: number }) =>
     api.get('/api/v1/incidents', { params }),
