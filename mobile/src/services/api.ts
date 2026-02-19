@@ -179,3 +179,12 @@ export const patrolApi = {
 
   getMyRuns: () => api.get('/api/v1/patrols/runs/mine'),
 };
+
+// ---------------------------------------------------------------------------
+// Payroll / Payslip API (guard-facing)
+// ---------------------------------------------------------------------------
+
+export const payrollApi = {
+  getMyPayslip: (params?: { year?: number; month?: number }) =>
+    api.get('/api/v1/payroll/my-payslip', { params }),
+};

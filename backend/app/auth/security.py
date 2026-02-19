@@ -1,6 +1,6 @@
 """Security utilities for authentication and authorization."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 import secrets
 from jose import JWTError, jwt
@@ -109,9 +109,10 @@ def authenticate_user(db: Session, username: str, password: str) -> Optional[Use
 
     # Check if account is locked
     if user.account_locked_until:
-        if datetime.utcnow() < user.account_locked_until:
+        now_utc = datetime.now(tz=user.account_locked_until.tzinfo)
+        if now_utc < user.account_locked_until:
             # Account is still locked
-            time_remaining = (user.account_locked_until - datetime.utcnow()).total_seconds() / 60
+            time_remaining = (user.account_locked_until - now_utc).total_seconds() / 60
             raise HTTPException(
                 status_code=status.HTTP_423_LOCKED,
                 detail=f"Account locked due to too many failed login attempts. Try again in {int(time_remaining)} minutes."
@@ -127,11 +128,11 @@ def authenticate_user(db: Session, username: str, password: str) -> Optional[Use
     if not verify_password(password, user.hashed_password):
         # Failed login attempt
         user.failed_login_attempts += 1
-        user.last_failed_login = datetime.utcnow()
+        user.last_failed_login = datetime.now(tz=timezone.utc)
 
         # Check if should lock account
         if user.failed_login_attempts >= settings.MAX_LOGIN_ATTEMPTS:
-            user.account_locked_until = datetime.utcnow() + timedelta(
+            user.account_locked_until = datetime.now(tz=timezone.utc) + timedelta(
                 minutes=settings.ACCOUNT_LOCKOUT_DURATION_MINUTES
             )
             db.commit()

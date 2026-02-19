@@ -164,6 +164,14 @@ export default function HomeScreen() {
             <Text style={styles.actionEmoji}>⚠️</Text>
             <Text style={styles.actionLabel}>Incident</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => navigation.navigate('Payslip')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.actionEmoji}>💰</Text>
+            <Text style={styles.actionLabel}>Payslip</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Upcoming Shifts */}

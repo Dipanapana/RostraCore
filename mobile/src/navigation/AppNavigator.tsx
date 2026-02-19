@@ -10,6 +10,7 @@ import CheckInScreen from '../screens/CheckInScreen';
 import IncidentReportScreen from '../screens/IncidentReportScreen';
 import PatrolScreen from '../screens/PatrolScreen';
 import LeaveScreen from '../screens/LeaveScreen';
+import PayslipScreen from '../screens/PayslipScreen';
 
 // ---------------------------------------------------------------------------
 // Tab icon components (emoji-based — replace with @expo/vector-icons later)
@@ -56,6 +57,11 @@ function HomeStackNavigator() {
       <HomeStack.Screen
         name="Leave"
         component={LeaveScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <HomeStack.Screen
+        name="Payslip"
+        component={PayslipScreen}
         options={{ presentation: 'modal' }}
       />
     </HomeStack.Navigator>

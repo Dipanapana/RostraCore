@@ -19,7 +19,7 @@ from app.models.shift import Shift
 from app.models.shift_assignment import ShiftAssignment
 from app.models.employee import Employee
 from app.models.user import User
-from app.auth.security import get_current_org_id, require_finance_access
+from app.auth.security import get_current_org_id, require_finance_access, get_current_user
 from app.services.payroll_generator_service import PayrollGeneratorService, PayrollPeriod
 
 router = APIRouter()
@@ -53,6 +53,81 @@ class ComprehensivePayrollRequest(BaseModel):
     def effective_end_date(self) -> date:
         """Get end date from either field name."""
         return self.end_date or self.period_end
+
+
+@router.get("/my-payslip")
+async def get_my_payslip(
+    year: Optional[int] = None,
+    month: Optional[int] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Guard-accessible endpoint: returns the authenticated employee's own payslip
+    records. Looks up the employee by matching User.email to Employee.email.
+    Falls back to current month when year/month are omitted.
+    """
+    today = date.today()
+    target_year = year or today.year
+    target_month = month or today.month
+
+    # Resolve user → employee via email match
+    employee = db.query(Employee).filter(
+        Employee.email == current_user.email,
+        Employee.org_id == current_user.org_id
+    ).first()
+
+    if not employee:
+        raise HTTPException(
+            status_code=404,
+            detail="No employee record linked to your account"
+        )
+
+    payrolls = db.query(PayrollSummary).filter(
+        PayrollSummary.employee_id == employee.employee_id,
+        extract("year", PayrollSummary.period_start) == target_year,
+        extract("month", PayrollSummary.period_start) == target_month
+    ).order_by(PayrollSummary.period_start.desc()).all()
+
+    regular_hours = sum((p.total_hours - p.overtime_hours) for p in payrolls)
+    overtime_hours = sum(p.overtime_hours for p in payrolls)
+    gross_pay = sum(p.gross_pay for p in payrolls)
+    deductions = sum(p.expenses_total for p in payrolls)
+    net_pay = sum(p.net_pay for p in payrolls)
+
+    return {
+        "period": {
+            "year": target_year,
+            "month": target_month,
+        },
+        "employee": {
+            "employee_id": employee.employee_id,
+            "name": f"{employee.first_name} {employee.last_name}",
+            "psira_number": employee.psira_number,
+            "bank_name": employee.bank_name,
+            "account_masked": f"****{employee.account_number[-4:]}" if employee.account_number else None,
+        },
+        "earnings": {
+            "regular_hours": round(regular_hours, 2),
+            "overtime_hours": round(overtime_hours, 2),
+            "total_hours": round(regular_hours + overtime_hours, 2),
+            "gross_pay": round(gross_pay, 2),
+            "deductions": round(deductions, 2),
+            "net_pay": round(net_pay, 2),
+        },
+        "records": [
+            {
+                "payroll_id": p.payroll_id,
+                "period_start": p.period_start.isoformat(),
+                "period_end": p.period_end.isoformat(),
+                "total_hours": p.total_hours,
+                "overtime_hours": p.overtime_hours,
+                "gross_pay": p.gross_pay,
+                "net_pay": p.net_pay,
+            }
+            for p in payrolls
+        ]
+    }
 
 
 @router.get("/")
