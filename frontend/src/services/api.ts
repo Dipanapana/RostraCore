@@ -427,4 +427,14 @@ export const notificationsApi = {
   markAllRead: () => api.patch('/api/v1/notifications/read-all'),
 }
 
+// Guard Restrictions API (Personnel Blacklisting)
+export const guardRestrictionsApi = {
+  list: (params?: { employee_id?: number; client_id?: number; site_id?: number }) =>
+    api.get('/api/v1/guard-restrictions/', { params }),
+  create: (data: { employee_id: number; client_id?: number; site_id?: number; reason?: string }) =>
+    api.post('/api/v1/guard-restrictions/', data),
+  remove: (restrictionId: number) =>
+    api.delete(`/api/v1/guard-restrictions/${restrictionId}`),
+}
+
 export default api

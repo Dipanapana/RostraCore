@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { employeesApi, certificationsApi, api } from "@/services/api";
+import { employeesApi, certificationsApi, api, clientsApi, guardRestrictionsApi } from "@/services/api";
 import { Employee } from "@/types";
 import {
   ArrowLeft,
@@ -22,12 +22,32 @@ import {
   Loader2,
   Building2,
   Pencil,
+  Ban,
+  Trash2,
+  Plus,
 } from "lucide-react";
 import { format, parseISO, isPast, addDays } from "date-fns";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
+
+interface GuardRestriction {
+  restriction_id: number;
+  employee_id: number;
+  employee_name: string;
+  client_id: number | null;
+  client_name: string | null;
+  site_id: number | null;
+  site_name: string | null;
+  reason: string | null;
+  created_at: string;
+}
+
+interface ClientOption {
+  client_id: number;
+  client_name: string;
+}
 
 interface Certification {
   certification_id: number;
@@ -132,21 +152,28 @@ export default function EmployeeDetailPage() {
   const [certifications, setCertifications] = useState<Certification[]>([]);
   const [leaveBalances, setLeaveBalances] = useState<LeaveBalance[]>([]);
   const [recentShifts, setRecentShifts] = useState<EmployeeShift[]>([]);
+  const [restrictions, setRestrictions] = useState<GuardRestriction[]>([]);
+  const [clientOptions, setClientOptions] = useState<ClientOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+
+  // Restriction form state
+  const [restrictClientId, setRestrictClientId] = useState<string>('');
+  const [restrictReason, setRestrictReason] = useState<string>('');
+  const [restrictAdding, setRestrictAdding] = useState(false);
 
   useEffect(() => {
     if (!employeeId) return;
 
     async function load() {
       try {
-        const [empRes, certRes, leaveRes, shiftsRes] = await Promise.allSettled([
+        const [empRes, certRes, leaveRes, shiftsRes, restrictRes, clientsRes] = await Promise.allSettled([
           employeesApi.getById(employeeId),
           certificationsApi.getAll({ employee_id: employeeId }),
           api.get(`/api/v1/leave/balances/${employeeId}`),
-          api.get(`/api/v1/employees/${employeeId}/shifts`, {
-            params: { limit: 10 },
-          }),
+          api.get(`/api/v1/employees/${employeeId}/shifts`, { params: { limit: 10 } }),
+          guardRestrictionsApi.list({ employee_id: employeeId }),
+          clientsApi.getAll(),
         ]);
 
         if (empRes.status === "fulfilled") {
@@ -169,13 +196,21 @@ export default function EmployeeDetailPage() {
         if (shiftsRes.status === "fulfilled") {
           const data = shiftsRes.value.data;
           const shifts = data?.assignments ?? data?.shifts ?? data ?? [];
-          // Sort most recent first
           setRecentShifts(
             [...shifts].sort(
               (a: any, b: any) =>
                 new Date(b.start_time ?? 0).getTime() - new Date(a.start_time ?? 0).getTime()
             ).slice(0, 10)
           );
+        }
+
+        if (restrictRes.status === "fulfilled") {
+          setRestrictions(restrictRes.value.data ?? []);
+        }
+
+        if (clientsRes.status === "fulfilled") {
+          const data = clientsRes.value.data;
+          setClientOptions(Array.isArray(data) ? data : data?.clients ?? []);
         }
       } catch {
         setNotFound(true);
@@ -211,6 +246,36 @@ export default function EmployeeDetailPage() {
       </DashboardLayout>
     );
   }
+
+  const handleAddRestriction = async () => {
+    if (!restrictClientId) return;
+    setRestrictAdding(true);
+    try {
+      const res = await guardRestrictionsApi.create({
+        employee_id: employeeId,
+        client_id: Number(restrictClientId),
+        reason: restrictReason.trim() || undefined,
+      });
+      setRestrictions((prev) => [res.data, ...prev]);
+      setRestrictClientId('');
+      setRestrictReason('');
+    } catch {
+      // Silently fail — duplicate restrictions return 409
+    } finally {
+      setRestrictAdding(false);
+    }
+  };
+
+  const handleRemoveRestriction = async (restrictionId: number) => {
+    setRestrictions((prev) => prev.filter((r) => r.restriction_id !== restrictionId));
+    try {
+      await guardRestrictionsApi.remove(restrictionId);
+    } catch {
+      // Reload on error
+      const res = await guardRestrictionsApi.list({ employee_id: employeeId });
+      setRestrictions(res.data ?? []);
+    }
+  };
 
   const fullName = `${employee.first_name} ${employee.last_name}`;
   const initials = (employee.first_name[0] + (employee.last_name[0] ?? "")).toUpperCase();
@@ -420,6 +485,70 @@ export default function EmployeeDetailPage() {
             </div>
           </Section>
         )}
+
+        {/* Site & Client Restrictions */}
+        <Section title="Client Restrictions" icon={Ban}>
+          {/* Add restriction form */}
+          <div className="flex flex-col sm:flex-row gap-2 mb-4 pb-4 border-b border-slate-100 dark:border-slate-700">
+            <select
+              value={restrictClientId}
+              onChange={(e) => setRestrictClientId(e.target.value)}
+              className="flex-1 text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-red-400"
+            >
+              <option value="">Select client to restrict…</option>
+              {clientOptions.map((c) => (
+                <option key={c.client_id} value={c.client_id}>{c.client_name}</option>
+              ))}
+            </select>
+            <input
+              type="text"
+              placeholder="Reason (optional)"
+              value={restrictReason}
+              onChange={(e) => setRestrictReason(e.target.value)}
+              className="flex-1 text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-red-400"
+            />
+            <button
+              onClick={handleAddRestriction}
+              disabled={!restrictClientId || restrictAdding}
+              className="flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              {restrictAdding ? 'Adding…' : 'Add'}
+            </button>
+          </div>
+
+          {restrictions.length === 0 ? (
+            <p className="text-sm text-slate-400 py-2">No client restrictions — guard can be assigned anywhere.</p>
+          ) : (
+            <div className="space-y-2">
+              {restrictions.map((r) => (
+                <div
+                  key={r.restriction_id}
+                  className="flex items-center justify-between px-3 py-2.5 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 rounded-lg"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Ban className="w-4 h-4 text-red-500 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
+                        {r.client_name ?? r.site_name ?? `ID ${r.client_id ?? r.site_id}`}
+                      </p>
+                      {r.reason && (
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{r.reason}</p>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleRemoveRestriction(r.restriction_id)}
+                    className="ml-3 p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0"
+                    title="Remove restriction"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </Section>
 
         {/* Recent Shifts */}
         <Section title="Recent Shifts" icon={Clock}>

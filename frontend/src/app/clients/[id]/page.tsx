@@ -18,9 +18,11 @@ import {
   Clock,
   AlertTriangle,
   XCircle,
+  Ban,
+  Trash2,
 } from 'lucide-react'
 import DashboardLayout from '@/components/layout/DashboardLayout'
-import { clientsApi, invoiceApi, api } from '@/services/api'
+import { clientsApi, invoiceApi, api, guardRestrictionsApi } from '@/services/api'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -60,6 +62,18 @@ interface InvoiceRow {
   due_date?: string | null
   issue_date?: string
   created_at?: string
+}
+
+interface GuardRestriction {
+  restriction_id: number
+  employee_id: number
+  employee_name: string
+  client_id: number | null
+  client_name: string | null
+  site_id: number | null
+  site_name: string | null
+  reason: string | null
+  created_at: string
 }
 
 // ---------------------------------------------------------------------------
@@ -139,6 +153,7 @@ export default function ClientDetailPage() {
   const [client, setClient] = useState<ClientDetail | null>(null)
   const [sites, setSites] = useState<SiteRow[]>([])
   const [invoices, setInvoices] = useState<InvoiceRow[]>([])
+  const [restrictions, setRestrictions] = useState<GuardRestriction[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -147,10 +162,11 @@ export default function ClientDetailPage() {
 
     async function load() {
       setLoading(true)
-      const [clientRes, sitesRes, invoicesRes] = await Promise.allSettled([
+      const [clientRes, sitesRes, invoicesRes, restrictRes] = await Promise.allSettled([
         clientsApi.getById(clientId),
         api.get(`/api/v1/clients/${clientId}/sites`),
         invoiceApi.list({ client_id: clientId, limit: 8 }),
+        guardRestrictionsApi.list({ client_id: clientId }),
       ])
 
       if (clientRes.status === 'fulfilled') {
@@ -169,6 +185,10 @@ export default function ClientDetailPage() {
       if (invoicesRes.status === 'fulfilled') {
         const data = invoicesRes.value.data
         setInvoices(Array.isArray(data) ? data : data?.invoices ?? [])
+      }
+
+      if (restrictRes.status === 'fulfilled') {
+        setRestrictions(restrictRes.value.data ?? [])
       }
 
       setLoading(false)
@@ -198,6 +218,16 @@ export default function ClientDetailPage() {
         </div>
       </DashboardLayout>
     )
+  }
+
+  const handleRemoveRestriction = async (restrictionId: number) => {
+    setRestrictions((prev) => prev.filter((r) => r.restriction_id !== restrictionId))
+    try {
+      await guardRestrictionsApi.remove(restrictionId)
+    } catch {
+      const res = await guardRestrictionsApi.list({ client_id: clientId })
+      setRestrictions(res.data ?? [])
+    }
   }
 
   const contractBadge = contractStatus(client)
@@ -396,6 +426,44 @@ export default function ClientDetailPage() {
           </Section>
 
         </div>
+
+        {/* Restricted Guards */}
+        {restrictions.length > 0 && (
+          <Section title={`Restricted Guards (${restrictions.length})`} icon={Ban}>
+            <div className="space-y-2">
+              {restrictions.map((r) => (
+                <div
+                  key={r.restriction_id}
+                  className="flex items-center justify-between px-4 py-3 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 rounded-xl"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
+                      <Ban className="w-4 h-4 text-red-500" />
+                    </div>
+                    <div className="min-w-0">
+                      <Link
+                        href={`/employees/${r.employee_id}`}
+                        className="text-sm font-semibold text-slate-800 dark:text-slate-200 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                      >
+                        {r.employee_name}
+                      </Link>
+                      {r.reason && (
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">{r.reason}</p>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleRemoveRestriction(r.restriction_id)}
+                    className="ml-3 p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0"
+                    title="Lift restriction"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
 
         {/* Notes */}
         {client.notes && (
