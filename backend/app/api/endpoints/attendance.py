@@ -1,14 +1,14 @@
 """Mobile attendance endpoints — GPS-verified check-in / check-out via ShiftAssignment."""
 
 import math
-from datetime import datetime
-from typing import Optional
+from datetime import datetime, date
+from typing import Optional, List
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.auth.security import get_current_org_id, get_current_user
+from app.auth.security import get_current_org_id, get_current_user, require_roles
 from app.database import get_db
 from app.models.employee import Employee
 from app.models.shift import Shift
@@ -17,6 +17,8 @@ from app.models.site import Site
 from app.models.user import User
 
 router = APIRouter()
+
+MANAGEMENT_ROLES = {"admin", "company_admin", "scheduler", "superadmin"}
 
 # Maximum allowed distance from site GPS centre for clock-in/out (metres)
 MAX_DISTANCE_METERS = 500
@@ -188,4 +190,140 @@ def check_out(
         "check_out_time": assignment.check_out_time.isoformat(),
         "duration_minutes": duration_minutes,
         "site_name": site.site_name if site else None,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Admin: list attendance records
+# ---------------------------------------------------------------------------
+
+@router.get("/")
+def list_attendance(
+    start_date: Optional[str] = Query(None, description="YYYY-MM-DD inclusive start"),
+    end_date: Optional[str] = Query(None, description="YYYY-MM-DD inclusive end"),
+    employee_id: Optional[int] = Query(None),
+    site_id: Optional[int] = Query(None),
+    attendance_status: Optional[str] = Query(None, description="present|in_progress|no_show|scheduled"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(200, ge=1, le=500),
+    current_user: User = Depends(get_current_user),
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db),
+):
+    """
+    Admin endpoint — list all shift assignments with attendance detail for the org.
+    Returns enriched records including check-in/out times, actual hours, and
+    a derived status: present | in_progress | no_show | scheduled.
+    """
+    if current_user.role not in MANAGEMENT_ROLES:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Management access required.")
+
+    # Build base query joining ShiftAssignment → Shift → Site, Employee
+    query = (
+        db.query(ShiftAssignment, Shift, Site, Employee)
+        .join(Shift, ShiftAssignment.shift_id == Shift.shift_id)
+        .join(Employee, ShiftAssignment.employee_id == Employee.employee_id)
+        .outerjoin(Site, Shift.site_id == Site.site_id)
+        .filter(Employee.org_id == org_id)
+        .filter(ShiftAssignment.status != AssignmentStatus.CANCELLED.value)
+    )
+
+    # Date filters applied to shift start_time
+    if start_date:
+        try:
+            sd = datetime.strptime(start_date, "%Y-%m-%d")
+            query = query.filter(Shift.start_time >= sd)
+        except ValueError:
+            pass
+    if end_date:
+        try:
+            ed = datetime.strptime(end_date, "%Y-%m-%d")
+            # Include the full end day
+            from datetime import timedelta
+            ed = ed.replace(hour=23, minute=59, second=59)
+            query = query.filter(Shift.start_time <= ed)
+        except ValueError:
+            pass
+
+    if employee_id:
+        query = query.filter(ShiftAssignment.employee_id == employee_id)
+    if site_id:
+        query = query.filter(Shift.site_id == site_id)
+
+    # Order by shift start desc
+    query = query.order_by(Shift.start_time.desc())
+
+    rows = query.offset(skip).limit(limit).all()
+
+    now = datetime.utcnow()
+    records = []
+    for assignment, shift, site, employee in rows:
+        # Derive attendance status
+        if assignment.checked_in and assignment.checked_out:
+            astat = "present"
+        elif assignment.checked_in and not assignment.checked_out:
+            astat = "in_progress"
+        elif not assignment.checked_in and shift.end_time and shift.end_time < now:
+            astat = "no_show"
+        else:
+            astat = "scheduled"
+
+        # Filter by requested status
+        if attendance_status and astat != attendance_status:
+            continue
+
+        # Late check-in: more than 15 minutes after shift start
+        is_late = False
+        if assignment.check_in_time and shift.start_time:
+            delta_minutes = (assignment.check_in_time - shift.start_time).total_seconds() / 60
+            is_late = delta_minutes > 15
+
+        # Actual hours worked
+        actual_hours: Optional[float] = None
+        if assignment.check_in_time and assignment.check_out_time:
+            actual_hours = round(
+                (assignment.check_out_time - assignment.check_in_time).total_seconds() / 3600, 2
+            )
+
+        scheduled_hours = shift.duration_hours if hasattr(shift, 'duration_hours') else None
+        if scheduled_hours is None and shift.start_time and shift.end_time:
+            scheduled_hours = round(
+                (shift.end_time - shift.start_time).total_seconds() / 3600, 2
+            )
+
+        records.append({
+            "assignment_id": assignment.assignment_id,
+            "employee_id": employee.employee_id,
+            "employee_name": f"{employee.first_name} {employee.last_name}",
+            "site_id": site.site_id if site else None,
+            "site_name": site.site_name if site else "—",
+            "shift_id": shift.shift_id,
+            "shift_start": shift.start_time.isoformat() if shift.start_time else None,
+            "shift_end": shift.end_time.isoformat() if shift.end_time else None,
+            "scheduled_hours": scheduled_hours,
+            "checked_in": assignment.checked_in,
+            "check_in_time": assignment.check_in_time.isoformat() if assignment.check_in_time else None,
+            "checked_out": assignment.checked_out,
+            "check_out_time": assignment.check_out_time.isoformat() if assignment.check_out_time else None,
+            "actual_hours": actual_hours,
+            "attendance_status": astat,
+            "is_late": is_late,
+        })
+
+    # Summary counts (before status filter for full picture)
+    total = len(records)
+    present_count = sum(1 for r in records if r["attendance_status"] == "present")
+    in_progress_count = sum(1 for r in records if r["attendance_status"] == "in_progress")
+    no_show_count = sum(1 for r in records if r["attendance_status"] == "no_show")
+    late_count = sum(1 for r in records if r["is_late"])
+
+    return {
+        "records": records,
+        "summary": {
+            "total": total,
+            "present": present_count,
+            "in_progress": in_progress_count,
+            "no_show": no_show_count,
+            "late": late_count,
+        },
     }

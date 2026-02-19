@@ -408,4 +408,16 @@ export const authApi = {
     }),
 }
 
+export const attendanceApi = {
+  getRecords: (params?: {
+    start_date?: string
+    end_date?: string
+    employee_id?: number
+    site_id?: number
+    attendance_status?: string
+    skip?: number
+    limit?: number
+  }) => api.get('/api/v1/attendance/', { params }),
+}
+
 export default api

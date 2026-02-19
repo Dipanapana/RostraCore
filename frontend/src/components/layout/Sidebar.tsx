@@ -157,6 +157,13 @@ const NAV_ENTRIES: NavEntry[] = [
         ],
       },
       {
+        key: "attendance",
+        label: "Attendance",
+        href: "/attendance",
+        icon: Gauge,
+        roles: MANAGEMENT_ROLES,
+      },
+      {
         key: "availability",
         label: "Availability",
         href: "/availability",
