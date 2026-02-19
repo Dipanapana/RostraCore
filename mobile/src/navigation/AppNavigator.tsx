@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, Text, StyleSheet } from 'react-native';
 import HomeScreen from '../screens/HomeScreen';
+import AdminDashboardScreen from '../screens/AdminDashboardScreen';
 import ScheduleScreen from '../screens/ScheduleScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
@@ -11,6 +12,21 @@ import IncidentReportScreen from '../screens/IncidentReportScreen';
 import PatrolScreen from '../screens/PatrolScreen';
 import LeaveScreen from '../screens/LeaveScreen';
 import PayslipScreen from '../screens/PayslipScreen';
+import { useAuthStore } from '../context/authStore';
+
+// ---------------------------------------------------------------------------
+// Role-based home screen — management sees org dashboard, guards see guard home
+// ---------------------------------------------------------------------------
+
+const MANAGEMENT_ROLES = ['admin', 'company_admin', 'scheduler', 'finance', 'superadmin'];
+
+function HomeRouter() {
+  const { user } = useAuthStore();
+  if (user && MANAGEMENT_ROLES.includes(user.role)) {
+    return <AdminDashboardScreen />;
+  }
+  return <HomeScreen />;
+}
 
 // ---------------------------------------------------------------------------
 // Tab icon components (emoji-based — replace with @expo/vector-icons later)
@@ -35,7 +51,7 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
 }
 
 // ---------------------------------------------------------------------------
-// Home Stack (Home + Check-in + Incident + Leave)
+// Home Stack (role-based home + Check-in + Incident + Leave modals)
 // ---------------------------------------------------------------------------
 
 const HomeStack = createNativeStackNavigator();
@@ -43,7 +59,7 @@ const HomeStack = createNativeStackNavigator();
 function HomeStackNavigator() {
   return (
     <HomeStack.Navigator screenOptions={{ headerShown: false }}>
-      <HomeStack.Screen name="HomeMain" component={HomeScreen} />
+      <HomeStack.Screen name="HomeMain" component={HomeRouter} />
       <HomeStack.Screen
         name="CheckIn"
         component={CheckInScreen}
