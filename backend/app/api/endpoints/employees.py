@@ -750,3 +750,219 @@ async def remove_pattern_assignment(
         "availability_cleared": cleared_count if clear_availability else "not requested"
     }
 
+
+# =============================================================================
+# PERFORMANCE EVALUATIONS
+# =============================================================================
+
+class EvaluationCreate(BaseModel):
+    evaluation_date: date
+    overall_score: int  # 1–5
+    punctuality_score: Optional[int] = None
+    conduct_score: Optional[int] = None
+    performance_score: Optional[int] = None
+    appearance_score: Optional[int] = None
+    communication_score: Optional[int] = None
+    notes: Optional[str] = None
+
+
+@router.get("/{employee_id}/evaluations")
+async def list_evaluations(
+    employee_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """List all performance evaluations for an employee."""
+    from app.models.performance import EmployeeEvaluation
+
+    org_id = _get_org_id_or_403(current_user)
+    employee = db.query(Employee).filter(
+        Employee.employee_id == employee_id, Employee.org_id == org_id
+    ).first()
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+
+    evals = (
+        db.query(EmployeeEvaluation)
+        .filter(
+            EmployeeEvaluation.employee_id == employee_id,
+            EmployeeEvaluation.org_id == org_id,
+        )
+        .order_by(EmployeeEvaluation.evaluation_date.desc())
+        .all()
+    )
+    return [e.to_dict() for e in evals]
+
+
+@router.post("/{employee_id}/evaluations", status_code=201)
+async def create_evaluation(
+    employee_id: int,
+    payload: EvaluationCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Create a new performance evaluation for an employee."""
+    from app.models.performance import EmployeeEvaluation
+
+    org_id = _get_org_id_or_403(current_user)
+    employee = db.query(Employee).filter(
+        Employee.employee_id == employee_id, Employee.org_id == org_id
+    ).first()
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+
+    if not (1 <= payload.overall_score <= 5):
+        raise HTTPException(status_code=400, detail="overall_score must be between 1 and 5")
+
+    ev = EmployeeEvaluation(
+        org_id=org_id,
+        employee_id=employee_id,
+        evaluation_date=payload.evaluation_date,
+        evaluator_id=current_user.user_id,
+        evaluator_name=f"{getattr(current_user, 'first_name', '')} {getattr(current_user, 'last_name', '')}".strip() or current_user.email,
+        overall_score=payload.overall_score,
+        punctuality_score=payload.punctuality_score,
+        conduct_score=payload.conduct_score,
+        performance_score=payload.performance_score,
+        appearance_score=payload.appearance_score,
+        communication_score=payload.communication_score,
+        notes=payload.notes,
+    )
+    db.add(ev)
+    db.commit()
+    db.refresh(ev)
+    return ev.to_dict()
+
+
+@router.delete("/{employee_id}/evaluations/{evaluation_id}", status_code=204)
+async def delete_evaluation(
+    employee_id: int,
+    evaluation_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Delete a performance evaluation."""
+    from app.models.performance import EmployeeEvaluation
+
+    org_id = _get_org_id_or_403(current_user)
+    ev = db.query(EmployeeEvaluation).filter(
+        EmployeeEvaluation.evaluation_id == evaluation_id,
+        EmployeeEvaluation.employee_id == employee_id,
+        EmployeeEvaluation.org_id == org_id,
+    ).first()
+    if not ev:
+        raise HTTPException(status_code=404, detail="Evaluation not found")
+    db.delete(ev)
+    db.commit()
+    return None
+
+
+# =============================================================================
+# DISCIPLINARY CASES
+# =============================================================================
+
+VALID_CASE_TYPES = {
+    "verbal_warning", "written_warning", "final_warning", "suspension", "dismissal"
+}
+
+
+class DisciplinaryCaseCreate(BaseModel):
+    incident_date: date
+    case_type: str  # verbal_warning | written_warning | final_warning | suspension | dismissal
+    reason: str
+    outcome: Optional[str] = None
+
+
+@router.get("/{employee_id}/disciplinary")
+async def list_disciplinary(
+    employee_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """List all disciplinary cases for an employee."""
+    from app.models.performance import DisciplinaryCase
+
+    org_id = _get_org_id_or_403(current_user)
+    employee = db.query(Employee).filter(
+        Employee.employee_id == employee_id, Employee.org_id == org_id
+    ).first()
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+
+    cases = (
+        db.query(DisciplinaryCase)
+        .filter(
+            DisciplinaryCase.employee_id == employee_id,
+            DisciplinaryCase.org_id == org_id,
+        )
+        .order_by(DisciplinaryCase.incident_date.desc())
+        .all()
+    )
+    return [c.to_dict() for c in cases]
+
+
+@router.post("/{employee_id}/disciplinary", status_code=201)
+async def create_disciplinary(
+    employee_id: int,
+    payload: DisciplinaryCaseCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Create a new disciplinary case for an employee."""
+    from app.models.performance import DisciplinaryCase
+
+    org_id = _get_org_id_or_403(current_user)
+    employee = db.query(Employee).filter(
+        Employee.employee_id == employee_id, Employee.org_id == org_id
+    ).first()
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+
+    if payload.case_type not in VALID_CASE_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"case_type must be one of: {', '.join(sorted(VALID_CASE_TYPES))}"
+        )
+
+    issuer_name = (
+        f"{getattr(current_user, 'first_name', '')} {getattr(current_user, 'last_name', '')}".strip()
+        or current_user.email
+    )
+
+    dc = DisciplinaryCase(
+        org_id=org_id,
+        employee_id=employee_id,
+        incident_date=payload.incident_date,
+        case_type=payload.case_type,
+        reason=payload.reason,
+        outcome=payload.outcome,
+        issued_by_id=current_user.user_id,
+        issued_by_name=issuer_name,
+    )
+    db.add(dc)
+    db.commit()
+    db.refresh(dc)
+    return dc.to_dict()
+
+
+@router.delete("/{employee_id}/disciplinary/{case_id}", status_code=204)
+async def delete_disciplinary(
+    employee_id: int,
+    case_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Delete a disciplinary case."""
+    from app.models.performance import DisciplinaryCase
+
+    org_id = _get_org_id_or_403(current_user)
+    dc = db.query(DisciplinaryCase).filter(
+        DisciplinaryCase.case_id == case_id,
+        DisciplinaryCase.employee_id == employee_id,
+        DisciplinaryCase.org_id == org_id,
+    ).first()
+    if not dc:
+        raise HTTPException(status_code=404, detail="Disciplinary case not found")
+    db.delete(dc)
+    db.commit()
+    return None

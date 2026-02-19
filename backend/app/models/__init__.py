@@ -22,6 +22,7 @@ from app.models.superadmin_invitation import SuperadminInvitation
 from app.models.shift_pattern_template import ShiftPatternTemplate, PatternType as ShiftPatternType
 from app.models.leave import LeaveRequest, LeaveBalance, LeaveType, LeaveStatus
 from app.models.refresh_token import RefreshToken
+from app.models.performance import EmployeeEvaluation, DisciplinaryCase
 
 __all__ = [
     "User",
@@ -55,5 +56,7 @@ __all__ = [
     "LeaveBalance",
     "LeaveType",
     "LeaveStatus",
-    "RefreshToken"
+    "RefreshToken",
+    "EmployeeEvaluation",
+    "DisciplinaryCase",
 ]

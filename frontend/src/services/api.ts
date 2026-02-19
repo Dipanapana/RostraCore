@@ -447,4 +447,34 @@ export const guardRestrictionsApi = {
     api.delete(`/api/v1/guard-restrictions/${restrictionId}`),
 }
 
+export const employeeEvaluationsApi = {
+  list: (employeeId: number) =>
+    api.get(`/api/v1/employees/${employeeId}/evaluations`),
+  create: (employeeId: number, data: {
+    evaluation_date: string;
+    overall_score: number;
+    punctuality_score?: number | null;
+    conduct_score?: number | null;
+    performance_score?: number | null;
+    appearance_score?: number | null;
+    communication_score?: number | null;
+    notes?: string;
+  }) => api.post(`/api/v1/employees/${employeeId}/evaluations`, data),
+  remove: (employeeId: number, evaluationId: number) =>
+    api.delete(`/api/v1/employees/${employeeId}/evaluations/${evaluationId}`),
+}
+
+export const employeeDisciplinaryApi = {
+  list: (employeeId: number) =>
+    api.get(`/api/v1/employees/${employeeId}/disciplinary`),
+  create: (employeeId: number, data: {
+    incident_date: string;
+    case_type: string;
+    reason: string;
+    outcome?: string;
+  }) => api.post(`/api/v1/employees/${employeeId}/disciplinary`, data),
+  remove: (employeeId: number, caseId: number) =>
+    api.delete(`/api/v1/employees/${employeeId}/disciplinary/${caseId}`),
+}
+
 export default api
