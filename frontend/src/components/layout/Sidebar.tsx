@@ -39,6 +39,7 @@ import {
   Activity,
   TrendingDown,
   ShieldAlert,
+  CalendarDays,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -170,6 +171,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Exception Log",
         href: "/roster/exceptions",
         icon: AlertCircle,
+        roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "coverage",
+        label: "Coverage Calendar",
+        href: "/roster/coverage",
+        icon: CalendarDays,
         roles: MANAGEMENT_ROLES,
       },
       {
@@ -431,6 +439,7 @@ const ROUTE_GROUPS: Record<string, string[]> = {
   "/roster/spare-pool": ["/roster/spare-pool"],
   "/roster/compliance": ["/roster/compliance"],
   "/roster/forecast": ["/roster/forecast"],
+  "/roster/coverage": ["/roster/coverage"],
   "/leave": ["/leave"],
   "/availability": ["/availability"],
   "/payroll": ["/payroll", "/billing/subscription"],

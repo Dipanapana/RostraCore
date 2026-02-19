@@ -1457,6 +1457,146 @@ def get_cost_forecast(
     }
 
 
+@router.get("/site-coverage-calendar")
+def get_site_coverage_calendar(
+    start_date: datetime,
+    end_date: datetime,
+    site_id: Optional[int] = None,
+    client_id: Optional[int] = None,
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db),
+):
+    """
+    Site coverage calendar: per-site, per-day staffing summary for calendar grid view.
+
+    Returns a matrix of sites x dates with required_staff, assigned_staff, gap, and fill_rate.
+    """
+    from datetime import date as date_type, timedelta as td
+    from collections import defaultdict
+    from app.models.shift_assignment import ShiftAssignment, AssignmentStatus
+
+    start = start_date if isinstance(start_date, date_type) else start_date.date()
+    end = end_date if isinstance(end_date, date_type) else end_date.date()
+
+    # Limit to 62 days
+    if (end - start).days > 62:
+        end = start + td(days=62)
+
+    # Query shifts in range for org
+    shift_q = (
+        db.query(Shift)
+        .join(Site, Shift.site_id == Site.site_id)
+        .filter(
+            Site.org_id == org_id,
+            Shift.start_time >= datetime.combine(start, datetime.min.time()),
+            Shift.start_time <= datetime.combine(end, datetime.max.time()),
+            Shift.status != "cancelled",
+        )
+    )
+
+    if site_id:
+        shift_q = shift_q.filter(Shift.site_id == site_id)
+    if client_id:
+        shift_q = shift_q.filter(Site.client_id == client_id)
+
+    shifts = shift_q.all()
+
+    if not shifts:
+        return {"period_start": start.isoformat(), "period_end": end.isoformat(), "sites": [], "dates": []}
+
+    # Get assignment counts per shift
+    shift_ids = [s.shift_id for s in shifts]
+    assignment_counts: dict[int, int] = defaultdict(int)
+    if shift_ids:
+        from sqlalchemy import func
+        counts = (
+            db.query(ShiftAssignment.shift_id, func.count(ShiftAssignment.assignment_id))
+            .filter(
+                ShiftAssignment.shift_id.in_(shift_ids),
+                ShiftAssignment.status != AssignmentStatus.CANCELLED,
+            )
+            .group_by(ShiftAssignment.shift_id)
+            .all()
+        )
+        for sid, cnt in counts:
+            assignment_counts[sid] = cnt
+
+    # Get site info
+    site_ids_in_result = list(set(s.site_id for s in shifts))
+    sites_data = db.query(Site).filter(Site.site_id.in_(site_ids_in_result)).all()
+    site_map = {s.site_id: s for s in sites_data}
+
+    # Client names
+    client_ids_list = list(set(s.client_id for s in sites_data if s.client_id))
+    client_map: dict[int, str] = {}
+    if client_ids_list:
+        clients = db.query(Client).filter(Client.client_id.in_(client_ids_list)).all()
+        client_map = {c.client_id: c.client_name for c in clients}
+
+    # Build per-site per-date aggregation
+    # Structure: {site_id: {date_str: {required, assigned}}}
+    site_date_agg: dict[int, dict[str, dict]] = defaultdict(lambda: defaultdict(lambda: {"required": 0, "assigned": 0, "shifts": 0}))
+
+    for s in shifts:
+        d = s.start_time.date().isoformat()
+        sid = s.site_id
+        req = s.required_staff or 1
+        asgn = assignment_counts.get(s.shift_id, 0)
+        site_date_agg[sid][d]["required"] += req
+        site_date_agg[sid][d]["assigned"] += asgn
+        site_date_agg[sid][d]["shifts"] += 1
+
+    # Build date list
+    dates = []
+    current = start
+    while current <= end:
+        dates.append(current.isoformat())
+        current += td(days=1)
+
+    # Build sites result
+    sites_result = []
+    for sid in sorted(site_ids_in_result):
+        site = site_map.get(sid)
+        if not site:
+            continue
+        day_data = []
+        total_req = 0
+        total_asgn = 0
+        for d in dates:
+            agg = site_date_agg[sid].get(d, {"required": 0, "assigned": 0, "shifts": 0})
+            gap = agg["required"] - agg["assigned"]
+            fill = round(agg["assigned"] / agg["required"] * 100, 1) if agg["required"] > 0 else None
+            status = "no_shifts" if agg["shifts"] == 0 else "full" if gap <= 0 else "partial" if agg["assigned"] > 0 else "empty"
+            total_req += agg["required"]
+            total_asgn += agg["assigned"]
+            day_data.append({
+                "date": d,
+                "required": agg["required"],
+                "assigned": agg["assigned"],
+                "gap": gap,
+                "fill_rate": fill,
+                "shifts": agg["shifts"],
+                "status": status,
+            })
+
+        sites_result.append({
+            "site_id": sid,
+            "site_name": site.site_name or site.client_name,
+            "client_name": client_map.get(site.client_id, "") if site.client_id else "",
+            "total_required": total_req,
+            "total_assigned": total_asgn,
+            "overall_fill_rate": round(total_asgn / total_req * 100, 1) if total_req > 0 else None,
+            "days": day_data,
+        })
+
+    return {
+        "period_start": start.isoformat(),
+        "period_end": end.isoformat(),
+        "dates": dates,
+        "sites": sites_result,
+    }
+
+
 @router.get("/posting-alerts")
 def get_posting_alerts(
     start_date: datetime,

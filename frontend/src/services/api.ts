@@ -130,6 +130,12 @@ export const rosterApi = {
   }) => api.get('/api/v1/roster/posting-alerts', { params }),
   getOvertimeCompliance: (params?: { week_start?: string }) =>
     api.get('/api/v1/roster/overtime-compliance', { params }),
+  getSiteCoverageCalendar: (params: {
+    start_date: string;
+    end_date: string;
+    site_id?: number;
+    client_id?: number;
+  }) => api.get('/api/v1/roster/site-coverage-calendar', { params }),
 }
 
 export const availabilityApi = {
