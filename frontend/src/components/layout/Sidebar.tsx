@@ -35,6 +35,7 @@ import {
   Calculator,
   ShieldCheck,
   Scale,
+  ShieldBan,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -181,6 +182,13 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/roster/compliance",
         icon: Scale,
         roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "guard-restrictions",
+        label: "Guard Restrictions",
+        href: "/employees/restrictions",
+        icon: ShieldBan,
+        roles: ADMIN_ROLES,
       },
       {
         key: "time-leave",
@@ -380,6 +388,7 @@ const ROUTE_GROUPS: Record<string, string[]> = {
   "/certifications": ["/certifications"],
   "/clients": ["/clients", "/sites"],
   "/clients/renewals": ["/clients/renewals"],
+  "/employees/restrictions": ["/employees/restrictions"],
   "/sites": ["/sites"],
   "/roster": ["/roster", "/shifts", "/calendar", "/schedule"],
   "/roster/alerts": ["/roster/alerts"],
