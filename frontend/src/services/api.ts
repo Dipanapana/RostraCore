@@ -147,6 +147,7 @@ export const certificationsApi = {
   create: (data: any) => api.post('/api/v1/certifications/', data),
   update: (id: number, data: any) => api.put(`/api/v1/certifications/${id}`, data),
   delete: (id: number) => api.delete(`/api/v1/certifications/${id}`),
+  getComplianceDashboard: () => api.get('/api/v1/certifications/compliance-dashboard'),
 }
 
 export const rosterPreferencesApi = {

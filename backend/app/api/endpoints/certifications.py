@@ -61,6 +61,127 @@ async def get_certifications(
     return certifications
 
 
+@router.get("/compliance-dashboard")
+async def get_compliance_dashboard(
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db)
+):
+    """Workforce compliance dashboard: PSIRA, firearm, and certification status across all employees."""
+    today = date.today()
+
+    active_employees = db.query(Employee).filter(
+        Employee.org_id == org_id,
+        Employee.status == "active",
+    ).all()
+
+    total_active = len(active_employees)
+    if total_active == 0:
+        return {
+            "total_active_employees": 0,
+            "psira_summary": {},
+            "firearm_summary": {},
+            "certification_summary": {},
+            "expiry_alerts": [],
+            "employees_without_certs": [],
+        }
+
+    emp_ids = [e.employee_id for e in active_employees]
+    all_certs = db.query(Certification).filter(
+        Certification.employee_id.in_(emp_ids)
+    ).all()
+
+    # --- PSIRA summary ---
+    psira_certs = [c for c in all_certs if c.psira_grade is not None]
+    psira_valid = [c for c in psira_certs if c.expiry_date >= today and c.verified]
+    psira_expired = [c for c in psira_certs if c.expiry_date < today]
+    psira_expiring_30 = [c for c in psira_certs if 0 <= (c.expiry_date - today).days <= 30]
+    psira_expiring_90 = [c for c in psira_certs if 0 <= (c.expiry_date - today).days <= 90]
+
+    grade_counts: dict[str, int] = {}
+    for c in psira_valid:
+        g = c.psira_grade.value if c.psira_grade else "Unknown"
+        grade_counts[g] = grade_counts.get(g, 0) + 1
+
+    # --- Firearm competency summary ---
+    firearm_certs = [c for c in all_certs if c.firearm_competency is not None]
+    firearm_valid = [c for c in firearm_certs if c.expiry_date >= today and c.verified]
+    firearm_expired = [c for c in firearm_certs if c.expiry_date < today]
+    firearm_expiring_30 = [c for c in firearm_certs if 0 <= (c.expiry_date - today).days <= 30]
+
+    armed_employees = [e for e in active_employees if e.role and e.role.value == "armed"]
+    armed_with_firearm = set()
+    for c in firearm_valid:
+        if c.employee_id in {e.employee_id for e in armed_employees}:
+            armed_with_firearm.add(c.employee_id)
+
+    # --- General certification summary ---
+    all_valid = [c for c in all_certs if c.expiry_date >= today]
+    all_expired = [c for c in all_certs if c.expiry_date < today]
+    verified_count = sum(1 for c in all_certs if c.verified)
+
+    employees_with_certs = set(c.employee_id for c in all_certs)
+    employees_without = [
+        {"employee_id": e.employee_id, "name": f"{e.first_name} {e.last_name}", "role": e.role.value if e.role else "unknown"}
+        for e in active_employees
+        if e.employee_id not in employees_with_certs
+    ]
+
+    # --- Expiry alerts (next 90 days) sorted by urgency ---
+    expiry_alerts = []
+    for c in all_certs:
+        days_left = (c.expiry_date - today).days
+        if days_left <= 90:
+            emp = next((e for e in active_employees if e.employee_id == c.employee_id), None)
+            severity = "expired" if days_left < 0 else "critical" if days_left <= 14 else "warning" if days_left <= 30 else "info"
+            expiry_alerts.append({
+                "cert_id": c.cert_id,
+                "employee_id": c.employee_id,
+                "employee_name": f"{emp.first_name} {emp.last_name}" if emp else "Unknown",
+                "cert_type": c.cert_type,
+                "psira_grade": c.psira_grade.value if c.psira_grade else None,
+                "firearm_type": c.firearm_competency.value if c.firearm_competency else None,
+                "expiry_date": c.expiry_date.isoformat(),
+                "days_remaining": days_left,
+                "severity": severity,
+                "verified": c.verified,
+            })
+
+    expiry_alerts.sort(key=lambda x: x["days_remaining"])
+
+    return {
+        "total_active_employees": total_active,
+        "psira_summary": {
+            "total_psira_certs": len(psira_certs),
+            "valid": len(psira_valid),
+            "expired": len(psira_expired),
+            "expiring_30_days": len(psira_expiring_30),
+            "expiring_90_days": len(psira_expiring_90),
+            "grade_distribution": grade_counts,
+        },
+        "firearm_summary": {
+            "total_firearm_certs": len(firearm_certs),
+            "valid": len(firearm_valid),
+            "expired": len(firearm_expired),
+            "expiring_30_days": len(firearm_expiring_30),
+            "armed_employees": len(armed_employees),
+            "armed_with_valid_cert": len(armed_with_firearm),
+            "armed_without_cert": len(armed_employees) - len(armed_with_firearm),
+        },
+        "certification_summary": {
+            "total_certs": len(all_certs),
+            "valid": len(all_valid),
+            "expired": len(all_expired),
+            "verified": verified_count,
+            "unverified": len(all_certs) - verified_count,
+            "employees_with_certs": len(employees_with_certs),
+            "employees_without_certs": len(employees_without),
+            "compliance_rate": round(len(employees_with_certs) / total_active * 100, 1) if total_active > 0 else 0,
+        },
+        "expiry_alerts": expiry_alerts,
+        "employees_without_certs": employees_without[:20],
+    }
+
+
 @router.get("/expiring", response_model=List[CertificationResponse])
 async def get_expiring_certifications(
     days: int = 30,

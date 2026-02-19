@@ -38,6 +38,7 @@ import {
   ShieldBan,
   Activity,
   TrendingDown,
+  ShieldAlert,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -204,6 +205,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Turnover & Retention",
         href: "/employees/turnover",
         icon: TrendingDown,
+        roles: ADMIN_ROLES,
+      },
+      {
+        key: "compliance",
+        label: "Compliance",
+        href: "/employees/compliance",
+        icon: ShieldAlert,
         roles: ADMIN_ROLES,
       },
       {
@@ -414,6 +422,7 @@ const ROUTE_GROUPS: Record<string, string[]> = {
   "/employees/restrictions": ["/employees/restrictions"],
   "/employees/hr-analytics": ["/employees/hr-analytics"],
   "/employees/turnover": ["/employees/turnover"],
+  "/employees/compliance": ["/employees/compliance"],
   "/attendance/analytics": ["/attendance/analytics"],
   "/sites": ["/sites"],
   "/roster": ["/roster", "/shifts", "/calendar", "/schedule"],
