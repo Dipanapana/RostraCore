@@ -425,6 +425,149 @@ async def get_hr_analytics(
     }
 
 
+@router.get("/turnover-analytics")
+async def get_turnover_analytics(
+    months: int = 12,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Employee turnover & retention analytics.
+
+    Uses hire_date / termination_date when available, otherwise falls
+    back to employee_id ordering and status for approximations.
+    Returns monthly hire/termination counts, headcount trend, tenure
+    distribution, and turnover rate.
+    """
+    from collections import defaultdict
+
+    def _add_months(d: date, n: int) -> date:
+        """Add n months to a date (clamp to last day of month)."""
+        month = d.month - 1 + n
+        year = d.year + month // 12
+        month = month % 12 + 1
+        import calendar
+        day = min(d.day, calendar.monthrange(year, month)[1])
+        return date(year, month, day)
+
+    org_id = _get_org_id_or_403(current_user)
+    today = date.today()
+    period_start = _add_months(today, -months)
+
+    all_emps = db.query(Employee).filter(Employee.org_id == org_id).all()
+
+    # ── Monthly hire / termination counts ───────────────────
+    monthly: dict = defaultdict(lambda: {"hires": 0, "terminations": 0, "headcount": 0})
+
+    # Generate month keys
+    month_keys = []
+    cursor = date(period_start.year, period_start.month, 1)
+    end_month = date(today.year, today.month, 1)
+    while cursor <= end_month:
+        month_keys.append(cursor.strftime("%Y-%m"))
+        cursor = _add_months(cursor, 1)
+
+    # Initialise all months
+    for mk in month_keys:
+        monthly[mk]  # triggers defaultdict
+
+    for emp in all_emps:
+        # Hire tracking
+        hd = emp.hire_date
+        if hd and period_start <= hd <= today:
+            mk = hd.strftime("%Y-%m")
+            if mk in monthly:
+                monthly[mk]["hires"] += 1
+
+        # Termination tracking
+        td = emp.termination_date
+        if td and period_start <= td <= today:
+            mk = td.strftime("%Y-%m")
+            if mk in monthly:
+                monthly[mk]["terminations"] += 1
+
+    # Build headcount per month (count employees active at end of each month)
+    for mk in month_keys:
+        y, m = int(mk[:4]), int(mk[5:7])
+        # Last day of month
+        if m == 12:
+            eom = date(y + 1, 1, 1) - timedelta(days=1)
+        else:
+            eom = date(y, m + 1, 1) - timedelta(days=1)
+
+        count = 0
+        for emp in all_emps:
+            hired_before = (emp.hire_date is None) or (emp.hire_date <= eom)
+            not_terminated = (emp.termination_date is None) or (emp.termination_date > eom)
+            # If no hire_date, include active employees
+            if emp.hire_date is None and emp.status != EmployeeStatus.ACTIVE:
+                continue
+            if hired_before and not_terminated:
+                count += 1
+        monthly[mk]["headcount"] = count
+
+    monthly_trend = []
+    for mk in month_keys:
+        d = monthly[mk]
+        monthly_trend.append({
+            "month": mk,
+            "hires": d["hires"],
+            "terminations": d["terminations"],
+            "headcount": d["headcount"],
+        })
+
+    # ── Tenure distribution (active employees only) ─────────
+    active = [e for e in all_emps if e.status == EmployeeStatus.ACTIVE]
+    tenure_buckets = {"<3 months": 0, "3-6 months": 0, "6-12 months": 0, "1-2 years": 0, "2-5 years": 0, "5+ years": 0, "Unknown": 0}
+
+    for emp in active:
+        if not emp.hire_date:
+            tenure_buckets["Unknown"] += 1
+            continue
+        days = (today - emp.hire_date).days
+        if days < 90:
+            tenure_buckets["<3 months"] += 1
+        elif days < 180:
+            tenure_buckets["3-6 months"] += 1
+        elif days < 365:
+            tenure_buckets["6-12 months"] += 1
+        elif days < 730:
+            tenure_buckets["1-2 years"] += 1
+        elif days < 1825:
+            tenure_buckets["2-5 years"] += 1
+        else:
+            tenure_buckets["5+ years"] += 1
+
+    # ── Summary metrics ─────────────────────────────────────
+    total_hires = sum(d["hires"] for d in monthly.values())
+    total_terminations = sum(d["terminations"] for d in monthly.values())
+    current_headcount = len(active)
+    avg_headcount = (
+        sum(d["headcount"] for d in monthly.values()) / len(month_keys)
+        if month_keys else current_headcount
+    )
+    turnover_rate = round(
+        (total_terminations / avg_headcount * 100) if avg_headcount > 0 else 0.0, 1
+    )
+
+    # Avg tenure (days) for active employees with hire_date
+    tenures = [(today - e.hire_date).days for e in active if e.hire_date]
+    avg_tenure_days = round(sum(tenures) / len(tenures)) if tenures else None
+
+    return {
+        "period_months": months,
+        "summary": {
+            "current_headcount": current_headcount,
+            "total_hires": total_hires,
+            "total_terminations": total_terminations,
+            "turnover_rate_pct": turnover_rate,
+            "avg_tenure_days": avg_tenure_days,
+        },
+        "monthly_trend": monthly_trend,
+        "tenure_distribution": tenure_buckets,
+    }
+
+
 @router.get("/{employee_id}", response_model=EmployeeResponse)
 async def get_employee(
     employee_id: int,

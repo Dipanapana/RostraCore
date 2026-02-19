@@ -100,6 +100,10 @@ class Employee(Base):
     is_active_account = Column(Boolean, default=False)  # Whether employee can login
     last_login = Column(DateTime(timezone=True), nullable=True)
 
+    # Employment dates (for turnover / retention analytics)
+    hire_date = Column(Date, nullable=True)
+    termination_date = Column(Date, nullable=True)
+
     # Supervisor and geographical fields
     is_supervisor = Column(Boolean, default=False)  # Whether employee is a supervisor
     province = Column(String(50), nullable=True)  # North West, Northern Cape, Gauteng, etc.

@@ -26,6 +26,8 @@ class EmployeeBase(BaseModel):
     gender: Optional[Gender] = None
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
+    hire_date: Optional[date] = None
+    termination_date: Optional[date] = None
 
     @model_validator(mode='after')
     def validate_pay_fields(self):
@@ -68,6 +70,8 @@ class EmployeeUpdate(BaseModel):
     gender: Optional[Gender] = None
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
+    hire_date: Optional[date] = None
+    termination_date: Optional[date] = None
     assigned_client_id: Optional[int] = None  # Allow updating client assignment (legacy)
     assigned_client_ids: Optional[List[int]] = None  # Allow updating multiple client assignment
 

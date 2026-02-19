@@ -37,6 +37,7 @@ import {
   Scale,
   ShieldBan,
   Activity,
+  TrendingDown,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -196,6 +197,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "HR Analytics",
         href: "/employees/hr-analytics",
         icon: BarChart3,
+        roles: ADMIN_ROLES,
+      },
+      {
+        key: "turnover",
+        label: "Turnover & Retention",
+        href: "/employees/turnover",
+        icon: TrendingDown,
         roles: ADMIN_ROLES,
       },
       {
@@ -405,6 +413,7 @@ const ROUTE_GROUPS: Record<string, string[]> = {
   "/clients/renewals": ["/clients/renewals"],
   "/employees/restrictions": ["/employees/restrictions"],
   "/employees/hr-analytics": ["/employees/hr-analytics"],
+  "/employees/turnover": ["/employees/turnover"],
   "/attendance/analytics": ["/attendance/analytics"],
   "/sites": ["/sites"],
   "/roster": ["/roster", "/shifts", "/calendar", "/schedule"],
