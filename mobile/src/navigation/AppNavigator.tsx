@@ -8,6 +8,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import CheckInScreen from '../screens/CheckInScreen';
 import IncidentReportScreen from '../screens/IncidentReportScreen';
+import PatrolScreen from '../screens/PatrolScreen';
 
 // ---------------------------------------------------------------------------
 // Tab icon components (emoji-based — replace with @expo/vector-icons later)
@@ -17,6 +18,7 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
   const icons: Record<string, string> = {
     Home: '🏠',
     Schedule: '📅',
+    Patrol: '🗺️',
     Alerts: '🔔',
     Profile: '👤',
   };
@@ -76,6 +78,7 @@ export default function AppNavigator() {
     >
       <Tab.Screen name="Home" component={HomeStackNavigator} />
       <Tab.Screen name="Schedule" component={ScheduleScreen} />
+      <Tab.Screen name="Patrol" component={PatrolScreen} />
       <Tab.Screen name="Alerts" component={NotificationsScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>

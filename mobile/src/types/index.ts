@@ -102,3 +102,52 @@ export interface Notification {
   created_at: string;
   data?: Record<string, any>;
 }
+
+// ---------------------------------------------------------------------------
+// Patrol Tours
+// ---------------------------------------------------------------------------
+
+export interface PatrolCheckpoint {
+  checkpoint_id: number;
+  name: string;
+  description?: string;
+  order_num: number;
+  photo_required: boolean;
+  qr_code?: string;
+  nfc_tag?: string;
+  gps_lat?: number;
+  gps_lng?: number;
+}
+
+export interface PatrolTour {
+  tour_id: number;
+  org_id: number;
+  site_id?: number;
+  name: string;
+  description?: string;
+  is_active: boolean;
+  checkpoints: PatrolCheckpoint[];
+}
+
+export interface PatrolScan {
+  scan_id: number;
+  run_id: number;
+  checkpoint_id: number;
+  checkpoint_name: string;
+  scanned_at: string;
+  latitude?: number;
+  longitude?: number;
+  photo_url?: string;
+}
+
+export interface PatrolRun {
+  run_id: number;
+  tour_id: number;
+  tour_name: string;
+  status: 'in_progress' | 'completed' | 'abandoned';
+  started_at: string;
+  completed_at?: string;
+  total_checkpoints: number;
+  scans_completed: number;
+  scans: PatrolScan[];
+}

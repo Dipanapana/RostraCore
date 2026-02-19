@@ -140,3 +140,42 @@ export const notificationsApi = {
   registerPushToken: (token: string, platform: string) =>
     api.post('/api/v1/notifications/push-token', { token, platform }),
 };
+
+// ---------------------------------------------------------------------------
+// Patrol API
+// ---------------------------------------------------------------------------
+
+export const patrolApi = {
+  getTours: (params?: { site_id?: number }) =>
+    api.get('/api/v1/patrols/tours', { params }),
+
+  getTour: (tourId: number) =>
+    api.get(`/api/v1/patrols/tours/${tourId}`),
+
+  startRun: (data: { tour_id: number; assignment_id?: number }) =>
+    api.post('/api/v1/patrols/runs/start', data),
+
+  scanCheckpoint: (
+    runId: number,
+    data: {
+      checkpoint_id?: number;
+      scanned_value?: string;
+      latitude?: number;
+      longitude?: number;
+      photo_url?: string;
+      notes?: string;
+    },
+  ) => api.post(`/api/v1/patrols/runs/${runId}/scan`, data),
+
+  completeRun: (runId: number, notes?: string) =>
+    api.post(`/api/v1/patrols/runs/${runId}/complete`, null, {
+      params: notes ? { notes } : undefined,
+    }),
+
+  abandonRun: (runId: number, notes?: string) =>
+    api.post(`/api/v1/patrols/runs/${runId}/abandon`, null, {
+      params: notes ? { notes } : undefined,
+    }),
+
+  getMyRuns: () => api.get('/api/v1/patrols/runs/mine'),
+};
