@@ -348,6 +348,9 @@ async def assign_guard_to_shift(
     db.commit()
     db.refresh(assignment)
 
+    from app.services.push_service import PushService
+    PushService(db).notify_shift_assigned(employee_id, shift, org_id)
+
     return assignment
 
 
@@ -389,6 +392,9 @@ async def unassign_guard_from_shift(
 
     assignment.status = AssignmentStatus.CANCELLED.value
     db.commit()
+
+    from app.services.push_service import PushService
+    PushService(db).notify_shift_cancelled(employee_id, shift, org_id)
 
     return None
 
@@ -438,6 +444,9 @@ async def confirm_shift_assignment(
     assignment.confirmation_datetime = datetime.utcnow()
     db.commit()
     db.refresh(assignment)
+
+    from app.services.push_service import PushService
+    PushService(db).notify_shift_confirmed(assignment.employee_id, shift, org_id)
 
     return assignment
 

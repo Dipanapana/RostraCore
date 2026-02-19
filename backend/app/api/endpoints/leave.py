@@ -384,6 +384,9 @@ async def approve_leave_request(
     db.commit()
     db.refresh(leave_request)
 
+    from app.services.push_service import PushService
+    PushService(db).notify_leave_approved(leave_request.employee_id, leave_request, org_id)
+
     employee = db.query(Employee).filter(Employee.employee_id == leave_request.employee_id).first()
 
     return LeaveRequestResponse(
@@ -431,6 +434,9 @@ async def reject_leave_request(
 
     db.commit()
     db.refresh(leave_request)
+
+    from app.services.push_service import PushService
+    PushService(db).notify_leave_rejected(leave_request.employee_id, leave_request, org_id)
 
     employee = db.query(Employee).filter(Employee.employee_id == leave_request.employee_id).first()
 

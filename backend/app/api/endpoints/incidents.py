@@ -120,6 +120,9 @@ def report_incident(
     db.commit()
     db.refresh(incident)
 
+    from app.services.push_service import PushService
+    PushService(db).notify_incident_reported(incident, org_id)
+
     return _to_response(incident)
 
 
