@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../context/authStore';
 import { dashboardApi, shiftsApi } from '../services/api';
 import { Shift } from '../types';
@@ -43,6 +44,7 @@ function getShiftDayLabel(dateStr: string): string {
 // ---------------------------------------------------------------------------
 
 export default function HomeScreen() {
+  const navigation = useNavigation<any>();
   const { user } = useAuthStore();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -142,6 +144,26 @@ export default function HomeScreen() {
             </Text>
             <Text style={styles.statLabel}>Next Payday</Text>
           </View>
+        </View>
+
+        {/* Quick Actions */}
+        <View style={styles.actionsRow}>
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => navigation.navigate('Leave')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.actionEmoji}>🌴</Text>
+            <Text style={styles.actionLabel}>Leave</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => navigation.navigate('IncidentReport')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.actionEmoji}>⚠️</Text>
+            <Text style={styles.actionLabel}>Incident</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Upcoming Shifts */}
@@ -264,6 +286,29 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     fontSize: 11,
     marginTop: 4,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 28,
+  },
+  actionBtn: {
+    flex: 1,
+    backgroundColor: '#1e293b',
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  actionEmoji: {
+    fontSize: 24,
+    marginBottom: 4,
+  },
+  actionLabel: {
+    color: '#94a3b8',
+    fontSize: 12,
+    fontWeight: '600',
   },
   sectionTitle: {
     color: '#e2e8f0',

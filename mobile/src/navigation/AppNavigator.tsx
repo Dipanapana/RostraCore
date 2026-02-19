@@ -9,6 +9,7 @@ import NotificationsScreen from '../screens/NotificationsScreen';
 import CheckInScreen from '../screens/CheckInScreen';
 import IncidentReportScreen from '../screens/IncidentReportScreen';
 import PatrolScreen from '../screens/PatrolScreen';
+import LeaveScreen from '../screens/LeaveScreen';
 
 // ---------------------------------------------------------------------------
 // Tab icon components (emoji-based — replace with @expo/vector-icons later)
@@ -33,7 +34,7 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
 }
 
 // ---------------------------------------------------------------------------
-// Home Stack (Home + Check-in + Incident)
+// Home Stack (Home + Check-in + Incident + Leave)
 // ---------------------------------------------------------------------------
 
 const HomeStack = createNativeStackNavigator();
@@ -50,6 +51,11 @@ function HomeStackNavigator() {
       <HomeStack.Screen
         name="IncidentReport"
         component={IncidentReportScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <HomeStack.Screen
+        name="Leave"
+        component={LeaveScreen}
         options={{ presentation: 'modal' }}
       />
     </HomeStack.Navigator>
