@@ -51,46 +51,12 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
 }
 
 // ---------------------------------------------------------------------------
-// Home Stack (role-based home + Check-in + Incident + Leave modals)
-// ---------------------------------------------------------------------------
-
-const HomeStack = createNativeStackNavigator();
-
-function HomeStackNavigator() {
-  return (
-    <HomeStack.Navigator screenOptions={{ headerShown: false }}>
-      <HomeStack.Screen name="HomeMain" component={HomeRouter} />
-      <HomeStack.Screen
-        name="CheckIn"
-        component={CheckInScreen}
-        options={{ presentation: 'modal' }}
-      />
-      <HomeStack.Screen
-        name="IncidentReport"
-        component={IncidentReportScreen}
-        options={{ presentation: 'modal' }}
-      />
-      <HomeStack.Screen
-        name="Leave"
-        component={LeaveScreen}
-        options={{ presentation: 'modal' }}
-      />
-      <HomeStack.Screen
-        name="Payslip"
-        component={PayslipScreen}
-        options={{ presentation: 'modal' }}
-      />
-    </HomeStack.Navigator>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Tab Navigator
+// Tab Navigator — five tabs, no nested stacks
 // ---------------------------------------------------------------------------
 
 const Tab = createBottomTabNavigator();
 
-export default function AppNavigator() {
+function TabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -104,12 +70,50 @@ export default function AppNavigator() {
         tabBarLabelStyle: styles.tabLabel,
       })}
     >
-      <Tab.Screen name="Home" component={HomeStackNavigator} />
+      <Tab.Screen name="Home" component={HomeRouter} />
       <Tab.Screen name="Schedule" component={ScheduleScreen} />
       <Tab.Screen name="Patrol" component={PatrolScreen} />
       <Tab.Screen name="Alerts" component={NotificationsScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Root Stack — TabNavigator + shared modals accessible from any tab
+//
+// By placing modal screens here (above the Tab.Navigator), every screen in
+// every tab can call navigation.navigate('CheckIn' | 'IncidentReport' | ...)
+// and React Navigation will find them in the parent stack.
+// ---------------------------------------------------------------------------
+
+const RootStack = createNativeStackNavigator();
+
+export default function AppNavigator() {
+  return (
+    <RootStack.Navigator screenOptions={{ headerShown: false }}>
+      <RootStack.Screen name="Tabs" component={TabNavigator} />
+      <RootStack.Screen
+        name="CheckIn"
+        component={CheckInScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <RootStack.Screen
+        name="IncidentReport"
+        component={IncidentReportScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <RootStack.Screen
+        name="Leave"
+        component={LeaveScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <RootStack.Screen
+        name="Payslip"
+        component={PayslipScreen}
+        options={{ presentation: 'modal' }}
+      />
+    </RootStack.Navigator>
   );
 }
 
