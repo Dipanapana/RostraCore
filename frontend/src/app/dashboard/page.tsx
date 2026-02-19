@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { api } from "@/services/api";
+import { api, incidentsApi, patrolsApi } from "@/services/api";
 import { getApiUrl } from "@/lib/config";
 import Link from "next/link";
 import {
@@ -10,7 +10,9 @@ import {
   Activity,
   TrendingUp,
   Calendar,
-  RefreshCw
+  RefreshCw,
+  ShieldAlert,
+  Route,
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import MetricCard from "@/components/dashboard/MetricCard";
@@ -63,6 +65,8 @@ export default function DashboardPage() {
   const [utilizationData, setUtilizationData] = useState<any[]>([]);
   const [complianceData, setComplianceData] = useState<any[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
+  const [incidentStats, setIncidentStats] = useState({ open: 0, critical: 0 });
+  const [activePatrols, setActivePatrols] = useState(0);
 
   const fetchData = async (isRefresh = false) => {
     if (isRefresh) {
@@ -71,10 +75,12 @@ export default function DashboardPage() {
       setLoading(true);
     }
     try {
-        const [metricsRes, shiftsRes, trendsRes] = await Promise.all([
+        const [metricsRes, shiftsRes, trendsRes, incidentsRes, patrolRunsRes] = await Promise.all([
           api.get(`${getApiUrl()}/api/v1/dashboard/metrics`),
           api.get(`${getApiUrl()}/api/v1/dashboard/upcoming-shifts?limit=5`),
           api.get(`${getApiUrl()}/api/v1/dashboard/cost-trends?days=7`),
+          incidentsApi.list({ limit: 200 }).catch(() => ({ data: [] })),
+          patrolsApi.listRuns({ run_status: 'in_progress', limit: 50 }).catch(() => ({ data: [] })),
         ]);
 
         const metricsData = metricsRes.data;
@@ -203,6 +209,13 @@ export default function DashboardPage() {
 
         setActivities(newActivities);
 
+        // Security ops counters
+        const allIncidents: any[] = incidentsRes.data ?? [];
+        const openInc = allIncidents.filter((i: any) => ['reported', 'investigating'].includes(i.status)).length;
+        const criticalInc = allIncidents.filter((i: any) => i.severity === 'critical' && ['reported', 'investigating'].includes(i.status)).length;
+        setIncidentStats({ open: openInc, critical: criticalInc });
+        setActivePatrols((patrolRunsRes.data ?? []).length);
+
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
@@ -306,6 +319,45 @@ export default function DashboardPage() {
             trend={costTrends.length > 0 ? { value: 6.2, label: "on track", direction: "up" } : undefined}
             delay={300}
           />
+        </div>
+
+        {/* Security Operations Strip */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <Link
+            href="/incidents"
+            className="bg-slate-800 border border-slate-700 rounded-xl p-5 flex items-center gap-4 hover:border-amber-500/40 hover:bg-slate-700/60 transition-all group"
+          >
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${incidentStats.open > 0 ? 'bg-amber-500/15' : 'bg-green-500/15'}`}>
+              <ShieldAlert size={22} className={incidentStats.open > 0 ? 'text-amber-400' : 'text-green-400'} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">Open Incidents</p>
+              <p className={`text-3xl font-bold leading-none ${incidentStats.open > 0 ? 'text-amber-400' : 'text-green-400'}`}>
+                {incidentStats.open}
+              </p>
+              {incidentStats.critical > 0 ? (
+                <p className="text-xs text-red-400 mt-1">{incidentStats.critical} critical — needs attention</p>
+              ) : (
+                <p className="text-xs text-slate-500 mt-1">No urgent incidents</p>
+              )}
+            </div>
+            <span className="text-xs text-slate-600 group-hover:text-slate-400 transition-colors whitespace-nowrap">View all →</span>
+          </Link>
+
+          <Link
+            href="/patrols"
+            className="bg-slate-800 border border-slate-700 rounded-xl p-5 flex items-center gap-4 hover:border-violet-500/40 hover:bg-slate-700/60 transition-all group"
+          >
+            <div className="w-12 h-12 rounded-xl bg-violet-500/15 flex items-center justify-center shrink-0">
+              <Route size={22} className="text-violet-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">Active Patrols</p>
+              <p className="text-3xl font-bold text-violet-400 leading-none">{activePatrols}</p>
+              <p className="text-xs text-slate-500 mt-1">patrol runs in progress</p>
+            </div>
+            <span className="text-xs text-slate-600 group-hover:text-slate-400 transition-colors whitespace-nowrap">Monitor →</span>
+          </Link>
         </div>
 
         {/* Main Content Grid - Professional Layout */}

@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/context/AuthContext'
@@ -10,19 +10,20 @@ import TrialBanner from '@/components/TrialBanner'
 
 const inter = Inter({ subsets: ['latin'] })
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: '#2563eb',
+}
+
 export const metadata: Metadata = {
   title: 'RostraCore - Security Workforce Management',
   description: 'Comprehensive security workforce management system for scheduling, rostering, and employee management',
   manifest: '/manifest.json',
-  themeColor: '#2563eb',
   icons: {
     icon: '/favicon.ico',
     apple: '/rostracore-logo.png',
-  },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
   },
   appleWebApp: {
     capable: true,
