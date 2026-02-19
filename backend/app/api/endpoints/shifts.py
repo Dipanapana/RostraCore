@@ -153,6 +153,72 @@ def _check_shift_client_access(db: Session, shift, org_id: int, current_user: Us
         )
 
 
+# NOTE: Static route — must be above /{shift_id} to avoid route conflicts.
+@router.get("/coverage-gaps")
+def get_coverage_gaps(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db),
+):
+    """
+    Return upcoming shifts that have fewer guards assigned than required_staff.
+    Default window: today through next 7 days.
+    Used by the dashboard understaffed-shifts alert card.
+    """
+    from sqlalchemy import func
+
+    now = datetime.utcnow()
+    window_start = datetime.fromisoformat(start_date) if start_date else now.replace(hour=0, minute=0, second=0)
+    window_end = datetime.fromisoformat(end_date) if end_date else window_start + timedelta(days=7)
+
+    # Subquery: count non-cancelled assignments per shift
+    assigned_sq = (
+        db.query(
+            ShiftAssignment.shift_id,
+            func.count(ShiftAssignment.assignment_id).label("assigned_count"),
+        )
+        .filter(ShiftAssignment.status != AssignmentStatus.CANCELLED)
+        .group_by(ShiftAssignment.shift_id)
+        .subquery()
+    )
+
+    rows = (
+        db.query(
+            Shift.shift_id,
+            Shift.start_time,
+            Shift.end_time,
+            Shift.required_staff,
+            Site.site_name,
+            func.coalesce(assigned_sq.c.assigned_count, 0).label("assigned_count"),
+        )
+        .join(Site, Shift.site_id == Site.site_id)
+        .outerjoin(assigned_sq, Shift.shift_id == assigned_sq.c.shift_id)
+        .filter(
+            Shift.org_id == org_id,
+            Shift.status.notin_(["cancelled", "completed"]),
+            Shift.start_time >= window_start,
+            Shift.start_time <= window_end,
+            func.coalesce(assigned_sq.c.assigned_count, 0) < Shift.required_staff,
+        )
+        .order_by(Shift.start_time)
+        .all()
+    )
+
+    return [
+        {
+            "shift_id": r.shift_id,
+            "site_name": r.site_name,
+            "start_time": r.start_time.isoformat(),
+            "end_time": r.end_time.isoformat(),
+            "required_staff": r.required_staff,
+            "assigned_count": r.assigned_count,
+            "gap": r.required_staff - r.assigned_count,
+        }
+        for r in rows
+    ]
+
+
 @router.get("/{shift_id}", response_model=ShiftResponse)
 async def get_shift(
     shift_id: int,

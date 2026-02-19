@@ -94,6 +94,8 @@ export const shiftsApi = {
   getAssignments: (shiftId: number) => api.get(`/api/v1/shifts/${shiftId}/assignments`),
   assignEmployee: (shiftId: number, employeeId: number) => api.post(`/api/v1/shifts/${shiftId}/assign/${employeeId}`),
   unassignEmployee: (shiftId: number, employeeId: number) => api.delete(`/api/v1/shifts/${shiftId}/assignments/${employeeId}`),
+  getCoverageGaps: (params?: { start_date?: string; end_date?: string }) =>
+    api.get('/api/v1/shifts/coverage-gaps', { params }),
 }
 
 export const rosterApi = {

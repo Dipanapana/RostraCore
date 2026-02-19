@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { api, incidentsApi, patrolsApi } from "@/services/api";
+import { api, incidentsApi, patrolsApi, shiftsApi } from "@/services/api";
 import { getApiUrl } from "@/lib/config";
 import Link from "next/link";
 import {
@@ -13,6 +13,7 @@ import {
   RefreshCw,
   ShieldAlert,
   Route,
+  AlertTriangle,
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import MetricCard from "@/components/dashboard/MetricCard";
@@ -67,6 +68,7 @@ export default function DashboardPage() {
   const [activities, setActivities] = useState<any[]>([]);
   const [incidentStats, setIncidentStats] = useState({ open: 0, critical: 0 });
   const [activePatrols, setActivePatrols] = useState(0);
+  const [understaffedShifts, setUnderstaffedShifts] = useState<any[]>([]);
 
   const fetchData = async (isRefresh = false) => {
     if (isRefresh) {
@@ -75,12 +77,13 @@ export default function DashboardPage() {
       setLoading(true);
     }
     try {
-        const [metricsRes, shiftsRes, trendsRes, incidentsRes, patrolRunsRes] = await Promise.all([
+        const [metricsRes, shiftsRes, trendsRes, incidentsRes, patrolRunsRes, coverageGapsRes] = await Promise.all([
           api.get(`${getApiUrl()}/api/v1/dashboard/metrics`),
           api.get(`${getApiUrl()}/api/v1/dashboard/upcoming-shifts?limit=5`),
           api.get(`${getApiUrl()}/api/v1/dashboard/cost-trends?days=7`),
           incidentsApi.list({ limit: 200 }).catch(() => ({ data: [] })),
           patrolsApi.listRuns({ run_status: 'in_progress', limit: 50 }).catch(() => ({ data: [] })),
+          shiftsApi.getCoverageGaps().catch(() => ({ data: [] })),
         ]);
 
         const metricsData = metricsRes.data;
@@ -215,6 +218,7 @@ export default function DashboardPage() {
         const criticalInc = allIncidents.filter((i: any) => i.severity === 'critical' && ['reported', 'investigating'].includes(i.status)).length;
         setIncidentStats({ open: openInc, critical: criticalInc });
         setActivePatrols((patrolRunsRes.data ?? []).length);
+        setUnderstaffedShifts(coverageGapsRes.data ?? []);
 
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -322,7 +326,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Security Operations Strip */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           <Link
             href="/incidents"
             className="bg-slate-800 border border-slate-700 rounded-xl p-5 flex items-center gap-4 hover:border-amber-500/40 hover:bg-slate-700/60 transition-all group"
@@ -357,6 +361,27 @@ export default function DashboardPage() {
               <p className="text-xs text-slate-500 mt-1">patrol runs in progress</p>
             </div>
             <span className="text-xs text-slate-600 group-hover:text-slate-400 transition-colors whitespace-nowrap">Monitor →</span>
+          </Link>
+
+          <Link
+            href="/roster"
+            className="bg-slate-800 border border-slate-700 rounded-xl p-5 flex items-center gap-4 hover:border-orange-500/40 hover:bg-slate-700/60 transition-all group"
+          >
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${understaffedShifts.length > 0 ? 'bg-orange-500/15' : 'bg-green-500/15'}`}>
+              <AlertTriangle size={22} className={understaffedShifts.length > 0 ? 'text-orange-400' : 'text-green-400'} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">Understaffed Shifts</p>
+              <p className={`text-3xl font-bold leading-none ${understaffedShifts.length > 0 ? 'text-orange-400' : 'text-green-400'}`}>
+                {understaffedShifts.length}
+              </p>
+              {understaffedShifts.length > 0 ? (
+                <p className="text-xs text-orange-400/80 mt-1">next 7 days — assign guards</p>
+              ) : (
+                <p className="text-xs text-slate-500 mt-1">All shifts fully staffed</p>
+              )}
+            </div>
+            <span className="text-xs text-slate-600 group-hover:text-slate-400 transition-colors whitespace-nowrap">Fix →</span>
           </Link>
         </div>
 
