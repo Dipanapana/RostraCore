@@ -138,6 +138,13 @@ const NAV_ENTRIES: NavEntry[] = [
         roles: MANAGEMENT_ROLES,
       },
       {
+        key: "guard-grades",
+        label: "Guard Grades",
+        href: "/employees/grades",
+        icon: Shield,
+        roles: ADMIN_ROLES,
+      },
+      {
         key: "schedule",
         label: "Schedule",
         href: "/roster",
@@ -331,6 +338,7 @@ const NAV_ENTRIES: NavEntry[] = [
 
 const ROUTE_GROUPS: Record<string, string[]> = {
   "/employees": ["/employees", "/certifications", "/documents"],
+  "/employees/grades": ["/employees/grades"],
   "/certifications": ["/certifications"],
   "/clients": ["/clients", "/sites"],
   "/sites": ["/sites"],

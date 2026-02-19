@@ -153,6 +153,24 @@ export default function EmployeesPage() {
       ),
     },
     {
+      header: 'Grade',
+      cell: (emp) => {
+        const grade = (emp as any).cert_level?.toUpperCase()
+        if (!grade) return <span className="text-xs text-slate-400 dark:text-slate-600">—</span>
+        const color =
+          grade === 'A' ? 'bg-emerald-500' :
+          grade === 'B' ? 'bg-blue-500' :
+          grade === 'C' ? 'bg-amber-500' :
+          grade === 'D' ? 'bg-orange-500' :
+          'bg-slate-500'
+        return (
+          <span className={`w-7 h-7 rounded-lg inline-flex items-center justify-center font-bold text-white text-xs ${color}`}>
+            {grade}
+          </span>
+        )
+      },
+    },
+    {
       header: 'Hourly Rate',
       cell: (emp) => (
         <span className="font-medium text-slate-700 dark:text-slate-300">

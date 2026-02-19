@@ -67,6 +67,7 @@ export const employeesApi = {
     },
   }),
   getDataQualityDashboard: () => api.get('/api/v1/employees/dashboard/data-quality'),
+  getGradeStats: () => api.get('/api/v1/employees/grade-stats'),
 }
 
 export const clientsApi = {

@@ -180,6 +180,84 @@ async def get_employees(
     return employees
 
 
+@router.get("/grade-stats")
+async def get_grade_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Return workforce breakdown by PSIRA grade (cert_level).
+    Used for the Guard Grades overview page.
+    """
+    from app.models.default_hourly_rate import DefaultHourlyRate
+
+    org_id = _get_org_id_or_403(current_user)
+    today = date.today()
+
+    # Fetch all active employees
+    employees = db.query(Employee).filter(
+        Employee.org_id == org_id,
+        Employee.status == EmployeeStatus.ACTIVE,
+    ).all()
+
+    # Fetch configured default rates
+    default_rates = db.query(DefaultHourlyRate).filter(
+        DefaultHourlyRate.org_id == org_id
+    ).all()
+    rates_by_grade: dict = {}
+    for r in default_rates:
+        rates_by_grade.setdefault(r.psira_grade, {})[r.role] = float(r.default_hourly_rate)
+
+    GRADES = ["A", "B", "C", "D", "E"]
+    grade_data: dict = {
+        g: {
+            "grade": g,
+            "count": 0,
+            "avg_actual_rate": None,
+            "default_rates": rates_by_grade.get(g, {}),
+            "expired_psira": 0,
+            "expiring_soon": 0,  # within 30 days
+            "no_psira_expiry": 0,
+        }
+        for g in GRADES
+    }
+
+    no_grade_count = 0
+    total_active = len(employees)
+    rate_sums: dict = {g: [] for g in GRADES}
+
+    for emp in employees:
+        grade = (emp.cert_level or "").strip().upper()
+        if grade not in GRADES:
+            no_grade_count += 1
+            continue
+
+        grade_data[grade]["count"] += 1
+
+        if emp.hourly_rate and emp.hourly_rate > 0:
+            rate_sums[grade].append(float(emp.hourly_rate))
+
+        if emp.psira_expiry_date:
+            days_until = (emp.psira_expiry_date - today).days
+            if days_until < 0:
+                grade_data[grade]["expired_psira"] += 1
+            elif days_until <= 30:
+                grade_data[grade]["expiring_soon"] += 1
+        else:
+            grade_data[grade]["no_psira_expiry"] += 1
+
+    for g in GRADES:
+        if rate_sums[g]:
+            grade_data[g]["avg_actual_rate"] = round(sum(rate_sums[g]) / len(rate_sums[g]), 2)
+
+    return {
+        "grades": list(grade_data.values()),
+        "no_grade_count": no_grade_count,
+        "total_active": total_active,
+        "has_default_rates": len(default_rates) > 0,
+    }
+
+
 @router.get("/{employee_id}", response_model=EmployeeResponse)
 async def get_employee(
     employee_id: int,
