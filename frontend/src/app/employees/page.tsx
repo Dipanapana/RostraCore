@@ -8,7 +8,8 @@ import ExportButtons from '@/components/ExportButtons'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import DataTable, { Column } from '@/components/ui/DataTable'
 import Modal from '@/components/ui/Modal'
-import { Plus, Pencil, Trash2, Upload, Download, Calendar } from 'lucide-react'
+import Link from 'next/link'
+import { Plus, Pencil, Trash2, Upload, Download, Calendar, Eye } from 'lucide-react'
 import EmployeeAvailabilityPatterns from '@/components/EmployeeAvailabilityPatterns'
 
 export default function EmployeesPage() {
@@ -237,6 +238,14 @@ export default function EmployeesPage() {
               >
                 <Calendar className="w-4 h-4" />
               </button>
+              <Link
+                href={`/employees/${emp.employee_id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="p-2 text-slate-400 dark:text-slate-300 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded-lg transition-colors inline-flex"
+                title="View Profile"
+              >
+                <Eye className="w-4 h-4" />
+              </Link>
               <button
                 onClick={(e) => {
                   e.stopPropagation()
