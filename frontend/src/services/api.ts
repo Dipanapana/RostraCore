@@ -322,6 +322,10 @@ export const exportsApi = {
     return `${getApiUrl()}/api/v1/exports/roster/excel${queryString ? '?' + queryString : ''}`
   },
 
+  // Payroll System CSV (Sage 300 / Pastel Evolution / VIP Payroll)
+  payrollCsv: (periodStart: string, periodEnd: string, format: 'sage300' | 'pastel' | 'vip') =>
+    `${getApiUrl()}/api/v1/exports/payroll/csv?period_start=${periodStart}&period_end=${periodEnd}&format=${format}`,
+
   // CSV Exports
   employeesCsv: () => `${getApiUrl()}/api/v1/exports/employees/csv`,
   sitesCsv: () => `${getApiUrl()}/api/v1/exports/sites/csv`,

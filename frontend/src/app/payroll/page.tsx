@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getApiUrl } from "@/lib/config";
-import { api } from "@/services/api";
+import { api, exportsApi } from "@/services/api";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import EmployeeCombobox from "@/components/ui/EmployeeCombobox";
 import {
@@ -135,6 +135,7 @@ export default function PayrollPage() {
   const [payrollSummary, setPayrollSummary] =
     useState<ComprehensivePayrollResponse["summary"] | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [showPayrollExportMenu, setShowPayrollExportMenu] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState<number | null>(null);
 
   // Month selector state
@@ -492,6 +493,26 @@ export default function PayrollPage() {
     }
   };
 
+  const handleExportPayrollSystem = (format: 'sage300' | 'pastel' | 'vip') => {
+    if (!filterStartDate || !filterEndDate) return;
+    setShowPayrollExportMenu(false);
+    const url = exportsApi.payrollCsv(filterStartDate, filterEndDate, format);
+    const token = localStorage.getItem('access_token');
+    // Trigger download via a temporary fetch (Bearer token required)
+    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => res.blob())
+      .then(blob => {
+        const a = document.createElement('a');
+        a.href = window.URL.createObjectURL(blob);
+        a.download = `payroll_${format}_${filterStartDate}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(a.href);
+        a.remove();
+      })
+      .catch(() => setError('Failed to export payroll CSV'));
+  };
+
   const handleDeletePayroll = async (payrollId: number) => {
     if (!confirm("Are you sure you want to delete this payroll record?")) {
       return;
@@ -567,6 +588,36 @@ export default function PayrollPage() {
               <FileSpreadsheet className="w-4 h-4" />
               Export Excel
             </button>
+            {/* Payroll system export dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setShowPayrollExportMenu(v => !v)}
+                disabled={filteredPayrolls.length === 0}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 text-sm transition-colors"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                Export to Payroll System ▾
+              </button>
+              {showPayrollExportMenu && (
+                <div className="absolute right-0 mt-1 w-52 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-10">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 px-3 pt-2 pb-1 font-medium uppercase tracking-wide">Select format</p>
+                  {[
+                    { key: 'sage300', label: 'Sage 300' },
+                    { key: 'pastel', label: 'Pastel Evolution' },
+                    { key: 'vip',    label: 'VIP Payroll' },
+                  ].map(({ key, label }) => (
+                    <button
+                      key={key}
+                      onClick={() => handleExportPayrollSystem(key as 'sage300' | 'pastel' | 'vip')}
+                      className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <button
               onClick={handleBulkPayslipPDF}
               disabled={exporting || filteredPayrolls.length === 0}

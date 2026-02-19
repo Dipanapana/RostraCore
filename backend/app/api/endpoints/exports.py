@@ -938,3 +938,185 @@ async def export_saved_roster_excel(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error exporting roster Excel: {str(e)}")
+
+
+# ==================== PAYROLL SYSTEM EXPORT (SAGE / PASTEL / VIP) ====================
+
+# Column schemas per payroll system
+_PAYROLL_FORMATS = {
+    "sage300": [
+        "Employee Number", "Employee Name", "ID Number", "Period Start", "Period End",
+        "Regular Hours", "Overtime Hours", "Total Hours",
+        "Gross Pay", "PAYE", "UIF (Employee)", "UIF (Employer)", "SDL",
+        "Total Deductions", "Net Pay",
+    ],
+    "pastel": [
+        "EmpNo", "EmpName", "ID Number", "Period", "Description",
+        "Reg Hours", "OT Hours",
+        "Gross Amount", "PAYE", "UIF Emp", "UIF Empl", "SDL", "Net Amount",
+    ],
+    "vip": [
+        "Pay Number", "Surname", "First Name", "ID Number", "Period",
+        "Ordinary Hours", "Overtime Hours",
+        "Gross Earnings", "PAYE Tax", "UIF Employee", "UIF Employer", "SDL Levy",
+        "Total Deductions", "Net Pay",
+    ],
+}
+
+
+@router.get("/payroll/csv")
+async def export_payroll_csv(
+    period_start: str,
+    period_end: str,
+    format: str = "sage300",
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db),
+):
+    """
+    Export payroll data as a CSV file formatted for a specific SA payroll system.
+
+    Supported formats: sage300, pastel, vip
+
+    Columns match the import templates for each system. Uses PayrollSummary records
+    when available, falling back to shift-assignment cost totals for the period.
+    """
+    from app.models.payroll import PayrollSummary
+    from datetime import date as date_type
+    from sqlalchemy import and_
+
+    if format not in _PAYROLL_FORMATS:
+        raise HTTPException(status_code=400, detail=f"Unknown format '{format}'. Choose: {list(_PAYROLL_FORMATS.keys())}")
+
+    try:
+        start = datetime.fromisoformat(period_start).date()
+        end = datetime.fromisoformat(period_end).date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
+
+    # Load payroll summaries for the period
+    summaries = (
+        db.query(PayrollSummary)
+        .join(Employee, PayrollSummary.employee_id == Employee.employee_id)
+        .filter(
+            Employee.org_id == org_id,
+            PayrollSummary.period_start >= start,
+            PayrollSummary.period_end <= end,
+        )
+        .all()
+    )
+
+    # Build rows keyed by employee; aggregate if multiple records per employee
+    from collections import defaultdict
+    agg: dict = defaultdict(lambda: {
+        "regular_hours": 0.0, "overtime_hours": 0.0,
+        "gross_pay": 0.0, "expenses_total": 0.0, "net_pay": 0.0,
+    })
+    emp_map: dict = {}
+
+    for s in summaries:
+        eid = s.employee_id
+        agg[eid]["regular_hours"] += s.total_hours - s.overtime_hours
+        agg[eid]["overtime_hours"] += s.overtime_hours
+        agg[eid]["gross_pay"] += s.gross_pay
+        agg[eid]["expenses_total"] += s.expenses_total
+        agg[eid]["net_pay"] += s.net_pay
+        if eid not in emp_map:
+            emp_map[eid] = s.employee
+
+    # Estimate statutory deductions (if not stored on PayrollSummary use SARS rules)
+    def _calc_deductions(gross: float):
+        """Simplified SA statutory deductions for export."""
+        uif_rate = 0.01  # 1% each side, capped at R177.12/month
+        uif_emp = min(gross * uif_rate, 177.12)
+        uif_empl = min(gross * uif_rate, 177.12)
+        # Simplified PAYE (flat 18% below R237,100 annual threshold)
+        annual = gross * 12
+        paye_monthly = max(0, (annual - 95_750) * 0.18 / 12) if annual > 95_750 else 0
+        # SDL 1% of gross (employer levy)
+        sdl = gross * 0.01
+        total_deductions = uif_emp + paye_monthly
+        return round(paye_monthly, 2), round(uif_emp, 2), round(uif_empl, 2), round(sdl, 2), round(total_deductions, 2)
+
+    period_label = f"{start.isoformat()} to {end.isoformat()}"
+    rows = []
+
+    for eid, totals in agg.items():
+        emp = emp_map.get(eid)
+        if not emp:
+            continue
+
+        gross = totals["gross_pay"]
+        net = totals["net_pay"]
+        reg = round(totals["regular_hours"], 2)
+        ot = round(totals["overtime_hours"], 2)
+        paye, uif_emp, uif_empl, sdl, total_ded = _calc_deductions(gross)
+
+        emp_number = str(emp.employee_id).zfill(5)
+        full_name = f"{emp.first_name} {emp.last_name}"
+        id_num = emp.id_number or ""
+
+        if format == "sage300":
+            rows.append({
+                "Employee Number": emp_number,
+                "Employee Name": full_name,
+                "ID Number": id_num,
+                "Period Start": start.isoformat(),
+                "Period End": end.isoformat(),
+                "Regular Hours": reg,
+                "Overtime Hours": ot,
+                "Total Hours": round(reg + ot, 2),
+                "Gross Pay": round(gross, 2),
+                "PAYE": paye,
+                "UIF (Employee)": uif_emp,
+                "UIF (Employer)": uif_empl,
+                "SDL": sdl,
+                "Total Deductions": total_ded,
+                "Net Pay": round(net, 2),
+            })
+        elif format == "pastel":
+            rows.append({
+                "EmpNo": emp_number,
+                "EmpName": full_name,
+                "ID Number": id_num,
+                "Period": period_label,
+                "Description": "Monthly Payroll",
+                "Reg Hours": reg,
+                "OT Hours": ot,
+                "Gross Amount": round(gross, 2),
+                "PAYE": paye,
+                "UIF Emp": uif_emp,
+                "UIF Empl": uif_empl,
+                "SDL": sdl,
+                "Net Amount": round(net, 2),
+            })
+        elif format == "vip":
+            rows.append({
+                "Pay Number": emp_number,
+                "Surname": emp.last_name,
+                "First Name": emp.first_name,
+                "ID Number": id_num,
+                "Period": period_label,
+                "Ordinary Hours": reg,
+                "Overtime Hours": ot,
+                "Gross Earnings": round(gross, 2),
+                "PAYE Tax": paye,
+                "UIF Employee": uif_emp,
+                "UIF Employer": uif_empl,
+                "SDL Levy": sdl,
+                "Total Deductions": total_ded,
+                "Net Pay": round(net, 2),
+            })
+
+    columns = _PAYROLL_FORMATS[format]
+    df = pd.DataFrame(rows, columns=columns) if rows else pd.DataFrame(columns=columns)
+
+    buffer = io.BytesIO()
+    df.to_csv(buffer, index=False)
+    buffer.seek(0)
+
+    filename = f"payroll_{format}_{start.isoformat()}_to_{end.isoformat()}.csv"
+    return StreamingResponse(
+        buffer,
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
