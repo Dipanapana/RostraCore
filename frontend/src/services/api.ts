@@ -76,6 +76,7 @@ export const clientsApi = {
   create: (data: any) => api.post('/api/v1/clients/', data),
   update: (id: number, data: any) => api.put(`/api/v1/clients/${id}`, data),
   delete: (id: number) => api.delete(`/api/v1/clients/${id}`),
+  getContractAlerts: () => api.get('/api/v1/clients/contract-alerts'),
 }
 
 export const sitesApi = {

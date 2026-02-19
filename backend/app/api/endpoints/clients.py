@@ -140,6 +140,76 @@ async def create_client(
     return client
 
 
+@router.get("/contract-alerts")
+async def get_contract_alerts(
+    current_user: User = Depends(get_current_user),
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db),
+):
+    """
+    Return contract expiry alerts for all active clients.
+
+    Severity levels:
+    - expired:  contract_end_date is in the past
+    - critical: expires within 30 days
+    - warning:  expires within 90 days
+    - ok:       more than 90 days remaining, or no end date set
+    """
+    from datetime import date as date_cls
+
+    today = date_cls.today()
+    clients = db.query(Client).filter(
+        Client.org_id == org_id,
+        Client.status == "active",
+    ).all()
+
+    alerts = []
+    summary = {"expired": 0, "critical": 0, "warning": 0, "ok": 0, "no_end_date": 0, "total": len(clients)}
+
+    for c in clients:
+        if not c.contract_end_date:
+            summary["no_end_date"] += 1
+            continue
+
+        days_remaining = (c.contract_end_date - today).days
+
+        if days_remaining < 0:
+            severity = "expired"
+            summary["expired"] += 1
+        elif days_remaining <= 30:
+            severity = "critical"
+            summary["critical"] += 1
+        elif days_remaining <= 90:
+            severity = "warning"
+            summary["warning"] += 1
+        else:
+            severity = "ok"
+            summary["ok"] += 1
+
+        site_count = db.query(Site).filter(Site.client_id == c.client_id).count()
+
+        alerts.append({
+            "client_id": c.client_id,
+            "client_name": c.client_name,
+            "contract_start_date": c.contract_start_date.isoformat() if c.contract_start_date else None,
+            "contract_end_date": c.contract_end_date.isoformat(),
+            "days_remaining": days_remaining,
+            "severity": severity,
+            "site_count": site_count,
+            "billing_rate": float(c.billing_rate) if c.billing_rate else None,
+        })
+
+    # Sort: expired first, then critical, warning, ok — within each by days_remaining ascending
+    severity_order = {"expired": 0, "critical": 1, "warning": 2, "ok": 3}
+    alerts.sort(key=lambda a: (severity_order.get(a["severity"], 9), a["days_remaining"]))
+
+    return {
+        "as_of": today.isoformat(),
+        "summary": summary,
+        "alerts": alerts,
+    }
+
+
 @router.get("/{client_id}", response_model=ClientResponse)
 async def get_client(
     client_id: int,

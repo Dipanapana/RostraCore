@@ -232,6 +232,13 @@ const NAV_ENTRIES: NavEntry[] = [
         roles: MANAGEMENT_ROLES,
       },
       {
+        key: "contract-renewals",
+        label: "Contract Renewals",
+        href: "/clients/renewals",
+        icon: CalendarClock,
+        roles: MANAGEMENT_ROLES,
+      },
+      {
         key: "sites",
         label: "Sites",
         href: "/sites",
@@ -372,6 +379,7 @@ const ROUTE_GROUPS: Record<string, string[]> = {
   "/employees/grades": ["/employees/grades"],
   "/certifications": ["/certifications"],
   "/clients": ["/clients", "/sites"],
+  "/clients/renewals": ["/clients/renewals"],
   "/sites": ["/sites"],
   "/roster": ["/roster", "/shifts", "/calendar", "/schedule"],
   "/roster/alerts": ["/roster/alerts"],
