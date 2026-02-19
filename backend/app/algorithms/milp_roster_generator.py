@@ -34,6 +34,7 @@ class MILPRosterGenerator:
         self,
         start_date: datetime,
         end_date: datetime,
+        org_id: int = None,
         site_ids: Optional[List[int]] = None
     ) -> Dict:
         """
@@ -48,8 +49,8 @@ class MILPRosterGenerator:
             Dict with roster assignments and metadata
         """
         # Step 1: Get data
-        shifts = self._get_unassigned_shifts(start_date, end_date, site_ids)
-        employees = self._get_available_employees()
+        shifts = self._get_unassigned_shifts(start_date, end_date, site_ids, org_id)
+        employees = self._get_available_employees(org_id)
 
         print(f"[MILP DEBUG] Found {len(shifts)} unassigned shifts and {len(employees)} active employees")
 
@@ -120,7 +121,8 @@ class MILPRosterGenerator:
         self,
         start_date: datetime,
         end_date: datetime,
-        site_ids: Optional[List[int]] = None
+        site_ids: Optional[List[int]] = None,
+        org_id: int = None
     ) -> List[Dict]:
         """Get all unassigned shifts in the period."""
         from app.models.shift import Shift
@@ -130,6 +132,9 @@ class MILPRosterGenerator:
             Shift.start_time < end_date,
             Shift.assigned_employee_id == None
         )
+
+        if org_id is not None:
+            query = query.filter(Shift.org_id == org_id)
 
         if site_ids:
             query = query.filter(Shift.site_id.in_(site_ids))
@@ -154,13 +159,16 @@ class MILPRosterGenerator:
             for s in shifts
         ]
 
-    def _get_available_employees(self) -> List[Dict]:
+    def _get_available_employees(self, org_id: int = None) -> List[Dict]:
         """Get all active employees."""
         from app.models.employee import Employee, EmployeeStatus
 
-        employees = self.db.query(Employee).filter(
-            Employee.status == EmployeeStatus.ACTIVE
-        ).all()
+        query = self.db.query(Employee).filter(Employee.status == EmployeeStatus.ACTIVE)
+
+        if org_id is not None:
+            query = query.filter(Employee.org_id == org_id)
+
+        employees = query.all()
 
         return [
             {
@@ -236,7 +244,7 @@ class MILPRosterGenerator:
 
                 # Calculate cost (even if not feasible, for analysis)
                 shift_hours = shift["hours"]
-                labor_cost = employee["hourly_rate"] * shift_hours
+                labor_cost = (employee["hourly_rate"] or 0) * shift_hours
                 total_cost = int(labor_cost)  # CP-SAT requires int
 
                 feasibility[(emp_idx, shift_idx)] = {
@@ -304,13 +312,14 @@ class MILPRosterGenerator:
             for week_start, week_shifts in shifts_by_week.items():
                 week_shift_indices = [shifts.index(s) for s in week_shifts]
 
-                total_hours = sum(
-                    shifts[shift_idx]["hours"] * assignment_vars[(emp_idx, shift_idx)]
+                # CP-SAT requires integer coefficients — scale hours × 100
+                total_hours_scaled = sum(
+                    int(shifts[shift_idx]["hours"] * 100) * assignment_vars[(emp_idx, shift_idx)]
                     for shift_idx in week_shift_indices
                     if feasibility[(emp_idx, shift_idx)]["feasible"]
                 )
 
-                model.Add(total_hours <= max_hours * 100)  # Scale for integer arithmetic
+                model.Add(total_hours_scaled <= int(max_hours * 100))
 
         # CONSTRAINT 4: Rest period between consecutive shifts
         for emp_idx in range(n_employees):
@@ -320,7 +329,9 @@ class MILPRosterGenerator:
                         # Check if shifts overlap or don't have enough rest
                         time_between = (shift2["start_time"] - shift1["end_time"]).total_seconds() / 3600
 
-                        if 0 < time_between < self.min_rest_hours:
+                        # Block overlapping shifts (time_between ≤ 0) AND
+                        # shifts without sufficient rest (0 < time_between < min_rest)
+                        if time_between < self.min_rest_hours:
                             # Can't assign both shifts to same employee
                             model.Add(
                                 assignment_vars[(emp_idx, i)] + assignment_vars[(emp_idx, j)] <= 1
