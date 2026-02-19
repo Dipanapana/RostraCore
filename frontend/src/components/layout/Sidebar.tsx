@@ -31,6 +31,7 @@ import {
   Wrench,
   AlertTriangle,
   Route,
+  Calculator,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -256,6 +257,13 @@ const NAV_ENTRIES: NavEntry[] = [
         icon: BarChart3,
         roles: FINANCE_ROLES,
       },
+      {
+        key: "cost-forecast",
+        label: "Cost Forecast",
+        href: "/roster/forecast",
+        icon: Calculator,
+        roles: FINANCE_ROLES,
+      },
     ],
   },
 
@@ -327,6 +335,7 @@ const ROUTE_GROUPS: Record<string, string[]> = {
   "/clients": ["/clients", "/sites"],
   "/sites": ["/sites"],
   "/roster": ["/roster", "/shifts", "/calendar", "/schedule"],
+  "/roster/forecast": ["/roster/forecast"],
   "/leave": ["/leave"],
   "/availability": ["/availability"],
   "/payroll": ["/payroll", "/billing/subscription"],

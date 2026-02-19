@@ -1261,3 +1261,194 @@ def get_spare_pool(
         "shortage": shortage,
         "status": pool_status,
     }
+
+
+@router.get("/cost-forecast")
+def get_cost_forecast(
+    start_date: datetime,
+    end_date: datetime,
+    site_id: Optional[int] = None,
+    client_id: Optional[int] = None,
+    budget_limit: Optional[float] = None,
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db),
+):
+    """
+    Project the total wage cost for a roster period before publishing.
+
+    Returns per-site cost breakdown including:
+    - Total shifts and filled/unfilled counts
+    - Confirmed vs pending wage costs from ShiftAssignment records
+    - Projected billing revenue (hours × client billing_rate)
+    - Estimated profit margin per site
+    - Overall totals and optional budget comparison
+    """
+    from sqlalchemy import func, distinct
+    from app.models.shift_assignment import ShiftAssignment, AssignmentStatus
+    from app.models.employee import Employee
+    from app.models.client import Client
+
+    # Normalise date range to midnight boundaries
+    start = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+    end = end_date.replace(hour=23, minute=59, second=59, microsecond=0)
+
+    # Fetch all shifts in the period for this org
+    shift_query = db.query(Shift).join(Site, Shift.site_id == Site.site_id).filter(
+        Shift.org_id == org_id,
+        Shift.start_time >= start,
+        Shift.start_time <= end,
+        Shift.status.notin_(["cancelled"]),
+    )
+    if site_id:
+        shift_query = shift_query.filter(Shift.site_id == site_id)
+    if client_id:
+        shift_query = shift_query.filter(Site.client_id == client_id)
+
+    shifts = shift_query.all()
+    shift_ids = [s.shift_id for s in shifts]
+
+    # Fetch all non-cancelled assignments for these shifts
+    assignments = db.query(ShiftAssignment).filter(
+        ShiftAssignment.shift_id.in_(shift_ids),
+        ShiftAssignment.status != AssignmentStatus.CANCELLED,
+    ).all() if shift_ids else []
+
+    # Index assignments by shift_id
+    assignments_by_shift: dict[int, list] = {}
+    for a in assignments:
+        assignments_by_shift.setdefault(a.shift_id, []).append(a)
+
+    # Index sites for lookup
+    all_sites = {s.site_id: s for s in db.query(Site).filter(Site.org_id == org_id).all()}
+    all_clients = {c.client_id: c for c in db.query(Client).filter(Client.org_id == org_id).all()}
+
+    # Aggregate per site
+    site_data: dict[int, dict] = {}
+    for shift in shifts:
+        sid = shift.site_id
+        site = all_sites.get(sid)
+        if not site:
+            continue
+
+        client = all_clients.get(site.client_id) if site.client_id else None
+        billing_rate = float(client.billing_rate) if client and client.billing_rate else 120.0
+
+        if sid not in site_data:
+            site_data[sid] = {
+                "site_id": sid,
+                "site_name": site.site_name,
+                "client_id": site.client_id,
+                "client_name": client.client_name if client else None,
+                "billing_rate": billing_rate,
+                "total_shifts": 0,
+                "filled_shifts": 0,
+                "unfilled_shifts": 0,
+                "required_guards": 0,
+                "assigned_guards": 0,
+                "confirmed_cost": 0.0,
+                "pending_cost": 0.0,
+                "total_hours": 0.0,
+                "projected_revenue": 0.0,
+            }
+
+        sd = site_data[sid]
+        sd["total_shifts"] += 1
+        sd["required_guards"] += shift.required_staff
+
+        shift_assignments = assignments_by_shift.get(shift.shift_id, [])
+        if shift_assignments:
+            sd["filled_shifts"] += 1
+        else:
+            sd["unfilled_shifts"] += 1
+
+        for a in shift_assignments:
+            sd["assigned_guards"] += 1
+            hours = a.regular_hours + a.overtime_hours
+            sd["total_hours"] += hours
+            sd["projected_revenue"] += hours * billing_rate
+            if a.status == AssignmentStatus.CONFIRMED:
+                sd["confirmed_cost"] += a.total_cost
+            else:
+                sd["pending_cost"] += a.total_cost
+
+    # Build per-site result rows
+    sites_result = []
+    total_wage_cost = 0.0
+    total_revenue = 0.0
+    total_shifts = 0
+    total_filled = 0
+    total_unfilled = 0
+    total_hours = 0.0
+
+    for sd in site_data.values():
+        wage_cost = sd["confirmed_cost"] + sd["pending_cost"]
+        revenue = sd["projected_revenue"]
+        profit = revenue - wage_cost
+        margin = round((profit / revenue * 100), 1) if revenue > 0 else 0.0
+        margin_status = "green" if margin >= 30 else "amber" if margin >= 15 else "red"
+        fill_rate = round(sd["filled_shifts"] / sd["total_shifts"] * 100, 1) if sd["total_shifts"] > 0 else 0.0
+
+        sites_result.append({
+            "site_id": sd["site_id"],
+            "site_name": sd["site_name"],
+            "client_id": sd["client_id"],
+            "client_name": sd["client_name"],
+            "total_shifts": sd["total_shifts"],
+            "filled_shifts": sd["filled_shifts"],
+            "unfilled_shifts": sd["unfilled_shifts"],
+            "fill_rate_pct": fill_rate,
+            "required_guards": sd["required_guards"],
+            "assigned_guards": sd["assigned_guards"],
+            "total_hours": round(sd["total_hours"], 1),
+            "confirmed_cost": round(sd["confirmed_cost"], 2),
+            "pending_cost": round(sd["pending_cost"], 2),
+            "total_wage_cost": round(wage_cost, 2),
+            "projected_revenue": round(revenue, 2),
+            "projected_profit": round(profit, 2),
+            "profit_margin_pct": margin,
+            "margin_status": margin_status,
+        })
+
+        total_wage_cost += wage_cost
+        total_revenue += revenue
+        total_shifts += sd["total_shifts"]
+        total_filled += sd["filled_shifts"]
+        total_unfilled += sd["unfilled_shifts"]
+        total_hours += sd["total_hours"]
+
+    # Sort by total wage cost descending
+    sites_result.sort(key=lambda x: x["total_wage_cost"], reverse=True)
+
+    overall_profit = total_revenue - total_wage_cost
+    overall_margin = round((overall_profit / total_revenue * 100), 1) if total_revenue > 0 else 0.0
+    overall_fill_rate = round(total_filled / total_shifts * 100, 1) if total_shifts > 0 else 0.0
+
+    # Budget comparison
+    budget_comparison = None
+    if budget_limit is not None:
+        variance = budget_limit - total_wage_cost
+        budget_comparison = {
+            "budget_limit": round(budget_limit, 2),
+            "total_wage_cost": round(total_wage_cost, 2),
+            "variance": round(variance, 2),
+            "status": "under_budget" if variance >= 0 else "over_budget",
+            "pct_used": round((total_wage_cost / budget_limit * 100), 1) if budget_limit > 0 else 0.0,
+        }
+
+    return {
+        "period_start": start.date().isoformat(),
+        "period_end": end.date().isoformat(),
+        "summary": {
+            "total_shifts": total_shifts,
+            "filled_shifts": total_filled,
+            "unfilled_shifts": total_unfilled,
+            "fill_rate_pct": overall_fill_rate,
+            "total_hours": round(total_hours, 1),
+            "total_wage_cost": round(total_wage_cost, 2),
+            "projected_revenue": round(total_revenue, 2),
+            "projected_profit": round(overall_profit, 2),
+            "profit_margin_pct": overall_margin,
+        },
+        "budget_comparison": budget_comparison,
+        "sites": sites_result,
+    }

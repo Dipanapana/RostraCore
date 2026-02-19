@@ -110,6 +110,13 @@ export const rosterApi = {
     api.get('/api/v1/roster/assignment-dashboard', { params }),
   getSparePool: (bufferPct?: number) =>
     api.get('/api/v1/roster/spare-pool', { params: bufferPct !== undefined ? { buffer_pct: bufferPct } : undefined }),
+  getCostForecast: (params: {
+    start_date: string;
+    end_date: string;
+    site_id?: number;
+    client_id?: number;
+    budget_limit?: number;
+  }) => api.get('/api/v1/roster/cost-forecast', { params }),
 }
 
 export const availabilityApi = {
