@@ -92,5 +92,12 @@ celery_app.conf.beat_schedule = {
         'task': 'app.tasks.notification_tasks.send_shift_reminders',
         'schedule': 1800.0,  # Run every 30 minutes
         'options': {'queue': 'default'}
-    }
+    },
+
+    # BCEA Overtime Alerts
+    'send-overtime-alerts': {
+        'task': 'app.tasks.notification_tasks.send_overtime_alerts',
+        'schedule': 21600.0,  # Run every 6 hours
+        'options': {'queue': 'default'}
+    },
 }

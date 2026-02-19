@@ -777,6 +777,110 @@ class ReportPDFGenerator:
 
         return elements
 
+    def _build_psira_compliance_report(self, data: dict) -> List:
+        """Build PSIRA compliance report content.
+
+        Data shape:
+            {
+                'as_of_date': str,
+                'total_guards': int,
+                'valid_count': int,
+                'expiring_count': int,   # within 30 days
+                'expired_count': int,
+                'no_psira_count': int,
+                'grade_counts': {'A': int, 'B': int, ...},
+                'guards': [
+                    {
+                        'name': str, 'psira_number': str, 'grade': str,
+                        'expiry_date': str, 'days_until_expiry': int,
+                        'status': str,  # 'Valid' | 'Expiring Soon' | 'Expired' | 'No PSIRA'
+                        'site': str,
+                    }, ...
+                ]
+            }
+        """
+        elements = []
+        P = self.P
+
+        total = data.get('total_guards', 0)
+        valid = data.get('valid_count', 0)
+        expiring = data.get('expiring_count', 0)
+        expired = data.get('expired_count', 0)
+        no_psira = data.get('no_psira_count', 0)
+
+        compliance_pct = (valid / total * 100) if total else 0
+        compliance_color = P.PROFIT_GREEN if compliance_pct >= 95 else (
+            P.TEXT if compliance_pct >= 80 else P.LOSS_RED
+        )
+
+        metrics = [
+            {'label': 'Total Guards', 'value': str(total)},
+            {'label': 'Valid PSIRA', 'value': str(valid), 'color': P.PROFIT_GREEN},
+            {'label': 'Expiring ≤30 days', 'value': str(expiring), 'color': P.TEXT if expiring == 0 else colors.HexColor('#D69E2E')},
+            {'label': 'Expired', 'value': str(expired), 'color': P.LOSS_RED if expired > 0 else P.TEXT},
+            {'label': 'Compliance Rate', 'value': self._fmt_pct(compliance_pct), 'color': compliance_color},
+        ]
+        elements.extend(self._build_summary_metrics(metrics))
+
+        # Grade breakdown
+        grade_counts = data.get('grade_counts', {})
+        if grade_counts:
+            elements.append(Paragraph("Guards by PSIRA Grade", self.style_section_label))
+            elements.append(Spacer(1, 0.05 * inch))
+            grade_headers = ['Grade', 'Guards', 'Description']
+            grade_descriptions = {
+                'E': 'General Security (entry level)',
+                'D': 'Access Control / Reaction Officer',
+                'C': 'Security Supervisor',
+                'B': 'Security Manager',
+                'A': 'Senior Security Manager (highest)',
+            }
+            grade_rows = []
+            for grade in ['E', 'D', 'C', 'B', 'A']:
+                count = grade_counts.get(grade, 0)
+                if count > 0:
+                    grade_rows.append([
+                        f"Grade {grade}",
+                        str(count),
+                        grade_descriptions.get(grade, ''),
+                    ])
+            if no_psira > 0:
+                grade_rows.append(['No PSIRA', str(no_psira), 'No certification on record'])
+
+            col_widths = [1.2 * inch, 1.0 * inch, 5.0 * inch]
+            elements.extend(self._build_data_table(grade_headers, grade_rows, col_widths))
+
+        # Guard detail table
+        guards = data.get('guards', [])
+        if guards:
+            elements.append(Paragraph("Guard Certification Detail", self.style_section_label))
+            elements.append(Spacer(1, 0.05 * inch))
+
+            headers = ['Name', 'PSIRA No.', 'Grade', 'Expiry Date', 'Days Left', 'Status', 'Site']
+            rows = []
+            for g in guards:
+                status = g.get('status', '')
+                days = g.get('days_until_expiry')
+                days_str = str(days) if days is not None else '–'
+                rows.append([
+                    str(g.get('name', '')),
+                    str(g.get('psira_number', '–')),
+                    str(g.get('grade', '–')),
+                    str(g.get('expiry_date', '–')),
+                    days_str,
+                    status,
+                    str(g.get('site', '–')),
+                ])
+
+            col_widths = [1.6 * inch, 1.2 * inch, 0.7 * inch, 1.1 * inch, 0.8 * inch, 1.1 * inch, 0.7 * inch]
+            elements.extend(self._build_data_table(
+                headers, rows, col_widths,
+                right_align_cols=[4],
+                center_align_cols=[2, 5],
+            ))
+
+        return elements
+
     # ------------------------------------------------------------------
     # Report type router
     # ------------------------------------------------------------------
@@ -787,6 +891,7 @@ class ReportPDFGenerator:
         'coverage': '_build_coverage_report',
         'outstanding_invoices': '_build_outstanding_invoices_report',
         'employee_payroll': '_build_employee_payroll_report',
+        'psira_compliance': '_build_psira_compliance_report',
     }
 
     _REPORT_TITLES = {
@@ -795,6 +900,7 @@ class ReportPDFGenerator:
         'coverage': 'Coverage Report',
         'outstanding_invoices': 'Outstanding Invoices Report',
         'employee_payroll': 'Employee Payroll Summary',
+        'psira_compliance': 'PSIRA Compliance Report',
     }
 
     # ------------------------------------------------------------------

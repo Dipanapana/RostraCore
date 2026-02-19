@@ -1001,3 +1001,147 @@ async def export_employee_payroll_pdf(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error generating employee payroll PDF: {str(e)}"
         )
+
+
+@router.get("/psira-compliance/pdf")
+async def export_psira_compliance_pdf(
+    as_of_date: Optional[date] = None,
+    current_user: User = Depends(require_finance_access),
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db),
+):
+    """
+    Export PSIRA Compliance Report as PDF.
+
+    Lists all active guards with their PSIRA registration number, grade,
+    and certification expiry status. Flags expired and expiring-soon certs.
+
+    Required by PSIRA regulations for audit and compliance purposes.
+
+    Args:
+        as_of_date: Reference date (defaults to today)
+    """
+    from app.models.certification import Certification
+    from app.models.shift_assignment import ShiftAssignment, AssignmentStatus
+
+    check_date = as_of_date or date.today()
+
+    try:
+        company = _load_org_company_details(db, org_id)
+
+        employees = (
+            db.query(Employee)
+            .filter(
+                Employee.org_id == org_id,
+                Employee.status == "active",
+            )
+            .order_by(Employee.last_name, Employee.first_name)
+            .all()
+        )
+
+        guards = []
+        grade_counts: dict = {}
+        valid_count = expired_count = expiring_count = no_psira_count = 0
+
+        for emp in employees:
+            # Prefer the employee-level PSIRA fields; fall back to certifications
+            psira_number = emp.psira_number or "–"
+            psira_grade = (emp.psira_grade or "–").upper()
+            psira_expiry = emp.psira_expiry_date
+
+            # If no employee-level fields, look in certifications table
+            if not emp.psira_number:
+                psira_cert = next(
+                    (c for c in emp.certifications if c.psira_grade is not None),
+                    None,
+                )
+                if psira_cert:
+                    psira_number = psira_cert.cert_number or "–"
+                    psira_grade = (psira_cert.psira_grade.value if hasattr(psira_cert.psira_grade, "value")
+                                   else str(psira_cert.psira_grade)).upper()
+                    psira_expiry = psira_cert.expiry_date
+
+            # Determine status
+            if psira_expiry is None and psira_number == "–":
+                status_label = "No PSIRA"
+                days_left = None
+                no_psira_count += 1
+            else:
+                days_left = (psira_expiry - check_date).days if psira_expiry else None
+                if days_left is None or days_left < 0:
+                    status_label = "Expired"
+                    expired_count += 1
+                elif days_left <= 30:
+                    status_label = "Expiring Soon"
+                    expiring_count += 1
+                else:
+                    status_label = "Valid"
+                    valid_count += 1
+
+            # Grade tally
+            if psira_grade != "–":
+                grade_counts[psira_grade] = grade_counts.get(psira_grade, 0) + 1
+
+            # Current site (most recent active assignment)
+            site_name = "–"
+            latest = (
+                db.query(ShiftAssignment)
+                .join(Shift, ShiftAssignment.shift_id == Shift.shift_id)
+                .join(Site, Shift.site_id == Site.site_id)
+                .filter(
+                    ShiftAssignment.employee_id == emp.employee_id,
+                    ShiftAssignment.status == AssignmentStatus.CONFIRMED,
+                )
+                .order_by(Shift.start_time.desc())
+                .first()
+            )
+            if latest and latest.shift and latest.shift.site:
+                site_name = latest.shift.site.site_name
+
+            guards.append({
+                "name": f"{emp.first_name} {emp.last_name}",
+                "psira_number": psira_number,
+                "grade": psira_grade,
+                "expiry_date": psira_expiry.strftime("%d %b %Y") if psira_expiry else "–",
+                "days_until_expiry": days_left,
+                "status": status_label,
+                "site": site_name,
+            })
+
+        # Sort: expired first, then expiring, then valid, then no PSIRA
+        status_order = {"Expired": 0, "Expiring Soon": 1, "Valid": 2, "No PSIRA": 3}
+        guards.sort(key=lambda g: (status_order.get(g["status"], 9), g["name"]))
+
+        report_data = {
+            "as_of_date": check_date.strftime("%d %b %Y"),
+            "total_guards": len(employees),
+            "valid_count": valid_count,
+            "expiring_count": expiring_count,
+            "expired_count": expired_count,
+            "no_psira_count": no_psira_count,
+            "grade_counts": grade_counts,
+            "guards": guards,
+        }
+
+        pdf_bytes = generate_report_pdf(
+            report_type="psira_compliance",
+            data=report_data,
+            company=company,
+            period_start=check_date,
+            period_end=check_date,
+        )
+
+        filename = f"psira-compliance-{check_date.isoformat()}.pdf"
+        return StreamingResponse(
+            io.BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generating PSIRA compliance report: {str(e)}",
+        )
