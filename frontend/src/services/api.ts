@@ -446,6 +446,8 @@ export const attendanceApi = {
     skip?: number
     limit?: number
   }) => api.get('/api/v1/attendance/', { params }),
+  getAnalytics: (params?: { period_days?: number }) =>
+    api.get('/api/v1/attendance/analytics', { params }),
 }
 
 export const notificationsApi = {

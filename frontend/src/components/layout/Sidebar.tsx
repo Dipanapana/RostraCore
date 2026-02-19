@@ -36,6 +36,7 @@ import {
   ShieldCheck,
   Scale,
   ShieldBan,
+  Activity,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -218,6 +219,13 @@ const NAV_ENTRIES: NavEntry[] = [
         roles: MANAGEMENT_ROLES,
       },
       {
+        key: "attendance-analytics",
+        label: "Attendance Analytics",
+        href: "/attendance/analytics",
+        icon: Activity,
+        roles: ADMIN_ROLES,
+      },
+      {
         key: "availability",
         label: "Availability",
         href: "/availability",
@@ -397,6 +405,7 @@ const ROUTE_GROUPS: Record<string, string[]> = {
   "/clients/renewals": ["/clients/renewals"],
   "/employees/restrictions": ["/employees/restrictions"],
   "/employees/hr-analytics": ["/employees/hr-analytics"],
+  "/attendance/analytics": ["/attendance/analytics"],
   "/sites": ["/sites"],
   "/roster": ["/roster", "/shifts", "/calendar", "/schedule"],
   "/roster/alerts": ["/roster/alerts"],

@@ -327,3 +327,148 @@ def list_attendance(
             "late": late_count,
         },
     }
+
+
+@router.get("/analytics")
+def attendance_analytics(
+    period_days: int = Query(30, ge=7, le=365, description="Lookback period in days"),
+    current_user: User = Depends(get_current_user),
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db),
+):
+    """
+    Attendance analytics — check-in rates, punctuality, no-show trends,
+    and per-site/per-employee breakdowns for the given lookback period.
+    """
+    from datetime import timedelta
+    from app.models.client import Client
+
+    if current_user.role not in MANAGEMENT_ROLES:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Management access required.")
+
+    now = datetime.utcnow()
+    cutoff = now - timedelta(days=period_days)
+
+    # All non-cancelled assignments in the window whose shift has ended
+    rows = (
+        db.query(ShiftAssignment, Shift, Site, Employee)
+        .join(Shift, ShiftAssignment.shift_id == Shift.shift_id)
+        .join(Employee, ShiftAssignment.employee_id == Employee.employee_id)
+        .outerjoin(Site, Shift.site_id == Site.site_id)
+        .filter(
+            Employee.org_id == org_id,
+            Shift.start_time >= cutoff,
+            Shift.end_time <= now,
+            ShiftAssignment.status != AssignmentStatus.CANCELLED.value,
+        )
+        .all()
+    )
+
+    total = len(rows)
+    checked_in_count = 0
+    checked_out_count = 0
+    no_show_count = 0
+    late_count = 0
+    total_lateness_min = 0.0
+    early_departure_count = 0
+
+    # Per-site aggregation
+    site_stats: dict = {}
+    # Per-employee aggregation
+    emp_stats: dict = {}
+    # Daily trend
+    daily_stats: dict = {}
+
+    for assignment, shift, site, employee in rows:
+        day_key = shift.start_time.strftime("%Y-%m-%d")
+        site_key = site.site_name if site else "Unknown"
+        emp_key = employee.employee_id
+        emp_name = f"{employee.first_name} {employee.last_name}"
+
+        # Initialize
+        if day_key not in daily_stats:
+            daily_stats[day_key] = {"total": 0, "checked_in": 0, "no_show": 0, "late": 0}
+        if site_key not in site_stats:
+            site_stats[site_key] = {"site_id": site.site_id if site else None, "total": 0, "checked_in": 0, "no_show": 0, "late": 0}
+        if emp_key not in emp_stats:
+            emp_stats[emp_key] = {"employee_id": emp_key, "name": emp_name, "total": 0, "checked_in": 0, "no_show": 0, "late": 0}
+
+        daily_stats[day_key]["total"] += 1
+        site_stats[site_key]["total"] += 1
+        emp_stats[emp_key]["total"] += 1
+
+        if assignment.checked_in:
+            checked_in_count += 1
+            daily_stats[day_key]["checked_in"] += 1
+            site_stats[site_key]["checked_in"] += 1
+            emp_stats[emp_key]["checked_in"] += 1
+
+            # Lateness check (>15 min after shift start)
+            if assignment.check_in_time and shift.start_time:
+                delta_min = (assignment.check_in_time - shift.start_time).total_seconds() / 60
+                if delta_min > 15:
+                    late_count += 1
+                    total_lateness_min += delta_min
+                    daily_stats[day_key]["late"] += 1
+                    site_stats[site_key]["late"] += 1
+                    emp_stats[emp_key]["late"] += 1
+
+            if assignment.checked_out:
+                checked_out_count += 1
+                # Early departure (checked out >15 min before shift end)
+                if assignment.check_out_time and shift.end_time:
+                    early_min = (shift.end_time - assignment.check_out_time).total_seconds() / 60
+                    if early_min > 15:
+                        early_departure_count += 1
+        else:
+            no_show_count += 1
+            daily_stats[day_key]["no_show"] += 1
+            site_stats[site_key]["no_show"] += 1
+            emp_stats[emp_key]["no_show"] += 1
+
+    check_in_rate = round((checked_in_count / total * 100), 1) if total > 0 else 0.0
+    punctuality_rate = round(((checked_in_count - late_count) / checked_in_count * 100), 1) if checked_in_count > 0 else 0.0
+    no_show_rate = round((no_show_count / total * 100), 1) if total > 0 else 0.0
+    avg_lateness = round(total_lateness_min / late_count, 1) if late_count > 0 else 0.0
+
+    # Top 5 worst no-show employees
+    emp_list = sorted(emp_stats.values(), key=lambda e: e["no_show"], reverse=True)
+    top_no_shows = emp_list[:5] if emp_list else []
+
+    # Sites sorted by no-show rate
+    site_list = []
+    for name, s in site_stats.items():
+        ns_rate = round((s["no_show"] / s["total"] * 100), 1) if s["total"] > 0 else 0.0
+        site_list.append({**s, "site_name": name, "no_show_rate": ns_rate, "check_in_rate": round((s["checked_in"] / s["total"] * 100), 1) if s["total"] > 0 else 0.0})
+    site_list.sort(key=lambda s: s["no_show_rate"], reverse=True)
+
+    # Daily trend sorted by date
+    daily_trend = []
+    for day, d in sorted(daily_stats.items()):
+        daily_trend.append({
+            "date": day,
+            "total": d["total"],
+            "checked_in": d["checked_in"],
+            "no_show": d["no_show"],
+            "late": d["late"],
+            "check_in_rate": round((d["checked_in"] / d["total"] * 100), 1) if d["total"] > 0 else 0.0,
+        })
+
+    return {
+        "period_days": period_days,
+        "total_assignments": total,
+        "overview": {
+            "check_in_rate": check_in_rate,
+            "punctuality_rate": punctuality_rate,
+            "no_show_rate": no_show_rate,
+            "avg_lateness_min": avg_lateness,
+            "checked_in": checked_in_count,
+            "checked_out": checked_out_count,
+            "no_shows": no_show_count,
+            "late_arrivals": late_count,
+            "early_departures": early_departure_count,
+        },
+        "daily_trend": daily_trend,
+        "by_site": site_list[:20],
+        "top_no_show_employees": top_no_shows,
+    }
