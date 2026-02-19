@@ -191,6 +191,13 @@ const NAV_ENTRIES: NavEntry[] = [
         roles: ADMIN_ROLES,
       },
       {
+        key: "hr-analytics",
+        label: "HR Analytics",
+        href: "/employees/hr-analytics",
+        icon: BarChart3,
+        roles: ADMIN_ROLES,
+      },
+      {
         key: "time-leave",
         label: "Time & Leave",
         href: "/leave",
@@ -389,6 +396,7 @@ const ROUTE_GROUPS: Record<string, string[]> = {
   "/clients": ["/clients", "/sites"],
   "/clients/renewals": ["/clients/renewals"],
   "/employees/restrictions": ["/employees/restrictions"],
+  "/employees/hr-analytics": ["/employees/hr-analytics"],
   "/sites": ["/sites"],
   "/roster": ["/roster", "/shifts", "/calendar", "/schedule"],
   "/roster/alerts": ["/roster/alerts"],

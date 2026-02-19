@@ -258,6 +258,173 @@ async def get_grade_stats(
     }
 
 
+@router.get("/hr-analytics")
+async def get_hr_analytics(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Aggregated HR analytics dashboard data.
+
+    Returns headcount breakdown, certification compliance, performance
+    averages, disciplinary summary, leave utilisation, and turnover
+    indicators in a single payload for the HR dashboard.
+    """
+    from app.models.performance import EmployeeEvaluation, DisciplinaryCase
+    from app.models.leave import LeaveRequest
+    from app.models.guard_restriction import GuardRestriction
+
+    org_id = _get_org_id_or_403(current_user)
+    today = date.today()
+    year_start = date(today.year, 1, 1)
+
+    # ── Headcount ───────────────────────────────────────────
+    all_employees = db.query(Employee).filter(Employee.org_id == org_id).all()
+    active = [e for e in all_employees if e.status == EmployeeStatus.ACTIVE]
+    inactive = [e for e in all_employees if e.status != EmployeeStatus.ACTIVE]
+
+    # Role breakdown
+    role_counts: dict = {}
+    for e in active:
+        r = (e.role.value if e.role else "unknown").replace("_", " ").title()
+        role_counts[r] = role_counts.get(r, 0) + 1
+
+    # Grade breakdown
+    grade_counts: dict = {}
+    for e in active:
+        g = (e.cert_level or "").strip().upper() or "Ungraded"
+        grade_counts[g] = grade_counts.get(g, 0) + 1
+
+    # ── Certification Compliance ────────────────────────────
+    certs = (
+        db.query(Certification)
+        .join(Employee, Certification.employee_id == Employee.employee_id)
+        .filter(Employee.org_id == org_id, Employee.status == EmployeeStatus.ACTIVE)
+        .all()
+    )
+    certs_expired = sum(1 for c in certs if c.expiry_date and c.expiry_date < today)
+    certs_expiring_30d = sum(
+        1 for c in certs
+        if c.expiry_date and today <= c.expiry_date <= today + timedelta(days=30)
+    )
+    certs_expiring_90d = sum(
+        1 for c in certs
+        if c.expiry_date and today <= c.expiry_date <= today + timedelta(days=90)
+    )
+    certs_valid = sum(
+        1 for c in certs
+        if c.expiry_date and c.expiry_date > today + timedelta(days=90)
+    )
+
+    # PSIRA compliance
+    psira_expired = sum(
+        1 for e in active
+        if e.psira_expiry_date and e.psira_expiry_date < today
+    )
+    psira_expiring_30d = sum(
+        1 for e in active
+        if e.psira_expiry_date and today <= e.psira_expiry_date <= today + timedelta(days=30)
+    )
+    psira_no_date = sum(1 for e in active if not e.psira_expiry_date)
+
+    # ── Performance Averages (this year) ────────────────────
+    evals_this_year = (
+        db.query(EmployeeEvaluation)
+        .filter(
+            EmployeeEvaluation.org_id == org_id,
+            EmployeeEvaluation.evaluation_date >= year_start,
+        )
+        .all()
+    )
+    avg_overall = (
+        round(sum(e.overall_score for e in evals_this_year) / len(evals_this_year), 1)
+        if evals_this_year else None
+    )
+    eval_count = len(evals_this_year)
+
+    # Score distribution
+    score_dist = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+    for ev in evals_this_year:
+        if 1 <= ev.overall_score <= 5:
+            score_dist[ev.overall_score] += 1
+
+    # ── Disciplinary Summary (this year) ────────────────────
+    cases_this_year = (
+        db.query(DisciplinaryCase)
+        .filter(
+            DisciplinaryCase.org_id == org_id,
+            DisciplinaryCase.incident_date >= year_start,
+        )
+        .all()
+    )
+    case_type_counts: dict = {}
+    for c in cases_this_year:
+        label = (c.case_type or "unknown").replace("_", " ").title()
+        case_type_counts[label] = case_type_counts.get(label, 0) + 1
+
+    # ── Leave Utilisation (this year) ────────────────────────
+    leave_requests = (
+        db.query(LeaveRequest)
+        .filter(
+            LeaveRequest.org_id == org_id,
+            LeaveRequest.start_date >= year_start,
+            LeaveRequest.status == "approved",
+        )
+        .all()
+    )
+    leave_type_counts: dict = {}
+    total_leave_days = 0
+    for lr in leave_requests:
+        lt = (lr.leave_type or "unknown").replace("_", " ").title()
+        days = (lr.end_date - lr.start_date).days + 1 if lr.end_date and lr.start_date else 0
+        leave_type_counts[lt] = leave_type_counts.get(lt, 0) + days
+        total_leave_days += days
+
+    # ── Guard Restrictions ──────────────────────────────────
+    restriction_count = (
+        db.query(func.count(GuardRestriction.restriction_id))
+        .filter(GuardRestriction.org_id == org_id)
+        .scalar() or 0
+    )
+
+    return {
+        "as_of": today.isoformat(),
+        "headcount": {
+            "total": len(all_employees),
+            "active": len(active),
+            "inactive": len(inactive),
+            "by_role": role_counts,
+            "by_grade": grade_counts,
+        },
+        "certifications": {
+            "total": len(certs),
+            "expired": certs_expired,
+            "expiring_30d": certs_expiring_30d,
+            "expiring_90d": certs_expiring_90d,
+            "valid": certs_valid,
+            "psira_expired": psira_expired,
+            "psira_expiring_30d": psira_expiring_30d,
+            "psira_no_date": psira_no_date,
+        },
+        "performance": {
+            "evaluations_ytd": eval_count,
+            "avg_overall_score": avg_overall,
+            "score_distribution": score_dist,
+        },
+        "disciplinary": {
+            "cases_ytd": len(cases_this_year),
+            "by_type": case_type_counts,
+        },
+        "leave": {
+            "total_days_ytd": total_leave_days,
+            "by_type": leave_type_counts,
+        },
+        "restrictions": {
+            "active_count": restriction_count,
+        },
+    }
+
+
 @router.get("/{employee_id}", response_model=EmployeeResponse)
 async def get_employee(
     employee_id: int,
