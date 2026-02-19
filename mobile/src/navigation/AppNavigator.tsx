@@ -14,6 +14,7 @@ import LeaveScreen from '../screens/LeaveScreen';
 import PayslipScreen from '../screens/PayslipScreen';
 import MyIncidentsScreen from '../screens/MyIncidentsScreen';
 import LeaveApprovalScreen from '../screens/LeaveApprovalScreen';
+import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 import { useAuthStore } from '../context/authStore';
 
 // ---------------------------------------------------------------------------
@@ -123,6 +124,11 @@ export default function AppNavigator() {
       <RootStack.Screen
         name="LeaveApproval"
         component={LeaveApprovalScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <RootStack.Screen
+        name="ChangePassword"
+        component={ChangePasswordScreen}
         options={{ presentation: 'modal' }}
       />
     </RootStack.Navigator>

@@ -8,9 +8,11 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../context/authStore';
 
 export default function ProfileScreen() {
+  const navigation = useNavigation<any>();
   const { user, logout } = useAuthStore();
 
   const handleLogout = () => {
@@ -71,6 +73,13 @@ export default function ProfileScreen() {
 
         {/* Actions */}
         <View style={styles.actionsSection}>
+          <TouchableOpacity
+            style={styles.changePasswordButton}
+            onPress={() => navigation.navigate('ChangePassword')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.changePasswordText}>🔑  Change Password</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <Text style={styles.logoutText}>Sign Out</Text>
           </TouchableOpacity>
@@ -163,6 +172,20 @@ const styles = StyleSheet.create({
   },
   actionsSection: {
     marginBottom: 24,
+    gap: 12,
+  },
+  changePasswordButton: {
+    backgroundColor: '#1e293b',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  changePasswordText: {
+    color: '#a78bfa',
+    fontSize: 16,
+    fontWeight: '600',
   },
   logoutButton: {
     backgroundColor: '#450a0a',

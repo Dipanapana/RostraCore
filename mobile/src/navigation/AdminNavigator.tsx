@@ -12,6 +12,7 @@ import LeaveScreen from '../screens/LeaveScreen';
 import PayslipScreen from '../screens/PayslipScreen';
 import MyIncidentsScreen from '../screens/MyIncidentsScreen';
 import LeaveApprovalScreen from '../screens/LeaveApprovalScreen';
+import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 
 // ---------------------------------------------------------------------------
 // Tab icons
@@ -104,6 +105,11 @@ export default function AdminNavigator() {
       <AdminRootStack.Screen
         name="MyIncidents"
         component={MyIncidentsScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <AdminRootStack.Screen
+        name="ChangePassword"
+        component={ChangePasswordScreen}
         options={{ presentation: 'modal' }}
       />
     </AdminRootStack.Navigator>

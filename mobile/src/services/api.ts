@@ -55,6 +55,11 @@ export const authApi = {
   me: () => api.get('/api/v1/auth/me'),
   refresh: (refreshToken: string) =>
     api.post('/api/v1/auth/refresh', { refresh_token: refreshToken }),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    api.post('/api/v1/auth/change-password', {
+      current_password: currentPassword,
+      new_password: newPassword,
+    }),
 };
 
 // ---------------------------------------------------------------------------
