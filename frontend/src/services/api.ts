@@ -381,6 +381,16 @@ export const reportsApi = {
     api.get('/api/v1/reports/psira-compliance/pdf', { responseType: 'blob' }),
 }
 
+export const incidentsApi = {
+  list: (params?: { site_id?: number; severity?: string; status_filter?: string; skip?: number; limit?: number }) =>
+    api.get('/api/v1/incidents', { params }),
+  get: (id: number) => api.get(`/api/v1/incidents/${id}`),
+  updateStatus: (id: number, newStatus: string, resolutionNotes?: string) =>
+    api.patch(`/api/v1/incidents/${id}/status`, null, {
+      params: { new_status: newStatus, resolution_notes: resolutionNotes },
+    }),
+}
+
 export const authApi = {
   changePassword: (currentPassword: string, newPassword: string) =>
     api.post('/api/v1/auth/change-password', {
