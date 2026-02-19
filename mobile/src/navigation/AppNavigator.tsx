@@ -12,6 +12,7 @@ import IncidentReportScreen from '../screens/IncidentReportScreen';
 import PatrolScreen from '../screens/PatrolScreen';
 import LeaveScreen from '../screens/LeaveScreen';
 import PayslipScreen from '../screens/PayslipScreen';
+import MyIncidentsScreen from '../screens/MyIncidentsScreen';
 import { useAuthStore } from '../context/authStore';
 
 // ---------------------------------------------------------------------------
@@ -111,6 +112,11 @@ export default function AppNavigator() {
       <RootStack.Screen
         name="Payslip"
         component={PayslipScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <RootStack.Screen
+        name="MyIncidents"
+        component={MyIncidentsScreen}
         options={{ presentation: 'modal' }}
       />
     </RootStack.Navigator>
