@@ -1589,3 +1589,127 @@ def get_posting_alerts(
         "summary": summary,
         "alerts": alerts,
     }
+
+
+@router.get("/spare-pool")
+def get_spare_pool(
+    lookback_days: int = 90,
+    buffer_pct: float = 5.0,
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db),
+):
+    """
+    Calculate the recommended spare/relief guard pool size for the organisation.
+
+    Uses historical absence data (approved leave + no-show/AWOL exceptions) to
+    compute the historical absence rate, then recommends a spare headcount to
+    cover expected daily absences plus a configurable safety buffer.
+    """
+    from math import ceil
+    from datetime import date, timedelta, datetime, time as dt_time
+    from app.models.leave import LeaveRequest
+    from app.models.shift_exception import ShiftException
+    from app.models.shift_assignment import ShiftAssignment, AssignmentStatus
+    from app.models.employee import Employee, EmployeeStatus
+
+    today = date.today()
+    lookback_start = today - timedelta(days=lookback_days)
+    lookback_start_dt = datetime.combine(lookback_start, dt_time(0, 0))
+    today_dt = datetime.combine(today, dt_time(23, 59))
+
+    # 1. Active guard headcount
+    active_count = db.query(Employee).filter(
+        Employee.org_id == org_id,
+        Employee.status == EmployeeStatus.ACTIVE,
+    ).count()
+
+    # 2. Approved leave incidents + days in lookback window
+    leave_records = db.query(LeaveRequest).filter(
+        LeaveRequest.org_id == org_id,
+        LeaveRequest.status == "approved",
+        LeaveRequest.start_date >= lookback_start,
+        LeaveRequest.start_date <= today,
+    ).all()
+    total_leave_days = sum(float(lr.days_requested or 1) for lr in leave_records)
+    leave_incident_count = len(leave_records)
+
+    # 3. No-show / AWOL exceptions in lookback window
+    no_show_count = db.query(ShiftException).filter(
+        ShiftException.org_id == org_id,
+        ShiftException.exception_date >= lookback_start,
+        ShiftException.exception_date <= today,
+        ShiftException.exception_type.in_(["no_show", "awol"]),
+    ).count()
+
+    # 4. Total non-cancelled guard-shifts scheduled in lookback window
+    scheduled_shifts = db.query(ShiftAssignment).join(
+        Shift, ShiftAssignment.shift_id == Shift.shift_id
+    ).filter(
+        Shift.org_id == org_id,
+        Shift.start_time >= lookback_start_dt,
+        Shift.start_time <= today_dt,
+        ShiftAssignment.status != AssignmentStatus.CANCELLED,
+    ).count()
+
+    # 5. Absence rate = absent units / (scheduled + absent)
+    total_absent = total_leave_days + no_show_count
+    total_possible = scheduled_shifts + total_absent
+    absence_rate = (total_absent / total_possible * 100) if total_possible > 0 else 0.0
+
+    # 6. Recommended spare pool (absence rate + safety buffer applied to active headcount)
+    effective_rate = absence_rate / 100.0 + buffer_pct / 100.0
+    recommended_spare = ceil(active_count * effective_rate) if active_count > 0 else 0
+
+    # 7. Per-site unique guard deployment (last 30 days)
+    site_window_dt = datetime.combine(today - timedelta(days=30), dt_time(0, 0))
+    site_rows = db.query(
+        Shift.site_id,
+        ShiftAssignment.employee_id,
+    ).join(
+        Shift, ShiftAssignment.shift_id == Shift.shift_id
+    ).filter(
+        Shift.org_id == org_id,
+        Shift.start_time >= site_window_dt,
+        ShiftAssignment.status != AssignmentStatus.CANCELLED,
+    ).distinct().all()
+
+    site_guard_counts: dict[int, set] = {}
+    for sid, emp_id in site_rows:
+        site_guard_counts.setdefault(sid, set()).add(emp_id)
+
+    all_sites_map = {s.site_id: s for s in db.query(Site).filter(Site.org_id == org_id).all()}
+    client_cache: dict[int, Client] = {}
+    for s in all_sites_map.values():
+        if s.client_id and s.client_id not in client_cache:
+            c = db.query(Client).filter(Client.client_id == s.client_id).first()
+            if c:
+                client_cache[s.client_id] = c
+
+    site_breakdown = []
+    for sid, emp_set in sorted(site_guard_counts.items(), key=lambda x: -len(x[1])):
+        site = all_sites_map.get(sid)
+        client = client_cache.get(site.client_id) if site and site.client_id else None
+        site_breakdown.append({
+            "site_id": sid,
+            "site_name": site.site_name if site else f"Site {sid}",
+            "client_name": client.client_name if client else None,
+            "deployed_guards": len(emp_set),
+        })
+
+    return {
+        "as_of": today.isoformat(),
+        "lookback_days": lookback_days,
+        "buffer_pct": buffer_pct,
+        "active_guards": active_count,
+        "absence_stats": {
+            "leave_incidents": leave_incident_count,
+            "total_leave_days": round(total_leave_days, 1),
+            "no_show_awol_count": no_show_count,
+            "total_absent_units": round(total_absent, 1),
+            "total_scheduled_shifts": scheduled_shifts,
+            "absence_rate_pct": round(absence_rate, 1),
+        },
+        "recommended_spare_pool": recommended_spare,
+        "effective_rate_pct": round(effective_rate * 100, 1),
+        "site_breakdown": site_breakdown,
+    }
