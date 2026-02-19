@@ -34,6 +34,7 @@ import {
   Route,
   Calculator,
   ShieldCheck,
+  Scale,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -172,6 +173,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Spare Pool",
         href: "/roster/spare-pool",
         icon: ShieldCheck,
+        roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "compliance",
+        label: "BCEA Compliance",
+        href: "/roster/compliance",
+        icon: Scale,
         roles: MANAGEMENT_ROLES,
       },
       {
@@ -369,6 +377,7 @@ const ROUTE_GROUPS: Record<string, string[]> = {
   "/roster/alerts": ["/roster/alerts"],
   "/roster/exceptions": ["/roster/exceptions"],
   "/roster/spare-pool": ["/roster/spare-pool"],
+  "/roster/compliance": ["/roster/compliance"],
   "/roster/forecast": ["/roster/forecast"],
   "/leave": ["/leave"],
   "/availability": ["/availability"],

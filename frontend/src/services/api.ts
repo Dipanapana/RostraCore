@@ -124,6 +124,8 @@ export const rosterApi = {
     site_id?: number;
     client_id?: number;
   }) => api.get('/api/v1/roster/posting-alerts', { params }),
+  getOvertimeCompliance: (params?: { week_start?: string }) =>
+    api.get('/api/v1/roster/overtime-compliance', { params }),
 }
 
 export const availabilityApi = {

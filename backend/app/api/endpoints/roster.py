@@ -1713,3 +1713,132 @@ def get_spare_pool(
         "effective_rate_pct": round(effective_rate * 100, 1),
         "site_breakdown": site_breakdown,
     }
+
+
+@router.get("/overtime-compliance")
+def get_overtime_compliance(
+    week_start: Optional[str] = None,
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db),
+):
+    """
+    BCEA overtime compliance check for the specified week.
+
+    South African BCEA limits:
+    - Normal working time: 45 hours per week (Section 9)
+    - Maximum overtime: 10 hours per week (Section 10)
+    - Daily overtime: max 3 hours per day
+
+    Returns per-employee hours breakdown with compliance status:
+    - green:  total_hours < 45
+    - amber:  45 <= total_hours <= 55  (within legal OT limit)
+    - red:    total_hours > 55  (exceeds BCEA maximum)
+    """
+    from datetime import date, timedelta, datetime, time as dt_time
+    from collections import defaultdict
+    from app.models.shift_assignment import ShiftAssignment, AssignmentStatus
+    from app.models.employee import Employee, EmployeeStatus
+
+    # Determine the Monday–Sunday week window
+    if week_start:
+        try:
+            ws = datetime.fromisoformat(week_start).date()
+        except ValueError:
+            ws = date.today()
+    else:
+        ws = date.today()
+
+    # Roll back to Monday
+    monday = ws - timedelta(days=ws.weekday())
+    sunday = monday + timedelta(days=6)
+    start_dt = datetime.combine(monday, dt_time(0, 0))
+    end_dt = datetime.combine(sunday, dt_time(23, 59, 59))
+
+    # Fetch all non-cancelled assignments in the week for this org
+    assignments = (
+        db.query(ShiftAssignment)
+        .join(Shift, ShiftAssignment.shift_id == Shift.shift_id)
+        .filter(
+            Shift.org_id == org_id,
+            Shift.start_time >= start_dt,
+            Shift.start_time <= end_dt,
+            ShiftAssignment.status != AssignmentStatus.CANCELLED,
+        )
+        .all()
+    )
+
+    # Aggregate per employee
+    emp_hours: dict[int, dict] = defaultdict(lambda: {
+        "regular_hours": 0.0,
+        "overtime_hours": 0.0,
+        "shift_count": 0,
+    })
+    for a in assignments:
+        emp_hours[a.employee_id]["regular_hours"] += a.regular_hours
+        emp_hours[a.employee_id]["overtime_hours"] += a.overtime_hours
+        emp_hours[a.employee_id]["shift_count"] += 1
+
+    # Fetch employee details
+    emp_ids = list(emp_hours.keys())
+    employees_map: dict[int, Employee] = {}
+    if emp_ids:
+        for emp in db.query(Employee).filter(Employee.employee_id.in_(emp_ids)).all():
+            employees_map[emp.employee_id] = emp
+
+    BCEA_NORMAL = 45.0
+    BCEA_MAX_OT = 10.0
+    BCEA_ABSOLUTE = BCEA_NORMAL + BCEA_MAX_OT  # 55 hours
+
+    rows = []
+    summary = {"green": 0, "amber": 0, "red": 0, "total_employees": 0}
+
+    for eid, hrs in emp_hours.items():
+        emp = employees_map.get(eid)
+        if not emp:
+            continue
+
+        total = round(hrs["regular_hours"] + hrs["overtime_hours"], 1)
+        ot = round(hrs["overtime_hours"], 1)
+        reg = round(hrs["regular_hours"], 1)
+        max_week = emp.max_hours_week or 48
+
+        if total > BCEA_ABSOLUTE:
+            status = "red"
+            summary["red"] += 1
+        elif total >= BCEA_NORMAL:
+            status = "amber"
+            summary["amber"] += 1
+        else:
+            status = "green"
+            summary["green"] += 1
+
+        summary["total_employees"] += 1
+
+        rows.append({
+            "employee_id": eid,
+            "employee_name": f"{emp.first_name} {emp.last_name}",
+            "employee_number": str(eid).zfill(5),
+            "role": emp.role.value if emp.role else None,
+            "regular_hours": reg,
+            "overtime_hours": ot,
+            "total_hours": total,
+            "max_hours_week": max_week,
+            "shift_count": hrs["shift_count"],
+            "compliance_status": status,
+        })
+
+    # Sort: red first, then amber, then green; within each by total hours descending
+    status_order = {"red": 0, "amber": 1, "green": 2}
+    rows.sort(key=lambda r: (status_order.get(r["compliance_status"], 9), -r["total_hours"]))
+
+    return {
+        "week_start": monday.isoformat(),
+        "week_end": sunday.isoformat(),
+        "bcea_limits": {
+            "normal_hours": BCEA_NORMAL,
+            "max_overtime": BCEA_MAX_OT,
+            "absolute_max": BCEA_ABSOLUTE,
+        },
+        "summary": summary,
+        "employees": rows,
+    }
