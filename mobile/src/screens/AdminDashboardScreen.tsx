@@ -6,8 +6,10 @@ import {
   ScrollView,
   RefreshControl,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { dashboardApi } from '../services/api';
 import { useAuthStore } from '../context/authStore';
 
@@ -71,6 +73,7 @@ function StatCard({
 // ---------------------------------------------------------------------------
 
 export default function AdminDashboardScreen() {
+  const navigation = useNavigation<any>();
   const { user } = useAuthStore();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -196,12 +199,17 @@ export default function AdminDashboardScreen() {
         {/* Alerts */}
         <Text style={styles.sectionTitle}>Action Required</Text>
         <View style={styles.statsGrid}>
-          <StatCard
-            title="Pending Leave"
-            value={stats?.pending_leave_requests ?? 0}
-            subtitle="requests"
-            color="#f59e0b"
-          />
+          <TouchableOpacity
+            activeOpacity={0.75}
+            onPress={() => navigation.navigate('LeaveApproval')}
+          >
+            <StatCard
+              title="Pending Leave"
+              value={stats?.pending_leave_requests ?? 0}
+              subtitle="tap to review →"
+              color="#f59e0b"
+            />
+          </TouchableOpacity>
           <StatCard
             title="Expiring Certs"
             value={stats?.expiring_certifications ?? 0}

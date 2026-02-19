@@ -127,6 +127,16 @@ export const leaveApi = {
     end_date: string;
     reason?: string;
   }) => api.post('/api/v1/leave/', data),
+
+  // Admin-only
+  getRequests: (params?: { status?: string; skip?: number; limit?: number }) =>
+    api.get('/api/v1/leave/requests', { params }),
+  approve: (leaveId: number) =>
+    api.patch(`/api/v1/leave/requests/${leaveId}/approve`),
+  reject: (leaveId: number, rejectionReason?: string) =>
+    api.patch(`/api/v1/leave/requests/${leaveId}/reject`, {
+      rejection_reason: rejectionReason,
+    }),
 };
 
 // ---------------------------------------------------------------------------
