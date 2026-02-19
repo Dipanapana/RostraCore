@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { api, incidentsApi, patrolsApi, shiftsApi, rosterApi } from "@/services/api";
+import { api, incidentsApi, patrolsApi, shiftsApi, rosterApi, reportsApi } from "@/services/api";
 import { getApiUrl } from "@/lib/config";
 import Link from "next/link";
 import {
@@ -70,6 +70,7 @@ export default function DashboardPage() {
   const [activePatrols, setActivePatrols] = useState(0);
   const [understaffedShifts, setUnderstaffedShifts] = useState<any[]>([]);
   const [sparePool, setSparePool] = useState<any>(null);
+  const [clientProfitability, setClientProfitability] = useState<any[]>([]);
 
   const fetchData = async (isRefresh = false) => {
     if (isRefresh) {
@@ -78,7 +79,7 @@ export default function DashboardPage() {
       setLoading(true);
     }
     try {
-        const [metricsRes, shiftsRes, trendsRes, incidentsRes, patrolRunsRes, coverageGapsRes, sparePoolRes] = await Promise.all([
+        const [metricsRes, shiftsRes, trendsRes, incidentsRes, patrolRunsRes, coverageGapsRes, sparePoolRes, profitabilityRes] = await Promise.all([
           api.get(`${getApiUrl()}/api/v1/dashboard/metrics`),
           api.get(`${getApiUrl()}/api/v1/dashboard/upcoming-shifts?limit=5`),
           api.get(`${getApiUrl()}/api/v1/dashboard/cost-trends?days=7`),
@@ -86,6 +87,7 @@ export default function DashboardPage() {
           patrolsApi.listRuns({ run_status: 'in_progress', limit: 50 }).catch(() => ({ data: [] })),
           shiftsApi.getCoverageGaps().catch(() => ({ data: [] })),
           rosterApi.getSparePool().catch(() => ({ data: null })),
+          reportsApi.clientProfitability().catch(() => ({ data: { clients: [] } })),
         ]);
 
         const metricsData = metricsRes.data;
@@ -222,6 +224,7 @@ export default function DashboardPage() {
         setActivePatrols((patrolRunsRes.data ?? []).length);
         setUnderstaffedShifts(coverageGapsRes.data ?? []);
         setSparePool(sparePoolRes.data);
+        setClientProfitability((profitabilityRes.data?.clients ?? []).slice(0, 5));
 
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -466,6 +469,48 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
+        {/* Client Profitability — Top 5 by Margin */}
+        {clientProfitability.length > 0 && (
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 animate-slide-up" style={{ animationDelay: "1000ms" }}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="font-semibold text-slate-900 dark:text-white">Client Profitability</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Wage-to-revenue ratio — last 30 days</p>
+              </div>
+              <Link href="/reports" className="text-xs text-blue-500 hover:text-blue-400 transition-colors">View reports →</Link>
+            </div>
+
+            <div className="space-y-3">
+              {clientProfitability.map((c: any) => (
+                <div key={c.client_id} className="flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm text-slate-700 dark:text-slate-300 truncate font-medium">{c.client_name}</span>
+                      <span className={`text-xs font-semibold ml-2 shrink-0 ${
+                        c.margin_status === 'green'  ? 'text-green-400' :
+                        c.margin_status === 'amber'  ? 'text-amber-400' :
+                                                       'text-red-400'
+                      }`}>{c.profit_margin}%</span>
+                    </div>
+                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5">
+                      <div
+                        className={`h-1.5 rounded-full ${
+                          c.margin_status === 'green'  ? 'bg-green-400' :
+                          c.margin_status === 'amber'  ? 'bg-amber-400' :
+                                                         'bg-red-400'
+                        }`}
+                        style={{ width: `${Math.max(2, Math.min(100, c.profit_margin))}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">R{c.revenue.toLocaleString('en-ZA', { maximumFractionDigits: 0 })}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

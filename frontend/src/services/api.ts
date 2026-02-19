@@ -369,6 +369,8 @@ export const reportsApi = {
     api.get('/api/v1/reports/revenue-vs-cost', { params }),
   outstandingInvoices: () =>
     api.get('/api/v1/reports/outstanding-invoices'),
+  clientProfitability: (params?: { period_start?: string; period_end?: string }) =>
+    api.get('/api/v1/reports/client-profitability', { params }),
 
   // PDF download URLs (open in new tab or download)
   profitabilityPdf: (params: { period_start: string; period_end: string }) =>

@@ -429,6 +429,90 @@ async def get_outstanding_invoices_report(
     }
 
 
+@router.get("/client-profitability")
+async def get_client_profitability(
+    period_start: Optional[date] = None,
+    period_end: Optional[date] = None,
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db)
+):
+    """
+    Per-client wage-to-revenue profitability breakdown.
+
+    Revenue = billable hours × client billing rate.
+    Wage cost = sum of ShiftAssignment.total_cost for guards at client's sites.
+    Profit margin = (revenue - wage_cost) / revenue × 100.
+
+    Default window: last 30 days.
+    Returns clients sorted by profit margin descending (most profitable first).
+    """
+    today = date.today()
+    if not period_end:
+        period_end = today
+    if not period_start:
+        period_start = today - timedelta(days=30)
+
+    start_dt = datetime.combine(period_start, datetime.min.time())
+    end_dt = datetime.combine(period_end, datetime.max.time())
+
+    clients = db.query(Client).filter(
+        Client.org_id == org_id,
+        Client.status == "active",
+    ).all()
+
+    result = []
+    for client in clients:
+        assignments = (
+            db.query(ShiftAssignment)
+            .join(Shift, ShiftAssignment.shift_id == Shift.shift_id)
+            .join(Site, Shift.site_id == Site.site_id)
+            .filter(
+                Site.client_id == client.client_id,
+                Shift.start_time >= start_dt,
+                Shift.end_time <= end_dt,
+                ShiftAssignment.status.in_(["confirmed", "completed"]),
+            )
+            .all()
+        )
+
+        if not assignments:
+            continue
+
+        wage_cost = sum(a.total_cost for a in assignments)
+        hours_billed = sum(a.regular_hours + a.overtime_hours for a in assignments)
+        billing_rate = float(client.billing_rate or 120.0)
+        revenue = hours_billed * billing_rate
+        profit = revenue - wage_cost
+        margin = (profit / revenue * 100) if revenue > 0 else 0.0
+
+        if margin >= 30:
+            margin_status = "green"
+        elif margin >= 15:
+            margin_status = "amber"
+        else:
+            margin_status = "red"
+
+        result.append({
+            "client_id": client.client_id,
+            "client_name": client.client_name,
+            "revenue": round(revenue, 2),
+            "wage_cost": round(wage_cost, 2),
+            "profit": round(profit, 2),
+            "profit_margin": round(margin, 1),
+            "margin_status": margin_status,
+            "hours_billed": round(hours_billed, 1),
+            "shifts_count": len(set(a.shift_id for a in assignments)),
+        })
+
+    result.sort(key=lambda x: x["profit_margin"], reverse=True)
+
+    return {
+        "period_start": period_start.isoformat(),
+        "period_end": period_end.isoformat(),
+        "clients": result,
+    }
+
+
 # ==================== PDF REPORT EXPORTS ====================
 
 def _load_org_company_details(db: Session, org_id: int):
