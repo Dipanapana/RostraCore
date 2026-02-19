@@ -133,6 +133,10 @@ export const leaveApi = {
     reason?: string;
   }) => api.post('/api/v1/leave/', data),
 
+  // Balance for the logged-in guard
+  getBalances: (employeeId: number) =>
+    api.get(`/api/v1/leave/balances/${employeeId}`),
+
   // Admin-only
   getRequests: (params?: { status?: string; skip?: number; limit?: number }) =>
     api.get('/api/v1/leave/requests', { params }),

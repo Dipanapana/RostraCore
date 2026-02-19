@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { format, parseISO, differenceInCalendarDays } from 'date-fns';
 import { leaveApi } from '../services/api';
+import { useAuthStore } from '../context/authStore';
 import { LeaveRequest } from '../types';
 
 // ---------------------------------------------------------------------------
@@ -100,12 +101,72 @@ function LeaveCard({ item }: { item: LeaveRequest }) {
 
 type View = 'list' | 'new';
 
+// ---------------------------------------------------------------------------
+// Leave balance shape from backend
+// ---------------------------------------------------------------------------
+
+interface LeaveBalances {
+  annual_entitlement: number;
+  annual_used: number;
+  annual_remaining: number;
+  sick_entitlement: number;
+  sick_used: number;
+  sick_remaining: number;
+  family_entitlement: number;
+  family_used: number;
+  family_remaining: number;
+}
+
+// ---------------------------------------------------------------------------
+// Balance card sub-component
+// ---------------------------------------------------------------------------
+
+function BalanceCard({
+  emoji,
+  label,
+  remaining,
+  entitled,
+}: {
+  emoji: string;
+  label: string;
+  remaining: number;
+  entitled: number;
+}) {
+  const pct = entitled > 0 ? Math.min(remaining / entitled, 1) : 0;
+  const isLow = pct < 0.25;
+  const barColor = isLow ? '#ef4444' : pct < 0.5 ? '#f59e0b' : '#4ade80';
+
+  return (
+    <View style={balanceStyles.card}>
+      <Text style={balanceStyles.emoji}>{emoji}</Text>
+      <Text style={balanceStyles.label}>{label}</Text>
+      <Text style={[balanceStyles.days, isLow && balanceStyles.daysLow]}>
+        {remaining}
+        <Text style={balanceStyles.daysOf}> / {entitled}</Text>
+      </Text>
+      <View style={balanceStyles.track}>
+        <View style={[balanceStyles.fill, { width: `${Math.round(pct * 100)}%` as any, backgroundColor: barColor }]} />
+      </View>
+      <Text style={balanceStyles.daysLabel}>days left</Text>
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main screen
+// ---------------------------------------------------------------------------
+
 export default function LeaveScreen() {
   const navigation = useNavigation();
+  const { user } = useAuthStore();
   const [view, setView] = useState<View>('list');
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  // Leave balance state
+  const [balances, setBalances] = useState<LeaveBalances | null>(null);
+  const [balancesLoading, setBalancesLoading] = useState(true);
 
   // Form state
   const [leaveType, setLeaveType] = useState('annual');
@@ -124,9 +185,25 @@ export default function LeaveScreen() {
     }
   }, []);
 
+  const fetchBalances = useCallback(async () => {
+    if (!user?.employee_id) {
+      setBalancesLoading(false);
+      return;
+    }
+    try {
+      const res = await leaveApi.getBalances(user.employee_id);
+      setBalances(res.data);
+    } catch {
+      // Non-fatal — widget simply hidden on error
+    } finally {
+      setBalancesLoading(false);
+    }
+  }, [user?.employee_id]);
+
   useEffect(() => {
     fetchRequests();
-  }, [fetchRequests]);
+    fetchBalances();
+  }, [fetchRequests, fetchBalances]);
 
   function resetForm() {
     setLeaveType('annual');
@@ -196,6 +273,33 @@ export default function LeaveScreen() {
         >
           <Text style={styles.newBtnText}>+ New Leave Request</Text>
         </TouchableOpacity>
+
+        {/* Leave balance widget */}
+        {!balancesLoading && balances && (
+          <View style={balanceStyles.section}>
+            <Text style={balanceStyles.sectionTitle}>Your Leave Balance</Text>
+            <View style={balanceStyles.row}>
+              <BalanceCard
+                emoji="🌴"
+                label="Annual"
+                remaining={balances.annual_remaining}
+                entitled={balances.annual_entitlement}
+              />
+              <BalanceCard
+                emoji="🤒"
+                label="Sick"
+                remaining={balances.sick_remaining}
+                entitled={balances.sick_entitlement}
+              />
+              <BalanceCard
+                emoji="👨‍👩‍👧"
+                label="Family"
+                remaining={balances.family_remaining}
+                entitled={balances.family_entitlement}
+              />
+            </View>
+          </View>
+        )}
 
         {requests.length === 0 ? (
           <View style={styles.emptyCard}>
@@ -591,5 +695,80 @@ const styles = StyleSheet.create({
     color: '#64748b',
     fontSize: 15,
     fontWeight: '600',
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Balance card styles
+// ---------------------------------------------------------------------------
+
+const balanceStyles = StyleSheet.create({
+  section: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    color: '#94a3b8',
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 10,
+  },
+  row: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  card: {
+    flex: 1,
+    backgroundColor: '#1e293b',
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  emoji: {
+    fontSize: 20,
+    marginBottom: 4,
+  },
+  label: {
+    color: '#64748b',
+    fontSize: 10,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginBottom: 4,
+  },
+  days: {
+    color: '#4ade80',
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  daysLow: {
+    color: '#ef4444',
+  },
+  daysOf: {
+    color: '#475569',
+    fontSize: 11,
+    fontWeight: '400',
+  },
+  track: {
+    width: '100%',
+    height: 4,
+    backgroundColor: '#334155',
+    borderRadius: 2,
+    marginTop: 6,
+    overflow: 'hidden',
+  },
+  fill: {
+    height: 4,
+    borderRadius: 2,
+  },
+  daysLabel: {
+    color: '#475569',
+    fontSize: 9,
+    marginTop: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
 });
