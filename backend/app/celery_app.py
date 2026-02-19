@@ -85,5 +85,12 @@ celery_app.conf.beat_schedule = {
         'task': 'app.tasks.prediction_tasks.analyze_shift_patterns',
         'schedule': 604800.0,  # Run weekly (every 7 days)
         'options': {'queue': 'analytics'}
+    },
+
+    # Shift Reminders
+    'send-shift-reminders': {
+        'task': 'app.tasks.notification_tasks.send_shift_reminders',
+        'schedule': 1800.0,  # Run every 30 minutes
+        'options': {'queue': 'default'}
     }
 }
