@@ -45,6 +45,7 @@ import {
   UserCheck,
   Key,
   Radio,
+  Bell,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -148,6 +149,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Certifications",
         href: "/certifications",
         icon: Award,
+        roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "cert-alerts",
+        label: "Cert Alerts",
+        href: "/cert-alerts",
+        icon: Bell,
         roles: MANAGEMENT_ROLES,
       },
       {

@@ -659,4 +659,11 @@ export const commLogApi = {
   dashboard: (days?: number) => api.get('/api/v1/comm-log/dashboard/', { params: { days } }),
 }
 
+// ── Certification Expiry Alerts ─────────────────────────────────────────────
+export const certAlertsApi = {
+  expiring: (params?: { days?: number; cert_type?: string }) =>
+    api.get('/api/v1/cert-alerts/expiring/', { params }),
+  dashboard: () => api.get('/api/v1/cert-alerts/dashboard/'),
+}
+
 export default api
