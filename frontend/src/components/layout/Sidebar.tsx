@@ -62,6 +62,7 @@ import {
   CalendarRange,
   Phone,
   Download,
+  HeartPulse,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -193,6 +194,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Emergency Contacts",
         href: "/emergency-contacts",
         icon: Phone,
+        roles: ADMIN_ROLES,
+      },
+      {
+        key: "iod",
+        label: "Injury on Duty",
+        href: "/iod",
+        icon: HeartPulse,
         roles: ADMIN_ROLES,
       },
       {

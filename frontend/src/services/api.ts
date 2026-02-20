@@ -849,4 +849,13 @@ export const siteProfitabilityApi = {
   summary: () => api.get('/api/v1/site-profitability/summary'),
 }
 
+export const iodApi = {
+  list: (params?: { status?: string; employee_id?: number }) =>
+    api.get('/api/v1/iod/', { params }),
+  create: (data: any) => api.post('/api/v1/iod/', data),
+  update: (id: number, data: any) => api.put(`/api/v1/iod/${id}/`, data),
+  remove: (id: number) => api.delete(`/api/v1/iod/${id}/`),
+  dashboard: () => api.get('/api/v1/iod/dashboard'),
+}
+
 export default api

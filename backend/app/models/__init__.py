@@ -45,6 +45,7 @@ from app.models.overtime import OvertimeRecord, OvertimeStatus
 from app.models.client_report import ClientReport
 from app.models.budget import Budget
 from app.models.emergency_contact import EmergencyContact
+from app.models.iod_record import IODRecord
 
 __all__ = [
     "User",
@@ -128,4 +129,5 @@ __all__ = [
     "ClientReport",
     "Budget",
     "EmergencyContact",
+    "IODRecord",
 ]
