@@ -57,6 +57,7 @@ import {
   Target,
   History,
   Timer,
+  FileBarChart,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -454,6 +455,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "SLA Compliance",
         href: "/sla-compliance",
         icon: Target,
+        roles: ADMIN_ROLES,
+      },
+      {
+        key: "client-reports",
+        label: "Client Reports",
+        href: "/client-reports",
+        icon: FileBarChart,
         roles: ADMIN_ROLES,
       },
     ],

@@ -792,4 +792,13 @@ export const overtimeApi = {
   dashboard: (days?: number) => api.get('/api/v1/overtime/dashboard', { params: { days } }),
 }
 
+export const clientReportsApi = {
+  list: (params?: { client_id?: number; report_type?: string; status?: string }) =>
+    api.get('/api/v1/client-reports/', { params }),
+  create: (data: any) => api.post('/api/v1/client-reports/', data),
+  update: (id: number, data: any) => api.put(`/api/v1/client-reports/${id}/`, data),
+  remove: (id: number) => api.delete(`/api/v1/client-reports/${id}/`),
+  dashboard: () => api.get('/api/v1/client-reports/dashboard'),
+}
+
 export default api
