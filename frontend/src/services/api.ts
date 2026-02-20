@@ -889,4 +889,9 @@ export const siteRiskApi = {
   scores: (days?: number) => api.get('/api/v1/site-risk/scores', { params: { days } }),
 }
 
+export const patrolAnalyticsApi = {
+  dashboard: (days?: number, siteId?: number) =>
+    api.get('/api/v1/patrol-analytics/dashboard', { params: { days, site_id: siteId } }),
+}
+
 export default api

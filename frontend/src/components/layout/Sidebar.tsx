@@ -68,6 +68,7 @@ import {
   Repeat,
   PieChart,
   ShieldQuestion,
+  Radar,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -396,6 +397,13 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/patrols",
         icon: Route,
         roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "patrol-analytics",
+        label: "Patrol Analytics",
+        href: "/patrols/analytics",
+        icon: Radar,
+        roles: ADMIN_ROLES,
       },
       {
         key: "inspections",
