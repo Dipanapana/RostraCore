@@ -26,6 +26,7 @@ from app.models.performance import EmployeeEvaluation, DisciplinaryCase
 from app.models.shift_exception import ShiftException
 from app.models.shift_swap import ShiftSwap, SwapStatus
 from app.models.inspection import InspectionTemplate, Inspection, InspectionStatus
+from app.models.asset import Asset, AssetHistory, AssetStatus, AssetCategory
 
 __all__ = [
     "User",
@@ -68,4 +69,8 @@ __all__ = [
     "InspectionTemplate",
     "Inspection",
     "InspectionStatus",
+    "Asset",
+    "AssetHistory",
+    "AssetStatus",
+    "AssetCategory",
 ]

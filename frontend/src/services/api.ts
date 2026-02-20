@@ -588,4 +588,17 @@ export const inspectionsApi = {
     api.get('/api/v1/inspections/dashboard/', { params: { days: days || 30 } }),
 }
 
+export const assetsApi = {
+  list: (params?: { category?: string; status?: string; employee_id?: number; site_id?: number; search?: string; limit?: number; offset?: number }) =>
+    api.get('/api/v1/assets/', { params }),
+  create: (data: any) => api.post('/api/v1/assets/', data),
+  update: (id: number, data: any) => api.put(`/api/v1/assets/${id}`, data),
+  issue: (id: number, data: { employee_id: number; site_id?: number; notes?: string }) =>
+    api.post(`/api/v1/assets/${id}/issue`, data),
+  returnAsset: (id: number, notes?: string) =>
+    api.post(`/api/v1/assets/${id}/return`, null, { params: { notes } }),
+  history: (id: number) => api.get(`/api/v1/assets/${id}/history`),
+  summary: () => api.get('/api/v1/assets/summary/'),
+}
+
 export default api
