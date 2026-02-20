@@ -50,6 +50,7 @@ import {
   GraduationCap,
   DollarSign,
   Car,
+  ClipboardList,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -398,6 +399,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Fleet",
         href: "/fleet",
         icon: Car,
+        roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "daily-activity",
+        label: "Daily Activity",
+        href: "/daily-activity",
+        icon: ClipboardList,
         roles: MANAGEMENT_ROLES,
       },
     ],

@@ -722,4 +722,15 @@ export const fleetApi = {
   dashboard: () => api.get('/api/v1/fleet/dashboard/'),
 }
 
+// ── Daily Activity Reports (DAR) ────────────────────────────────────────────
+export const darApi = {
+  list: (params?: { site_id?: number; employee_id?: number; status?: string; search?: string; days?: number; limit?: number; offset?: number }) =>
+    api.get('/api/v1/daily-activity/', { params }),
+  create: (data: any) => api.post('/api/v1/daily-activity/', data),
+  review: (id: number, data: { reviewer_notes?: string }) =>
+    api.post(`/api/v1/daily-activity/${id}/review/`, data),
+  remove: (id: number) => api.delete(`/api/v1/daily-activity/${id}/`),
+  dashboard: (days?: number) => api.get('/api/v1/daily-activity/dashboard/', { params: { days } }),
+}
+
 export default api

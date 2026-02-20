@@ -36,6 +36,7 @@ from app.models.document import Document, DocumentCategory
 from app.models.training import TrainingCourse, TrainingRecord, TrainingStatus, TrainingCategory
 from app.models.contract_value import ContractValue, BillingFrequency
 from app.models.vehicle import Vehicle, VehicleStatus
+from app.models.daily_activity import DailyActivityReport, DARStatus
 
 __all__ = [
     "User",
@@ -104,4 +105,6 @@ __all__ = [
     "BillingFrequency",
     "Vehicle",
     "VehicleStatus",
+    "DailyActivityReport",
+    "DARStatus",
 ]
