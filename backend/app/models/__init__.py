@@ -25,6 +25,7 @@ from app.models.refresh_token import RefreshToken
 from app.models.performance import EmployeeEvaluation, DisciplinaryCase
 from app.models.shift_exception import ShiftException
 from app.models.shift_swap import ShiftSwap, SwapStatus
+from app.models.inspection import InspectionTemplate, Inspection, InspectionStatus
 
 __all__ = [
     "User",
@@ -64,4 +65,7 @@ __all__ = [
     "ShiftException",
     "ShiftSwap",
     "SwapStatus",
+    "InspectionTemplate",
+    "Inspection",
+    "InspectionStatus",
 ]

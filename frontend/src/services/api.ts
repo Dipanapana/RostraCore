@@ -567,4 +567,25 @@ export const shiftSwapsApi = {
   cancel: (id: number) => api.post(`/api/v1/shift-swaps/${id}/cancel`),
 }
 
+export const inspectionsApi = {
+  // Templates
+  listTemplates: (params?: { site_id?: number; active_only?: boolean }) =>
+    api.get('/api/v1/inspections/templates/', { params }),
+  createTemplate: (data: { name: string; description?: string; site_id?: number; items: { key: string; label: string; required?: boolean }[] }) =>
+    api.post('/api/v1/inspections/templates/', data),
+  updateTemplate: (id: number, data: any) =>
+    api.put(`/api/v1/inspections/templates/${id}`, data),
+  deleteTemplate: (id: number) =>
+    api.delete(`/api/v1/inspections/templates/${id}`),
+  // Inspections
+  list: (params?: { site_id?: number; employee_id?: number; status?: string; limit?: number; offset?: number }) =>
+    api.get('/api/v1/inspections/', { params }),
+  start: (data: { template_id: number; site_id: number }) =>
+    api.post('/api/v1/inspections/', data),
+  submit: (id: number, data: { responses: Record<string, { checked: boolean; note?: string }>; overall_notes?: string }) =>
+    api.post(`/api/v1/inspections/${id}/submit`, data),
+  dashboard: (days?: number) =>
+    api.get('/api/v1/inspections/dashboard/', { params: { days: days || 30 } }),
+}
+
 export default api

@@ -41,6 +41,7 @@ import {
   ShieldAlert,
   CalendarDays,
   ArrowLeftRight,
+  ClipboardCheck,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -305,6 +306,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Patrols",
         href: "/patrols",
         icon: Route,
+        roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "inspections",
+        label: "Inspections",
+        href: "/inspections",
+        icon: ClipboardCheck,
         roles: MANAGEMENT_ROLES,
       },
       {
