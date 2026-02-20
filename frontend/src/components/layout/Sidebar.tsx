@@ -69,6 +69,7 @@ import {
   PieChart,
   ShieldQuestion,
   Radar,
+  Grid3X3,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -187,6 +188,13 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/training",
         icon: GraduationCap,
         roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "skills-matrix",
+        label: "Skills Matrix",
+        href: "/employees/skills-matrix",
+        icon: Grid3X3,
+        roles: ADMIN_ROLES,
       },
       {
         key: "disciplinary",

@@ -894,4 +894,9 @@ export const patrolAnalyticsApi = {
     api.get('/api/v1/patrol-analytics/dashboard', { params: { days, site_id: siteId } }),
 }
 
+export const skillsMatrixApi = {
+  overview: () => api.get('/api/v1/skills-matrix/overview'),
+  dashboard: () => api.get('/api/v1/skills-matrix/dashboard'),
+}
+
 export default api
