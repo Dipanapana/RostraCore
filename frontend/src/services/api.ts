@@ -674,4 +674,14 @@ export const dobApi = {
   dashboard: (days?: number) => api.get('/api/v1/occurrence-book/dashboard/', { params: { days } }),
 }
 
+// ── Document Management ─────────────────────────────────────────────────────
+export const documentsApi = {
+  list: (params?: { employee_id?: number; document_type?: string; search?: string; include_deleted?: boolean; limit?: number; offset?: number }) =>
+    api.get('/api/v1/documents/', { params }),
+  create: (data: any) => api.post('/api/v1/documents/', data),
+  update: (id: number, data: any) => api.put(`/api/v1/documents/${id}/`, data),
+  remove: (id: number) => api.delete(`/api/v1/documents/${id}/`),
+  summary: () => api.get('/api/v1/documents/summary/'),
+}
+
 export default api

@@ -376,6 +376,13 @@ const NAV_ENTRIES: NavEntry[] = [
         icon: BookOpen,
         roles: MANAGEMENT_ROLES,
       },
+      {
+        key: "documents",
+        label: "Documents",
+        href: "/documents",
+        icon: FileText,
+        roles: MANAGEMENT_ROLES,
+      },
     ],
   },
   {
