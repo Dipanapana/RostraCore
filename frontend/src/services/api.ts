@@ -622,4 +622,16 @@ export const geofenceApi = {
   dashboard: (days?: number) => api.get('/api/v1/geofence/dashboard/', { params: { days } }),
 }
 
+// ── Visitor Management ──────────────────────────────────────────────────────
+export const visitorsApi = {
+  list: (params?: { site_id?: number; status?: string; search?: string; days?: number; limit?: number; offset?: number }) =>
+    api.get('/api/v1/visitors/', { params }),
+  signIn: (data: any) => api.post('/api/v1/visitors/', data),
+  signOut: (id: number, data?: { notes?: string }) =>
+    api.post(`/api/v1/visitors/${id}/sign-out/`, data || {}),
+  onSite: (siteId?: number) =>
+    api.get('/api/v1/visitors/on-site/', { params: siteId ? { site_id: siteId } : {} }),
+  dashboard: (days?: number) => api.get('/api/v1/visitors/dashboard/', { params: { days } }),
+}
+
 export default api

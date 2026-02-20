@@ -42,6 +42,7 @@ import {
   CalendarDays,
   ArrowLeftRight,
   ClipboardCheck,
+  UserCheck,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -334,6 +335,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Geofencing",
         href: "/geofencing",
         icon: MapPin,
+        roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "visitors",
+        label: "Visitors",
+        href: "/visitors",
+        icon: UserCheck,
         roles: MANAGEMENT_ROLES,
       },
     ],

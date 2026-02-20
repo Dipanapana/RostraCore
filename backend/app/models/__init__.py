@@ -28,6 +28,7 @@ from app.models.shift_swap import ShiftSwap, SwapStatus
 from app.models.inspection import InspectionTemplate, Inspection, InspectionStatus
 from app.models.asset import Asset, AssetHistory, AssetStatus, AssetCategory
 from app.models.geofence import GeofenceViolation, ViolationType
+from app.models.visitor import Visitor, VisitorStatus
 
 __all__ = [
     "User",
@@ -76,4 +77,6 @@ __all__ = [
     "AssetCategory",
     "GeofenceViolation",
     "ViolationType",
+    "Visitor",
+    "VisitorStatus",
 ]
