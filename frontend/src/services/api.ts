@@ -772,4 +772,13 @@ export const slaApi = {
   dashboard: (year?: number) => api.get('/api/v1/sla/dashboard', { params: { year } }),
 }
 
+export const deploymentsApi = {
+  list: (params?: { employee_id?: number; site_id?: number; reason?: string; active_only?: boolean; limit?: number }) =>
+    api.get('/api/v1/deployments/', { params }),
+  create: (data: any) => api.post('/api/v1/deployments/', data),
+  update: (id: number, data: any) => api.put(`/api/v1/deployments/${id}/`, data),
+  remove: (id: number) => api.delete(`/api/v1/deployments/${id}/`),
+  dashboard: () => api.get('/api/v1/deployments/dashboard'),
+}
+
 export default api

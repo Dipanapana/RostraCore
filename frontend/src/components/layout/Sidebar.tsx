@@ -55,6 +55,7 @@ import {
   Megaphone,
   Hammer,
   Target,
+  History,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -186,6 +187,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Guard Grades",
         href: "/employees/grades",
         icon: Shield,
+        roles: ADMIN_ROLES,
+      },
+      {
+        key: "deployments",
+        label: "Deployments",
+        href: "/deployments",
+        icon: History,
         roles: ADMIN_ROLES,
       },
       {

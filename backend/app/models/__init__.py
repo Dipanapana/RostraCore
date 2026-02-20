@@ -40,6 +40,7 @@ from app.models.daily_activity import DailyActivityReport, DARStatus
 from app.models.announcement import Announcement, AnnouncementPriority
 from app.models.maintenance import MaintenanceRequest, MaintenancePriority, MaintenanceStatus
 from app.models.sla_compliance import SLARecord, SLAStatus
+from app.models.deployment_history import DeploymentRecord
 
 __all__ = [
     "User",
@@ -117,4 +118,5 @@ __all__ = [
     "MaintenanceStatus",
     "SLARecord",
     "SLAStatus",
+    "DeploymentRecord",
 ]
