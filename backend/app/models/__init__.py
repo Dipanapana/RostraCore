@@ -30,6 +30,7 @@ from app.models.asset import Asset, AssetHistory, AssetStatus, AssetCategory
 from app.models.geofence import GeofenceViolation, ViolationType
 from app.models.visitor import Visitor, VisitorStatus
 from app.models.key_register import KeyRegister, KeyLog, KeyStatus
+from app.models.comm_log import CommLog, CommType, CommPriority
 
 __all__ = [
     "User",
@@ -83,4 +84,7 @@ __all__ = [
     "KeyRegister",
     "KeyLog",
     "KeyStatus",
+    "CommLog",
+    "CommType",
+    "CommPriority",
 ]

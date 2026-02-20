@@ -649,4 +649,14 @@ export const keysApi = {
   summary: () => api.get('/api/v1/keys/summary/'),
 }
 
+// ── Control Room / Communication Log ────────────────────────────────────────
+export const commLogApi = {
+  list: (params?: { site_id?: number; comm_type?: string; priority?: string; resolved?: string; search?: string; days?: number; limit?: number }) =>
+    api.get('/api/v1/comm-log/', { params }),
+  create: (data: any) => api.post('/api/v1/comm-log/', data),
+  resolve: (id: number, data: { resolved: string; resolution_notes?: string }) =>
+    api.post(`/api/v1/comm-log/${id}/resolve/`, data),
+  dashboard: (days?: number) => api.get('/api/v1/comm-log/dashboard/', { params: { days } }),
+}
+
 export default api
