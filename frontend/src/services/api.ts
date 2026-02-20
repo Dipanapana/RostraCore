@@ -881,4 +881,8 @@ export const shiftHandoversApi = {
   dashboard: () => api.get('/api/v1/shift-handovers/dashboard'),
 }
 
+export const incidentAnalyticsApi = {
+  dashboard: (days?: number) => api.get('/api/v1/incident-analytics/dashboard', { params: { days } }),
+}
+
 export default api

@@ -66,6 +66,7 @@ import {
   Receipt,
   FileCheck,
   Repeat,
+  PieChart,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -401,6 +402,13 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/incidents",
         icon: AlertTriangle,
         roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "incident-analytics",
+        label: "Incident Analytics",
+        href: "/incidents/analytics",
+        icon: PieChart,
+        roles: ADMIN_ROLES,
       },
       {
         key: "assets",
