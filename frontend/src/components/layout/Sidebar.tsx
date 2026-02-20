@@ -67,6 +67,7 @@ import {
   FileCheck,
   Repeat,
   PieChart,
+  ShieldQuestion,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -381,6 +382,13 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/sites",
         icon: MapPin,
         roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "site-risk",
+        label: "Site Risk",
+        href: "/sites/risk",
+        icon: ShieldQuestion,
+        roles: ADMIN_ROLES,
       },
       {
         key: "patrols",

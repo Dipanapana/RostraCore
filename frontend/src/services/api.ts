@@ -885,4 +885,8 @@ export const incidentAnalyticsApi = {
   dashboard: (days?: number) => api.get('/api/v1/incident-analytics/dashboard', { params: { days } }),
 }
 
+export const siteRiskApi = {
+  scores: (days?: number) => api.get('/api/v1/site-risk/scores', { params: { days } }),
+}
+
 export default api
