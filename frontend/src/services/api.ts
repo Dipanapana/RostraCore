@@ -781,4 +781,15 @@ export const deploymentsApi = {
   dashboard: () => api.get('/api/v1/deployments/dashboard'),
 }
 
+export const overtimeApi = {
+  list: (params?: { employee_id?: number; site_id?: number; status?: string; days?: number }) =>
+    api.get('/api/v1/overtime/', { params }),
+  create: (data: any) => api.post('/api/v1/overtime/', data),
+  update: (id: number, data: any) => api.put(`/api/v1/overtime/${id}/`, data),
+  approve: (id: number, data: { status: string; rejection_reason?: string }) =>
+    api.post(`/api/v1/overtime/${id}/approve/`, data),
+  remove: (id: number) => api.delete(`/api/v1/overtime/${id}/`),
+  dashboard: (days?: number) => api.get('/api/v1/overtime/dashboard', { params: { days } }),
+}
+
 export default api

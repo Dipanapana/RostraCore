@@ -41,6 +41,7 @@ from app.models.announcement import Announcement, AnnouncementPriority
 from app.models.maintenance import MaintenanceRequest, MaintenancePriority, MaintenanceStatus
 from app.models.sla_compliance import SLARecord, SLAStatus
 from app.models.deployment_history import DeploymentRecord
+from app.models.overtime import OvertimeRecord, OvertimeStatus
 
 __all__ = [
     "User",
@@ -119,4 +120,6 @@ __all__ = [
     "SLARecord",
     "SLAStatus",
     "DeploymentRecord",
+    "OvertimeRecord",
+    "OvertimeStatus",
 ]

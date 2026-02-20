@@ -56,6 +56,7 @@ import {
   Hammer,
   Target,
   History,
+  Timer,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -285,6 +286,13 @@ const NAV_ENTRIES: NavEntry[] = [
           "guard",
           "superadmin",
         ],
+      },
+      {
+        key: "overtime",
+        label: "Overtime",
+        href: "/overtime",
+        icon: Timer,
+        roles: ADMIN_ROLES,
       },
       {
         key: "attendance",
