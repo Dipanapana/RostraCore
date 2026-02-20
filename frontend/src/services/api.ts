@@ -763,4 +763,13 @@ export const maintenanceApi = {
   dashboard: (days?: number) => api.get('/api/v1/maintenance/dashboard/', { params: { days } }),
 }
 
+export const slaApi = {
+  list: (params?: { site_id?: number; status?: string; year?: number; month?: number }) =>
+    api.get('/api/v1/sla/', { params }),
+  create: (data: any) => api.post('/api/v1/sla/', data),
+  update: (id: number, data: any) => api.put(`/api/v1/sla/${id}/`, data),
+  remove: (id: number) => api.delete(`/api/v1/sla/${id}/`),
+  dashboard: (year?: number) => api.get('/api/v1/sla/dashboard', { params: { year } }),
+}
+
 export default api

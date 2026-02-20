@@ -54,6 +54,7 @@ import {
   Gavel,
   Megaphone,
   Hammer,
+  Target,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -431,6 +432,13 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/maintenance",
         icon: Hammer,
         roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "sla-compliance",
+        label: "SLA Compliance",
+        href: "/sla-compliance",
+        icon: Target,
+        roles: ADMIN_ROLES,
       },
     ],
   },
