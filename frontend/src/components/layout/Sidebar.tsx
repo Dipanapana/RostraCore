@@ -59,6 +59,7 @@ import {
   Timer,
   FileBarChart,
   TrendingUp,
+  CalendarRange,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -470,6 +471,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Forecasting",
         href: "/workforce-forecast",
         icon: TrendingUp,
+        roles: ADMIN_ROLES,
+      },
+      {
+        key: "compliance-calendar",
+        label: "Compliance Cal",
+        href: "/compliance-calendar",
+        icon: CalendarRange,
         roles: ADMIN_ROLES,
       },
     ],

@@ -808,4 +808,9 @@ export const workforceApi = {
   monthlyProjection: (months?: number) => api.get('/api/v1/workforce-forecast/monthly-projection', { params: { months_ahead: months } }),
 }
 
+export const complianceCalendarApi = {
+  events: (days?: number) => api.get('/api/v1/compliance-calendar/events', { params: { days_ahead: days } }),
+  summary: () => api.get('/api/v1/compliance-calendar/summary'),
+}
+
 export default api
