@@ -52,6 +52,7 @@ import {
   Car,
   ClipboardList,
   Gavel,
+  Megaphone,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -414,6 +415,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Daily Activity",
         href: "/daily-activity",
         icon: ClipboardList,
+        roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "announcements",
+        label: "Announcements",
+        href: "/announcements",
+        icon: Megaphone,
         roles: MANAGEMENT_ROLES,
       },
     ],

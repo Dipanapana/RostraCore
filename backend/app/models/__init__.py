@@ -37,6 +37,7 @@ from app.models.training import TrainingCourse, TrainingRecord, TrainingStatus, 
 from app.models.contract_value import ContractValue, BillingFrequency
 from app.models.vehicle import Vehicle, VehicleStatus
 from app.models.daily_activity import DailyActivityReport, DARStatus
+from app.models.announcement import Announcement, AnnouncementPriority
 
 __all__ = [
     "User",
@@ -107,4 +108,6 @@ __all__ = [
     "VehicleStatus",
     "DailyActivityReport",
     "DARStatus",
+    "Announcement",
+    "AnnouncementPriority",
 ]

@@ -743,4 +743,14 @@ export const disciplinaryApi = {
   dashboard: (days?: number) => api.get('/api/v1/disciplinary/dashboard/', { params: { days } }),
 }
 
+// ── Company Announcements ───────────────────────────────────────────────────
+export const announcementsApi = {
+  list: (params?: { site_id?: number; priority?: string; category?: string; active_only?: boolean; search?: string; limit?: number; offset?: number }) =>
+    api.get('/api/v1/announcements/', { params }),
+  create: (data: any) => api.post('/api/v1/announcements/', data),
+  update: (id: number, data: any) => api.put(`/api/v1/announcements/${id}/`, data),
+  remove: (id: number) => api.delete(`/api/v1/announcements/${id}/`),
+  dashboard: () => api.get('/api/v1/announcements/dashboard/'),
+}
+
 export default api
