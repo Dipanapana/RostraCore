@@ -831,4 +831,12 @@ export const emergencyContactsApi = {
   dashboard: () => api.get('/api/v1/emergency-contacts/dashboard'),
 }
 
+export const payrollExportApi = {
+  downloadCsv: (periodStart: string, periodEnd: string, format: string) =>
+    api.get('/api/v1/exports/payroll/csv', {
+      params: { period_start: periodStart, period_end: periodEnd, format },
+      responseType: 'blob',
+    }),
+}
+
 export default api

@@ -61,6 +61,7 @@ import {
   TrendingUp,
   CalendarRange,
   Phone,
+  Download,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -536,6 +537,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Contract Values",
         href: "/contract-values",
         icon: DollarSign,
+        roles: FINANCE_ROLES,
+      },
+      {
+        key: "payroll-export",
+        label: "Payroll Export",
+        href: "/payroll/exports",
+        icon: Download,
         roles: FINANCE_ROLES,
       },
       {
