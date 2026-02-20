@@ -60,6 +60,7 @@ import {
   FileBarChart,
   TrendingUp,
   CalendarRange,
+  Phone,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -184,6 +185,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Disciplinary",
         href: "/disciplinary",
         icon: Gavel,
+        roles: ADMIN_ROLES,
+      },
+      {
+        key: "emergency-contacts",
+        label: "Emergency Contacts",
+        href: "/emergency-contacts",
+        icon: Phone,
         roles: ADMIN_ROLES,
       },
       {

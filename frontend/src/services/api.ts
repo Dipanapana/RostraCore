@@ -822,4 +822,13 @@ export const budgetsApi = {
   dashboard: (year?: number) => api.get('/api/v1/budgets/dashboard', { params: { year } }),
 }
 
+export const emergencyContactsApi = {
+  list: (params?: { employee_id?: number }) =>
+    api.get('/api/v1/emergency-contacts/', { params }),
+  create: (data: any) => api.post('/api/v1/emergency-contacts/', data),
+  update: (id: number, data: any) => api.put(`/api/v1/emergency-contacts/${id}/`, data),
+  remove: (id: number) => api.delete(`/api/v1/emergency-contacts/${id}/`),
+  dashboard: () => api.get('/api/v1/emergency-contacts/dashboard'),
+}
+
 export default api
