@@ -64,6 +64,7 @@ import {
   Download,
   HeartPulse,
   Receipt,
+  FileCheck,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -476,6 +477,13 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/maintenance",
         icon: Hammer,
         roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "contract-compliance",
+        label: "Contract Compliance",
+        href: "/contract-compliance",
+        icon: FileCheck,
+        roles: ADMIN_ROLES,
       },
       {
         key: "sla-compliance",

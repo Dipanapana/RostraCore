@@ -858,6 +858,11 @@ export const payrollReportsApi = {
     api.get('/api/v1/payroll-reports/by-employee', { params: { year, month } }),
 }
 
+export const contractComplianceApi = {
+  overview: () => api.get('/api/v1/contract-compliance/overview'),
+  dashboard: () => api.get('/api/v1/contract-compliance/dashboard'),
+}
+
 export const iodApi = {
   list: (params?: { status?: string; employee_id?: number }) =>
     api.get('/api/v1/iod/', { params }),
