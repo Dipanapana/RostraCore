@@ -280,6 +280,13 @@ const NAV_ENTRIES: NavEntry[] = [
         roles: ADMIN_ROLES,
       },
       {
+        key: "performance-dashboard",
+        label: "Performance",
+        href: "/employees/performance",
+        icon: Activity,
+        roles: ADMIN_ROLES,
+      },
+      {
         key: "workforce-compliance",
         label: "Compliance",
         href: "/employees/compliance",

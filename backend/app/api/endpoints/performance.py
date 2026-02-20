@@ -202,6 +202,110 @@ def create_disciplinary(
     return case.to_dict()
 
 
+@router.get("/performance-dashboard")
+def performance_dashboard(
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db),
+):
+    """Organisation-wide performance dashboard with aggregated stats."""
+    from sqlalchemy import func as sqlfunc
+
+    # All evaluations for org
+    evals = db.query(EmployeeEvaluation).filter(
+        EmployeeEvaluation.org_id == org_id
+    ).all()
+
+    # All disciplinary cases
+    cases = db.query(DisciplinaryCase).filter(
+        DisciplinaryCase.org_id == org_id
+    ).all()
+
+    # Active employees count
+    active_count = db.query(Employee).filter(
+        Employee.org_id == org_id, Employee.status == "active"
+    ).count()
+
+    # Employees with at least one evaluation
+    evaluated_ids = {e.employee_id for e in evals}
+    employees_evaluated = len(evaluated_ids)
+
+    # Average scores
+    if evals:
+        avg_overall = round(sum(e.overall_score for e in evals) / len(evals), 1)
+        scores = {
+            "punctuality": [e.punctuality_score for e in evals if e.punctuality_score],
+            "conduct": [e.conduct_score for e in evals if e.conduct_score],
+            "performance": [e.performance_score for e in evals if e.performance_score],
+            "appearance": [e.appearance_score for e in evals if e.appearance_score],
+            "communication": [e.communication_score for e in evals if e.communication_score],
+        }
+        avg_by_category = {
+            k: round(sum(v) / len(v), 1) if v else None
+            for k, v in scores.items()
+        }
+    else:
+        avg_overall = 0
+        avg_by_category = {}
+
+    # Score distribution
+    score_dist = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+    for e in evals:
+        score_dist[e.overall_score] = score_dist.get(e.overall_score, 0) + 1
+
+    # Top performers (latest eval per employee, sorted by score)
+    latest_evals: dict = {}
+    for e in evals:
+        eid = e.employee_id
+        if eid not in latest_evals or e.evaluation_date > latest_evals[eid].evaluation_date:
+            latest_evals[eid] = e
+
+    top_performers = sorted(latest_evals.values(), key=lambda x: x.overall_score, reverse=True)[:10]
+    top_list = []
+    for ev in top_performers:
+        emp = db.query(Employee).get(ev.employee_id)
+        emp_name = f"{emp.first_name} {emp.last_name}".strip() if emp else "Unknown"
+        top_list.append({
+            "employee_id": ev.employee_id,
+            "name": emp_name,
+            "overall_score": ev.overall_score,
+            "evaluation_date": ev.evaluation_date.isoformat(),
+        })
+
+    # Disciplinary summary
+    case_type_counts: dict = {}
+    for c in cases:
+        case_type_counts[c.case_type] = case_type_counts.get(c.case_type, 0) + 1
+
+    # Recent disciplinary (last 10)
+    recent_cases = sorted(cases, key=lambda c: c.incident_date, reverse=True)[:10]
+    recent_list = []
+    for c in recent_cases:
+        emp = db.query(Employee).get(c.employee_id)
+        emp_name = f"{emp.first_name} {emp.last_name}".strip() if emp else "Unknown"
+        recent_list.append({
+            "case_id": c.case_id,
+            "employee_id": c.employee_id,
+            "name": emp_name,
+            "case_type": c.case_type,
+            "reason": c.reason[:100] if c.reason else "",
+            "incident_date": c.incident_date.isoformat(),
+        })
+
+    return {
+        "total_active_employees": active_count,
+        "employees_evaluated": employees_evaluated,
+        "evaluation_coverage_pct": round(employees_evaluated / active_count * 100, 1) if active_count else 0,
+        "total_evaluations": len(evals),
+        "avg_overall_score": avg_overall,
+        "avg_by_category": avg_by_category,
+        "score_distribution": score_dist,
+        "top_performers": top_list,
+        "total_disciplinary_cases": len(cases),
+        "disciplinary_by_type": case_type_counts,
+        "recent_disciplinary": recent_list,
+    }
+
+
 @router.delete("/employees/{employee_id}/disciplinary/{case_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_disciplinary(
     employee_id: int,
