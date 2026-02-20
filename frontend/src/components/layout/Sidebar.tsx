@@ -530,6 +530,13 @@ const NAV_ENTRIES: NavEntry[] = [
         icon: DollarSign,
         roles: FINANCE_ROLES,
       },
+      {
+        key: "budgets",
+        label: "Budgets",
+        href: "/budgets",
+        icon: Wallet,
+        roles: FINANCE_ROLES,
+      },
     ],
   },
 

@@ -813,4 +813,13 @@ export const complianceCalendarApi = {
   summary: () => api.get('/api/v1/compliance-calendar/summary'),
 }
 
+export const budgetsApi = {
+  list: (params?: { year?: number; category?: string; site_id?: number }) =>
+    api.get('/api/v1/budgets/', { params }),
+  create: (data: any) => api.post('/api/v1/budgets/', data),
+  update: (id: number, data: any) => api.put(`/api/v1/budgets/${id}/`, data),
+  remove: (id: number) => api.delete(`/api/v1/budgets/${id}/`),
+  dashboard: (year?: number) => api.get('/api/v1/budgets/dashboard', { params: { year } }),
+}
+
 export default api

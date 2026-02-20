@@ -43,6 +43,7 @@ from app.models.sla_compliance import SLARecord, SLAStatus
 from app.models.deployment_history import DeploymentRecord
 from app.models.overtime import OvertimeRecord, OvertimeStatus
 from app.models.client_report import ClientReport
+from app.models.budget import Budget
 
 __all__ = [
     "User",
@@ -124,4 +125,5 @@ __all__ = [
     "OvertimeRecord",
     "OvertimeStatus",
     "ClientReport",
+    "Budget",
 ]
