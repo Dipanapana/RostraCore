@@ -31,6 +31,7 @@ from app.models.geofence import GeofenceViolation, ViolationType
 from app.models.visitor import Visitor, VisitorStatus
 from app.models.key_register import KeyRegister, KeyLog, KeyStatus
 from app.models.comm_log import CommLog, CommType, CommPriority
+from app.models.occurrence_book import OccurrenceEntry, OccurrenceCategory
 
 __all__ = [
     "User",
@@ -87,4 +88,6 @@ __all__ = [
     "CommLog",
     "CommType",
     "CommPriority",
+    "OccurrenceEntry",
+    "OccurrenceCategory",
 ]

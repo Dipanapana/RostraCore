@@ -666,4 +666,12 @@ export const certAlertsApi = {
   dashboard: () => api.get('/api/v1/cert-alerts/dashboard/'),
 }
 
+// ── Daily Occurrence Book ───────────────────────────────────────────────────
+export const dobApi = {
+  list: (params?: { site_id?: number; category?: string; search?: string; date_from?: string; date_to?: string; days?: number; limit?: number }) =>
+    api.get('/api/v1/occurrence-book/', { params }),
+  create: (data: any) => api.post('/api/v1/occurrence-book/', data),
+  dashboard: (days?: number) => api.get('/api/v1/occurrence-book/dashboard/', { params: { days } }),
+}
+
 export default api

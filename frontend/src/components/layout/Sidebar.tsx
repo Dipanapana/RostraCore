@@ -46,6 +46,7 @@ import {
   Key,
   Radio,
   Bell,
+  BookOpen,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -366,6 +367,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Comms Log",
         href: "/comm-log",
         icon: Radio,
+        roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "occurrence-book",
+        label: "Occurrence Book",
+        href: "/occurrence-book",
+        icon: BookOpen,
         roles: MANAGEMENT_ROLES,
       },
     ],
