@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api.endpoints import employees, sites, shifts, availability, certifications, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, organization_approval, organization_users, organization_settings, clients, payments, superadmin_analytics, subscriptions, subscription_plans, dashboards, superadmin_auth, invoices, reports, roster_preferences, superadmin, staffing_profiles, availability_patterns, system_settings, shift_patterns, leave, payroll_deductions, test_data, attendance, incidents, notifications, patrols, guard_restrictions, exceptions, performance, shift_swaps, inspections, assets, geofence, visitors, key_holding, comm_log, cert_alerts, occurrence_book, documents, training, contract_values, fleet, daily_activity, disciplinary, announcements, maintenance, sla_compliance, deployment_history, overtime, client_reports, workforce_forecast, compliance_calendar, budgets, emergency_contacts, site_profitability, iod
+from app.api.endpoints import employees, sites, shifts, availability, certifications, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, organization_approval, organization_users, organization_settings, clients, payments, superadmin_analytics, subscriptions, subscription_plans, dashboards, superadmin_auth, invoices, reports, roster_preferences, superadmin, staffing_profiles, availability_patterns, system_settings, shift_patterns, leave, payroll_deductions, test_data, attendance, incidents, notifications, patrols, guard_restrictions, exceptions, performance, shift_swaps, inspections, assets, geofence, visitors, key_holding, comm_log, cert_alerts, occurrence_book, documents, training, contract_values, fleet, daily_activity, disciplinary, announcements, maintenance, sla_compliance, deployment_history, overtime, client_reports, workforce_forecast, compliance_calendar, budgets, emergency_contacts, site_profitability, iod, payroll_reports
 from app.middleware import RateLimitMiddleware, ForceHTTPSRedirectMiddleware
 
 # Initialize Sentry for error tracking and performance monitoring
@@ -275,6 +275,9 @@ app.include_router(site_profitability.router, prefix=f"{settings.API_V1_PREFIX}/
 
 # IOD (Injury on Duty)
 app.include_router(iod.router, prefix=f"{settings.API_V1_PREFIX}/iod", tags=["iod"])
+
+# Payroll Reports / Analytics
+app.include_router(payroll_reports.router, prefix=f"{settings.API_V1_PREFIX}/payroll-reports", tags=["payroll-reports"])
 
 
 if __name__ == "__main__":

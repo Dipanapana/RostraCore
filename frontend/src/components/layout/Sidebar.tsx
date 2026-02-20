@@ -63,6 +63,7 @@ import {
   Phone,
   Download,
   HeartPulse,
+  Receipt,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -573,6 +574,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Site Profitability",
         href: "/site-profitability",
         icon: TrendingUp,
+        roles: FINANCE_ROLES,
+      },
+      {
+        key: "payroll-reports",
+        label: "Payroll Reports",
+        href: "/payroll/reports",
+        icon: Receipt,
         roles: FINANCE_ROLES,
       },
     ],
