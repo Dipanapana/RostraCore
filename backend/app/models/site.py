@@ -1,6 +1,6 @@
 """Site model."""
 
-from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -38,6 +38,10 @@ class Site(Base):
     billing_rate = Column(Float)
     min_staff = Column(Integer, default=1)
     notes = Column(Text)
+
+    # Geofencing
+    geofence_radius = Column(Float, default=200)  # meters
+    geofence_enabled = Column(Boolean, default=False)
 
     # Supervisor
     supervisor_id = Column(Integer, ForeignKey("employees.employee_id", ondelete="SET NULL"), nullable=True)

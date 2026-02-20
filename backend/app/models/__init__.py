@@ -27,6 +27,7 @@ from app.models.shift_exception import ShiftException
 from app.models.shift_swap import ShiftSwap, SwapStatus
 from app.models.inspection import InspectionTemplate, Inspection, InspectionStatus
 from app.models.asset import Asset, AssetHistory, AssetStatus, AssetCategory
+from app.models.geofence import GeofenceViolation, ViolationType
 
 __all__ = [
     "User",
@@ -73,4 +74,6 @@ __all__ = [
     "AssetHistory",
     "AssetStatus",
     "AssetCategory",
+    "GeofenceViolation",
+    "ViolationType",
 ]

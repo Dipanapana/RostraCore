@@ -601,4 +601,25 @@ export const assetsApi = {
   summary: () => api.get('/api/v1/assets/summary/'),
 }
 
+// ── Geofencing ──────────────────────────────────────────────────────────────
+export const geofenceApi = {
+  // Site geofence config
+  listSites: () => api.get('/api/v1/geofence/sites/'),
+  updateSite: (siteId: number, data: { geofence_enabled?: boolean; geofence_radius?: number }) =>
+    api.put(`/api/v1/geofence/sites/${siteId}/`, data),
+
+  // Geofence check (mobile)
+  check: (data: { site_id: number; employee_id: number; lat: number; lng: number; shift_id?: number }) =>
+    api.post('/api/v1/geofence/check/', data),
+
+  // Violations
+  listViolations: (params?: { site_id?: number; employee_id?: number; resolved?: string; days?: number; limit?: number; offset?: number }) =>
+    api.get('/api/v1/geofence/violations/', { params }),
+  resolveViolation: (id: number, data: { resolution: string; notes?: string }) =>
+    api.post(`/api/v1/geofence/violations/${id}/resolve/`, data),
+
+  // Dashboard
+  dashboard: (days?: number) => api.get('/api/v1/geofence/dashboard/', { params: { days } }),
+}
+
 export default api

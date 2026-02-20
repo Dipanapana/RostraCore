@@ -329,6 +329,13 @@ const NAV_ENTRIES: NavEntry[] = [
         icon: Package,
         roles: MANAGEMENT_ROLES,
       },
+      {
+        key: "geofencing",
+        label: "Geofencing",
+        href: "/geofencing",
+        icon: MapPin,
+        roles: MANAGEMENT_ROLES,
+      },
     ],
   },
   {
