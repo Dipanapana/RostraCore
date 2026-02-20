@@ -913,4 +913,9 @@ export const clientSatisfactionApi = {
   dashboard: () => api.get('/api/v1/client-satisfaction/dashboard'),
 }
 
+export const shiftCostsApi = {
+  breakdown: (days?: number, siteId?: number) =>
+    api.get('/api/v1/shift-costs/breakdown', { params: { days, site_id: siteId } }),
+}
+
 export default api

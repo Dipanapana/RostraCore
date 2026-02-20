@@ -72,6 +72,7 @@ import {
   Grid3X3,
   Flame,
   Star,
+  Coins,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -645,6 +646,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Payroll Reports",
         href: "/payroll/reports",
         icon: Receipt,
+        roles: FINANCE_ROLES,
+      },
+      {
+        key: "shift-costs",
+        label: "Shift Costs",
+        href: "/shifts/costs",
+        icon: Coins,
         roles: FINANCE_ROLES,
       },
     ],
