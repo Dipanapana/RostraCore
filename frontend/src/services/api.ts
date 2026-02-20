@@ -872,4 +872,13 @@ export const iodApi = {
   dashboard: () => api.get('/api/v1/iod/dashboard'),
 }
 
+export const shiftHandoversApi = {
+  list: (params?: { site_id?: number; acknowledged?: boolean; priority?: string; limit?: number }) =>
+    api.get('/api/v1/shift-handovers/', { params }),
+  create: (data: any) => api.post('/api/v1/shift-handovers/', data),
+  acknowledge: (id: number) => api.put(`/api/v1/shift-handovers/${id}/acknowledge`),
+  remove: (id: number) => api.delete(`/api/v1/shift-handovers/${id}/`),
+  dashboard: () => api.get('/api/v1/shift-handovers/dashboard'),
+}
+
 export default api

@@ -65,6 +65,7 @@ import {
   HeartPulse,
   Receipt,
   FileCheck,
+  Repeat,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -434,6 +435,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Comms Log",
         href: "/comm-log",
         icon: Radio,
+        roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "shift-handovers",
+        label: "Shift Handovers",
+        href: "/shift-handovers",
+        icon: Repeat,
         roles: MANAGEMENT_ROLES,
       },
       {
