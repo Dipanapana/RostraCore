@@ -58,6 +58,7 @@ import {
   History,
   Timer,
   FileBarChart,
+  TrendingUp,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -462,6 +463,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Client Reports",
         href: "/client-reports",
         icon: FileBarChart,
+        roles: ADMIN_ROLES,
+      },
+      {
+        key: "workforce-forecast",
+        label: "Forecasting",
+        href: "/workforce-forecast",
+        icon: TrendingUp,
         roles: ADMIN_ROLES,
       },
     ],

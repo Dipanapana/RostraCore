@@ -801,4 +801,11 @@ export const clientReportsApi = {
   dashboard: () => api.get('/api/v1/client-reports/dashboard'),
 }
 
+export const workforceApi = {
+  summary: () => api.get('/api/v1/workforce-forecast/summary'),
+  staffingGaps: (days?: number) => api.get('/api/v1/workforce-forecast/staffing-gaps', { params: { days_ahead: days } }),
+  siteNeeds: () => api.get('/api/v1/workforce-forecast/site-needs'),
+  monthlyProjection: (months?: number) => api.get('/api/v1/workforce-forecast/monthly-projection', { params: { months_ahead: months } }),
+}
+
 export default api
