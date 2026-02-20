@@ -843,4 +843,10 @@ export const payrollExportApi = {
     }),
 }
 
+export const siteProfitabilityApi = {
+  bySite: (year?: number, month?: number) =>
+    api.get('/api/v1/site-profitability/by-site', { params: { year, month } }),
+  summary: () => api.get('/api/v1/site-profitability/summary'),
+}
+
 export default api

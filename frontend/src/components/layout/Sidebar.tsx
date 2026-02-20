@@ -560,6 +560,13 @@ const NAV_ENTRIES: NavEntry[] = [
         icon: Wallet,
         roles: FINANCE_ROLES,
       },
+      {
+        key: "site-profitability",
+        label: "Site Profitability",
+        href: "/site-profitability",
+        icon: TrendingUp,
+        roles: FINANCE_ROLES,
+      },
     ],
   },
 
