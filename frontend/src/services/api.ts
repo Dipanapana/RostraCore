@@ -899,4 +899,9 @@ export const skillsMatrixApi = {
   dashboard: () => api.get('/api/v1/skills-matrix/dashboard'),
 }
 
+export const availabilityHeatmapApi = {
+  heatmap: (siteId?: number) =>
+    api.get('/api/v1/availability-heatmap/heatmap', { params: { site_id: siteId } }),
+}
+
 export default api

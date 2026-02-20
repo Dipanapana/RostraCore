@@ -70,6 +70,7 @@ import {
   ShieldQuestion,
   Radar,
   Grid3X3,
+  Flame,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -361,6 +362,13 @@ const NAV_ENTRIES: NavEntry[] = [
           "guard",
           "superadmin",
         ],
+      },
+      {
+        key: "availability-heatmap",
+        label: "Avail. Heatmap",
+        href: "/availability/heatmap",
+        icon: Flame,
+        roles: ADMIN_ROLES,
       },
     ],
   },
