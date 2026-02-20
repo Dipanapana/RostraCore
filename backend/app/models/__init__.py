@@ -33,6 +33,7 @@ from app.models.key_register import KeyRegister, KeyLog, KeyStatus
 from app.models.comm_log import CommLog, CommType, CommPriority
 from app.models.occurrence_book import OccurrenceEntry, OccurrenceCategory
 from app.models.document import Document, DocumentCategory
+from app.models.training import TrainingCourse, TrainingRecord, TrainingStatus, TrainingCategory
 
 __all__ = [
     "User",
@@ -93,4 +94,8 @@ __all__ = [
     "OccurrenceCategory",
     "Document",
     "DocumentCategory",
+    "TrainingCourse",
+    "TrainingRecord",
+    "TrainingStatus",
+    "TrainingCategory",
 ]

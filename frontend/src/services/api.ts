@@ -684,4 +684,22 @@ export const documentsApi = {
   summary: () => api.get('/api/v1/documents/summary/'),
 }
 
+// ── Training Management ─────────────────────────────────────────────────────
+export const trainingApi = {
+  // Courses
+  listCourses: (params?: { category?: string; active_only?: boolean; search?: string }) =>
+    api.get('/api/v1/training/courses/', { params }),
+  createCourse: (data: any) => api.post('/api/v1/training/courses/', data),
+  updateCourse: (id: number, data: any) => api.put(`/api/v1/training/courses/${id}/`, data),
+  deleteCourse: (id: number) => api.delete(`/api/v1/training/courses/${id}/`),
+  // Records
+  listRecords: (params?: { employee_id?: number; course_id?: number; status?: string; search?: string; limit?: number; offset?: number }) =>
+    api.get('/api/v1/training/records/', { params }),
+  createRecord: (data: any) => api.post('/api/v1/training/records/', data),
+  updateRecord: (id: number, data: any) => api.put(`/api/v1/training/records/${id}/`, data),
+  deleteRecord: (id: number) => api.delete(`/api/v1/training/records/${id}/`),
+  // Dashboard
+  dashboard: () => api.get('/api/v1/training/dashboard/'),
+}
+
 export default api

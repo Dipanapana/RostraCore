@@ -47,6 +47,7 @@ import {
   Radio,
   Bell,
   BookOpen,
+  GraduationCap,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -157,6 +158,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Cert Alerts",
         href: "/cert-alerts",
         icon: Bell,
+        roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "training",
+        label: "Training",
+        href: "/training",
+        icon: GraduationCap,
         roles: MANAGEMENT_ROLES,
       },
       {
