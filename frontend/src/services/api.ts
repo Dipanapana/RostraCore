@@ -753,4 +753,14 @@ export const announcementsApi = {
   dashboard: () => api.get('/api/v1/announcements/dashboard/'),
 }
 
+// ── Maintenance Requests ────────────────────────────────────────────────────
+export const maintenanceApi = {
+  list: (params?: { site_id?: number; status?: string; priority?: string; category?: string; search?: string; days?: number; limit?: number }) =>
+    api.get('/api/v1/maintenance/', { params }),
+  create: (data: any) => api.post('/api/v1/maintenance/', data),
+  update: (id: number, data: any) => api.put(`/api/v1/maintenance/${id}/`, data),
+  remove: (id: number) => api.delete(`/api/v1/maintenance/${id}/`),
+  dashboard: (days?: number) => api.get('/api/v1/maintenance/dashboard/', { params: { days } }),
+}
+
 export default api

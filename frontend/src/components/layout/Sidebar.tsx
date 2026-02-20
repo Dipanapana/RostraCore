@@ -53,6 +53,7 @@ import {
   ClipboardList,
   Gavel,
   Megaphone,
+  Hammer,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -422,6 +423,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Announcements",
         href: "/announcements",
         icon: Megaphone,
+        roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "maintenance",
+        label: "Maintenance",
+        href: "/maintenance",
+        icon: Hammer,
         roles: MANAGEMENT_ROLES,
       },
     ],
