@@ -40,6 +40,7 @@ import {
   TrendingDown,
   ShieldAlert,
   CalendarDays,
+  ArrowLeftRight,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -178,6 +179,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Coverage Calendar",
         href: "/roster/coverage",
         icon: CalendarDays,
+        roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "shift-swaps",
+        label: "Shift Swaps",
+        href: "/roster/swaps",
+        icon: ArrowLeftRight,
         roles: MANAGEMENT_ROLES,
       },
       {

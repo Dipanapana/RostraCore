@@ -24,6 +24,7 @@ from app.models.leave import LeaveRequest, LeaveBalance, LeaveType, LeaveStatus
 from app.models.refresh_token import RefreshToken
 from app.models.performance import EmployeeEvaluation, DisciplinaryCase
 from app.models.shift_exception import ShiftException
+from app.models.shift_swap import ShiftSwap, SwapStatus
 
 __all__ = [
     "User",
@@ -61,4 +62,6 @@ __all__ = [
     "EmployeeEvaluation",
     "DisciplinaryCase",
     "ShiftException",
+    "ShiftSwap",
+    "SwapStatus",
 ]

@@ -549,4 +549,22 @@ export const exceptionsApi = {
   remove: (id: number) => api.delete(`/api/v1/exceptions/${id}`),
 }
 
+export const shiftSwapsApi = {
+  list: (params?: { status?: string; employee_id?: number; limit?: number; offset?: number }) =>
+    api.get('/api/v1/shift-swaps/', { params }),
+  upcomingAssignments: (limit?: number) =>
+    api.get('/api/v1/shift-swaps/upcoming-assignments', { params: { limit: limit || 200 } }),
+  create: (data: {
+    requester_assignment_id: number;
+    target_employee_id: number;
+    target_assignment_id?: number;
+    reason?: string;
+  }) => api.post('/api/v1/shift-swaps/', data),
+  peerRespond: (id: number, accept: boolean, decline_reason?: string) =>
+    api.post(`/api/v1/shift-swaps/${id}/respond`, null, { params: { accept, decline_reason } }),
+  review: (id: number, approve: boolean, rejection_reason?: string) =>
+    api.post(`/api/v1/shift-swaps/${id}/review`, null, { params: { approve, rejection_reason } }),
+  cancel: (id: number) => api.post(`/api/v1/shift-swaps/${id}/cancel`),
+}
+
 export default api
