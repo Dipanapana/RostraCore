@@ -43,6 +43,7 @@ import {
   ArrowLeftRight,
   ClipboardCheck,
   UserCheck,
+  Key,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -342,6 +343,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Visitors",
         href: "/visitors",
         icon: UserCheck,
+        roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "keys",
+        label: "Key Holding",
+        href: "/keys",
+        icon: Key,
         roles: MANAGEMENT_ROLES,
       },
     ],

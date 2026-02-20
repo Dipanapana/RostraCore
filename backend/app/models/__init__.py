@@ -29,6 +29,7 @@ from app.models.inspection import InspectionTemplate, Inspection, InspectionStat
 from app.models.asset import Asset, AssetHistory, AssetStatus, AssetCategory
 from app.models.geofence import GeofenceViolation, ViolationType
 from app.models.visitor import Visitor, VisitorStatus
+from app.models.key_register import KeyRegister, KeyLog, KeyStatus
 
 __all__ = [
     "User",
@@ -79,4 +80,7 @@ __all__ = [
     "ViolationType",
     "Visitor",
     "VisitorStatus",
+    "KeyRegister",
+    "KeyLog",
+    "KeyStatus",
 ]

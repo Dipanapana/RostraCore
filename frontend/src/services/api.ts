@@ -634,4 +634,19 @@ export const visitorsApi = {
   dashboard: (days?: number) => api.get('/api/v1/visitors/dashboard/', { params: { days } }),
 }
 
+// ── Key Holding / Access Management ─────────────────────────────────────────
+export const keysApi = {
+  list: (params?: { site_id?: number; status?: string; key_type?: string; search?: string }) =>
+    api.get('/api/v1/keys/', { params }),
+  create: (data: any) => api.post('/api/v1/keys/', data),
+  update: (id: number, data: any) => api.put(`/api/v1/keys/${id}/`, data),
+  issue: (id: number, data: { employee_id: number; notes?: string }) =>
+    api.post(`/api/v1/keys/${id}/issue/`, data),
+  returnKey: (id: number, data?: { notes?: string }) =>
+    api.post(`/api/v1/keys/${id}/return/`, data || {}),
+  reportLost: (id: number) => api.post(`/api/v1/keys/${id}/report-lost/`),
+  history: (id: number) => api.get(`/api/v1/keys/${id}/history/`),
+  summary: () => api.get('/api/v1/keys/summary/'),
+}
+
 export default api
