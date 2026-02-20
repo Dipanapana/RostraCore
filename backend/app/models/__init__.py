@@ -35,6 +35,7 @@ from app.models.occurrence_book import OccurrenceEntry, OccurrenceCategory
 from app.models.document import Document, DocumentCategory
 from app.models.training import TrainingCourse, TrainingRecord, TrainingStatus, TrainingCategory
 from app.models.contract_value import ContractValue, BillingFrequency
+from app.models.vehicle import Vehicle, VehicleStatus
 
 __all__ = [
     "User",
@@ -101,4 +102,6 @@ __all__ = [
     "TrainingCategory",
     "ContractValue",
     "BillingFrequency",
+    "Vehicle",
+    "VehicleStatus",
 ]

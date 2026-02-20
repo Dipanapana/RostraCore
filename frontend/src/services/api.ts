@@ -712,4 +712,14 @@ export const contractValuesApi = {
   dashboard: () => api.get('/api/v1/contract-values/dashboard/'),
 }
 
+// ── Fleet / Vehicle Management ──────────────────────────────────────────────
+export const fleetApi = {
+  list: (params?: { status?: string; assigned_site_id?: number; search?: string }) =>
+    api.get('/api/v1/fleet/', { params }),
+  create: (data: any) => api.post('/api/v1/fleet/', data),
+  update: (id: number, data: any) => api.put(`/api/v1/fleet/${id}/`, data),
+  remove: (id: number) => api.delete(`/api/v1/fleet/${id}/`),
+  dashboard: () => api.get('/api/v1/fleet/dashboard/'),
+}
+
 export default api

@@ -49,6 +49,7 @@ import {
   BookOpen,
   GraduationCap,
   DollarSign,
+  Car,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -390,6 +391,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Documents",
         href: "/documents",
         icon: FileText,
+        roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "fleet",
+        label: "Fleet",
+        href: "/fleet",
+        icon: Car,
         roles: MANAGEMENT_ROLES,
       },
     ],
