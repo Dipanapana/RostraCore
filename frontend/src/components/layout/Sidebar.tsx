@@ -74,6 +74,7 @@ import {
   Star,
   Coins,
   Map,
+  Zap,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -156,6 +157,15 @@ const NAV_ENTRIES: NavEntry[] = [
     icon: LayoutDashboard,
     href: "/dashboard",
     roles: ALL_ROLES,
+    section: "main",
+  },
+  {
+    kind: "standalone",
+    key: "ops-summary",
+    label: "Ops Summary",
+    icon: Zap,
+    href: "/ops-summary",
+    roles: ADMIN_ROLES,
     section: "main",
   },
   {

@@ -928,4 +928,8 @@ export const deploymentMapApi = {
     api.get('/api/v1/deployment-map/history', { params: { days, site_id: siteId } }),
 }
 
+export const opsSummaryApi = {
+  snapshot: () => api.get('/api/v1/ops-summary/snapshot'),
+}
+
 export default api
