@@ -922,4 +922,10 @@ export const revenueApi = {
   overview: (days?: number) => api.get('/api/v1/revenue/overview', { params: { days } }),
 }
 
+export const deploymentMapApi = {
+  current: () => api.get('/api/v1/deployment-map/current'),
+  history: (days?: number, siteId?: number) =>
+    api.get('/api/v1/deployment-map/history', { params: { days, site_id: siteId } }),
+}
+
 export default api

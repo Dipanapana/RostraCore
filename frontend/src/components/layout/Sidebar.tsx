@@ -73,6 +73,7 @@ import {
   Flame,
   Star,
   Coins,
+  Map,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -232,6 +233,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Deployments",
         href: "/deployments",
         icon: History,
+        roles: ADMIN_ROLES,
+      },
+      {
+        key: "deployment-map",
+        label: "Deployment Map",
+        href: "/deployments/map",
+        icon: Map,
         roles: ADMIN_ROLES,
       },
       {
