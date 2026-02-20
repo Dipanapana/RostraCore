@@ -918,4 +918,8 @@ export const shiftCostsApi = {
     api.get('/api/v1/shift-costs/breakdown', { params: { days, site_id: siteId } }),
 }
 
+export const revenueApi = {
+  overview: (days?: number) => api.get('/api/v1/revenue/overview', { params: { days } }),
+}
+
 export default api
