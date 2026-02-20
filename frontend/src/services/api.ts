@@ -733,4 +733,14 @@ export const darApi = {
   dashboard: (days?: number) => api.get('/api/v1/daily-activity/dashboard/', { params: { days } }),
 }
 
+// ── Disciplinary Records ────────────────────────────────────────────────────
+export const disciplinaryApi = {
+  list: (params?: { employee_id?: number; type?: string; search?: string; days?: number; limit?: number; offset?: number }) =>
+    api.get('/api/v1/disciplinary/', { params }),
+  create: (data: any) => api.post('/api/v1/disciplinary/', data),
+  update: (id: number, data: any) => api.put(`/api/v1/disciplinary/${id}/`, data),
+  remove: (id: number) => api.delete(`/api/v1/disciplinary/${id}/`),
+  dashboard: (days?: number) => api.get('/api/v1/disciplinary/dashboard/', { params: { days } }),
+}
+
 export default api

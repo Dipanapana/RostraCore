@@ -51,6 +51,7 @@ import {
   DollarSign,
   Car,
   ClipboardList,
+  Gavel,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -169,6 +170,13 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/training",
         icon: GraduationCap,
         roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "disciplinary",
+        label: "Disciplinary",
+        href: "/disciplinary",
+        icon: Gavel,
+        roles: ADMIN_ROLES,
       },
       {
         key: "guard-grades",
