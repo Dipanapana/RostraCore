@@ -47,6 +47,7 @@ from app.models.budget import Budget
 from app.models.emergency_contact import EmergencyContact
 from app.models.iod_record import IODRecord
 from app.models.shift_handover import ShiftHandover
+from app.models.client_satisfaction import ClientSatisfaction
 
 __all__ = [
     "User",
@@ -132,4 +133,5 @@ __all__ = [
     "EmergencyContact",
     "IODRecord",
     "ShiftHandover",
+    "ClientSatisfaction",
 ]

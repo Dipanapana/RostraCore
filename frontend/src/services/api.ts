@@ -904,4 +904,13 @@ export const availabilityHeatmapApi = {
     api.get('/api/v1/availability-heatmap/heatmap', { params: { site_id: siteId } }),
 }
 
+export const clientSatisfactionApi = {
+  list: (clientId?: number, siteId?: number) =>
+    api.get('/api/v1/client-satisfaction/', { params: { client_id: clientId, site_id: siteId } }),
+  create: (data: any) => api.post('/api/v1/client-satisfaction/', data),
+  update: (id: number, data: any) => api.put(`/api/v1/client-satisfaction/${id}`, data),
+  delete: (id: number) => api.delete(`/api/v1/client-satisfaction/${id}`),
+  dashboard: () => api.get('/api/v1/client-satisfaction/dashboard'),
+}
+
 export default api

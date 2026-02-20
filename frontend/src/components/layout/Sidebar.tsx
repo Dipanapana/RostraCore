@@ -71,6 +71,7 @@ import {
   Radar,
   Grid3X3,
   Flame,
+  Star,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -392,6 +393,13 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/clients/renewals",
         icon: CalendarClock,
         roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "client-satisfaction",
+        label: "Satisfaction",
+        href: "/clients/satisfaction",
+        icon: Star,
+        roles: ADMIN_ROLES,
       },
       {
         key: "sites",
