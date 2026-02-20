@@ -702,4 +702,14 @@ export const trainingApi = {
   dashboard: () => api.get('/api/v1/training/dashboard/'),
 }
 
+// ── Contract Values ─────────────────────────────────────────────────────────
+export const contractValuesApi = {
+  list: (params?: { client_id?: number; site_id?: number; active_only?: boolean }) =>
+    api.get('/api/v1/contract-values/', { params }),
+  create: (data: any) => api.post('/api/v1/contract-values/', data),
+  update: (id: number, data: any) => api.put(`/api/v1/contract-values/${id}/`, data),
+  remove: (id: number) => api.delete(`/api/v1/contract-values/${id}/`),
+  dashboard: () => api.get('/api/v1/contract-values/dashboard/'),
+}
+
 export default api

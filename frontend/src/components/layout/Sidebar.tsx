@@ -48,6 +48,7 @@ import {
   Bell,
   BookOpen,
   GraduationCap,
+  DollarSign,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -432,6 +433,13 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Cost Forecast",
         href: "/roster/forecast",
         icon: Calculator,
+        roles: FINANCE_ROLES,
+      },
+      {
+        key: "contract-values",
+        label: "Contract Values",
+        href: "/contract-values",
+        icon: DollarSign,
         roles: FINANCE_ROLES,
       },
     ],

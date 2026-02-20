@@ -34,6 +34,7 @@ from app.models.comm_log import CommLog, CommType, CommPriority
 from app.models.occurrence_book import OccurrenceEntry, OccurrenceCategory
 from app.models.document import Document, DocumentCategory
 from app.models.training import TrainingCourse, TrainingRecord, TrainingStatus, TrainingCategory
+from app.models.contract_value import ContractValue, BillingFrequency
 
 __all__ = [
     "User",
@@ -98,4 +99,6 @@ __all__ = [
     "TrainingRecord",
     "TrainingStatus",
     "TrainingCategory",
+    "ContractValue",
+    "BillingFrequency",
 ]
