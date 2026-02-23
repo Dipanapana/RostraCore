@@ -15,6 +15,7 @@ import {
   Package,
   Settings,
   Shield,
+  Siren,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -43,6 +44,7 @@ import {
   ArrowLeftRight,
   ClipboardCheck,
   UserCheck,
+  UserSearch,
   Key,
   Radio,
   Bell,
@@ -74,6 +76,7 @@ import {
   Star,
   Coins,
   Map,
+  MessageSquare,
   Zap,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -166,6 +169,33 @@ const NAV_ENTRIES: NavEntry[] = [
     icon: Zap,
     href: "/ops-summary",
     roles: ADMIN_ROLES,
+    section: "main",
+  },
+  {
+    kind: "standalone",
+    key: "emergency",
+    label: "Emergency",
+    icon: Siren,
+    href: "/emergency",
+    roles: MANAGEMENT_ROLES,
+    section: "main",
+  },
+  {
+    kind: "standalone",
+    key: "lone-worker",
+    label: "Lone Worker",
+    icon: UserSearch,
+    href: "/lone-worker",
+    roles: MANAGEMENT_ROLES,
+    section: "main",
+  },
+  {
+    kind: "standalone",
+    key: "messaging",
+    label: "Messaging",
+    icon: MessageSquare,
+    href: "/messaging",
+    roles: ALL_ROLES,
     section: "main",
   },
   {
@@ -877,14 +907,14 @@ function NavTooltip({
       <div
         className="
           pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50
-          whitespace-nowrap rounded-md bg-slate-800 border border-slate-700
-          px-2.5 py-1.5 text-xs font-medium text-slate-100 shadow-xl
+          whitespace-nowrap rounded-md bg-gray-800 border border-gray-700
+          px-2.5 py-1.5 text-xs font-medium text-white shadow-xl
           opacity-0 scale-95 group-hover/tooltip:opacity-100 group-hover/tooltip:scale-100
           transition-all duration-150 ease-out
         "
       >
         {label}
-        <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-800" />
+        <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-800" />
       </div>
     </div>
   );
@@ -914,14 +944,14 @@ function NavPopover({
           transition-colors duration-150
           ${
             active
-              ? "bg-slate-700/50 text-white"
-              : "text-slate-300 hover:bg-slate-800 hover:text-white"
+              ? "bg-blue-50 text-blue-700"
+              : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
           }
         `}
       >
         <Icon
           className={`w-5 h-5 flex-shrink-0 ${
-            active ? "text-blue-400" : "text-slate-400"
+            active ? "text-blue-500" : "text-gray-400"
           }`}
         />
       </div>
@@ -931,14 +961,14 @@ function NavPopover({
         className="
           invisible opacity-0 group-hover/popover:visible group-hover/popover:opacity-100
           absolute left-full top-0 ml-2 z-50
-          min-w-[180px] py-1.5 rounded-lg
-          bg-slate-800 border border-slate-700 shadow-xl
+          min-w-[180px] py-1.5 rounded-xl
+          bg-white border border-gray-200 shadow-xl
           transition-all duration-150 ease-out
         "
       >
         {/* Group header */}
-        <div className="px-3 py-2 border-b border-slate-700">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+        <div className="px-3 py-2 border-b border-gray-100">
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
             {entry.label}
           </span>
         </div>
@@ -957,14 +987,14 @@ function NavPopover({
                 text-sm transition-colors duration-100
                 ${
                   childActive
-                    ? "bg-slate-700 text-white"
-                    : "text-slate-300 hover:bg-slate-700/50 hover:text-white"
+                    ? "bg-blue-50 text-blue-700"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 }
               `}
             >
               <ChildIcon
                 className={`w-4 h-4 flex-shrink-0 ${
-                  childActive ? "text-blue-400" : "text-slate-500"
+                  childActive ? "text-blue-500" : "text-gray-400"
                 }`}
               />
               {child.label}
@@ -985,11 +1015,11 @@ function SectionLabel({
   collapsed: boolean;
 }) {
   if (collapsed) {
-    return <div className="my-2 mx-3 h-px bg-slate-800" />;
+    return <div className="my-2 mx-3 h-px bg-gray-200" />;
   }
   return (
     <div className="mt-6 mb-2 px-3">
-      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
         {label}
       </span>
     </div>
@@ -1119,30 +1149,30 @@ export default function Sidebar() {
           ${collapsed ? "justify-center" : ""}
           ${
             active
-              ? "bg-slate-700/50 text-white"
+              ? "bg-blue-50 text-blue-700 font-medium"
               : isPlatform
-              ? "text-amber-300 hover:bg-amber-500/10"
-              : "text-slate-300 hover:bg-slate-800 hover:text-white"
+              ? "text-amber-700 hover:bg-amber-50"
+              : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
           }
         `}
       >
         <Icon
           className={`w-5 h-5 flex-shrink-0 ${
             active
-              ? "text-blue-400"
+              ? "text-blue-500"
               : isPlatform
-              ? "text-amber-400"
-              : "text-slate-400"
+              ? "text-amber-500"
+              : "text-gray-400"
           }`}
         />
         {!collapsed && (
           <span
             className={`text-sm font-medium truncate ${
               active
-                ? "text-white"
+                ? "text-blue-700"
                 : isPlatform
-                ? "text-amber-300"
-                : "text-slate-300"
+                ? "text-amber-700"
+                : "text-gray-600"
             }`}
           >
             {entry.label}
@@ -1195,25 +1225,25 @@ export default function Sidebar() {
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500
             ${
               active && !expanded
-                ? "bg-slate-700/30 text-white"
-                : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                ? "bg-blue-50 text-blue-700 font-medium"
+                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
             }
           `}
         >
           <Icon
             className={`w-5 h-5 flex-shrink-0 ${
-              active ? "text-blue-400" : "text-slate-400"
+              active ? "text-blue-500" : "text-gray-400"
             }`}
           />
           <span
             className={`flex-1 text-sm font-medium truncate ${
-              active ? "text-white" : "text-slate-300"
+              active && !expanded ? "text-blue-700" : active ? "text-gray-900" : "text-gray-600"
             }`}
           >
             {entry.label}
           </span>
           <ChevronDown
-            className={`w-4 h-4 flex-shrink-0 text-slate-500 transition-transform duration-200 ${
+            className={`w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200 ${
               expanded ? "rotate-0" : "-rotate-90"
             }`}
           />
@@ -1226,7 +1256,7 @@ export default function Sidebar() {
             ${expanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"}
           `}
         >
-          <div className="ml-4 pl-3 border-l border-slate-800 mt-0.5 mb-1 space-y-0.5">
+          <div className="ml-4 pl-3 border-l border-gray-200 mt-0.5 mb-1 space-y-0.5">
             {visChildren.map((child) => {
               const childActive = isRouteActive(child.href, pathname);
               const ChildIcon = child.icon;
@@ -1242,14 +1272,14 @@ export default function Sidebar() {
                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500
                     ${
                       childActive
-                        ? "bg-slate-700/50 text-white"
-                        : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                        ? "bg-blue-50 text-blue-700 font-medium"
+                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
                     }
                   `}
                 >
                   <ChildIcon
                     className={`w-4 h-4 flex-shrink-0 ${
-                      childActive ? "text-blue-400" : "text-slate-500"
+                      childActive ? "text-blue-500" : "text-gray-400"
                     }`}
                   />
                   <span className="truncate">{child.label}</span>
@@ -1275,11 +1305,11 @@ export default function Sidebar() {
     );
 
     return (
-      <div className="flex flex-col h-full bg-slate-900 border-r border-slate-800">
+      <div className="flex flex-col h-full bg-white border-r border-gray-200">
         {/* Brand / Logo */}
         <div
           className={`
-            flex items-center h-16 px-4 border-b border-slate-800 flex-shrink-0
+            flex items-center h-16 px-4 border-b border-gray-100 flex-shrink-0
             ${collapsed ? "justify-center" : "justify-between"}
           `}
         >
@@ -1295,7 +1325,7 @@ export default function Sidebar() {
               </span>
             </div>
             {!collapsed && (
-              <span className="text-white font-semibold text-base tracking-tight truncate">
+              <span className="text-gray-900 font-semibold text-base tracking-tight truncate">
                 RostraCore
               </span>
             )}
@@ -1304,7 +1334,7 @@ export default function Sidebar() {
           {isMobile && (
             <button
               onClick={() => setMobileOpen(false)}
-              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors lg:hidden"
+              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors lg:hidden"
               aria-label="Close navigation"
             >
               <X className="w-5 h-5" />
@@ -1350,13 +1380,13 @@ export default function Sidebar() {
             <>
               {!collapsed ? (
                 <div className="mt-6 mb-2 px-3">
-                  <div className="h-px bg-amber-500/20 mb-2" />
-                  <span className="text-[10px] font-bold text-amber-500/70 uppercase tracking-widest">
+                  <div className="h-px bg-amber-200 mb-2" />
+                  <span className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">
                     Platform
                   </span>
                 </div>
               ) : (
-                <div className="my-2 mx-3 h-px bg-amber-500/20" />
+                <div className="my-2 mx-3 h-px bg-amber-200" />
               )}
               <div className="space-y-0.5">
                 {platformEntries.map((entry) =>
@@ -1370,7 +1400,7 @@ export default function Sidebar() {
         </nav>
 
         {/* User profile card */}
-        <div className="flex-shrink-0 border-t border-slate-800">
+        <div className="flex-shrink-0 border-t border-gray-200">
           <div
             className={`
               flex items-center gap-3 px-3 py-3
@@ -1395,14 +1425,14 @@ export default function Sidebar() {
 
             {!collapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white truncate leading-tight">
+                <p className="text-sm font-semibold text-gray-900 truncate leading-tight">
                   {user?.full_name || user?.username || "User"}
                 </p>
                 <p
                   className={`text-xs truncate leading-tight mt-0.5 ${
                     isSuperadmin
-                      ? "text-amber-400 font-medium"
-                      : "text-slate-400"
+                      ? "text-amber-600 font-medium"
+                      : "text-gray-500"
                   }`}
                 >
                   {getRoleBadgeLabel(user?.role)}
@@ -1416,8 +1446,8 @@ export default function Sidebar() {
                 title="Log out"
                 aria-label="Log out"
                 className="
-                  flex-shrink-0 p-1.5 text-slate-500 hover:text-red-400
-                  hover:bg-red-500/10 rounded-lg transition-colors duration-150
+                  flex-shrink-0 p-1.5 text-gray-400 hover:text-red-500
+                  hover:bg-red-50 rounded-lg transition-colors duration-150
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500
                 "
               >
@@ -1433,7 +1463,7 @@ export default function Sidebar() {
                 aria-label="Log out"
                 className="
                   w-full flex items-center justify-center py-2.5 px-2
-                  text-slate-500 hover:text-red-400 hover:bg-red-500/10
+                  text-gray-400 hover:text-red-500 hover:bg-red-50
                   transition-colors duration-150
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500
                 "
@@ -1445,7 +1475,7 @@ export default function Sidebar() {
 
           {/* Collapse toggle — desktop only */}
           {!isMobile && (
-            <div className="border-t border-slate-800">
+            <div className="border-t border-gray-200">
               <button
                 onClick={toggleCollapsed}
                 aria-label={
@@ -1453,7 +1483,7 @@ export default function Sidebar() {
                 }
                 className={`
                   w-full flex items-center py-3 px-3 gap-2
-                  text-slate-500 hover:text-slate-200 hover:bg-slate-800
+                  text-gray-400 hover:text-gray-700 hover:bg-gray-100
                   transition-colors duration-150 text-xs font-medium
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500
                   ${collapsed ? "justify-center" : "justify-between"}
@@ -1485,9 +1515,9 @@ export default function Sidebar() {
         aria-label="Open navigation"
         className="
           lg:hidden fixed top-4 left-4 z-50
-          p-2.5 bg-slate-900 rounded-xl shadow-lg
-          border border-slate-700 text-slate-300
-          hover:bg-slate-800 hover:text-white
+          p-2.5 bg-white rounded-xl shadow-lg
+          border border-gray-200 text-gray-600
+          hover:bg-gray-50 hover:text-gray-900
           transition-colors duration-150
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500
         "
@@ -1498,7 +1528,7 @@ export default function Sidebar() {
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+          className="lg:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
           onClick={() => setMobileOpen(false)}
           aria-hidden="true"
         />

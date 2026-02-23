@@ -48,6 +48,14 @@ from app.models.emergency_contact import EmergencyContact
 from app.models.iod_record import IODRecord
 from app.models.shift_handover import ShiftHandover
 from app.models.client_satisfaction import ClientSatisfaction
+from app.models.organization_payroll_config import OrganizationPayrollConfig
+from app.models.audit_log import AuditLog
+from app.models.roster_snapshot import RosterSnapshot
+from app.models.attendance_photo import AttendancePhoto
+from app.models.biometric_template import BiometricTemplate
+from app.models.emergency_alert import EmergencyAlert, AlertType, AlertStatus
+from app.models.lone_worker import LoneWorkerSession, LoneWorkerStatus
+from app.models.messaging import ChatChannel, ChannelMember, ChatMessage, ChannelType
 
 __all__ = [
     "User",
@@ -134,4 +142,18 @@ __all__ = [
     "IODRecord",
     "ShiftHandover",
     "ClientSatisfaction",
+    "OrganizationPayrollConfig",
+    "AuditLog",
+    "RosterSnapshot",
+    "AttendancePhoto",
+    "BiometricTemplate",
+    "EmergencyAlert",
+    "AlertType",
+    "AlertStatus",
+    "LoneWorkerSession",
+    "LoneWorkerStatus",
+    "ChatChannel",
+    "ChannelMember",
+    "ChatMessage",
+    "ChannelType",
 ]

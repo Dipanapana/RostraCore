@@ -454,6 +454,47 @@ export const incidentsApi = {
     }),
 }
 
+export const emergencyApi = {
+  triggerPanic: (data: { alert_type?: string; latitude?: number; longitude?: number; site_id?: number; shift_id?: number; notes?: string }) =>
+    api.post('/api/v1/emergency/panic', data),
+  getActive: () => api.get('/api/v1/emergency/active'),
+  list: (params?: { status_filter?: string; skip?: number; limit?: number }) =>
+    api.get('/api/v1/emergency/', { params }),
+  acknowledge: (id: number, notes?: string) =>
+    api.put(`/api/v1/emergency/${id}/acknowledge`, { notes }),
+  dispatch: (id: number) =>
+    api.put(`/api/v1/emergency/${id}/dispatch`),
+  resolve: (id: number, data: { resolution_notes: string; false_alarm?: boolean }) =>
+    api.put(`/api/v1/emergency/${id}/resolve`, data),
+}
+
+export const loneWorkerApi = {
+  start: (data: { shift_id?: number; site_id?: number; check_in_interval_minutes?: number; latitude?: number; longitude?: number }) =>
+    api.post('/api/v1/lone-worker/start', data),
+  checkIn: (data?: { latitude?: number; longitude?: number }) =>
+    api.post('/api/v1/lone-worker/check-in', data || {}),
+  end: (sessionId: number) =>
+    api.post(`/api/v1/lone-worker/${sessionId}/end`),
+  getOverdue: () => api.get('/api/v1/lone-worker/overdue'),
+  getActive: () => api.get('/api/v1/lone-worker/active'),
+  list: (params?: { status_filter?: string; skip?: number; limit?: number }) =>
+    api.get('/api/v1/lone-worker/', { params }),
+};
+
+export const messagingApi = {
+  createChannel: (data: { name: string; channel_type?: string; site_id?: number; member_user_ids?: number[] }) =>
+    api.post('/api/v1/messages/channels', data),
+  getChannels: () => api.get('/api/v1/messages/channels'),
+  getMessages: (channelId: number, params?: { skip?: number; limit?: number }) =>
+    api.get(`/api/v1/messages/channels/${channelId}/messages`, { params }),
+  sendMessage: (channelId: number, data: { content: string; message_type?: string }) =>
+    api.post(`/api/v1/messages/channels/${channelId}/messages`, data),
+  addMember: (channelId: number, userId: number) =>
+    api.post(`/api/v1/messages/channels/${channelId}/members`, null, { params: { user_id: userId } }),
+  getMembers: (channelId: number) =>
+    api.get(`/api/v1/messages/channels/${channelId}/members`),
+};
+
 export const authApi = {
   changePassword: (currentPassword: string, newPassword: string) =>
     api.post('/api/v1/auth/change-password', {
