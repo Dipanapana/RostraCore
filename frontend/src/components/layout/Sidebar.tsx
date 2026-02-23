@@ -552,6 +552,13 @@ const NAV_ENTRIES: NavEntry[] = [
         roles: MANAGEMENT_ROLES,
       },
       {
+        key: "post-orders",
+        label: "Post Orders",
+        href: "/post-orders",
+        icon: FileText,
+        roles: MANAGEMENT_ROLES,
+      },
+      {
         key: "occurrence-book",
         label: "Occurrence Book",
         href: "/occurrence-book",
