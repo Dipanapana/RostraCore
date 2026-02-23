@@ -976,23 +976,45 @@ class ProductionRosterOptimizer:
                 logger.warning(f"Shift {shift.shift_id} has no feasible employees!")
 
     def _add_no_overlap_constraints(self):
-        """Prevent employee from working overlapping shifts"""
+        """
+        Prevent employee from working overlapping shifts.
+
+        Optimised from O(n^2) to O(n log n) by pre-sorting shifts by start_time.
+        For each shift we only scan forward while the next shift's start_time is
+        before the current shift's end_time, so non-overlapping pairs are never
+        compared.
+        """
         logger.info("Adding no-overlap constraints...")
 
-        for emp in self.employees:
-            # Find all pairs of overlapping shifts
-            for i, shift1 in enumerate(self.shifts):
-                for shift2 in self.shifts[i+1:]:
-                    # Check if shifts overlap in time
-                    if self._shifts_overlap(shift1, shift2):
-                        key1 = (emp.employee_id, shift1.shift_id)
-                        key2 = (emp.employee_id, shift2.shift_id)
+        # Pre-sort shifts once by start_time (O(n log n))
+        sorted_shifts = sorted(self.shifts, key=lambda s: s.start_time)
 
-                        if key1 in self.assignment_vars and key2 in self.assignment_vars:
-                            # Employee can't work both
-                            self.model.Add(
-                                self.assignment_vars[key1] + self.assignment_vars[key2] <= 1
-                            )
+        # Pre-compute overlapping pairs once (independent of employees)
+        overlapping_pairs: list = []
+        n = len(sorted_shifts)
+        for i in range(n):
+            s1 = sorted_shifts[i]
+            # Only scan forward while s2.start_time < s1.end_time
+            for j in range(i + 1, n):
+                s2 = sorted_shifts[j]
+                if s2.start_time >= s1.end_time:
+                    break  # All subsequent shifts start even later; no overlap possible
+                # s2.start_time < s1.end_time guaranteed; s1.start_time < s2.end_time
+                # because s1.start_time <= s2.start_time (sorted) and s2 has positive duration
+                overlapping_pairs.append((s1.shift_id, s2.shift_id))
+
+        logger.info(f"Found {len(overlapping_pairs)} overlapping shift pairs (from {n} shifts)")
+
+        # Apply constraints per employee using the pre-computed pairs
+        for emp in self.employees:
+            emp_id = emp.employee_id
+            for sid1, sid2 in overlapping_pairs:
+                key1 = (emp_id, sid1)
+                key2 = (emp_id, sid2)
+                if key1 in self.assignment_vars and key2 in self.assignment_vars:
+                    self.model.Add(
+                        self.assignment_vars[key1] + self.assignment_vars[key2] <= 1
+                    )
 
     def _shifts_overlap(self, shift1: Shift, shift2: Shift) -> bool:
         """Check if two shifts overlap in time"""
