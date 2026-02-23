@@ -2634,16 +2634,38 @@ async def manual_assign(
                 detail="Employee is already assigned to this shift in this roster"
             )
 
-        # BCEA weekly hours check
+        # ── BCEA & qualification constraint checks ──
+        from app.models.employee import Employee
+        from app.models.certification import PSIRAGrade, Certification
+        from datetime import date as date_type
+
         warnings = []
-        # Determine the week boundaries for this shift
+        errors = []
+
+        # Load the employee once for all checks
+        employee = db.query(Employee).filter(Employee.employee_id == employee_id).first()
+        if not employee:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Employee with ID {employee_id} not found"
+            )
+
+        # 1. Check shift capacity (required_staff vs current assignments)
+        current_assigned = db.query(ShiftAssignment).filter(
+            ShiftAssignment.shift_id == shift_id,
+            ShiftAssignment.status.notin_(["cancelled"])
+        ).count()
+        if current_assigned >= shift.required_staff:
+            errors.append(
+                f"Shift is already fully staffed ({current_assigned}/{shift.required_staff})"
+            )
+
+        # 2. BCEA weekly hours check
         shift_date = shift.start_time.date() if shift.start_time else None
         if shift_date:
-            # Monday of that week
             week_start = shift_date - timedelta(days=shift_date.weekday())
             week_end = week_start + timedelta(days=7)
 
-            # Sum existing hours for this employee that week
             existing_hours = db.query(func.coalesce(func.sum(ShiftAssignment.regular_hours), 0)).join(
                 Shift, ShiftAssignment.shift_id == Shift.shift_id
             ).filter(
@@ -2660,6 +2682,105 @@ async def manual_assign(
                     f"BCEA warning: employee will have {total_weekly:.1f} hours this week "
                     f"(limit is 48h). Current: {float(existing_hours):.1f}h + new: {new_hours:.1f}h."
                 )
+
+        # 3. Check rest period (min 8h between shifts — BCEA requirement)
+        # Check gap from previous shift ending to this shift starting
+        prev_assignment = db.query(ShiftAssignment).join(Shift).filter(
+            ShiftAssignment.employee_id == employee_id,
+            ShiftAssignment.status.notin_(["cancelled"]),
+            Shift.end_time <= shift.start_time,
+            Shift.end_time >= shift.start_time - timedelta(hours=24)
+        ).order_by(Shift.end_time.desc()).first()
+
+        if prev_assignment:
+            prev_shift = prev_assignment.shift
+            rest_gap = (shift.start_time - prev_shift.end_time).total_seconds() / 3600
+            if rest_gap < 8:
+                warnings.append(
+                    f"Only {rest_gap:.1f}h rest period before this shift (BCEA requires minimum 8h)"
+                )
+
+        # Check gap from this shift ending to next shift starting
+        next_assignment = db.query(ShiftAssignment).join(Shift).filter(
+            ShiftAssignment.employee_id == employee_id,
+            ShiftAssignment.status.notin_(["cancelled"]),
+            Shift.start_time >= shift.end_time,
+            Shift.start_time <= shift.end_time + timedelta(hours=24)
+        ).order_by(Shift.start_time.asc()).first()
+
+        if next_assignment:
+            next_shift = next_assignment.shift
+            rest_gap = (next_shift.start_time - shift.end_time).total_seconds() / 3600
+            if rest_gap < 8:
+                warnings.append(
+                    f"Only {rest_gap:.1f}h until next shift (BCEA requires minimum 8h)"
+                )
+
+        # 4. Check consecutive work days (BCEA max 6 consecutive days)
+        if shift_date:
+            consecutive_before = 0
+            check_date = shift_date - timedelta(days=1)
+            while consecutive_before < 7:
+                has_shift = db.query(ShiftAssignment).join(Shift).filter(
+                    ShiftAssignment.employee_id == employee_id,
+                    ShiftAssignment.status.notin_(["cancelled"]),
+                    func.date(Shift.start_time) == check_date
+                ).first()
+                if has_shift:
+                    consecutive_before += 1
+                    check_date -= timedelta(days=1)
+                else:
+                    break
+
+            consecutive_after = 0
+            check_date = shift_date + timedelta(days=1)
+            while consecutive_after < 7:
+                has_shift = db.query(ShiftAssignment).join(Shift).filter(
+                    ShiftAssignment.employee_id == employee_id,
+                    ShiftAssignment.status.notin_(["cancelled"]),
+                    func.date(Shift.start_time) == check_date
+                ).first()
+                if has_shift:
+                    consecutive_after += 1
+                    check_date += timedelta(days=1)
+                else:
+                    break
+
+            total_consecutive = consecutive_before + 1 + consecutive_after
+            if total_consecutive > 6:
+                warnings.append(
+                    f"Would result in {total_consecutive} consecutive work days (BCEA max is 6)"
+                )
+
+        # 5. Check PSIRA grade requirement
+        if shift.required_psira_grade:
+            # Employee psira_grade is stored as a plain string ("A", "B", etc.)
+            # Convert to PSIRAGrade enum for comparison
+            grade_map = {"A": PSIRAGrade.GRADE_A, "B": PSIRAGrade.GRADE_B, "C": PSIRAGrade.GRADE_C, "D": PSIRAGrade.GRADE_D, "E": PSIRAGrade.GRADE_E}
+            emp_psira_enum = grade_map.get(employee.psira_grade) if employee.psira_grade else None
+            if not emp_psira_enum or not PSIRAGrade.can_work_grade(emp_psira_enum, shift.required_psira_grade):
+                emp_display = employee.psira_grade or "None"
+                req_display = shift.required_psira_grade.value if shift.required_psira_grade else "Unknown"
+                warnings.append(
+                    f"Employee PSIRA grade ({emp_display}) below required ({req_display})"
+                )
+
+        # 6. Check firearm competency
+        if shift.requires_firearm:
+            has_firearm_cert = db.query(Certification).filter(
+                Certification.employee_id == employee_id,
+                Certification.firearm_competency.isnot(None),
+                Certification.expiry_date >= date_type.today()
+            ).first()
+            if not has_firearm_cert:
+                warnings.append("Employee lacks valid firearm competency certification")
+
+        # If there are blocking errors, reject the assignment
+        if errors:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"errors": errors, "warnings": warnings}
+            )
 
         # Create assignment
         assignment = ShiftAssignment(
