@@ -5,7 +5,7 @@ Implements the "Partitioned CP-SAT" strategy from algo_plan.md.
 
 import logging
 import time
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Callable
 from datetime import datetime
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -22,17 +22,22 @@ class PartitionedRosterOptimizer:
     """
     Orchestrator that splits the roster problem into smaller partitions (by region/province)
     and solves them in parallel using ProductionRosterOptimizer.
+
+    Thread safety: Each partition thread gets its own SQLAlchemy Session via session_factory.
+    The main thread uses `db` for partition discovery queries.
     """
 
     def __init__(
         self,
         db: Session,
         config: Optional[OptimizationConfig] = None,
-        org_id: Optional[int] = None
+        org_id: Optional[int] = None,
+        session_factory: Optional[Callable[[], Session]] = None
     ):
-        self.db = db
+        self.db = db  # Main-thread session for partition discovery
         self.config = config or OptimizationConfig()
         self.org_id = org_id
+        self.session_factory = session_factory  # Factory for per-thread sessions
 
     def optimize(
         self,
@@ -99,61 +104,43 @@ class PartitionedRosterOptimizer:
         return final_result
 
     def _solve_partition(
-        self, 
-        region: str, 
-        site_ids: List[int], 
-        start_date: datetime, 
+        self,
+        region: str,
+        site_ids: List[int],
+        start_date: datetime,
         end_date: datetime
     ) -> Dict:
         """
-        Solve a single partition.
+        Solve a single partition using a dedicated DB session for thread safety.
+
+        Each thread gets its own SQLAlchemy Session via session_factory (if provided).
+        Sessions are NOT thread-safe, so sharing the main-thread session across
+        ThreadPoolExecutor workers causes race conditions and corrupted state.
         """
         logger.info(f"Solving partition '{region}' with {len(site_ids)} sites")
-        
-        # Create a new optimizer instance for this partition
-        # We need a new DB session? No, sharing session across threads is risky in SQLAlchemy.
-        # But creating a new session here is hard without session factory.
-        # For now, we'll assume the optimizer's read-only operations are safe-ish or 
-        # we rely on the fact that we are just reading. 
-        # ideally we should scope sessions.
-        
-        # Actually, ProductionRosterOptimizer writes nothing to DB, it just returns a dict.
-        # So sharing the session for READS is usually okay if lazy loading doesn't conflict.
-        # But to be safe, we should probably pre-load everything in the main thread?
-        # The ProductionRosterOptimizer loads its own data.
-        
-        # Let's try using the same DB session but be careful. 
-        # If it fails, we might need to pass a session factory.
-        
-        optimizer = ProductionRosterOptimizer(
-            self.db, 
-            self.config, 
-            self.org_id
-        )
-        
-        # We need to restrict the optimizer to ONLY use employees in this region?
-        # ProductionRosterOptimizer loads ALL active employees by default.
-        # We should subclass it to filter employees by region.
-        
-        # Dynamic subclassing to override _load_data?
-        # Or just modify ProductionRosterOptimizer to accept employee_filter?
-        # Since I can't easily modify the other file right now without potential breakage,
-        # I will subclass it here.
-        
-        class RegionScopedOptimizer(ProductionRosterOptimizer):
-            def _load_data(self, start, end, sites):
-                super()._load_data(start, end, sites)
-                # Filter employees to those in the region (plus those with no region or willing to travel?)
-                # For strict partitioning, we filter by province.
-                if region != "Unknown":
-                    self.employees = [
-                        e for e in self.employees 
-                        if e.province == region or e.province is None
-                    ]
-                logger.info(f"Partition '{region}': Filtered to {len(self.employees)} employees")
 
-        optimizer = RegionScopedOptimizer(self.db, self.config, self.org_id)
-        return optimizer.optimize(start_date, end_date, site_ids)
+        # Create a thread-local session if factory is available; otherwise fall back
+        # to the shared session (legacy behavior for callers that haven't been updated).
+        thread_db = self.session_factory() if self.session_factory else self.db
+        owns_session = self.session_factory is not None
+
+        try:
+            # Subclass to scope employees to this partition's region
+            class RegionScopedOptimizer(ProductionRosterOptimizer):
+                def _load_data(inner_self, start, end, sites):
+                    super()._load_data(start, end, sites)
+                    if region != "Unknown":
+                        inner_self.employees = [
+                            e for e in inner_self.employees
+                            if e.province == region or e.province is None
+                        ]
+                    logger.info(f"Partition '{region}': Filtered to {len(inner_self.employees)} employees")
+
+            optimizer = RegionScopedOptimizer(thread_db, self.config, self.org_id)
+            return optimizer.optimize(start_date, end_date, site_ids)
+        finally:
+            if owns_session:
+                thread_db.close()
 
     def _merge_results(self, results: List[Dict]) -> Dict:
         """

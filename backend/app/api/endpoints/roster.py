@@ -7,18 +7,19 @@ from datetime import datetime, timedelta
 import logging
 
 logger = logging.getLogger(__name__)
-from app.database import get_db
+from app.database import get_db, SessionLocal
 from app.models.schemas import RosterGenerateRequest, RosterGenerateResponse, ShiftResponse
 from app.services.shift_service import ShiftService
 from app.services.cache_service import CacheInvalidator
 from app.services.client_filter_service import ClientFilterService
 from app.config import settings
 from app.models.site import Site
-from app.models.shift import Shift
+from app.models.shift import Shift, ShiftStatus
 from app.models.client import Client
 from app.models.user import User
 from app.api.deps import get_current_user
 from app.auth.security import get_current_org_id
+from app.services.audit_service import AuditService
 
 router = APIRouter()
 
@@ -138,7 +139,8 @@ async def generate_roster(
             optimizer = PartitionedRosterOptimizer(
                 db,
                 config=build_config(300),
-                org_id=current_user.org_id if hasattr(current_user, 'org_id') else None
+                org_id=current_user.org_id if hasattr(current_user, 'org_id') else None,
+                session_factory=SessionLocal
             )
             result = optimizer.optimize(
                 start_date=start_datetime,
@@ -175,7 +177,8 @@ async def generate_roster(
             optimizer = PartitionedRosterOptimizer(
                 db,
                 config=build_config(300),
-                org_id=current_user.org_id if hasattr(current_user, 'org_id') else None
+                org_id=current_user.org_id if hasattr(current_user, 'org_id') else None,
+                session_factory=SessionLocal
             )
             result = optimizer.optimize(
                 start_date=start_datetime,
@@ -491,7 +494,8 @@ async def generate_roster_for_client(
                     time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 300),
                     fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2)
                 ),
-                org_id=org_id
+                org_id=org_id,
+                session_factory=SessionLocal
             )
             result = optimizer.optimize(
                 start_date=start_datetime,
@@ -532,7 +536,8 @@ async def generate_roster_for_client(
                 config=OptimizationConfig(
                     time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 300),
                     fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2)
-                )
+                ),
+                session_factory=SessionLocal
             )
             result = optimizer.optimize(
                 start_date=start_datetime,
@@ -701,7 +706,7 @@ async def get_assignment_dashboard(
                     "required_staff": required_staff,
                     "assigned_count": assigned_count,
                     "fill_status": fill_status,
-                    "status": shift.status.value if shift.status else "planned"
+                    "status": shift.status.value if shift.status else "PLANNED"
                 })
 
             # Calculate site fill rate
@@ -870,7 +875,20 @@ async def save_roster(
             db.add(shift_assignment)
 
         db.commit()
+
+        # Audit trail
+        AuditService.log_change(
+            db=db, org_id=org_id, entity_type="roster", entity_id=roster.roster_id,
+            action="create", changes={"name": roster.name, "assignments": len(assignments)},
+            user_id=current_user.user_id, user_email=current_user.email
+        )
+        db.commit()
+
         db.refresh(roster)
+
+        # Create initial snapshot for version history
+        _create_roster_snapshot(db, roster, current_user.user_id, label="Initial save")
+        db.commit()
 
         logger.info(f"Roster saved: {roster_code} with {len(assignments)} assignments")
 
@@ -1102,6 +1120,19 @@ async def update_roster_status(
 
         db.commit()
 
+        # Create snapshot on publish for version history
+        if new_status == "published" and old_status != "published":
+            _create_roster_snapshot(db, roster, current_user.user_id, label="Published")
+            db.commit()
+
+        # Audit trail
+        AuditService.log_change(
+            db=db, org_id=org_id, entity_type="roster", entity_id=roster_id,
+            action=new_status, changes={"old_status": old_status, "new_status": new_status},
+            user_id=current_user.user_id, user_email=current_user.email
+        )
+        db.commit()
+
         return {
             "success": True,
             "roster_id": roster_id,
@@ -1162,6 +1193,13 @@ async def delete_roster(
                 detail="Published rosters cannot be deleted. Archive them instead."
             )
 
+        # Audit trail
+        AuditService.log_change(
+            db=db, org_id=org_id, entity_type="roster", entity_id=roster_id,
+            action="delete", changes={"name": roster.name, "status": roster.status},
+            user_id=current_user.user_id, user_email=current_user.email
+        )
+
         roster_code = roster.roster_code
         db.delete(roster)  # Cascade will delete assignments
         db.commit()
@@ -1182,85 +1220,6 @@ async def delete_roster(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error deleting roster: {str(e)}"
         )
-
-
-@router.get("/spare-pool")
-def get_spare_pool(
-    buffer_pct: float = 0.15,
-    org_id: int = Depends(get_current_org_id),
-    db: Session = Depends(get_db),
-):
-    """
-    Calculate spare/relief guard pool metrics for the next 7 days.
-
-    Returns recommended spare pool size based on the organisation's active guard
-    count and their historical leave rate over the past 30 days, compared against
-    how many guards are currently unscheduled in the next 7-day window.
-
-    buffer_pct: minimum coverage buffer on top of the historical leave rate (default 15%).
-    """
-    import math
-    from sqlalchemy import func, distinct
-    from app.models.employee import Employee, EmployeeStatus
-    from app.models.shift_assignment import ShiftAssignment, AssignmentStatus
-    from app.models.leave import LeaveRequest
-
-    now = datetime.utcnow()
-    window_start = now.replace(hour=0, minute=0, second=0)
-    window_end = window_start + timedelta(days=7)
-    thirty_days_ago = now - timedelta(days=30)
-
-    # Total active guards in the org
-    active_guards = db.query(func.count(Employee.employee_id)).filter(
-        Employee.org_id == org_id,
-        Employee.status == EmployeeStatus.ACTIVE,
-    ).scalar() or 0
-
-    # Guards assigned to at least one non-cancelled shift in the next 7 days
-    guards_with_shifts = db.query(
-        func.count(distinct(ShiftAssignment.employee_id))
-    ).join(
-        Shift, ShiftAssignment.shift_id == Shift.shift_id
-    ).filter(
-        Shift.org_id == org_id,
-        Shift.start_time >= window_start,
-        Shift.start_time <= window_end,
-        ShiftAssignment.status != AssignmentStatus.CANCELLED,
-    ).scalar() or 0
-
-    # Historical leave rate: distinct employees on approved leave in last 30 days
-    on_leave_count = db.query(
-        func.count(distinct(LeaveRequest.employee_id))
-    ).filter(
-        LeaveRequest.org_id == org_id,
-        LeaveRequest.status == "approved",
-        LeaveRequest.start_date >= thirty_days_ago.date(),
-    ).scalar() or 0
-
-    leave_rate = (on_leave_count / active_guards) if active_guards > 0 else 0.0
-    effective_buffer = max(buffer_pct, leave_rate)
-    recommended = max(1, math.ceil(active_guards * effective_buffer)) if active_guards > 0 else 0
-
-    available = max(0, active_guards - guards_with_shifts)
-    shortage = recommended - available
-
-    if shortage > 2:
-        pool_status = "critical"
-    elif shortage > 0:
-        pool_status = "warning"
-    else:
-        pool_status = "ok"
-
-    return {
-        "active_guards": active_guards,
-        "guards_with_shifts": guards_with_shifts,
-        "available_guards": available,
-        "recommended_spare_pool": recommended,
-        "leave_rate_pct": round(leave_rate * 100, 1),
-        "buffer_pct": round(buffer_pct * 100, 1),
-        "shortage": shortage,
-        "status": pool_status,
-    }
 
 
 @router.get("/cost-forecast")
@@ -1297,7 +1256,7 @@ def get_cost_forecast(
         Shift.org_id == org_id,
         Shift.start_time >= start,
         Shift.start_time <= end,
-        Shift.status.notin_(["cancelled"]),
+        Shift.status.notin_([ShiftStatus.CANCELLED]),
     )
     if site_id:
         shift_query = shift_query.filter(Shift.site_id == site_id)
@@ -1490,7 +1449,7 @@ def get_site_coverage_calendar(
             Site.org_id == org_id,
             Shift.start_time >= datetime.combine(start, datetime.min.time()),
             Shift.start_time <= datetime.combine(end, datetime.max.time()),
-            Shift.status != "cancelled",
+            Shift.status != ShiftStatus.CANCELLED,
         )
     )
 
@@ -1629,7 +1588,7 @@ def get_posting_alerts(
             Shift.org_id == org_id,
             Shift.start_time >= start,
             Shift.start_time <= end,
-            Shift.status.notin_(["cancelled", "completed"]),
+            Shift.status.notin_([ShiftStatus.CANCELLED, ShiftStatus.COMPLETED]),
         )
     )
     if site_id:
@@ -1982,3 +1941,1162 @@ def get_overtime_compliance(
         "summary": summary,
         "employees": rows,
     }
+
+
+# ============== ROSTER SNAPSHOT HELPER ==============
+
+def _create_roster_snapshot(db, roster, user_id, label=None):
+    """Create a snapshot of the current roster state."""
+    from app.models.roster_snapshot import RosterSnapshot
+    from app.models.shift_assignment import ShiftAssignment
+    from sqlalchemy import func
+
+    # Get current version count
+    max_version = db.query(func.max(RosterSnapshot.version)).filter(
+        RosterSnapshot.roster_id == roster.roster_id
+    ).scalar() or 0
+
+    # Serialize current assignments
+    assignments = db.query(ShiftAssignment).filter(
+        ShiftAssignment.roster_id == roster.roster_id
+    ).all()
+
+    snapshot_data = {
+        "assignments": [
+            {
+                "assignment_id": a.assignment_id,
+                "shift_id": a.shift_id,
+                "employee_id": a.employee_id,
+                "status": a.status,
+                "regular_hours": float(a.regular_hours or 0),
+            }
+            for a in assignments
+        ],
+        "total_shifts": roster.total_shifts,
+        "assigned_shifts": roster.assigned_shifts,
+    }
+
+    snapshot = RosterSnapshot(
+        roster_id=roster.roster_id,
+        org_id=roster.org_id,
+        version=max_version + 1,
+        snapshot_data=snapshot_data,
+        label=label,
+        created_by=user_id
+    )
+    db.add(snapshot)
+    db.flush()
+    return snapshot
+
+
+# ============== PHASE 2: AUDIT TRAIL ENDPOINTS ==============
+
+@router.get("/audit-log")
+async def get_roster_audit_log(
+    roster_id: Optional[int] = None,
+    entity_type: Optional[str] = Query(None, description="Filter: roster, shift, assignment"),
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    limit: int = Query(50, ge=1, le=200),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get roster audit log entries.
+
+    If roster_id is provided, returns history for that specific roster.
+    Otherwise returns recent changes filtered by entity_type and date range.
+    """
+    try:
+        org_id = current_user.org_id
+        if not org_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User must belong to an organization"
+            )
+
+        if roster_id:
+            # Return history for a specific roster
+            entries = AuditService.get_entity_history(
+                db=db, org_id=org_id, entity_type="roster",
+                entity_id=roster_id, limit=limit
+            )
+        else:
+            # Return recent changes with optional filters
+            entity_types_filter = [entity_type] if entity_type else ["roster", "shift", "assignment"]
+            parsed_start = datetime.fromisoformat(start_date) if start_date else None
+            parsed_end = datetime.fromisoformat(end_date) if end_date else None
+
+            entries = AuditService.get_recent_changes(
+                db=db, org_id=org_id, entity_types=entity_types_filter,
+                limit=limit, start_date=parsed_start, end_date=parsed_end
+            )
+
+        return {
+            "audit_log": [
+                {
+                    "log_id": e.log_id,
+                    "entity_type": e.entity_type,
+                    "entity_id": e.entity_id,
+                    "action": e.action,
+                    "changes": e.changes,
+                    "reason": e.reason,
+                    "user_id": e.user_id,
+                    "user_email": e.user_email,
+                    "created_at": e.created_at.isoformat() if e.created_at else None,
+                }
+                for e in entries
+            ],
+            "total": len(entries),
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching audit log: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching audit log: {str(e)}"
+        )
+
+
+@router.get("/saved/{roster_id}/versions")
+async def get_roster_versions(
+    roster_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all version snapshots for a roster, ordered by version descending.
+    """
+    from app.models.roster_snapshot import RosterSnapshot
+    from app.models.roster import Roster
+
+    try:
+        org_id = current_user.org_id
+
+        # Verify roster belongs to org
+        roster = db.query(Roster).filter(
+            Roster.roster_id == roster_id,
+            Roster.org_id == org_id
+        ).first()
+        if not roster:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Roster with ID {roster_id} not found"
+            )
+
+        snapshots = db.query(RosterSnapshot).filter(
+            RosterSnapshot.roster_id == roster_id,
+            RosterSnapshot.org_id == org_id
+        ).order_by(RosterSnapshot.version.desc()).all()
+
+        return {
+            "roster_id": roster_id,
+            "versions": [
+                {
+                    "snapshot_id": s.snapshot_id,
+                    "version": s.version,
+                    "label": s.label,
+                    "created_at": s.created_at.isoformat() if s.created_at else None,
+                    "created_by": s.created_by,
+                    "assignment_count": len(s.snapshot_data.get("assignments", [])) if s.snapshot_data else 0,
+                    "total_shifts": s.snapshot_data.get("total_shifts", 0) if s.snapshot_data else 0,
+                    "assigned_shifts": s.snapshot_data.get("assigned_shifts", 0) if s.snapshot_data else 0,
+                }
+                for s in snapshots
+            ],
+            "total": len(snapshots),
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching roster versions: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching roster versions: {str(e)}"
+        )
+
+
+@router.get("/saved/{roster_id}/compare")
+async def compare_roster_versions(
+    roster_id: int,
+    v1: int = Query(..., description="First version number to compare"),
+    v2: int = Query(..., description="Second version number to compare"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Compare two roster version snapshots.
+
+    Returns assignments added, removed, and changed between v1 and v2.
+    Compares by (shift_id, employee_id) tuples.
+    """
+    from app.models.roster_snapshot import RosterSnapshot
+    from app.models.roster import Roster
+
+    try:
+        org_id = current_user.org_id
+
+        # Verify roster belongs to org
+        roster = db.query(Roster).filter(
+            Roster.roster_id == roster_id,
+            Roster.org_id == org_id
+        ).first()
+        if not roster:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Roster with ID {roster_id} not found"
+            )
+
+        # Load both snapshots
+        snap1 = db.query(RosterSnapshot).filter(
+            RosterSnapshot.roster_id == roster_id,
+            RosterSnapshot.version == v1
+        ).first()
+        snap2 = db.query(RosterSnapshot).filter(
+            RosterSnapshot.roster_id == roster_id,
+            RosterSnapshot.version == v2
+        ).first()
+
+        if not snap1:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Version {v1} not found for roster {roster_id}"
+            )
+        if not snap2:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Version {v2} not found for roster {roster_id}"
+            )
+
+        # Build lookup maps keyed by (shift_id, employee_id)
+        assignments_v1 = snap1.snapshot_data.get("assignments", [])
+        assignments_v2 = snap2.snapshot_data.get("assignments", [])
+
+        map_v1 = {}
+        for a in assignments_v1:
+            key = (a.get("shift_id"), a.get("employee_id"))
+            map_v1[key] = a
+
+        map_v2 = {}
+        for a in assignments_v2:
+            key = (a.get("shift_id"), a.get("employee_id"))
+            map_v2[key] = a
+
+        keys_v1 = set(map_v1.keys())
+        keys_v2 = set(map_v2.keys())
+
+        # Assignments only in v2 (added going from v1 to v2)
+        added = [map_v2[k] for k in (keys_v2 - keys_v1)]
+        # Assignments only in v1 (removed going from v1 to v2)
+        removed = [map_v1[k] for k in (keys_v1 - keys_v2)]
+        # Assignments in both but with different fields
+        changed = []
+        for k in (keys_v1 & keys_v2):
+            a1 = map_v1[k]
+            a2 = map_v2[k]
+            if a1 != a2:
+                changed.append({"v1": a1, "v2": a2})
+
+        return {
+            "roster_id": roster_id,
+            "v1": v1,
+            "v2": v2,
+            "added": added,
+            "removed": removed,
+            "changed": changed,
+            "summary": {
+                "added_count": len(added),
+                "removed_count": len(removed),
+                "changed_count": len(changed),
+            }
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error comparing roster versions: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error comparing roster versions: {str(e)}"
+        )
+
+
+# ============== PHASE 3: ROSTER UX ENDPOINTS ==============
+
+@router.post("/clone/{roster_id}")
+async def clone_roster(
+    roster_id: int,
+    clone_data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Clone a roster with shifted dates.
+
+    Args:
+        roster_id: Source roster ID to clone
+        clone_data: {
+            "new_start_date": "2026-03-01",
+            "name": "Optional new name"
+        }
+
+    Creates a new draft roster with all shifts and assignments duplicated,
+    dates shifted by the offset between the original start_date and new_start_date.
+    """
+    from app.models.roster import Roster
+    from app.models.shift_assignment import ShiftAssignment
+    import uuid
+
+    try:
+        org_id = current_user.org_id
+        if not org_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User must belong to an organization"
+            )
+
+        # Load source roster
+        source_roster = db.query(Roster).filter(
+            Roster.roster_id == roster_id,
+            Roster.org_id == org_id
+        ).first()
+        if not source_roster:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Roster with ID {roster_id} not found"
+            )
+
+        # Parse new start date
+        new_start_str = clone_data.get("new_start_date")
+        if not new_start_str:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="new_start_date is required"
+            )
+        new_start_date = datetime.fromisoformat(new_start_str.replace("Z", "+00:00"))
+
+        # Calculate date offset
+        date_offset = new_start_date - source_roster.start_date
+        new_end_date = source_roster.end_date + date_offset
+
+        # Generate new roster code
+        week_num = new_start_date.isocalendar()[1]
+        year = new_start_date.year
+        unique_suffix = str(uuid.uuid4())[:8].upper()
+        roster_code = f"R{year}-W{week_num}-{unique_suffix}"
+
+        # Create new roster
+        new_roster = Roster(
+            org_id=org_id,
+            roster_code=roster_code,
+            name=clone_data.get("name", f"Clone of {source_roster.name}"),
+            start_date=new_start_date,
+            end_date=new_end_date,
+            client_id=source_roster.client_id,
+            status="draft",
+            total_shifts=source_roster.total_shifts,
+            assigned_shifts=0,
+            unassigned_shifts=source_roster.total_shifts,
+            total_cost=0.0,
+            regular_pay_cost=0.0,
+            overtime_cost=0.0,
+            premium_cost=0.0,
+            bcea_compliant=True,
+            psira_compliant=True,
+            algorithm_used="cloned",
+            created_by=current_user.user_id,
+            notes=f"Cloned from roster {source_roster.roster_code}"
+        )
+        db.add(new_roster)
+        db.flush()
+
+        # Load source assignments with their shifts
+        source_assignments = db.query(ShiftAssignment).filter(
+            ShiftAssignment.roster_id == roster_id
+        ).all()
+
+        # Map old shift_id -> new shift for creating shifted shifts
+        shift_id_map = {}
+        new_assignment_count = 0
+
+        for sa in source_assignments:
+            old_shift = sa.shift
+            if not old_shift:
+                continue
+
+            # Create new shift with shifted dates if we haven't already
+            if old_shift.shift_id not in shift_id_map:
+                new_shift = Shift(
+                    org_id=org_id,
+                    site_id=old_shift.site_id,
+                    start_time=old_shift.start_time + date_offset,
+                    end_time=old_shift.end_time + date_offset,
+                    required_skill=old_shift.required_skill,
+                    required_staff=old_shift.required_staff,
+                    status=ShiftStatus.PLANNED,
+                    is_overtime=old_shift.is_overtime,
+                    includes_meal_break=old_shift.includes_meal_break,
+                    meal_break_duration_minutes=old_shift.meal_break_duration_minutes,
+                    required_psira_grade=old_shift.required_psira_grade,
+                    requires_firearm=old_shift.requires_firearm,
+                    required_firearm_type=old_shift.required_firearm_type,
+                    notes=old_shift.notes,
+                    created_by=current_user.email,
+                )
+                db.add(new_shift)
+                db.flush()
+                shift_id_map[old_shift.shift_id] = new_shift
+
+            # Create new assignment linking to new shift
+            new_assignment = ShiftAssignment(
+                shift_id=shift_id_map[old_shift.shift_id].shift_id,
+                employee_id=sa.employee_id,
+                roster_id=new_roster.roster_id,
+                status="pending",
+                regular_hours=sa.regular_hours,
+            )
+            db.add(new_assignment)
+            new_assignment_count += 1
+
+        # Update roster counts
+        new_roster.assigned_shifts = new_assignment_count
+        new_roster.unassigned_shifts = max(0, new_roster.total_shifts - new_assignment_count)
+
+        db.commit()
+
+        # Audit trail
+        AuditService.log_change(
+            db=db, org_id=org_id, entity_type="roster", entity_id=new_roster.roster_id,
+            action="create", changes={
+                "cloned_from": roster_id,
+                "source_code": source_roster.roster_code,
+                "assignments": new_assignment_count,
+                "shifts_created": len(shift_id_map),
+            },
+            user_id=current_user.user_id, user_email=current_user.email
+        )
+        db.commit()
+
+        logger.info(f"Roster {source_roster.roster_code} cloned to {roster_code}")
+
+        return {
+            "success": True,
+            "roster_id": new_roster.roster_id,
+            "roster_code": new_roster.roster_code,
+            "name": new_roster.name,
+            "status": new_roster.status,
+            "start_date": new_roster.start_date.isoformat(),
+            "end_date": new_roster.end_date.isoformat(),
+            "assignments_cloned": new_assignment_count,
+            "shifts_created": len(shift_id_map),
+            "cloned_from": {
+                "roster_id": source_roster.roster_id,
+                "roster_code": source_roster.roster_code,
+            }
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error cloning roster: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error cloning roster: {str(e)}"
+        )
+
+
+@router.post("/generate-from-templates")
+async def generate_from_templates(
+    template_data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Generate shifts from site shift templates across a date range.
+
+    Args:
+        template_data: {
+            "site_ids": [1, 2, 3],
+            "start_date": "2026-03-01",
+            "end_date": "2026-03-07"
+        }
+
+    Loads ShiftTemplate records for requested sites, expands them across the
+    date range matching day_of_week, and creates Shift records.
+    """
+    from app.models.shift_template import ShiftTemplate
+
+    try:
+        org_id = current_user.org_id
+        if not org_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User must belong to an organization"
+            )
+
+        site_ids = template_data.get("site_ids", [])
+        start_date_str = template_data.get("start_date")
+        end_date_str = template_data.get("end_date")
+
+        if not site_ids or not start_date_str or not end_date_str:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="site_ids, start_date, and end_date are required"
+            )
+
+        start_date = datetime.fromisoformat(start_date_str.replace("Z", "+00:00"))
+        end_date = datetime.fromisoformat(end_date_str.replace("Z", "+00:00"))
+
+        if end_date <= start_date:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="end_date must be after start_date"
+            )
+
+        # Verify sites belong to org
+        valid_sites = db.query(Site).filter(
+            Site.site_id.in_(site_ids),
+            Site.org_id == org_id
+        ).all()
+        valid_site_ids = {s.site_id for s in valid_sites}
+
+        if not valid_site_ids:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No valid sites found for this organization"
+            )
+
+        # Load templates for the sites
+        templates = db.query(ShiftTemplate).filter(
+            ShiftTemplate.site_id.in_(valid_site_ids)
+        ).all()
+
+        if not templates:
+            return {
+                "success": True,
+                "shifts_created": 0,
+                "message": "No shift templates found for the specified sites",
+                "shifts": [],
+            }
+
+        # Expand templates across date range
+        created_shifts = []
+        current_date = start_date.date() if hasattr(start_date, 'date') else start_date
+        end_date_only = end_date.date() if hasattr(end_date, 'date') else end_date
+
+        while current_date <= end_date_only:
+            day_of_week = current_date.weekday()  # 0=Monday, 6=Sunday
+
+            for tmpl in templates:
+                if tmpl.day_of_week is not None and tmpl.day_of_week != day_of_week:
+                    continue
+
+                # Create shift for this template on this date
+                shift_start = datetime.combine(current_date, tmpl.start_time)
+                shift_end = datetime.combine(current_date, tmpl.end_time)
+
+                # Handle overnight shifts
+                if shift_end <= shift_start:
+                    shift_end += timedelta(days=1)
+
+                # Create required number of shift records
+                for _ in range(tmpl.required_staff_count or 1):
+                    new_shift = Shift(
+                        org_id=org_id,
+                        site_id=tmpl.site_id,
+                        start_time=shift_start,
+                        end_time=shift_end,
+                        required_skill=tmpl.required_skill,
+                        required_staff=1,
+                        status=ShiftStatus.PLANNED,
+                        is_overtime=False,
+                        created_by=current_user.email,
+                        notes=f"Generated from template: {tmpl.template_name}",
+                    )
+                    db.add(new_shift)
+                    db.flush()
+                    created_shifts.append({
+                        "shift_id": new_shift.shift_id,
+                        "site_id": new_shift.site_id,
+                        "start_time": new_shift.start_time.isoformat(),
+                        "end_time": new_shift.end_time.isoformat(),
+                        "required_skill": new_shift.required_skill,
+                        "template_name": tmpl.template_name,
+                    })
+
+            current_date += timedelta(days=1)
+
+        db.commit()
+
+        logger.info(f"Generated {len(created_shifts)} shifts from templates for sites {list(valid_site_ids)}")
+
+        return {
+            "success": True,
+            "shifts_created": len(created_shifts),
+            "date_range": {
+                "start_date": start_date_str,
+                "end_date": end_date_str,
+            },
+            "sites_processed": len(valid_site_ids),
+            "templates_used": len(templates),
+            "shifts": created_shifts,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error generating from templates: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generating from templates: {str(e)}"
+        )
+
+
+@router.post("/saved/{roster_id}/assign")
+async def manual_assign(
+    roster_id: int,
+    assign_data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Manually assign an employee to a shift within a roster.
+
+    Args:
+        roster_id: Roster ID (must be draft)
+        assign_data: {"shift_id": int, "employee_id": int}
+
+    Validates roster ownership, draft status, duplicate assignment,
+    and runs a basic BCEA weekly hours check (<48h).
+    """
+    from app.models.roster import Roster
+    from app.models.shift_assignment import ShiftAssignment
+    from sqlalchemy import func
+
+    try:
+        org_id = current_user.org_id
+        if not org_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User must belong to an organization"
+            )
+
+        shift_id = assign_data.get("shift_id")
+        employee_id = assign_data.get("employee_id")
+
+        if not shift_id or not employee_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="shift_id and employee_id are required"
+            )
+
+        # Verify roster belongs to org and is draft
+        roster = db.query(Roster).filter(
+            Roster.roster_id == roster_id,
+            Roster.org_id == org_id
+        ).first()
+        if not roster:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Roster with ID {roster_id} not found"
+            )
+        if roster.status != "draft":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Can only assign shifts in draft rosters"
+            )
+
+        # Verify shift belongs to org
+        shift = db.query(Shift).filter(
+            Shift.shift_id == shift_id,
+            Shift.org_id == org_id
+        ).first()
+        if not shift:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Shift with ID {shift_id} not found"
+            )
+
+        # Check if already assigned
+        existing = db.query(ShiftAssignment).filter(
+            ShiftAssignment.shift_id == shift_id,
+            ShiftAssignment.employee_id == employee_id,
+            ShiftAssignment.roster_id == roster_id
+        ).first()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Employee is already assigned to this shift in this roster"
+            )
+
+        # BCEA weekly hours check
+        warnings = []
+        # Determine the week boundaries for this shift
+        shift_date = shift.start_time.date() if shift.start_time else None
+        if shift_date:
+            # Monday of that week
+            week_start = shift_date - timedelta(days=shift_date.weekday())
+            week_end = week_start + timedelta(days=7)
+
+            # Sum existing hours for this employee that week
+            existing_hours = db.query(func.coalesce(func.sum(ShiftAssignment.regular_hours), 0)).join(
+                Shift, ShiftAssignment.shift_id == Shift.shift_id
+            ).filter(
+                ShiftAssignment.employee_id == employee_id,
+                Shift.start_time >= datetime.combine(week_start, datetime.min.time()),
+                Shift.start_time < datetime.combine(week_end, datetime.min.time()),
+            ).scalar() or 0
+
+            new_hours = shift.paid_hours
+            total_weekly = float(existing_hours) + new_hours
+
+            if total_weekly > 48:
+                warnings.append(
+                    f"BCEA warning: employee will have {total_weekly:.1f} hours this week "
+                    f"(limit is 48h). Current: {float(existing_hours):.1f}h + new: {new_hours:.1f}h."
+                )
+
+        # Create assignment
+        assignment = ShiftAssignment(
+            shift_id=shift_id,
+            employee_id=employee_id,
+            roster_id=roster_id,
+            status="pending",
+            regular_hours=shift.paid_hours,
+            assigned_by=current_user.user_id,
+        )
+        db.add(assignment)
+
+        # Update roster counts
+        roster.assigned_shifts = (roster.assigned_shifts or 0) + 1
+        roster.unassigned_shifts = max(0, (roster.unassigned_shifts or 0) - 1)
+
+        db.commit()
+        db.refresh(assignment)
+
+        # Audit trail
+        AuditService.log_change(
+            db=db, org_id=org_id, entity_type="assignment", entity_id=assignment.assignment_id,
+            action="create", changes={
+                "roster_id": roster_id,
+                "shift_id": shift_id,
+                "employee_id": employee_id,
+            },
+            user_id=current_user.user_id, user_email=current_user.email
+        )
+        db.commit()
+
+        # Create snapshot for version history
+        _create_roster_snapshot(db, roster, current_user.user_id, label="Manual assignment")
+        db.commit()
+
+        return {
+            "success": True,
+            "assignment_id": assignment.assignment_id,
+            "shift_id": shift_id,
+            "employee_id": employee_id,
+            "roster_id": roster_id,
+            "status": assignment.status,
+            "regular_hours": assignment.regular_hours,
+            "warnings": warnings,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error assigning shift: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error assigning shift: {str(e)}"
+        )
+
+
+@router.post("/saved/{roster_id}/unassign")
+async def manual_unassign(
+    roster_id: int,
+    unassign_data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Remove a shift assignment from a roster.
+
+    Args:
+        roster_id: Roster ID (must be draft)
+        unassign_data: {"assignment_id": int}
+    """
+    from app.models.roster import Roster
+    from app.models.shift_assignment import ShiftAssignment
+
+    try:
+        org_id = current_user.org_id
+        if not org_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User must belong to an organization"
+            )
+
+        assignment_id = unassign_data.get("assignment_id")
+        if not assignment_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="assignment_id is required"
+            )
+
+        # Verify roster belongs to org and is draft
+        roster = db.query(Roster).filter(
+            Roster.roster_id == roster_id,
+            Roster.org_id == org_id
+        ).first()
+        if not roster:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Roster with ID {roster_id} not found"
+            )
+        if roster.status != "draft":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Can only unassign shifts in draft rosters"
+            )
+
+        # Find the assignment
+        assignment = db.query(ShiftAssignment).filter(
+            ShiftAssignment.assignment_id == assignment_id,
+            ShiftAssignment.roster_id == roster_id
+        ).first()
+        if not assignment:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Assignment with ID {assignment_id} not found in roster {roster_id}"
+            )
+
+        removed_shift_id = assignment.shift_id
+        removed_employee_id = assignment.employee_id
+
+        # Audit trail (before delete so we can capture the data)
+        AuditService.log_change(
+            db=db, org_id=org_id, entity_type="assignment", entity_id=assignment_id,
+            action="delete", changes={
+                "roster_id": roster_id,
+                "shift_id": removed_shift_id,
+                "employee_id": removed_employee_id,
+            },
+            user_id=current_user.user_id, user_email=current_user.email
+        )
+
+        db.delete(assignment)
+
+        # Update roster counts
+        roster.assigned_shifts = max(0, (roster.assigned_shifts or 0) - 1)
+        roster.unassigned_shifts = (roster.unassigned_shifts or 0) + 1
+
+        db.commit()
+
+        # Create snapshot for version history
+        _create_roster_snapshot(db, roster, current_user.user_id, label="Unassignment")
+        db.commit()
+
+        return {
+            "success": True,
+            "message": f"Assignment {assignment_id} removed from roster {roster_id}",
+            "removed": {
+                "assignment_id": assignment_id,
+                "shift_id": removed_shift_id,
+                "employee_id": removed_employee_id,
+            }
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error unassigning shift: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error unassigning shift: {str(e)}"
+        )
+
+
+@router.post("/saved/{roster_id}/swap")
+async def swap_assignments(
+    roster_id: int,
+    swap_data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Swap employee_ids between two assignments in a roster.
+
+    Args:
+        roster_id: Roster ID (must be draft)
+        swap_data: {"assignment_id_a": int, "assignment_id_b": int}
+    """
+    from app.models.roster import Roster
+    from app.models.shift_assignment import ShiftAssignment
+
+    try:
+        org_id = current_user.org_id
+        if not org_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User must belong to an organization"
+            )
+
+        assignment_id_a = swap_data.get("assignment_id_a")
+        assignment_id_b = swap_data.get("assignment_id_b")
+
+        if not assignment_id_a or not assignment_id_b:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="assignment_id_a and assignment_id_b are required"
+            )
+
+        if assignment_id_a == assignment_id_b:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot swap an assignment with itself"
+            )
+
+        # Verify roster belongs to org and is draft
+        roster = db.query(Roster).filter(
+            Roster.roster_id == roster_id,
+            Roster.org_id == org_id
+        ).first()
+        if not roster:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Roster with ID {roster_id} not found"
+            )
+        if roster.status != "draft":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Can only swap assignments in draft rosters"
+            )
+
+        # Load both assignments
+        assignment_a = db.query(ShiftAssignment).filter(
+            ShiftAssignment.assignment_id == assignment_id_a,
+            ShiftAssignment.roster_id == roster_id
+        ).first()
+        assignment_b = db.query(ShiftAssignment).filter(
+            ShiftAssignment.assignment_id == assignment_id_b,
+            ShiftAssignment.roster_id == roster_id
+        ).first()
+
+        if not assignment_a:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Assignment {assignment_id_a} not found in roster {roster_id}"
+            )
+        if not assignment_b:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Assignment {assignment_id_b} not found in roster {roster_id}"
+            )
+
+        # Swap employee_ids
+        old_emp_a = assignment_a.employee_id
+        old_emp_b = assignment_b.employee_id
+
+        assignment_a.employee_id = old_emp_b
+        assignment_b.employee_id = old_emp_a
+
+        db.commit()
+
+        # Audit trail
+        AuditService.log_change(
+            db=db, org_id=org_id, entity_type="assignment", entity_id=assignment_id_a,
+            action="swap", changes={
+                "roster_id": roster_id,
+                "swapped_with": assignment_id_b,
+                "old_employee_id": old_emp_a,
+                "new_employee_id": old_emp_b,
+            },
+            user_id=current_user.user_id, user_email=current_user.email
+        )
+        AuditService.log_change(
+            db=db, org_id=org_id, entity_type="assignment", entity_id=assignment_id_b,
+            action="swap", changes={
+                "roster_id": roster_id,
+                "swapped_with": assignment_id_a,
+                "old_employee_id": old_emp_b,
+                "new_employee_id": old_emp_a,
+            },
+            user_id=current_user.user_id, user_email=current_user.email
+        )
+        db.commit()
+
+        # Create snapshot for version history
+        _create_roster_snapshot(db, roster, current_user.user_id, label="Swap")
+        db.commit()
+
+        return {
+            "success": True,
+            "message": "Assignments swapped successfully",
+            "swap": {
+                "assignment_a": {
+                    "assignment_id": assignment_id_a,
+                    "old_employee_id": old_emp_a,
+                    "new_employee_id": old_emp_b,
+                },
+                "assignment_b": {
+                    "assignment_id": assignment_id_b,
+                    "old_employee_id": old_emp_b,
+                    "new_employee_id": old_emp_a,
+                },
+            }
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error swapping assignments: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error swapping assignments: {str(e)}"
+        )
+
+
+@router.post("/saved/{roster_id}/rollback/{snapshot_id}")
+async def rollback_roster(
+    roster_id: int,
+    snapshot_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Rollback a roster to a previous snapshot version.
+
+    Deletes all current assignments, recreates from snapshot_data,
+    creates a new snapshot (version bump), and logs the audit trail.
+    """
+    from app.models.roster import Roster
+    from app.models.roster_snapshot import RosterSnapshot
+    from app.models.shift_assignment import ShiftAssignment
+
+    try:
+        org_id = current_user.org_id
+        if not org_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User must belong to an organization"
+            )
+
+        # Verify roster belongs to org
+        roster = db.query(Roster).filter(
+            Roster.roster_id == roster_id,
+            Roster.org_id == org_id
+        ).first()
+        if not roster:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Roster with ID {roster_id} not found"
+            )
+
+        if roster.status == "published":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot rollback a published roster. Archive it first."
+            )
+
+        # Load the target snapshot
+        snapshot = db.query(RosterSnapshot).filter(
+            RosterSnapshot.snapshot_id == snapshot_id,
+            RosterSnapshot.roster_id == roster_id
+        ).first()
+        if not snapshot:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Snapshot {snapshot_id} not found for roster {roster_id}"
+            )
+
+        # Use a savepoint so that if recreate fails after delete, data is not lost
+        try:
+            savepoint = db.begin_nested()
+
+            # Create a snapshot of the CURRENT state before rollback
+            _create_roster_snapshot(db, roster, current_user.user_id, label="Before rollback")
+
+            # Delete all current assignments for this roster
+            db.query(ShiftAssignment).filter(
+                ShiftAssignment.roster_id == roster_id
+            ).delete(synchronize_session="fetch")
+
+            # Recreate assignments from snapshot data
+            snapshot_assignments = snapshot.snapshot_data.get("assignments", [])
+            restored_count = 0
+
+            for sa_data in snapshot_assignments:
+                new_assignment = ShiftAssignment(
+                    shift_id=sa_data.get("shift_id"),
+                    employee_id=sa_data.get("employee_id"),
+                    roster_id=roster_id,
+                    status=sa_data.get("status", "pending"),
+                    regular_hours=sa_data.get("regular_hours", 0),
+                )
+                db.add(new_assignment)
+                restored_count += 1
+
+            # Update roster stats from snapshot
+            roster.total_shifts = snapshot.snapshot_data.get("total_shifts", roster.total_shifts)
+            roster.assigned_shifts = snapshot.snapshot_data.get("assigned_shifts", restored_count)
+            roster.unassigned_shifts = max(0, roster.total_shifts - roster.assigned_shifts)
+
+            # Create a new snapshot for the rollback state
+            rollback_snapshot = _create_roster_snapshot(
+                db, roster, current_user.user_id,
+                label=f"Rollback to v{snapshot.version}"
+            )
+
+            savepoint.commit()
+        except Exception as e:
+            savepoint.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Rollback failed: {str(e)}"
+            )
+
+        db.commit()
+
+        # Audit trail
+        AuditService.log_change(
+            db=db, org_id=org_id, entity_type="roster", entity_id=roster_id,
+            action="rollback", changes={
+                "rollback_to_snapshot_id": snapshot_id,
+                "rollback_to_version": snapshot.version,
+                "assignments_restored": restored_count,
+                "new_version": rollback_snapshot.version,
+            },
+            user_id=current_user.user_id, user_email=current_user.email
+        )
+        db.commit()
+
+        logger.info(f"Roster {roster_id} rolled back to snapshot {snapshot_id} (v{snapshot.version})")
+
+        return {
+            "success": True,
+            "roster_id": roster_id,
+            "rolled_back_to": {
+                "snapshot_id": snapshot_id,
+                "version": snapshot.version,
+            },
+            "new_version": rollback_snapshot.version,
+            "assignments_restored": restored_count,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error rolling back roster: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error rolling back roster: {str(e)}"
+        )
