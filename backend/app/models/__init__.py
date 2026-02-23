@@ -56,6 +56,8 @@ from app.models.biometric_template import BiometricTemplate
 from app.models.emergency_alert import EmergencyAlert, AlertType, AlertStatus
 from app.models.lone_worker import LoneWorkerSession, LoneWorkerStatus
 from app.models.messaging import ChatChannel, ChannelMember, ChatMessage, ChannelType
+from app.models.report_schedule import ReportSchedule, ReportFrequency, ReportType
+from app.models.post_order import PostOrder, PostOrderAcknowledgment, PostOrderStatus
 
 __all__ = [
     "User",
@@ -156,4 +158,10 @@ __all__ = [
     "ChannelMember",
     "ChatMessage",
     "ChannelType",
+    "ReportSchedule",
+    "ReportFrequency",
+    "ReportType",
+    "PostOrder",
+    "PostOrderAcknowledgment",
+    "PostOrderStatus",
 ]
