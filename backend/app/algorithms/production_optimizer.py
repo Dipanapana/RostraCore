@@ -46,6 +46,8 @@ class OptimizationConfig:
     cost_weight: float = 1.0
     night_premium_per_hour: float = 20.0
     weekend_premium_per_hour: float = 30.0
+    night_shift_start_hour: int = 18  # 18:00
+    night_shift_end_hour: int = 6     # 06:00
     enable_emergency_mode: bool = False
     locked_assignments: Optional[Dict[Tuple[int, int], bool]] = None
     use_lazy_feasibility: bool = True  # Phase 4: Lazy feasibility for memory optimization
@@ -871,7 +873,7 @@ class ProductionRosterOptimizer:
         )
 
         # Add night shift premium (additional to BCEA premiums)
-        if shift.start_time.hour >= 18 or shift.start_time.hour < 6:
+        if shift.start_time.hour >= self.config.night_shift_start_hour or shift.start_time.hour < self.config.night_shift_end_hour:
             total_cost += self.config.night_premium_per_hour * hours
 
         # NOTE: Travel cost removed - distance no longer affects cost
@@ -917,7 +919,7 @@ class ProductionRosterOptimizer:
                 self.weekly_hours_vars[key] = self.model.NewIntVar(0, max_hours, var_name)
 
         # Night shift count variables (for fairness)
-        night_shifts = [s for s in self.shifts if s.start_time.hour >= 18 or s.start_time.hour < 6]
+        night_shifts = [s for s in self.shifts if s.start_time.hour >= self.config.night_shift_start_hour or s.start_time.hour < self.config.night_shift_end_hour]
         for emp in self.employees:
             var_name = f"nights_e{emp.employee_id}"
             self.night_shift_count_vars[emp.employee_id] = self.model.NewIntVar(0, len(night_shifts), var_name)
@@ -1039,7 +1041,7 @@ class ProductionRosterOptimizer:
                     if shift_week == week_num:
                         key = (emp.employee_id, shift.shift_id)
                         if key in self.assignment_vars:
-                            hours = int((shift.end_time - shift.start_time).total_seconds() / 3600)
+                            hours = int(shift.paid_hours)  # Excludes meal breaks per BCEA
                             week_shift_terms.append(self.assignment_vars[key] * hours)
 
                 if week_shift_terms:
@@ -1203,19 +1205,17 @@ class ProductionRosterOptimizer:
             if emp_constraints.max_consecutive_days_level != ConstraintLevel.HARD:
                 continue
 
-            # Check 7-day windows
+            # Consecutive-chain constraint: in any (max+1) consecutive calendar days,
+            # at most max_consecutive_days can be worked. This correctly tracks actual
+            # consecutive streaks rather than total days in a sliding window.
             sorted_dates = sorted(self.shifts_by_date.keys())
-            for i in range(len(sorted_dates) - 6):
-                window_dates = sorted_dates[i:i+7]
-                window_vars = []
-
-                for d in window_dates:
-                    key = (emp.employee_id, d)
-                    if key in self.works_on_date_vars:
-                        window_vars.append(self.works_on_date_vars[key])
-
-                if window_vars:
-                    # Max consecutive days worked in any 7-day window (from resolved constraints)
+            for i in range(len(sorted_dates) - max_consecutive_days):
+                window = sorted_dates[i:i + max_consecutive_days + 1]
+                window_vars = [self.works_on_date_vars[(emp.employee_id, d)]
+                               for d in window
+                               if (emp.employee_id, d) in self.works_on_date_vars]
+                if len(window_vars) == max_consecutive_days + 1:
+                    # Can't work ALL days in a (max+1)-day consecutive window
                     self.model.Add(sum(window_vars) <= max_consecutive_days)
 
     def _add_consecutive_nights_constraints(self):
@@ -1234,9 +1234,9 @@ class ProductionRosterOptimizer:
                 f"level: {sample_constraints.max_consecutive_nights_level.value})..."
             )
 
-        # Define what constitutes a night shift (18:00-06:00)
+        # Define what constitutes a night shift (configurable hours)
         def is_night_shift(shift):
-            return shift.start_time.hour >= 18 or shift.start_time.hour < 6
+            return shift.start_time.hour >= self.config.night_shift_start_hour or shift.start_time.hour < self.config.night_shift_end_hour
 
         for emp in self.employees:
             # Get employee-specific constraints
@@ -1297,7 +1297,7 @@ class ProductionRosterOptimizer:
         logger.info("Adding fairness constraints...")
 
         # 1. Count night shifts per employee
-        night_shifts = [s for s in self.shifts if s.start_time.hour >= 18 or s.start_time.hour < 6]
+        night_shifts = [s for s in self.shifts if s.start_time.hour >= self.config.night_shift_start_hour or s.start_time.hour < self.config.night_shift_end_hour]
         for emp in self.employees:
             night_terms = []
             for shift in night_shifts:
@@ -1516,6 +1516,39 @@ class ProductionRosterOptimizer:
                 # Penalty for unfairness
                 fairness_penalty = (max_hours - min_hours) * 1000 * self.config.fairness_weight
                 fairness_terms.append(fairness_penalty)
+
+            # Night shift fairness - balance night shifts across employees
+            night_counts = [self.night_shift_count_vars[eid] for eid in self.night_shift_count_vars]
+            if len(night_counts) >= 2:
+                max_nights = self.model.NewIntVar(0, 1000, "max_nights")
+                min_nights = self.model.NewIntVar(0, 1000, "min_nights")
+                self.model.AddMaxEquality(max_nights, night_counts)
+                self.model.AddMinEquality(min_nights, night_counts)
+                night_spread = self.model.NewIntVar(0, 1000, "night_spread")
+                self.model.Add(night_spread == max_nights - min_nights)
+                fairness_terms.append(night_spread * 500)
+
+            # Weekend shift fairness - balance weekend shifts across employees
+            weekend_counts = [self.weekend_shift_count_vars[eid] for eid in self.weekend_shift_count_vars]
+            if len(weekend_counts) >= 2:
+                max_weekends = self.model.NewIntVar(0, 1000, "max_weekends")
+                min_weekends = self.model.NewIntVar(0, 1000, "min_weekends")
+                self.model.AddMaxEquality(max_weekends, weekend_counts)
+                self.model.AddMinEquality(min_weekends, weekend_counts)
+                weekend_spread = self.model.NewIntVar(0, 1000, "weekend_spread")
+                self.model.Add(weekend_spread == max_weekends - min_weekends)
+                fairness_terms.append(weekend_spread * 500)
+
+            # Holiday shift fairness - balance holiday shifts across employees
+            holiday_counts = [self.holiday_shift_count_vars[eid] for eid in self.holiday_shift_count_vars]
+            if len(holiday_counts) >= 2:
+                max_holidays_obj = self.model.NewIntVar(0, 1000, "max_holidays_obj")
+                min_holidays_obj = self.model.NewIntVar(0, 1000, "min_holidays_obj")
+                self.model.AddMaxEquality(max_holidays_obj, holiday_counts)
+                self.model.AddMinEquality(min_holidays_obj, holiday_counts)
+                holiday_spread = self.model.NewIntVar(0, 1000, "holiday_spread")
+                self.model.Add(holiday_spread == max_holidays_obj - min_holidays_obj)
+                fairness_terms.append(holiday_spread * 500)
 
         # Combine objectives
         total_objective = cost_terms + fairness_terms
@@ -1756,28 +1789,179 @@ class ProductionRosterOptimizer:
         }
 
     def _diagnose_infeasibility(self) -> Dict:
-        """Provide detailed diagnostics when problem is infeasible"""
+        """
+        Provide detailed diagnostics when problem is infeasible.
+
+        Goes beyond simple reason counting to provide:
+        - Skill-adjusted capacity analysis (not just raw headcount * hours)
+        - Identification of the single most-blocking constraint
+        - Actionable suggested relaxations with estimated impact
+        """
         logger.info("Diagnosing infeasibility...")
 
-        # Count reasons for infeasibility
+        # ------------------------------------------------------------------
+        # 1. Count reasons for infeasibility (existing logic)
+        # ------------------------------------------------------------------
         reason_counts = defaultdict(int)
         for check in self.feasibility_matrix.values():
             if not check.is_feasible:
                 for reason in check.reasons:
                     reason_counts[reason] += 1
 
-        # Sort by frequency
         sorted_reasons = sorted(reason_counts.items(), key=lambda x: -x[1])
 
         logger.info("Top infeasibility reasons:")
         for reason, count in sorted_reasons[:5]:
             logger.info(f"  - {reason}: {count} violations")
 
-        # Check capacity
-        total_shift_hours = sum((s.end_time - s.start_time).total_seconds() / 3600 for s in self.shifts)
-        total_employee_capacity = len(self.employees) * settings.MAX_HOURS_WEEK  # Max hours per employee
-
+        # ------------------------------------------------------------------
+        # 2. Raw capacity check (existing)
+        # ------------------------------------------------------------------
+        total_shift_hours = sum(
+            (s.end_time - s.start_time).total_seconds() / 3600 for s in self.shifts
+        )
+        total_employee_capacity = len(self.employees) * settings.MAX_HOURS_WEEK
         capacity_sufficient = total_employee_capacity >= total_shift_hours
+
+        # ------------------------------------------------------------------
+        # 3. Skill-adjusted capacity analysis
+        # ------------------------------------------------------------------
+        # Group shifts by required_skill
+        shifts_by_skill: Dict[str, list] = defaultdict(list)
+        for s in self.shifts:
+            skill_key = (s.required_skill or "any").lower()
+            shifts_by_skill[skill_key].append(s)
+
+        # Count employees that can serve each skill bucket
+        skill_capacity: Dict[str, Dict] = {}
+        for skill_key, skill_shifts in shifts_by_skill.items():
+            hours_needed = sum(
+                (s.end_time - s.start_time).total_seconds() / 3600 for s in skill_shifts
+            )
+            qualified_count = 0
+            for emp in self.employees:
+                if skill_key == "any":
+                    qualified_count += 1
+                elif self._check_skill_match(emp, skill_shifts[0]):
+                    qualified_count += 1
+            qualified_capacity = qualified_count * settings.MAX_HOURS_WEEK
+            skill_capacity[skill_key] = {
+                "shifts": len(skill_shifts),
+                "hours_needed": round(hours_needed, 1),
+                "qualified_employees": qualified_count,
+                "qualified_capacity_hours": round(qualified_capacity, 1),
+                "deficit_hours": round(max(0, hours_needed - qualified_capacity), 1),
+                "sufficient": qualified_capacity >= hours_needed,
+            }
+
+        skill_adjusted_sufficient = all(sc["sufficient"] for sc in skill_capacity.values())
+
+        # ------------------------------------------------------------------
+        # 4. Identify the most-blocking constraint
+        # ------------------------------------------------------------------
+        # Categorise each reason into a constraint bucket so we can rank them
+        constraint_buckets: Dict[str, int] = defaultdict(int)
+        for reason, count in sorted_reasons:
+            reason_lower = reason.lower()
+            if "skill" in reason_lower:
+                constraint_buckets["skill_mismatch"] += count
+            elif "certif" in reason_lower or "psira" in reason_lower or "firearm" in reason_lower:
+                constraint_buckets["certification"] += count
+            elif "avail" in reason_lower:
+                constraint_buckets["availability"] += count
+            elif "client" in reason_lower:
+                constraint_buckets["client_assignment"] += count
+            else:
+                constraint_buckets["other"] += count
+
+        most_blocking = max(constraint_buckets, key=constraint_buckets.get) if constraint_buckets else "unknown"
+
+        # ------------------------------------------------------------------
+        # 5. Build actionable suggested relaxations
+        # ------------------------------------------------------------------
+        suggested_relaxations: list = []
+
+        # 5a. Rest-period relaxation estimate
+        if self.employees and self.shifts:
+            sample_constraints = self._get_resolved_constraints(self.employees[0], self.shifts[0])
+            current_rest = sample_constraints.min_rest_hours
+            if current_rest > 8:
+                # Estimate how many additional assignments become possible
+                rest_violations = 0
+                for emp in self.employees:
+                    for i, s1 in enumerate(self.shifts):
+                        for s2 in self.shifts[i + 1:]:
+                            gap = abs((s2.start_time - s1.end_time).total_seconds()) / 3600
+                            if 8 <= gap < current_rest:
+                                k1 = (emp.employee_id, s1.shift_id)
+                                k2 = (emp.employee_id, s2.shift_id)
+                                if k1 in self.feasibility_matrix._cache if isinstance(self.feasibility_matrix, LazyFeasibilityMatrix) else k1 in self.feasibility_matrix:
+                                    rest_violations += 1
+                                # Limit inner work to avoid long computation
+                            if rest_violations > 200:
+                                break
+                        if rest_violations > 200:
+                            break
+                    if rest_violations > 200:
+                        break
+
+                if rest_violations > 0:
+                    suggested_relaxations.append({
+                        "constraint": "rest_period",
+                        "current_value": f"{current_rest}h",
+                        "suggested_value": "8h",
+                        "impact": f"Could enable up to {rest_violations} additional shift-pair assignments",
+                        "risk": "Reduced rest may affect guard alertness; still meets BCEA minimum of 8h"
+                    })
+
+        # 5b. Skill matching relaxation
+        if constraint_buckets.get("skill_mismatch", 0) > 0:
+            skill_block_count = constraint_buckets["skill_mismatch"]
+            suggested_relaxations.append({
+                "constraint": "skill_matching",
+                "current_value": "HARD",
+                "suggested_value": "WARNING",
+                "impact": f"Would unblock {skill_block_count} employee-shift pairs currently rejected for skill mismatch",
+                "risk": "Guards may be assigned shifts outside their primary skill; review post-assignment"
+            })
+
+        # 5c. Availability relaxation
+        if constraint_buckets.get("availability", 0) > 0:
+            avail_block_count = constraint_buckets["availability"]
+            suggested_relaxations.append({
+                "constraint": "availability_check",
+                "current_value": "HARD",
+                "suggested_value": "WARNING",
+                "impact": f"Would unblock {avail_block_count} employee-shift pairs currently rejected for availability",
+                "risk": "Guards may be assigned outside their declared availability; manual confirmation recommended"
+            })
+
+        # 5d. Certification / PSIRA relaxation
+        if constraint_buckets.get("certification", 0) > 0:
+            cert_block_count = constraint_buckets["certification"]
+            suggested_relaxations.append({
+                "constraint": "psira_compliance",
+                "current_value": "HARD",
+                "suggested_value": "WARNING",
+                "impact": f"Would unblock {cert_block_count} employee-shift pairs currently rejected for certification issues",
+                "risk": "Regulatory non-compliance risk; only recommended as temporary emergency measure"
+            })
+
+        # 5e. Capacity shortage suggestion
+        for skill_key, sc in skill_capacity.items():
+            if not sc["sufficient"]:
+                additional_needed = math.ceil(sc["deficit_hours"] / settings.MAX_HOURS_WEEK)
+                suggested_relaxations.append({
+                    "constraint": "capacity",
+                    "skill": skill_key,
+                    "current_value": f"{sc['qualified_employees']} qualified employees",
+                    "suggested_value": f"Hire {additional_needed} more {skill_key} employees",
+                    "impact": f"Deficit of {sc['deficit_hours']}h for '{skill_key}' shifts ({sc['shifts']} shifts)",
+                    "risk": "Cannot be resolved by relaxing constraints; requires additional staffing"
+                })
+
+        logger.info(f"Most blocking constraint: {most_blocking}")
+        logger.info(f"Suggested relaxations: {len(suggested_relaxations)}")
 
         return {
             "status": "infeasible",
@@ -1788,10 +1972,15 @@ class ProductionRosterOptimizer:
                 "feasible_pairs": sum(1 for f in self.feasibility_matrix.values() if f.is_feasible),
                 "total_pairs": len(self.feasibility_matrix),
                 "top_reasons": sorted_reasons[:10],
-                "total_shift_hours": total_shift_hours,
-                "total_employee_capacity": total_employee_capacity,
-                "capacity_sufficient": capacity_sufficient
+                "total_shift_hours": round(total_shift_hours, 1),
+                "total_employee_capacity": round(total_employee_capacity, 1),
+                "capacity_sufficient": capacity_sufficient,
+                "skill_adjusted_capacity": skill_capacity,
+                "skill_adjusted_sufficient": skill_adjusted_sufficient,
+                "most_blocking_constraint": most_blocking,
+                "constraint_category_counts": dict(constraint_buckets),
             },
+            "suggested_relaxations": suggested_relaxations,
             "assignments": [],
             "unfilled_shifts": [self._shift_to_dict(s) for s in self.shifts]
         }
