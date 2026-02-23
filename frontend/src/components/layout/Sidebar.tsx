@@ -591,6 +591,13 @@ const NAV_ENTRIES: NavEntry[] = [
         roles: MANAGEMENT_ROLES,
       },
       {
+        key: "forms",
+        label: "Forms",
+        href: "/forms",
+        icon: ClipboardList,
+        roles: MANAGEMENT_ROLES,
+      },
+      {
         key: "occurrence-book",
         label: "Occurrence Book",
         href: "/occurrence-book",
