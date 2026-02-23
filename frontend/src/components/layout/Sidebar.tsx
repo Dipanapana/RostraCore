@@ -211,6 +211,15 @@ const NAV_ENTRIES: NavEntry[] = [
     section: "main",
   },
   {
+    kind: "standalone",
+    key: "command-center",
+    label: "Command Center",
+    icon: Radio,
+    href: "/command-center",
+    roles: ADMIN_ROLES,
+    section: "main",
+  },
+  {
     kind: "group",
     key: "workforce",
     label: "Workforce",
