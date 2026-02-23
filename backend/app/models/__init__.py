@@ -60,7 +60,9 @@ from app.models.report_schedule import ReportSchedule, ReportFrequency, ReportTy
 from app.models.post_order import PostOrder, PostOrderAcknowledgment, PostOrderStatus
 from app.models.psira_wage_rate import PSIRAWageRate
 from app.models.firearm import Firearm, FirearmIssue, FirearmInspection, FirearmStatus
+from app.models.location_ping import LocationPing
 from app.models.popia import POPIAConsent, DataSubjectRequest, ConsentType, RequestType, RequestStatus
+from app.models.custom_form import FormTemplate, FormSubmission, FormStatus
 
 __all__ = [
     "User",
@@ -172,9 +174,13 @@ __all__ = [
     "FirearmIssue",
     "FirearmInspection",
     "FirearmStatus",
+    "LocationPing",
     "POPIAConsent",
     "DataSubjectRequest",
     "ConsentType",
     "RequestType",
     "RequestStatus",
+    "FormTemplate",
+    "FormSubmission",
+    "FormStatus",
 ]

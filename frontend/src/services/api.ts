@@ -1038,4 +1038,24 @@ export const firearmsApi = {
   getOverdueInspections: () => api.get('/api/v1/firearms/overdue-inspections'),
 };
 
+export const customFormsApi = {
+  listTemplates: (params?: { status_filter?: string }) =>
+    api.get('/api/v1/forms/templates', { params }),
+  getTemplate: (id: number) => api.get(`/api/v1/forms/templates/${id}`),
+  createTemplate: (data: any) => api.post('/api/v1/forms/templates', data),
+  updateTemplate: (id: number, data: any) => api.put(`/api/v1/forms/templates/${id}`, data),
+  deleteTemplate: (id: number) => api.delete(`/api/v1/forms/templates/${id}`),
+  submitForm: (data: any) => api.post('/api/v1/forms/submit', data),
+  listSubmissions: (params?: { template_id?: number; site_id?: number; skip?: number; limit?: number }) =>
+    api.get('/api/v1/forms/submissions', { params }),
+};
+
+export const locationApi = {
+  submitPing: (data: { latitude: number; longitude: number; accuracy?: number; battery_level?: number; is_moving?: boolean; shift_id?: number }) =>
+    api.post('/api/v1/location/ping', data),
+  getTrail: (employeeId: number, params?: { shift_id?: number; hours?: number }) =>
+    api.get(`/api/v1/location/trail/${employeeId}`, { params }),
+  getActiveLocations: () => api.get('/api/v1/location/active'),
+};
+
 export default api
