@@ -79,6 +79,8 @@ import {
   MessageSquare,
   Zap,
   Briefcase,
+  Crosshair,
+  Lock,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -342,6 +344,20 @@ const NAV_ENTRIES: NavEntry[] = [
         roles: MANAGEMENT_ROLES,
       },
       {
+        key: "psira-compliance",
+        label: "PSIRA Wages",
+        href: "/compliance/psira",
+        icon: Scale,
+        roles: ADMIN_ROLES,
+      },
+      {
+        key: "popia-compliance",
+        label: "POPIA",
+        href: "/compliance/popia",
+        icon: Lock,
+        roles: ADMIN_ROLES,
+      },
+      {
         key: "guard-restrictions",
         label: "Guard Restrictions",
         href: "/employees/restrictions",
@@ -515,6 +531,13 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/assets",
         icon: Package,
         roles: MANAGEMENT_ROLES,
+      },
+      {
+        key: "firearms",
+        label: "Firearms",
+        href: "/firearms",
+        icon: Crosshair,
+        roles: ADMIN_ROLES,
       },
       {
         key: "geofencing",

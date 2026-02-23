@@ -58,6 +58,9 @@ from app.models.lone_worker import LoneWorkerSession, LoneWorkerStatus
 from app.models.messaging import ChatChannel, ChannelMember, ChatMessage, ChannelType
 from app.models.report_schedule import ReportSchedule, ReportFrequency, ReportType
 from app.models.post_order import PostOrder, PostOrderAcknowledgment, PostOrderStatus
+from app.models.psira_wage_rate import PSIRAWageRate
+from app.models.firearm import Firearm, FirearmIssue, FirearmInspection, FirearmStatus
+from app.models.popia import POPIAConsent, DataSubjectRequest, ConsentType, RequestType, RequestStatus
 
 __all__ = [
     "User",
@@ -164,4 +167,14 @@ __all__ = [
     "PostOrder",
     "PostOrderAcknowledgment",
     "PostOrderStatus",
+    "PSIRAWageRate",
+    "Firearm",
+    "FirearmIssue",
+    "FirearmInspection",
+    "FirearmStatus",
+    "POPIAConsent",
+    "DataSubjectRequest",
+    "ConsentType",
+    "RequestType",
+    "RequestStatus",
 ]

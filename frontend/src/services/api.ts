@@ -992,6 +992,26 @@ export const reportScheduleApi = {
   toggle: (id: number) => api.post(`/api/v1/report-schedules/${id}/toggle`),
 };
 
+export const psiraApi = {
+  getRates: (params?: { grade?: string; area?: number }) =>
+    api.get('/api/v1/psira/rates', { params }),
+  createRate: (data: any) => api.post('/api/v1/psira/rates', data),
+  seedRates: () => api.post('/api/v1/psira/rates/seed'),
+  checkCompliance: () => api.get('/api/v1/psira/check'),
+};
+
+export const popiaApi = {
+  getDashboard: () => api.get('/api/v1/popia/dashboard'),
+  listConsents: (params?: { employee_id?: number; consent_type?: string }) =>
+    api.get('/api/v1/popia/consent', { params }),
+  recordConsent: (data: any) => api.post('/api/v1/popia/consent', data),
+  withdrawConsent: (id: number) => api.post(`/api/v1/popia/consent/${id}/withdraw`),
+  listRequests: (params?: { status_filter?: string }) =>
+    api.get('/api/v1/popia/requests', { params }),
+  createRequest: (data: any) => api.post('/api/v1/popia/requests', data),
+  updateRequest: (id: number, data: any) => api.put(`/api/v1/popia/requests/${id}`, data),
+};
+
 export const postOrdersApi = {
   list: (params?: { site_id?: number; status_filter?: string; skip?: number; limit?: number }) =>
     api.get('/api/v1/post-orders/', { params }),
@@ -1002,6 +1022,20 @@ export const postOrdersApi = {
   getActiveForSite: (siteId: number) => api.get(`/api/v1/post-orders/site/${siteId}/active`),
   acknowledge: (id: number) => api.post(`/api/v1/post-orders/${id}/acknowledge`),
   getAcknowledgments: (id: number) => api.get(`/api/v1/post-orders/${id}/acknowledgments`),
+};
+
+export const firearmsApi = {
+  list: (params?: { status_filter?: string; skip?: number; limit?: number }) =>
+    api.get('/api/v1/firearms/', { params }),
+  get: (id: number) => api.get(`/api/v1/firearms/${id}`),
+  create: (data: any) => api.post('/api/v1/firearms/', data),
+  issue: (id: number, data: { employee_id: number; ammunition_issued?: number; condition_on_issue?: string }) =>
+    api.post(`/api/v1/firearms/${id}/issue`, data),
+  returnFirearm: (id: number, data: { ammunition_returned?: number; condition_on_return?: string }) =>
+    api.post(`/api/v1/firearms/${id}/return`, data),
+  getHistory: (id: number) => api.get(`/api/v1/firearms/${id}/history`),
+  inspect: (id: number, data: any) => api.post(`/api/v1/firearms/${id}/inspect`, data),
+  getOverdueInspections: () => api.get('/api/v1/firearms/overdue-inspections'),
 };
 
 export default api
