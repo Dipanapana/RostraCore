@@ -1058,4 +1058,14 @@ export const locationApi = {
   getActiveLocations: () => api.get('/api/v1/location/active'),
 };
 
+export const rolePermissionsApi = {
+  getMyPermissions: () => api.get('/api/v1/role-permissions/me'),
+  getAll: () => api.get('/api/v1/role-permissions/'),
+  getKeys: () => api.get('/api/v1/role-permissions/keys'),
+  getRole: (role: string) => api.get(`/api/v1/role-permissions/${role}`),
+  updateRole: (role: string, permissions: Record<string, boolean>) =>
+    api.put(`/api/v1/role-permissions/${role}`, { permissions }),
+  resetDefaults: () => api.post('/api/v1/role-permissions/reset-defaults'),
+};
+
 export default api

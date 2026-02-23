@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/context/AuthContext'
+import { PermissionsProvider } from '@/context/PermissionsContext'
 import { ThemeProvider } from '@/context/ThemeContext'
 import { ToastProvider } from '@/context/ToastContext'
 import ErrorBoundary from '@/components/ErrorBoundary'
@@ -59,9 +60,11 @@ export default function RootLayout({
           <ThemeProvider>
             <ToastProvider>
               <AuthProvider>
-                <TrialBanner />
-                {children}
-                <PWAInstaller />
+                <PermissionsProvider>
+                  <TrialBanner />
+                  {children}
+                  <PWAInstaller />
+                </PermissionsProvider>
               </AuthProvider>
             </ToastProvider>
           </ThemeProvider>

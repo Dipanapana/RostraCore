@@ -67,6 +67,7 @@ from app.models.firearm import Firearm, FirearmIssue, FirearmInspection, Firearm
 from app.models.location_ping import LocationPing
 from app.models.popia import POPIAConsent, DataSubjectRequest, ConsentType, RequestType, RequestStatus
 from app.models.custom_form import FormTemplate, FormSubmission, FormStatus
+from app.models.role_permission import OrganizationRolePermission
 
 __all__ = [
     "User",
@@ -197,4 +198,5 @@ __all__ = [
     "FormTemplate",
     "FormSubmission",
     "FormStatus",
+    "OrganizationRolePermission",
 ]

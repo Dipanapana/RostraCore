@@ -297,6 +297,33 @@ def require_management_role(current_user: User = Depends(get_current_user)) -> U
     ])(current_user)
 
 
+def require_permission(permission_key: str):
+    """
+    Dependency to require a specific permission via the org-level permission system.
+
+    - superadmin / admin / company_admin always pass
+    - Other roles: checked via PermissionService
+    - Coexists with existing require_roles() — no breaking changes
+    """
+    def permission_checker(
+        current_user: User = Depends(get_current_user),
+        db: Session = Depends(get_db),
+    ) -> User:
+        from app.services.permission_service import PermissionService
+
+        if current_user.role in (UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.COMPANY_ADMIN):
+            return current_user
+
+        if not PermissionService.has_permission(db, current_user, permission_key):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Permission denied: {permission_key}",
+            )
+        return current_user
+
+    return permission_checker
+
+
 def get_current_org_id(current_user: User = Depends(get_current_user)) -> int:
     """
     Get the org_id of the current authenticated user.

@@ -81,8 +81,10 @@ import {
   Briefcase,
   Crosshair,
   Lock,
+  HelpCircle,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { usePermissions } from "@/context/PermissionsContext";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -102,6 +104,7 @@ interface NavChild {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   roles: UserRole[];
+  permissionKey?: string;
 }
 
 interface NavGroup {
@@ -121,6 +124,7 @@ interface NavStandalone {
   href: string;
   roles: UserRole[];
   section: "main" | "system" | "platform";
+  permissionKey?: string;
 }
 
 type NavEntry = NavGroup | NavStandalone;
@@ -164,6 +168,7 @@ const NAV_ENTRIES: NavEntry[] = [
     href: "/dashboard",
     roles: ALL_ROLES,
     section: "main",
+    permissionKey: "dashboard.view",
   },
   {
     kind: "standalone",
@@ -173,6 +178,7 @@ const NAV_ENTRIES: NavEntry[] = [
     href: "/ops-summary",
     roles: ADMIN_ROLES,
     section: "main",
+    permissionKey: "ops_summary.view",
   },
   {
     kind: "standalone",
@@ -182,6 +188,7 @@ const NAV_ENTRIES: NavEntry[] = [
     href: "/emergency",
     roles: MANAGEMENT_ROLES,
     section: "main",
+    permissionKey: "emergency.view",
   },
   {
     kind: "standalone",
@@ -191,6 +198,7 @@ const NAV_ENTRIES: NavEntry[] = [
     href: "/lone-worker",
     roles: MANAGEMENT_ROLES,
     section: "main",
+    permissionKey: "lone_worker.view",
   },
   {
     kind: "standalone",
@@ -200,6 +208,7 @@ const NAV_ENTRIES: NavEntry[] = [
     href: "/messaging",
     roles: ALL_ROLES,
     section: "main",
+    permissionKey: "messaging.view",
   },
   {
     kind: "standalone",
@@ -209,6 +218,7 @@ const NAV_ENTRIES: NavEntry[] = [
     href: "/portal",
     roles: ALL_ROLES,
     section: "main",
+    permissionKey: "client_portal.view",
   },
   {
     kind: "standalone",
@@ -218,6 +228,7 @@ const NAV_ENTRIES: NavEntry[] = [
     href: "/command-center",
     roles: ADMIN_ROLES,
     section: "main",
+    permissionKey: "command_center.view",
   },
   {
     kind: "group",
@@ -232,6 +243,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/employees",
         icon: Users,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "employees.view",
       },
       {
         key: "certifications",
@@ -239,6 +251,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/certifications",
         icon: Award,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "certifications.view",
       },
       {
         key: "cert-alerts",
@@ -246,6 +259,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/cert-alerts",
         icon: Bell,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "certifications.view",
       },
       {
         key: "training",
@@ -253,6 +267,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/training",
         icon: GraduationCap,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "training.view",
       },
       {
         key: "skills-matrix",
@@ -260,6 +275,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/employees/skills-matrix",
         icon: Grid3X3,
         roles: ADMIN_ROLES,
+        permissionKey: "skills_matrix.view",
       },
       {
         key: "disciplinary",
@@ -267,6 +283,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/disciplinary",
         icon: Gavel,
         roles: ADMIN_ROLES,
+        permissionKey: "disciplinary.view",
       },
       {
         key: "emergency-contacts",
@@ -274,6 +291,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/emergency-contacts",
         icon: Phone,
         roles: ADMIN_ROLES,
+        permissionKey: "employees.view",
       },
       {
         key: "iod",
@@ -281,6 +299,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/iod",
         icon: HeartPulse,
         roles: ADMIN_ROLES,
+        permissionKey: "iod.view",
       },
       {
         key: "guard-grades",
@@ -288,6 +307,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/employees/grades",
         icon: Shield,
         roles: ADMIN_ROLES,
+        permissionKey: "employee_grades.view",
       },
       {
         key: "deployments",
@@ -295,6 +315,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/deployments",
         icon: History,
         roles: ADMIN_ROLES,
+        permissionKey: "deployments.view",
       },
       {
         key: "deployment-map",
@@ -302,6 +323,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/deployments/map",
         icon: Map,
         roles: ADMIN_ROLES,
+        permissionKey: "deployments.view",
       },
       {
         key: "schedule",
@@ -309,6 +331,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/roster",
         icon: CalendarClock,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "roster.view",
       },
       {
         key: "posting-alerts",
@@ -316,6 +339,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/roster/alerts",
         icon: AlertTriangle,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "roster.view",
       },
       {
         key: "exceptions",
@@ -323,6 +347,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/roster/exceptions",
         icon: AlertCircle,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "exceptions.view",
       },
       {
         key: "coverage",
@@ -330,6 +355,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/roster/coverage",
         icon: CalendarDays,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "roster.view",
       },
       {
         key: "shift-swaps",
@@ -337,6 +363,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/roster/swaps",
         icon: ArrowLeftRight,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "shift_swaps.view",
       },
       {
         key: "spare-pool",
@@ -344,6 +371,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/roster/spare-pool",
         icon: ShieldCheck,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "spare_pool.view",
       },
       {
         key: "compliance",
@@ -351,6 +379,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/roster/compliance",
         icon: Scale,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "bcea_compliance.view",
       },
       {
         key: "psira-compliance",
@@ -358,6 +387,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/compliance/psira",
         icon: Scale,
         roles: ADMIN_ROLES,
+        permissionKey: "psira_compliance.view",
       },
       {
         key: "popia-compliance",
@@ -365,6 +395,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/compliance/popia",
         icon: Lock,
         roles: ADMIN_ROLES,
+        permissionKey: "popia.view",
       },
       {
         key: "guard-restrictions",
@@ -372,6 +403,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/employees/restrictions",
         icon: ShieldBan,
         roles: ADMIN_ROLES,
+        permissionKey: "employee_restrictions.view",
       },
       {
         key: "hr-analytics",
@@ -379,6 +411,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/employees/hr-analytics",
         icon: BarChart3,
         roles: ADMIN_ROLES,
+        permissionKey: "hr_analytics.view",
       },
       {
         key: "turnover",
@@ -386,6 +419,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/employees/turnover",
         icon: TrendingDown,
         roles: ADMIN_ROLES,
+        permissionKey: "employee_turnover.view",
       },
       {
         key: "performance-dashboard",
@@ -393,6 +427,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/employees/performance",
         icon: Activity,
         roles: ADMIN_ROLES,
+        permissionKey: "performance.view",
       },
       {
         key: "workforce-compliance",
@@ -400,6 +435,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/employees/compliance",
         icon: ShieldAlert,
         roles: ADMIN_ROLES,
+        permissionKey: "employees.view",
       },
       {
         key: "time-leave",
@@ -413,6 +449,7 @@ const NAV_ENTRIES: NavEntry[] = [
           "guard",
           "superadmin",
         ],
+        permissionKey: "leave.view",
       },
       {
         key: "overtime",
@@ -420,6 +457,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/overtime",
         icon: Timer,
         roles: ADMIN_ROLES,
+        permissionKey: "overtime.view",
       },
       {
         key: "attendance",
@@ -427,6 +465,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/attendance",
         icon: Gauge,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "attendance.view",
       },
       {
         key: "attendance-analytics",
@@ -434,6 +473,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/attendance/analytics",
         icon: Activity,
         roles: ADMIN_ROLES,
+        permissionKey: "attendance.analytics",
       },
       {
         key: "availability",
@@ -447,6 +487,7 @@ const NAV_ENTRIES: NavEntry[] = [
           "guard",
           "superadmin",
         ],
+        permissionKey: "availability.view",
       },
       {
         key: "availability-heatmap",
@@ -454,6 +495,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/availability/heatmap",
         icon: Flame,
         roles: ADMIN_ROLES,
+        permissionKey: "availability.view",
       },
     ],
   },
@@ -470,6 +512,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/clients",
         icon: Building,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "clients.view",
       },
       {
         key: "contract-renewals",
@@ -477,6 +520,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/clients/renewals",
         icon: CalendarClock,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "clients.view",
       },
       {
         key: "client-satisfaction",
@@ -484,6 +528,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/clients/satisfaction",
         icon: Star,
         roles: ADMIN_ROLES,
+        permissionKey: "clients.view",
       },
       {
         key: "sites",
@@ -491,6 +536,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/sites",
         icon: MapPin,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "sites.view",
       },
       {
         key: "site-risk",
@@ -498,6 +544,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/sites/risk",
         icon: ShieldQuestion,
         roles: ADMIN_ROLES,
+        permissionKey: "sites.view",
       },
       {
         key: "patrols",
@@ -505,6 +552,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/patrols",
         icon: Route,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "patrols.view",
       },
       {
         key: "patrol-analytics",
@@ -512,6 +560,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/patrols/analytics",
         icon: Radar,
         roles: ADMIN_ROLES,
+        permissionKey: "patrols.view",
       },
       {
         key: "inspections",
@@ -519,6 +568,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/inspections",
         icon: ClipboardCheck,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "inspections.view",
       },
       {
         key: "incidents",
@@ -526,6 +576,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/incidents",
         icon: AlertTriangle,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "incidents.view",
       },
       {
         key: "incident-analytics",
@@ -533,6 +584,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/incidents/analytics",
         icon: PieChart,
         roles: ADMIN_ROLES,
+        permissionKey: "incidents.view",
       },
       {
         key: "assets",
@@ -540,6 +592,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/assets",
         icon: Package,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "assets.view",
       },
       {
         key: "firearms",
@@ -547,6 +600,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/firearms",
         icon: Crosshair,
         roles: ADMIN_ROLES,
+        permissionKey: "firearms.view",
       },
       {
         key: "geofencing",
@@ -554,6 +608,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/geofencing",
         icon: MapPin,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "geofencing.view",
       },
       {
         key: "visitors",
@@ -561,6 +616,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/visitors",
         icon: UserCheck,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "visitors.view",
       },
       {
         key: "keys",
@@ -568,6 +624,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/keys",
         icon: Key,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "keys.view",
       },
       {
         key: "comm-log",
@@ -575,6 +632,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/comm-log",
         icon: Radio,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "comm_log.view",
       },
       {
         key: "shift-handovers",
@@ -582,6 +640,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/shift-handovers",
         icon: Repeat,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "shift_handovers.view",
       },
       {
         key: "post-orders",
@@ -589,6 +648,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/post-orders",
         icon: FileText,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "post_orders.view",
       },
       {
         key: "forms",
@@ -596,6 +656,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/forms",
         icon: ClipboardList,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "forms.view",
       },
       {
         key: "occurrence-book",
@@ -603,6 +664,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/occurrence-book",
         icon: BookOpen,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "occurrence_book.view",
       },
       {
         key: "documents",
@@ -610,6 +672,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/documents",
         icon: FileText,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "documents.view",
       },
       {
         key: "fleet",
@@ -617,6 +680,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/fleet",
         icon: Car,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "fleet.view",
       },
       {
         key: "daily-activity",
@@ -624,6 +688,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/daily-activity",
         icon: ClipboardList,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "daily_activity.view",
       },
       {
         key: "announcements",
@@ -631,6 +696,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/announcements",
         icon: Megaphone,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "announcements.view",
       },
       {
         key: "maintenance",
@@ -638,6 +704,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/maintenance",
         icon: Hammer,
         roles: MANAGEMENT_ROLES,
+        permissionKey: "maintenance.view",
       },
       {
         key: "contract-compliance",
@@ -645,6 +712,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/contract-compliance",
         icon: FileCheck,
         roles: ADMIN_ROLES,
+        permissionKey: "contract_compliance.view",
       },
       {
         key: "sla-compliance",
@@ -652,6 +720,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/sla-compliance",
         icon: Target,
         roles: ADMIN_ROLES,
+        permissionKey: "sla_compliance.view",
       },
       {
         key: "client-reports",
@@ -659,6 +728,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/client-reports",
         icon: FileBarChart,
         roles: ADMIN_ROLES,
+        permissionKey: "reports.view",
       },
       {
         key: "workforce-forecast",
@@ -666,6 +736,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/workforce-forecast",
         icon: TrendingUp,
         roles: ADMIN_ROLES,
+        permissionKey: "employees.view",
       },
       {
         key: "compliance-calendar",
@@ -673,6 +744,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/compliance-calendar",
         icon: CalendarRange,
         roles: ADMIN_ROLES,
+        permissionKey: "compliance_calendar.view",
       },
     ],
   },
@@ -695,6 +767,7 @@ const NAV_ENTRIES: NavEntry[] = [
           "guard",
           "superadmin",
         ],
+        permissionKey: "payroll.view",
       },
       {
         key: "invoices",
@@ -702,6 +775,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/billing/invoices",
         icon: FileText,
         roles: FINANCE_ROLES,
+        permissionKey: "invoices.view",
       },
       {
         key: "reports",
@@ -709,6 +783,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/reports",
         icon: BarChart3,
         roles: FINANCE_ROLES,
+        permissionKey: "reports.view",
       },
       {
         key: "cost-forecast",
@@ -716,6 +791,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/roster/forecast",
         icon: Calculator,
         roles: FINANCE_ROLES,
+        permissionKey: "budgets.view",
       },
       {
         key: "contract-values",
@@ -723,6 +799,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/contract-values",
         icon: DollarSign,
         roles: FINANCE_ROLES,
+        permissionKey: "contract_values.view",
       },
       {
         key: "payroll-export",
@@ -730,6 +807,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/payroll/exports",
         icon: Download,
         roles: FINANCE_ROLES,
+        permissionKey: "payroll.export",
       },
       {
         key: "budgets",
@@ -737,6 +815,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/budgets",
         icon: Wallet,
         roles: FINANCE_ROLES,
+        permissionKey: "budgets.view",
       },
       {
         key: "site-profitability",
@@ -744,6 +823,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/site-profitability",
         icon: TrendingUp,
         roles: FINANCE_ROLES,
+        permissionKey: "site_profitability.view",
       },
       {
         key: "payroll-reports",
@@ -751,6 +831,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/payroll/reports",
         icon: Receipt,
         roles: FINANCE_ROLES,
+        permissionKey: "reports.view",
       },
       {
         key: "shift-costs",
@@ -758,6 +839,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/shifts/costs",
         icon: Coins,
         roles: FINANCE_ROLES,
+        permissionKey: "shift_costs.view",
       },
       {
         key: "revenue",
@@ -765,6 +847,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/revenue",
         icon: TrendingUp,
         roles: FINANCE_ROLES,
+        permissionKey: "revenue.view",
       },
     ],
   },
@@ -783,6 +866,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/settings",
         icon: Settings,
         roles: ADMIN_ROLES,
+        permissionKey: "settings.view",
       },
       {
         key: "settings-users",
@@ -790,6 +874,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/settings/users",
         icon: UserCog,
         roles: ADMIN_ROLES,
+        permissionKey: "users.view",
       },
       {
         key: "settings-company",
@@ -797,6 +882,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/settings/company-profile",
         icon: Building,
         roles: ADMIN_ROLES,
+        permissionKey: "company_profile.manage",
       },
       {
         key: "settings-rates",
@@ -804,6 +890,7 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/settings/hourly-rates",
         icon: Gauge,
         roles: ADMIN_ROLES,
+        permissionKey: "hourly_rates.manage",
       },
       {
         key: "settings-patterns",
@@ -811,8 +898,29 @@ const NAV_ENTRIES: NavEntry[] = [
         href: "/settings/shift-patterns",
         icon: Wrench,
         roles: ADMIN_ROLES,
+        permissionKey: "shift_patterns.manage",
+      },
+      {
+        key: "settings-permissions",
+        label: "Role Permissions",
+        href: "/settings/role-permissions",
+        icon: Shield,
+        roles: ADMIN_ROLES,
+        permissionKey: "roles_permissions.manage",
       },
     ],
+  },
+
+  // ── HELP ──────────────────────────────────────────────
+  {
+    kind: "standalone",
+    key: "help",
+    label: "Help & Manuals",
+    icon: HelpCircle,
+    href: "/help",
+    roles: ALL_ROLES,
+    section: "system",
+    permissionKey: "dashboard.view",
   },
 
   // ── PLATFORM (superadmin only) ────────────────────────
@@ -887,18 +995,30 @@ function isGroupActive(children: NavChild[], pathname: string): boolean {
 
 function getVisibleChildren(
   children: NavChild[],
-  role: UserRole
+  role: UserRole,
+  hasPermission?: (key: string) => boolean
 ): NavChild[] {
-  return children.filter((child) => child.roles.includes(role));
+  return children.filter((child) => {
+    if (child.permissionKey && hasPermission) {
+      return hasPermission(child.permissionKey);
+    }
+    return child.roles.includes(role);
+  });
 }
 
-function getVisibleEntries(role: UserRole): NavEntry[] {
+function getVisibleEntries(
+  role: UserRole,
+  hasPermission?: (key: string) => boolean
+): NavEntry[] {
   return NAV_ENTRIES.filter((entry) => {
     if (entry.kind === "standalone") {
+      if ((entry as NavStandalone & { permissionKey?: string }).permissionKey && hasPermission) {
+        return hasPermission((entry as NavStandalone & { permissionKey?: string }).permissionKey!);
+      }
       return entry.roles.includes(role);
     }
     // Group is visible if at least one child is visible
-    return getVisibleChildren(entry.children, role).length > 0;
+    return getVisibleChildren(entry.children, role, hasPermission).length > 0;
   });
 }
 
@@ -1089,6 +1209,7 @@ function SectionLabel({
 export default function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { hasPermission, permissionsLoaded } = usePermissions();
 
   // Desktop collapsed state
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
@@ -1118,7 +1239,7 @@ export default function Sidebar() {
   const role = (user?.role ?? "guard") as UserRole;
   const isSuperadmin =
     user?.is_superadmin === true || role?.toLowerCase() === "superadmin";
-  const visibleEntries = getVisibleEntries(role);
+  const visibleEntries = getVisibleEntries(role, permissionsLoaded ? hasPermission : undefined);
 
   // ── Effects ────────────────────────────────────────────
 
@@ -1150,7 +1271,7 @@ export default function Sidebar() {
   useEffect(() => {
     for (const entry of NAV_ENTRIES) {
       if (entry.kind === "group") {
-        const visChildren = getVisibleChildren(entry.children, role);
+        const visChildren = getVisibleChildren(entry.children, role, permissionsLoaded ? hasPermission : undefined);
         if (isGroupActive(visChildren, pathname)) {
           setExpandedGroups((prev) => {
             if (prev[entry.key]) return prev;
@@ -1159,7 +1280,7 @@ export default function Sidebar() {
         }
       }
     }
-  }, [pathname, role]);
+  }, [pathname, role, hasPermission, permissionsLoaded]);
 
   // Close mobile drawer on navigation
   useEffect(() => {
@@ -1249,7 +1370,7 @@ export default function Sidebar() {
   };
 
   const renderGroup = (entry: NavGroup, collapsed: boolean) => {
-    const visChildren = getVisibleChildren(entry.children, role);
+    const visChildren = getVisibleChildren(entry.children, role, permissionsLoaded ? hasPermission : undefined);
     if (visChildren.length === 0) return null;
 
     const active = isGroupActive(visChildren, pathname);

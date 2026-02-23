@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api.endpoints import employees, sites, shifts, availability, certifications, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, organization_approval, organization_users, organization_settings, clients, payments, superadmin_analytics, subscriptions, subscription_plans, dashboards, superadmin_auth, invoices, reports, roster_preferences, superadmin, staffing_profiles, availability_patterns, system_settings, shift_patterns, leave, payroll_deductions, test_data, attendance, incidents, notifications, patrols, guard_restrictions, exceptions, performance, shift_swaps, inspections, assets, geofence, visitors, key_holding, comm_log, cert_alerts, occurrence_book, documents, training, contract_values, fleet, daily_activity, disciplinary, announcements, maintenance, sla_compliance, deployment_history, overtime, client_reports, workforce_forecast, compliance_calendar, budgets, emergency_contacts, site_profitability, iod, payroll_reports, contract_compliance, shift_handovers, incident_analytics, site_risk, patrol_analytics, skills_matrix, availability_heatmap, client_satisfaction, shift_costs, revenue_dashboard, deployment_map, ops_summary, biometric, emergency, lone_worker, messaging, client_portal, report_schedules, post_orders, psira_compliance, popia, firearms, custom_forms, location
+from app.api.endpoints import employees, sites, shifts, availability, certifications, payroll, roster, dashboard, auth, exports, settings as settings_endpoint, organizations, organization_approval, organization_users, organization_settings, clients, payments, superadmin_analytics, subscriptions, subscription_plans, dashboards, superadmin_auth, invoices, reports, roster_preferences, superadmin, staffing_profiles, availability_patterns, system_settings, shift_patterns, leave, payroll_deductions, test_data, attendance, incidents, notifications, patrols, guard_restrictions, exceptions, performance, shift_swaps, inspections, assets, geofence, visitors, key_holding, comm_log, cert_alerts, occurrence_book, documents, training, contract_values, fleet, daily_activity, disciplinary, announcements, maintenance, sla_compliance, deployment_history, overtime, client_reports, workforce_forecast, compliance_calendar, budgets, emergency_contacts, site_profitability, iod, payroll_reports, contract_compliance, shift_handovers, incident_analytics, site_risk, patrol_analytics, skills_matrix, availability_heatmap, client_satisfaction, shift_costs, revenue_dashboard, deployment_map, ops_summary, biometric, emergency, lone_worker, messaging, client_portal, report_schedules, post_orders, psira_compliance, popia, firearms, custom_forms, location, role_permissions
 from app.middleware import RateLimitMiddleware, ForceHTTPSRedirectMiddleware
 
 # Initialize Sentry for error tracking and performance monitoring
@@ -350,6 +350,9 @@ app.include_router(custom_forms.router, prefix=f"{settings.API_V1_PREFIX}/forms"
 
 # GPS Location Tracking
 app.include_router(location.router, prefix=f"{settings.API_V1_PREFIX}/location", tags=["location"])
+
+# Role Permissions Management
+app.include_router(role_permissions.router, prefix=f"{settings.API_V1_PREFIX}/role-permissions", tags=["role-permissions"])
 
 
 if __name__ == "__main__":
