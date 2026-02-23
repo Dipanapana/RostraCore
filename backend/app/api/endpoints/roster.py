@@ -2960,6 +2960,9 @@ async def swap_assignments(
     """
     from app.models.roster import Roster
     from app.models.shift_assignment import ShiftAssignment
+    from app.models.employee import Employee
+    from app.models.certification import PSIRAGrade, Certification
+    from datetime import date as date_type
 
     try:
         org_id = current_user.org_id
@@ -3021,10 +3024,101 @@ async def swap_assignments(
                 detail=f"Assignment {assignment_id_b} not found in roster {roster_id}"
             )
 
-        # Swap employee_ids
+        # ── BCEA & qualification constraint checks for swap ──
+        # Validate BOTH directions: Emp A -> Shift B, Emp B -> Shift A
         old_emp_a = assignment_a.employee_id
         old_emp_b = assignment_b.employee_id
 
+        shift_a = assignment_a.shift
+        shift_b = assignment_b.shift
+
+        employee_a = db.query(Employee).filter(Employee.employee_id == old_emp_a).first()
+        employee_b = db.query(Employee).filter(Employee.employee_id == old_emp_b).first()
+
+        warnings = []
+        grade_map = {"A": PSIRAGrade.GRADE_A, "B": PSIRAGrade.GRADE_B, "C": PSIRAGrade.GRADE_C, "D": PSIRAGrade.GRADE_D, "E": PSIRAGrade.GRADE_E}
+
+        def _check_swap_qualifications(employee, target_shift, label):
+            """Check if an employee is qualified for the target shift after swap."""
+            swap_warnings = []
+
+            # PSIRA grade check
+            if target_shift.required_psira_grade and employee:
+                emp_psira_enum = grade_map.get(employee.psira_grade) if employee.psira_grade else None
+                if not emp_psira_enum or not PSIRAGrade.can_work_grade(emp_psira_enum, target_shift.required_psira_grade):
+                    emp_display = employee.psira_grade or "None"
+                    req_display = target_shift.required_psira_grade.value
+                    swap_warnings.append(
+                        f"{label}: PSIRA grade ({emp_display}) below required ({req_display})"
+                    )
+
+            # Firearm competency check
+            if target_shift.requires_firearm and employee:
+                has_firearm_cert = db.query(Certification).filter(
+                    Certification.employee_id == employee.employee_id,
+                    Certification.firearm_competency.isnot(None),
+                    Certification.expiry_date >= date_type.today()
+                ).first()
+                if not has_firearm_cert:
+                    swap_warnings.append(
+                        f"{label}: lacks valid firearm competency certification"
+                    )
+
+            return swap_warnings
+
+        def _check_swap_rest_periods(employee_id, target_shift, current_assignment_id, label):
+            """Check rest periods for an employee on the target shift, ignoring the assignment being swapped."""
+            swap_warnings = []
+
+            # Check gap from previous shift to target shift
+            prev_assignment = db.query(ShiftAssignment).join(Shift).filter(
+                ShiftAssignment.employee_id == employee_id,
+                ShiftAssignment.assignment_id != current_assignment_id,
+                ShiftAssignment.status.notin_(["cancelled"]),
+                Shift.end_time <= target_shift.start_time,
+                Shift.end_time >= target_shift.start_time - timedelta(hours=24)
+            ).order_by(Shift.end_time.desc()).first()
+
+            if prev_assignment:
+                prev_shift = prev_assignment.shift
+                rest_gap = (target_shift.start_time - prev_shift.end_time).total_seconds() / 3600
+                if rest_gap < 8:
+                    swap_warnings.append(
+                        f"{label}: only {rest_gap:.1f}h rest before shift (BCEA requires minimum 8h)"
+                    )
+
+            # Check gap from target shift to next shift
+            next_assignment = db.query(ShiftAssignment).join(Shift).filter(
+                ShiftAssignment.employee_id == employee_id,
+                ShiftAssignment.assignment_id != current_assignment_id,
+                ShiftAssignment.status.notin_(["cancelled"]),
+                Shift.start_time >= target_shift.end_time,
+                Shift.start_time <= target_shift.end_time + timedelta(hours=24)
+            ).order_by(Shift.start_time.asc()).first()
+
+            if next_assignment:
+                next_shift = next_assignment.shift
+                rest_gap = (next_shift.start_time - target_shift.end_time).total_seconds() / 3600
+                if rest_gap < 8:
+                    swap_warnings.append(
+                        f"{label}: only {rest_gap:.1f}h rest after shift (BCEA requires minimum 8h)"
+                    )
+
+            return swap_warnings
+
+        # Direction 1: Employee A -> Shift B
+        if employee_a and shift_b:
+            label_a = f"Employee {old_emp_a} -> Shift {shift_b.shift_id}"
+            warnings.extend(_check_swap_qualifications(employee_a, shift_b, label_a))
+            warnings.extend(_check_swap_rest_periods(old_emp_a, shift_b, assignment_a.assignment_id, label_a))
+
+        # Direction 2: Employee B -> Shift A
+        if employee_b and shift_a:
+            label_b = f"Employee {old_emp_b} -> Shift {shift_a.shift_id}"
+            warnings.extend(_check_swap_qualifications(employee_b, shift_a, label_b))
+            warnings.extend(_check_swap_rest_periods(old_emp_b, shift_a, assignment_b.assignment_id, label_b))
+
+        # Execute the swap (warnings are informational, not blocking)
         assignment_a.employee_id = old_emp_b
         assignment_b.employee_id = old_emp_a
 
@@ -3060,6 +3154,7 @@ async def swap_assignments(
         return {
             "success": True,
             "message": "Assignments swapped successfully",
+            "warnings": warnings,
             "swap": {
                 "assignment_a": {
                     "assignment_id": assignment_id_a,
