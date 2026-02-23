@@ -65,40 +65,40 @@ export default function PayrollExportsPage() {
       {/* Header */}
       <div className="flex items-center gap-3">
         <FileSpreadsheet className="w-7 h-7 text-emerald-600" />
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Payroll Export</h1>
+        <h1 className="text-2xl font-semibold text-gray-900">Payroll Export</h1>
       </div>
       <p className="text-sm text-gray-500">
         Export payroll data as CSV files formatted for South African payroll systems. Select a period and format, then download.
       </p>
 
       {/* Period Selection */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-        <h2 className="font-semibold text-gray-900 dark:text-white mb-4">Export Period</h2>
+      <div className="bg-white rounded-xl shadow p-6">
+        <h2 className="font-semibold text-gray-900 mb-4">Export Period</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Period Start</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Period Start</label>
             <input
               type="date"
               value={periodStart}
               onChange={e => setPeriodStart(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full border rounded-lg px-3 py-2 text-sm"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Period End</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Period End</label>
             <input
               type="date"
               value={periodEnd}
               onChange={e => setPeriodEnd(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full border rounded-lg px-3 py-2 text-sm"
             />
           </div>
         </div>
       </div>
 
       {/* Format Selection */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-        <h2 className="font-semibold text-gray-900 dark:text-white mb-4">Payroll System Format</h2>
+      <div className="bg-white rounded-xl shadow p-6">
+        <h2 className="font-semibold text-gray-900 mb-4">Payroll System Format</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {FORMATS.map(fmt => (
             <button
@@ -106,11 +106,11 @@ export default function PayrollExportsPage() {
               onClick={() => setSelectedFormat(fmt.key)}
               className={`text-left p-4 rounded-lg border-2 transition-colors ${
                 selectedFormat === fmt.key
-                  ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
-                  : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
+                  ? 'border-emerald-500 bg-emerald-50'
+                  : 'border-gray-200 hover:border-gray-300'
               }`}
             >
-              <div className="font-medium text-gray-900 dark:text-white">{fmt.label}</div>
+              <div className="font-medium text-gray-900">{fmt.label}</div>
               <div className="text-xs text-gray-500 mt-1">{fmt.description}</div>
             </button>
           ))}
@@ -119,13 +119,13 @@ export default function PayrollExportsPage() {
 
       {/* Column Preview */}
       {currentFormat && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-          <h2 className="font-semibold text-gray-900 dark:text-white mb-3">
+        <div className="bg-white rounded-xl shadow p-6">
+          <h2 className="font-semibold text-gray-900 mb-3">
             CSV Columns — {currentFormat.label}
           </h2>
           <div className="flex flex-wrap gap-2">
             {currentFormat.columns.map(col => (
-              <span key={col} className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded">
+              <span key={col} className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">
                 {col}
               </span>
             ))}
@@ -136,7 +136,7 @@ export default function PayrollExportsPage() {
       {/* Status Message */}
       {status && (
         <div className={`flex items-center gap-2 p-4 rounded-lg ${
-          status.type === 'success' ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
+          status.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
         }`}>
           {status.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
           <span className="text-sm">{status.message}</span>
@@ -148,7 +148,7 @@ export default function PayrollExportsPage() {
         <button
           onClick={handleDownload}
           disabled={downloading || !periodStart || !periodEnd}
-          className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium disabled:opacity-50"
+          className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium disabled:opacity-50"
         >
           <Download className="w-4 h-4" />
           {downloading ? 'Downloading...' : `Download ${currentFormat?.label} CSV`}

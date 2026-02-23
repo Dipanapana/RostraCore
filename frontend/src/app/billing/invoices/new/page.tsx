@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import PageHeader from "@/components/ui/PageHeader";
 import { invoiceApi, clientsApi } from "@/services/api";
 import { useToast } from "@/context/ToastContext";
 import {
@@ -76,8 +77,8 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
               <div
                 className={`w-12 h-0.5 mx-1 ${
                   isCompleted
-                    ? "bg-purple-500"
-                    : "bg-slate-200 dark:bg-slate-700"
+                    ? "bg-blue-500"
+                    : "bg-gray-200"
                 }`}
               />
             )}
@@ -85,10 +86,10 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
               <div
                 className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
                   isCompleted
-                    ? "bg-purple-600 text-white"
+                    ? "bg-blue-600 text-white"
                     : isActive
-                    ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 ring-2 ring-purple-500"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500"
+                    ? "bg-blue-100 text-blue-700 ring-2 ring-blue-500"
+                    : "bg-gray-100 text-gray-400"
                 }`}
               >
                 {isCompleted ? (
@@ -100,10 +101,10 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
               <span
                 className={`text-sm font-medium hidden sm:inline ${
                   isActive
-                    ? "text-purple-700 dark:text-purple-300"
+                    ? "text-blue-700"
                     : isCompleted
-                    ? "text-slate-700 dark:text-slate-300"
-                    : "text-slate-400 dark:text-slate-500"
+                    ? "text-gray-700"
+                    : "text-gray-400"
                 }`}
               >
                 {step.label}
@@ -274,10 +275,10 @@ export default function NewInvoicePage() {
   const renderStep1 = () => (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+        <h2 className="text-lg font-semibold text-gray-900">
           Select Client
         </h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+        <p className="text-sm text-gray-500 mt-1">
           Choose the client to generate an invoice for. Only active clients with
           assigned sites are shown.
         </p>
@@ -290,18 +291,18 @@ export default function NewInvoicePage() {
           placeholder="Search clients..."
           value={clientSearch}
           onChange={(e) => setClientSearch(e.target.value)}
-          className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+          className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
         />
       </div>
 
       {/* Client list */}
       {loadingClients ? (
-        <div className="flex items-center justify-center py-12 text-slate-400">
+        <div className="flex items-center justify-center py-12 text-gray-400">
           <Loader2 className="w-6 h-6 animate-spin mr-2" />
           Loading clients...
         </div>
       ) : filteredClients.length === 0 ? (
-        <div className="text-center py-12 text-slate-400">
+        <div className="text-center py-12 text-gray-400">
           <Building2 className="w-10 h-10 mx-auto mb-2 opacity-40" />
           <p className="text-sm">
             {clientSearch ? "No clients match your search" : "No active clients found"}
@@ -317,8 +318,8 @@ export default function NewInvoicePage() {
                 onClick={() => setSelectedClientId(client.client_id)}
                 className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-all ${
                   isSelected
-                    ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20"
-                    : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600"
+                    ? "border-blue-500 bg-blue-50"
+                    : "border-gray-200 bg-white hover:border-gray-300"
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -326,21 +327,21 @@ export default function NewInvoicePage() {
                     <p
                       className={`font-medium text-sm ${
                         isSelected
-                          ? "text-purple-700 dark:text-purple-300"
-                          : "text-slate-900 dark:text-slate-100"
+                          ? "text-blue-700"
+                          : "text-gray-900"
                       }`}
                     >
                       {client.client_name}
                     </p>
                     {client.contact_person && (
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      <p className="text-xs text-gray-500 mt-0.5">
                         Contact: {client.contact_person}
                         {client.contact_email && ` • ${client.contact_email}`}
                       </p>
                     )}
                   </div>
                   {client.billing_rate && (
-                    <span className="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                       R{Number(client.billing_rate).toFixed(2)}/hr
                     </span>
                   )}
@@ -356,12 +357,12 @@ export default function NewInvoicePage() {
   const renderStep2 = () => (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+        <h2 className="text-lg font-semibold text-gray-900">
           Billing Period & Details
         </h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+        <p className="text-sm text-gray-500 mt-1">
           Set the billing period for{" "}
-          <span className="font-medium text-slate-700 dark:text-slate-300">
+          <span className="font-medium text-gray-700">
             {selectedClient?.client_name}
           </span>
           . The system will auto-calculate hours from confirmed shift
@@ -372,31 +373,31 @@ export default function NewInvoicePage() {
       {/* Period dates */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Period Start *
           </label>
           <input
             type="date"
             value={periodStart}
             onChange={(e) => setPeriodStart(e.target.value)}
-            className="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+            className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Period End *
           </label>
           <input
             type="date"
             value={periodEnd}
             onChange={(e) => setPeriodEnd(e.target.value)}
-            className="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+            className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
           />
         </div>
       </div>
 
       {periodStart && periodEnd && periodStart > periodEnd && (
-        <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
+        <div className="flex items-center gap-2 text-sm text-red-600">
           <AlertCircle className="w-4 h-4" />
           Period start must be before period end
         </div>
@@ -404,16 +405,16 @@ export default function NewInvoicePage() {
 
       {/* Due date */}
       <div>
-        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">
           Due Date
         </label>
         <input
           type="date"
           value={dueDate}
           onChange={(e) => setDueDate(e.target.value)}
-          className="w-full sm:w-1/2 px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+          className="w-full sm:w-1/2 px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
         />
-        <p className="text-xs text-slate-400 mt-1">
+        <p className="text-xs text-gray-400 mt-1">
           Defaults to 30 days from today if left empty
         </p>
       </div>
@@ -421,13 +422,13 @@ export default function NewInvoicePage() {
       {/* Payment terms & PO */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Payment Terms
           </label>
           <select
             value={paymentTerms}
             onChange={(e) => setPaymentTerms(e.target.value)}
-            className="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+            className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
           >
             <option value="Net 7">Net 7</option>
             <option value="Net 15">Net 15</option>
@@ -437,7 +438,7 @@ export default function NewInvoicePage() {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Purchase Order # (optional)
           </label>
           <input
@@ -445,14 +446,14 @@ export default function NewInvoicePage() {
             value={purchaseOrderNumber}
             onChange={(e) => setPurchaseOrderNumber(e.target.value)}
             placeholder="e.g. PO-2026-045"
-            className="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+            className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
           />
         </div>
       </div>
 
       {/* Notes */}
       <div>
-        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">
           Notes (optional)
         </label>
         <textarea
@@ -460,7 +461,7 @@ export default function NewInvoicePage() {
           onChange={(e) => setNotes(e.target.value)}
           rows={3}
           placeholder="Any additional notes for this invoice..."
-          className="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none resize-none"
+          className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
         />
       </div>
     </div>
@@ -472,84 +473,84 @@ export default function NewInvoicePage() {
       return (
         <div className="space-y-6">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+            <h2 className="text-lg font-semibold text-gray-900">
               Review & Generate
             </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-sm text-gray-500 mt-1">
               Review the details below and click Generate to create the invoice.
             </p>
           </div>
 
           {/* Summary card */}
-          <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-5 space-y-3">
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="text-slate-500 dark:text-slate-400">
+                <span className="text-gray-500">
                   Client
                 </span>
-                <p className="font-medium text-slate-900 dark:text-slate-100">
+                <p className="font-medium text-gray-900">
                   {selectedClient?.client_name}
                 </p>
               </div>
               <div>
-                <span className="text-slate-500 dark:text-slate-400">
+                <span className="text-gray-500">
                   Billing Rate
                 </span>
-                <p className="font-medium text-slate-900 dark:text-slate-100">
+                <p className="font-medium text-gray-900">
                   {selectedClient?.billing_rate
                     ? `R${Number(selectedClient.billing_rate).toFixed(2)}/hr`
                     : "Per-site rates"}
                 </p>
               </div>
               <div>
-                <span className="text-slate-500 dark:text-slate-400">
+                <span className="text-gray-500">
                   Period
                 </span>
-                <p className="font-medium text-slate-900 dark:text-slate-100">
+                <p className="font-medium text-gray-900">
                   {formatDate(periodStart)} &mdash; {formatDate(periodEnd)}
                 </p>
               </div>
               <div>
-                <span className="text-slate-500 dark:text-slate-400">
+                <span className="text-gray-500">
                   Due Date
                 </span>
-                <p className="font-medium text-slate-900 dark:text-slate-100">
+                <p className="font-medium text-gray-900">
                   {dueDate ? formatDate(dueDate) : "30 days from today"}
                 </p>
               </div>
               <div>
-                <span className="text-slate-500 dark:text-slate-400">
+                <span className="text-gray-500">
                   Payment Terms
                 </span>
-                <p className="font-medium text-slate-900 dark:text-slate-100">
+                <p className="font-medium text-gray-900">
                   {paymentTerms}
                 </p>
               </div>
               {purchaseOrderNumber && (
                 <div>
-                  <span className="text-slate-500 dark:text-slate-400">
+                  <span className="text-gray-500">
                     PO Number
                   </span>
-                  <p className="font-medium text-slate-900 dark:text-slate-100">
+                  <p className="font-medium text-gray-900">
                     {purchaseOrderNumber}
                   </p>
                 </div>
               )}
             </div>
             {notes && (
-              <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
-                <span className="text-sm text-slate-500 dark:text-slate-400">
+              <div className="pt-2 border-t border-gray-200">
+                <span className="text-sm text-gray-500">
                   Notes
                 </span>
-                <p className="text-sm text-slate-700 dark:text-slate-300 mt-0.5">
+                <p className="text-sm text-gray-700 mt-0.5">
                   {notes}
                 </p>
               </div>
             )}
           </div>
 
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <p className="text-sm text-blue-700 dark:text-blue-300">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm text-blue-700">
               The invoice will be auto-calculated from confirmed shift
               assignments during this period. Line items will be grouped by
               site.
@@ -557,9 +558,9 @@ export default function NewInvoicePage() {
           </div>
 
           {generateError && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-start gap-3">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-700 dark:text-red-300">
+              <p className="text-sm text-red-700">
                 {generateError}
               </p>
             </div>
@@ -568,7 +569,7 @@ export default function NewInvoicePage() {
           <button
             onClick={handleGenerate}
             disabled={generating}
-            className="w-full sm:w-auto px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium transition-colors"
+            className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium transition-colors"
           >
             {generating ? (
               <>
@@ -589,7 +590,7 @@ export default function NewInvoicePage() {
     // Loading state
     if (generating) {
       return (
-        <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+        <div className="flex flex-col items-center justify-center py-16 text-gray-400">
           <Loader2 className="w-10 h-10 animate-spin mb-4" />
           <p className="text-sm font-medium">
             Generating invoice for {selectedClient?.client_name}...
@@ -606,34 +607,34 @@ export default function NewInvoicePage() {
       return (
         <div className="space-y-6">
           {/* Success banner */}
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 flex items-center gap-3">
-            <Check className="w-5 h-5 text-green-600 dark:text-green-400" />
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
+            <Check className="w-5 h-5 text-green-600" />
             <div>
-              <p className="text-sm font-medium text-green-700 dark:text-green-300">
+              <p className="text-sm font-medium text-green-700">
                 Invoice {generatedInvoice.invoice_number} generated
                 successfully!
               </p>
-              <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
+              <p className="text-xs text-green-600 mt-0.5">
                 Status: Draft — review and send when ready.
               </p>
             </div>
           </div>
 
           {/* Invoice summary */}
-          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700">
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+                  <h3 className="font-semibold text-gray-900">
                     {generatedInvoice.invoice_number}
                   </h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                  <p className="text-sm text-gray-500 mt-0.5">
                     {generatedInvoice.client_name} &bull;{" "}
                     {formatDate(generatedInvoice.period_start)} &ndash;{" "}
                     {formatDate(generatedInvoice.period_end)}
                   </p>
                 </div>
-                <span className="px-2.5 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full">
+                <span className="px-2.5 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">
                   Draft
                 </span>
               </div>
@@ -643,48 +644,48 @@ export default function NewInvoicePage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-slate-50 dark:bg-slate-900/50 text-left">
-                    <th className="px-5 py-3 font-medium text-slate-500 dark:text-slate-400">
+                  <tr className="bg-gray-50 text-left">
+                    <th className="px-5 py-3 font-medium text-gray-500">
                       Description
                     </th>
-                    <th className="px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-right">
+                    <th className="px-4 py-3 font-medium text-gray-500 text-right">
                       Hours
                     </th>
-                    <th className="px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-right">
+                    <th className="px-4 py-3 font-medium text-gray-500 text-right">
                       Shifts
                     </th>
-                    <th className="px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-right">
+                    <th className="px-4 py-3 font-medium text-gray-500 text-right">
                       Rate
                     </th>
-                    <th className="px-5 py-3 font-medium text-slate-500 dark:text-slate-400 text-right">
+                    <th className="px-5 py-3 font-medium text-gray-500 text-right">
                       Amount
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                <tbody className="divide-y divide-gray-100">
                   {generatedInvoice.line_items.map((item, idx) => (
                     <tr
                       key={idx}
-                      className="hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                      className="hover:bg-gray-50"
                     >
-                      <td className="px-5 py-3 text-slate-900 dark:text-slate-100">
+                      <td className="px-5 py-3 text-gray-900">
                         {item.description}
                         {item.site_name && (
-                          <span className="block text-xs text-slate-400 mt-0.5">
+                          <span className="block text-xs text-gray-400 mt-0.5">
                             {item.site_name}
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-300">
+                      <td className="px-4 py-3 text-right text-gray-600">
                         {item.hours.toFixed(1)}
                       </td>
-                      <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-300">
+                      <td className="px-4 py-3 text-right text-gray-600">
                         {item.shifts}
                       </td>
-                      <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-300">
+                      <td className="px-4 py-3 text-right text-gray-600">
                         {formatCurrency(item.rate_per_hour)}
                       </td>
-                      <td className="px-5 py-3 text-right font-medium text-slate-900 dark:text-slate-100">
+                      <td className="px-5 py-3 text-right font-medium text-gray-900">
                         {formatCurrency(item.amount)}
                       </td>
                     </tr>
@@ -694,29 +695,29 @@ export default function NewInvoicePage() {
             </div>
 
             {/* Totals */}
-            <div className="border-t border-slate-200 dark:border-slate-700 px-5 py-4 bg-slate-50 dark:bg-slate-900/30">
+            <div className="border-t border-gray-200 px-5 py-4 bg-gray-50">
               <div className="flex flex-col items-end gap-1 text-sm">
                 <div className="flex gap-8">
-                  <span className="text-slate-500 dark:text-slate-400">
+                  <span className="text-gray-500">
                     Subtotal
                   </span>
-                  <span className="font-medium text-slate-700 dark:text-slate-300 w-28 text-right">
+                  <span className="font-medium text-gray-700 w-28 text-right">
                     {formatCurrency(generatedInvoice.subtotal)}
                   </span>
                 </div>
                 <div className="flex gap-8">
-                  <span className="text-slate-500 dark:text-slate-400">
+                  <span className="text-gray-500">
                     VAT (15%)
                   </span>
-                  <span className="font-medium text-slate-700 dark:text-slate-300 w-28 text-right">
+                  <span className="font-medium text-gray-700 w-28 text-right">
                     {formatCurrency(generatedInvoice.tax_amount)}
                   </span>
                 </div>
-                <div className="flex gap-8 pt-2 border-t border-slate-300 dark:border-slate-600 mt-1">
-                  <span className="font-semibold text-slate-900 dark:text-slate-100">
+                <div className="flex gap-8 pt-2 border-t border-gray-300 mt-1">
+                  <span className="font-semibold text-gray-900">
                     Total
                   </span>
-                  <span className="font-bold text-purple-700 dark:text-purple-400 w-28 text-right text-base">
+                  <span className="font-bold text-blue-700 w-28 text-right text-base">
                     {formatCurrency(generatedInvoice.total_amount)}
                   </span>
                 </div>
@@ -726,27 +727,27 @@ export default function NewInvoicePage() {
 
           {/* Stats row */}
           <div className="grid grid-cols-3 gap-4">
-            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4 text-center">
-              <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+            <div className="bg-white border border-gray-200 rounded-lg p-4 text-center">
+              <p className="text-2xl font-bold text-gray-900">
                 {generatedInvoice.total_hours.toFixed(1)}
               </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-gray-500">
                 Total Hours
               </p>
             </div>
-            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4 text-center">
-              <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+            <div className="bg-white border border-gray-200 rounded-lg p-4 text-center">
+              <p className="text-2xl font-bold text-gray-900">
                 {generatedInvoice.total_shifts}
               </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-gray-500">
                 Total Shifts
               </p>
             </div>
-            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4 text-center">
-              <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+            <div className="bg-white border border-gray-200 rounded-lg p-4 text-center">
+              <p className="text-2xl font-bold text-gray-900">
                 {generatedInvoice.line_items.length}
               </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-gray-500">
                 Sites Billed
               </p>
             </div>
@@ -760,7 +761,7 @@ export default function NewInvoicePage() {
                   `/billing/invoices/${generatedInvoice.invoice_id}`
                 )
               }
-              className="px-5 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2 text-sm font-medium transition-colors"
+              className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm font-medium transition-colors"
             >
               <FileText className="w-4 h-4" />
               View Invoice
@@ -778,13 +779,13 @@ export default function NewInvoicePage() {
                 setPaymentTerms("Net 30");
                 setPurchaseOrderNumber("");
               }}
-              className="px-5 py-2.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 text-sm font-medium transition-colors"
+              className="px-5 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2 text-sm font-medium transition-colors"
             >
               Generate Another
             </button>
             <button
               onClick={() => router.push("/billing/invoices")}
-              className="px-5 py-2.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 text-sm font-medium transition-colors"
+              className="px-5 py-2.5 text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors"
             >
               Back to Invoices
             </button>
@@ -804,29 +805,20 @@ export default function NewInvoicePage() {
     <DashboardLayout>
       <div className="max-w-3xl mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <button
-            onClick={() => router.push("/billing/invoices")}
-            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-            aria-label="Back to invoices"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-              Generate Invoice
-            </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Create a new client invoice from confirmed shift assignments
-            </p>
-          </div>
+        <div className="mb-6">
+          <PageHeader
+            backHref="/billing/invoices"
+            backLabel="Back to Invoices"
+            title="Generate Invoice"
+            subtitle="Create a new client invoice from confirmed shift assignments"
+          />
         </div>
 
         {/* Step indicator - hide when showing generated result */}
         {!generatedInvoice && <StepIndicator currentStep={step} />}
 
         {/* Step content card */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
           {step === 1 && renderStep1()}
           {step === 2 && renderStep2()}
           {step === 3 && renderStep3()}
@@ -838,7 +830,7 @@ export default function NewInvoicePage() {
             <button
               onClick={goBack}
               disabled={step === 1}
-              className="px-4 py-2.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium transition-colors"
+              className="px-4 py-2.5 text-gray-600 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               Back
@@ -849,7 +841,7 @@ export default function NewInvoicePage() {
                 (step === 1 && !canProceedStep1) ||
                 (step === 2 && !canProceedStep2)
               }
-              className="px-5 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium transition-colors"
+              className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium transition-colors"
             >
               Next
               <ArrowRight className="w-4 h-4" />
@@ -862,7 +854,7 @@ export default function NewInvoicePage() {
           <div className="mt-4">
             <button
               onClick={goBack}
-              className="px-4 py-2.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 flex items-center gap-2 text-sm font-medium transition-colors"
+              className="px-4 py-2.5 text-gray-600 hover:text-gray-900 flex items-center gap-2 text-sm font-medium transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Period Details

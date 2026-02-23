@@ -19,6 +19,8 @@ from app.models.auth_schemas import (
     UserWithToken,
     ForgotPasswordRequest,
     ResetPasswordRequest,
+    VerifyEmailRequest,
+    ResendVerificationRequest,
 )
 from app.auth.security import (
     authenticate_user,
@@ -51,7 +53,7 @@ def get_password_requirements_endpoint():
     return get_password_requirements()
 
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/register", status_code=status.HTTP_201_CREATED)
 def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
     """
     Register a new user and optionally create an organization.
@@ -144,6 +146,24 @@ def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+
+    # Send verification email if feature is enabled
+    if settings.ENABLE_EMAIL_VERIFICATION:
+        verification_result = VerificationService.send_verification_email(new_user, db)
+        # In dev mode, include verification URL for easy testing
+        if verification_result.get("verification_url"):
+            return {
+                "user_id": new_user.user_id,
+                "username": new_user.username,
+                "email": new_user.email,
+                "full_name": new_user.full_name,
+                "role": new_user.role.value,
+                "is_active": new_user.is_active,
+                "created_at": new_user.created_at.isoformat() if new_user.created_at else None,
+                "last_login": None,
+                "message": "Registration successful. Please check your email to verify your account.",
+                "verification_url": verification_result.get("verification_url"),
+            }
 
     return new_user
 
@@ -648,20 +668,22 @@ def send_verification_email(
 
 @router.post("/verify-email", status_code=status.HTTP_200_OK)
 def verify_email(
-    token: str,
+    request: VerifyEmailRequest,
     db: Session = Depends(get_db)
 ):
     """
-    Verify email using token from email link
+    Verify email using token from email link.
+
+    Accepts token in JSON body: {"token": "..."}
 
     Args:
-        token: Email verification token
+        request: VerifyEmailRequest with token
         db: Database session
 
     Returns:
         Success message
     """
-    result = VerificationService.verify_email_token(token, db)
+    result = VerificationService.verify_email_token(request.token, db)
 
     if result["status"] == "error":
         raise HTTPException(
@@ -670,6 +692,39 @@ def verify_email(
         )
 
     return result
+
+
+@router.post("/resend-verification", status_code=status.HTTP_200_OK)
+def resend_verification_email(
+    request: ResendVerificationRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Resend email verification link. Does NOT require authentication.
+
+    This endpoint allows unverified users (who are blocked from login) to
+    request a new verification email.
+
+    Always returns a success message to avoid revealing whether an email
+    exists in the system.
+
+    Args:
+        request: ResendVerificationRequest with email
+        db: Database session
+
+    Returns:
+        Generic success message
+    """
+    user = db.query(User).filter(User.email == request.email).first()
+
+    if user and not user.is_email_verified:
+        VerificationService.send_verification_email(user, db)
+
+    # Always return success (don't reveal if email exists)
+    return {
+        "status": "success",
+        "message": "If an account exists with this email, a verification link has been sent."
+    }
 
 
 @router.post("/send-phone-verification", status_code=status.HTTP_200_OK)

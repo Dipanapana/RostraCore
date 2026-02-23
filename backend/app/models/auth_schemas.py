@@ -78,3 +78,13 @@ class ResetPasswordRequest(BaseModel):
     """Reset password request schema."""
     token: str = Field(..., description="Password reset token from email")
     new_password: str = Field(..., min_length=8, description="New password (min 8 characters)")
+
+
+class VerifyEmailRequest(BaseModel):
+    """Email verification request schema."""
+    token: str = Field(..., description="Email verification token from link")
+
+
+class ResendVerificationRequest(BaseModel):
+    """Resend verification email request schema."""
+    email: EmailStr = Field(..., description="Email address to resend verification to")

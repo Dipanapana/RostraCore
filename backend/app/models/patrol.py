@@ -81,7 +81,7 @@ class PatrolRun(Base):
     assignment_id = Column(Integer, ForeignKey("shift_assignments.assignment_id"), nullable=True, index=True)
     started_by_employee_id = Column(Integer, ForeignKey("employees.employee_id"), nullable=True, index=True)
 
-    status = Column(SQLEnum(PatrolRunStatus), nullable=False, default=PatrolRunStatus.IN_PROGRESS, index=True)
+    status = Column(SQLEnum(PatrolRunStatus, values_callable=lambda x: [e.value for e in x]), nullable=False, default=PatrolRunStatus.IN_PROGRESS, index=True)
 
     started_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     completed_at = Column(DateTime(timezone=True), nullable=True)

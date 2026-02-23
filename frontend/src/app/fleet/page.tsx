@@ -13,9 +13,9 @@ function statusBadge(s: string) {
   const m: Record<string, string> = {
     active: 'bg-green-500/20 text-green-400',
     in_service: 'bg-amber-500/20 text-amber-400',
-    decommissioned: 'bg-slate-500/20 text-slate-400',
+    decommissioned: 'bg-gray-500/20 text-gray-500',
   }
-  return m[s] || 'bg-slate-500/20 text-slate-400'
+  return m[s] || 'bg-gray-500/20 text-gray-500'
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -166,10 +166,10 @@ export default function FleetPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
             <Car className="w-7 h-7 text-blue-400" /> Fleet Management
           </h1>
-          <p className="text-slate-400 text-sm mt-1">Vehicle tracking, assignments, and service management</p>
+          <p className="text-gray-500 text-sm mt-1">Vehicle tracking, assignments, and service management</p>
         </div>
         <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors">
           <Plus className="w-4 h-4" /> Add Vehicle
@@ -177,9 +177,9 @@ export default function FleetPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-slate-800/50 rounded-lg p-1 w-fit">
+      <div className="flex gap-1 bg-white rounded-lg p-1 w-fit">
         {(['list', 'dashboard'] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)} className={`px-4 py-2 rounded-md text-sm font-medium transition-colors capitalize ${tab === t ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}>
+          <button key={t} onClick={() => setTab(t)} className={`px-4 py-2 rounded-md text-sm font-medium transition-colors capitalize ${tab === t ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-900'}`}>
             {t === 'list' ? 'Vehicles' : 'Dashboard'}
           </button>
         ))}
@@ -190,79 +190,79 @@ export default function FleetPage() {
         <div className="space-y-4">
           <div className="flex flex-wrap gap-3">
             <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search registration, make, model…" className="w-full pl-10 pr-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search registration, make, model…" className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500" />
             </div>
-            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500">
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500">
               <option value="">All Statuses</option>
               {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
-            <select value={siteFilter} onChange={e => setSiteFilter(e.target.value)} className="px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500">
+            <select value={siteFilter} onChange={e => setSiteFilter(e.target.value)} className="px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500">
               <option value="">All Sites</option>
               {sites.map((s: any) => <option key={s.site_id} value={s.site_id}>{s.site_name}</option>)}
             </select>
           </div>
 
-          <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl overflow-hidden">
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-700">
-                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Registration</th>
-                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Vehicle</th>
-                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Status</th>
-                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Site</th>
-                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Driver</th>
-                    <th className="text-right px-4 py-3 text-slate-400 font-medium">Mileage</th>
-                    <th className="text-left px-4 py-3 text-slate-400 font-medium">License Expiry</th>
-                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Service Due</th>
-                    <th className="text-right px-4 py-3 text-slate-400 font-medium">Actions</th>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left px-4 py-3 text-gray-500 font-medium">Registration</th>
+                    <th className="text-left px-4 py-3 text-gray-500 font-medium">Vehicle</th>
+                    <th className="text-left px-4 py-3 text-gray-500 font-medium">Status</th>
+                    <th className="text-left px-4 py-3 text-gray-500 font-medium">Site</th>
+                    <th className="text-left px-4 py-3 text-gray-500 font-medium">Driver</th>
+                    <th className="text-right px-4 py-3 text-gray-500 font-medium">Mileage</th>
+                    <th className="text-left px-4 py-3 text-gray-500 font-medium">License Expiry</th>
+                    <th className="text-left px-4 py-3 text-gray-500 font-medium">Service Due</th>
+                    <th className="text-right px-4 py-3 text-gray-500 font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
-                    <tr><td colSpan={9} className="px-4 py-12 text-center text-slate-500">Loading…</td></tr>
+                    <tr><td colSpan={9} className="px-4 py-12 text-center text-gray-400">Loading…</td></tr>
                   ) : vehicles.length === 0 ? (
-                    <tr><td colSpan={9} className="px-4 py-12 text-center text-slate-500">No vehicles found</td></tr>
+                    <tr><td colSpan={9} className="px-4 py-12 text-center text-gray-400">No vehicles found</td></tr>
                   ) : vehicles.map((v: any) => (
-                    <tr key={v.vehicle_id} className="border-b border-slate-700/50 hover:bg-slate-700/20 transition-colors">
+                    <tr key={v.vehicle_id} className="border-b border-gray-200 hover:bg-gray-100/20 transition-colors">
                       <td className="px-4 py-3">
-                        <span className="text-white font-semibold">{v.registration}</span>
-                        {v.fleet_number && <span className="text-slate-500 text-xs ml-2">#{v.fleet_number}</span>}
+                        <span className="text-gray-900 font-semibold">{v.registration}</span>
+                        {v.fleet_number && <span className="text-gray-400 text-xs ml-2">#{v.fleet_number}</span>}
                       </td>
-                      <td className="px-4 py-3 text-slate-300">
+                      <td className="px-4 py-3 text-gray-700">
                         {[v.make, v.model, v.year].filter(Boolean).join(' ') || '—'}
-                        {v.colour && <span className="text-slate-500 text-xs ml-1">({v.colour})</span>}
+                        {v.colour && <span className="text-gray-400 text-xs ml-1">({v.colour})</span>}
                       </td>
                       <td className="px-4 py-3">
                         <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${statusBadge(v.status)}`}>
                           {STATUS_LABELS[v.status] || v.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-slate-300">{v.assigned_site_name || '—'}</td>
-                      <td className="px-4 py-3 text-slate-300">{v.assigned_employee_name || '—'}</td>
-                      <td className="px-4 py-3 text-right text-slate-400">{fmtKm(v.current_mileage)}</td>
+                      <td className="px-4 py-3 text-gray-700">{v.assigned_site_name || '—'}</td>
+                      <td className="px-4 py-3 text-gray-700">{v.assigned_employee_name || '—'}</td>
+                      <td className="px-4 py-3 text-right text-gray-500">{fmtKm(v.current_mileage)}</td>
                       <td className="px-4 py-3">
                         {v.license_expiry ? (
-                          <span className={`flex items-center gap-1 text-xs font-medium ${isExpired(v.license_expiry) ? 'text-red-400' : isExpiring(v.license_expiry) ? 'text-amber-400' : 'text-slate-400'}`}>
+                          <span className={`flex items-center gap-1 text-xs font-medium ${isExpired(v.license_expiry) ? 'text-red-400' : isExpiring(v.license_expiry) ? 'text-amber-400' : 'text-gray-500'}`}>
                             {isExpired(v.license_expiry) && <AlertTriangle className="w-3 h-3" />}
                             {isExpiring(v.license_expiry) && <Clock className="w-3 h-3" />}
                             {fmtDate(v.license_expiry)}
                           </span>
-                        ) : <span className="text-slate-500">—</span>}
+                        ) : <span className="text-gray-400">—</span>}
                       </td>
                       <td className="px-4 py-3">
                         {v.service_due_date ? (
-                          <span className={`flex items-center gap-1 text-xs font-medium ${isExpired(v.service_due_date) ? 'text-red-400' : isExpiring(v.service_due_date) ? 'text-amber-400' : 'text-slate-400'}`}>
+                          <span className={`flex items-center gap-1 text-xs font-medium ${isExpired(v.service_due_date) ? 'text-red-400' : isExpiring(v.service_due_date) ? 'text-amber-400' : 'text-gray-500'}`}>
                             {isExpired(v.service_due_date) && <Wrench className="w-3 h-3" />}
                             {fmtDate(v.service_due_date)}
                           </span>
-                        ) : <span className="text-slate-500">—</span>}
+                        ) : <span className="text-gray-400">—</span>}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <button onClick={() => openEdit(v)} className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"><Edit2 className="w-4 h-4" /></button>
-                          <button onClick={() => handleDelete(v.vehicle_id)} className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
+                          <button onClick={() => openEdit(v)} className="p-1.5 text-gray-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"><Edit2 className="w-4 h-4" /></button>
+                          <button onClick={() => handleDelete(v.vehicle_id)} className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
                         </div>
                       </td>
                     </tr>
@@ -282,14 +282,14 @@ export default function FleetPage() {
               { label: 'Total Vehicles', value: dashboard.total, icon: Car, colour: 'blue' },
               { label: 'Active', value: dashboard.active, icon: Car, colour: 'green' },
               { label: 'In Service', value: dashboard.in_service, icon: Wrench, colour: 'amber' },
-              { label: 'Decommissioned', value: dashboard.decommissioned, icon: Car, colour: 'slate' },
+              { label: 'Decommissioned', value: dashboard.decommissioned, icon: Car, colour: 'gray' },
             ].map((kpi, i) => (
-              <div key={i} className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
+              <div key={i} className="bg-white border border-gray-200 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-slate-400 text-xs font-medium">{kpi.label}</span>
+                  <span className="text-gray-500 text-xs font-medium">{kpi.label}</span>
                   <kpi.icon className={`w-4 h-4 text-${kpi.colour}-400`} />
                 </div>
-                <p className="text-2xl font-bold text-white">{kpi.value}</p>
+                <p className="text-2xl font-bold text-gray-900">{kpi.value}</p>
               </div>
             ))}
           </div>
@@ -301,44 +301,44 @@ export default function FleetPage() {
               { label: 'Service Due', value: dashboard.service_due, colour: 'text-amber-400' },
               { label: 'Service Overdue', value: dashboard.service_overdue, colour: 'text-red-400' },
             ].map((item, i) => (
-              <div key={i} className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 text-center">
+              <div key={i} className="bg-white border border-gray-200 rounded-xl p-4 text-center">
                 <p className={`text-2xl font-bold ${item.colour}`}>{item.value}</p>
-                <p className="text-slate-400 text-xs mt-1">{item.label}</p>
+                <p className="text-gray-500 text-xs mt-1">{item.label}</p>
               </div>
             ))}
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
-              <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+            <div className="bg-white border border-gray-200 rounded-xl p-5">
+              <h3 className="text-gray-900 font-semibold mb-4 flex items-center gap-2">
                 <Fuel className="w-4 h-4 text-blue-400" /> By Fuel Type
               </h3>
               {(dashboard.by_fuel || []).length === 0 ? (
-                <p className="text-slate-500 text-sm">No fuel data</p>
+                <p className="text-gray-400 text-sm">No fuel data</p>
               ) : (
                 <div className="space-y-3">
                   {dashboard.by_fuel.map(([fuel, count]: [string, number]) => (
                     <div key={fuel} className="flex items-center justify-between text-sm">
-                      <span className="text-slate-300 capitalize">{fuel}</span>
-                      <span className="text-white font-medium">{count}</span>
+                      <span className="text-gray-700 capitalize">{fuel}</span>
+                      <span className="text-gray-900 font-medium">{count}</span>
                     </div>
                   ))}
                 </div>
               )}
             </div>
 
-            <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
-              <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+            <div className="bg-white border border-gray-200 rounded-xl p-5">
+              <h3 className="text-gray-900 font-semibold mb-4 flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-green-400" /> By Site
               </h3>
               {(dashboard.by_site || []).length === 0 ? (
-                <p className="text-slate-500 text-sm">No site assignments</p>
+                <p className="text-gray-400 text-sm">No site assignments</p>
               ) : (
                 <div className="space-y-3">
                   {dashboard.by_site.map((s: any) => (
                     <div key={s.site_id} className="flex items-center justify-between text-sm">
-                      <span className="text-slate-300">{s.site_name}</span>
-                      <span className="text-white font-medium">{s.count}</span>
+                      <span className="text-gray-700">{s.site_name}</span>
+                      <span className="text-gray-900 font-medium">{s.count}</span>
                     </div>
                   ))}
                 </div>
@@ -351,44 +351,44 @@ export default function FleetPage() {
       {/* ── CREATE / EDIT MODAL ── */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-5 border-b border-slate-700">
-              <h2 className="text-lg font-semibold text-white">{editItem ? 'Edit Vehicle' : 'Add Vehicle'}</h2>
-              <button onClick={() => setShowModal(false)} className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"><X className="w-5 h-5" /></button>
+          <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">{editItem ? 'Edit Vehicle' : 'Add Vehicle'}</h2>
+              <button onClick={() => setShowModal(false)} className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Registration *</label>
-                  <input value={form.registration} onChange={e => setForm({ ...form, registration: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500" placeholder="e.g. GP 123-456" />
+                  <label className="block text-sm text-gray-500 mb-1">Registration *</label>
+                  <input value={form.registration} onChange={e => setForm({ ...form, registration: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500" placeholder="e.g. GP 123-456" />
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Fleet Number</label>
-                  <input value={form.fleet_number} onChange={e => setForm({ ...form, fleet_number: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500" placeholder="e.g. V-001" />
+                  <label className="block text-sm text-gray-500 mb-1">Fleet Number</label>
+                  <input value={form.fleet_number} onChange={e => setForm({ ...form, fleet_number: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500" placeholder="e.g. V-001" />
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Make</label>
-                  <input value={form.make} onChange={e => setForm({ ...form, make: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500" placeholder="e.g. Toyota" />
+                  <label className="block text-sm text-gray-500 mb-1">Make</label>
+                  <input value={form.make} onChange={e => setForm({ ...form, make: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500" placeholder="e.g. Toyota" />
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Model</label>
-                  <input value={form.model} onChange={e => setForm({ ...form, model: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500" placeholder="e.g. Hilux" />
+                  <label className="block text-sm text-gray-500 mb-1">Model</label>
+                  <input value={form.model} onChange={e => setForm({ ...form, model: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500" placeholder="e.g. Hilux" />
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Year</label>
-                  <input type="number" value={form.year} onChange={e => setForm({ ...form, year: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500" />
+                  <label className="block text-sm text-gray-500 mb-1">Year</label>
+                  <input type="number" value={form.year} onChange={e => setForm({ ...form, year: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Colour</label>
-                  <input value={form.colour} onChange={e => setForm({ ...form, colour: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500" />
+                  <label className="block text-sm text-gray-500 mb-1">Colour</label>
+                  <input value={form.colour} onChange={e => setForm({ ...form, colour: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500" />
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Fuel Type</label>
-                  <select value={form.fuel_type} onChange={e => setForm({ ...form, fuel_type: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500">
+                  <label className="block text-sm text-gray-500 mb-1">Fuel Type</label>
+                  <select value={form.fuel_type} onChange={e => setForm({ ...form, fuel_type: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500">
                     <option value="">—</option>
                     {FUEL_TYPES.map(f => <option key={f} value={f} className="capitalize">{f}</option>)}
                   </select>
@@ -396,15 +396,15 @@ export default function FleetPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Assigned Site</label>
-                  <select value={form.assigned_site_id} onChange={e => setForm({ ...form, assigned_site_id: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500">
+                  <label className="block text-sm text-gray-500 mb-1">Assigned Site</label>
+                  <select value={form.assigned_site_id} onChange={e => setForm({ ...form, assigned_site_id: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500">
                     <option value="">— None —</option>
                     {sites.map((s: any) => <option key={s.site_id} value={s.site_id}>{s.site_name}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Assigned Driver</label>
-                  <select value={form.assigned_employee_id} onChange={e => setForm({ ...form, assigned_employee_id: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500">
+                  <label className="block text-sm text-gray-500 mb-1">Assigned Driver</label>
+                  <select value={form.assigned_employee_id} onChange={e => setForm({ ...form, assigned_employee_id: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500">
                     <option value="">— None —</option>
                     {employees.map((e: any) => <option key={e.employee_id} value={e.employee_id}>{e.first_name} {e.last_name}</option>)}
                   </select>
@@ -412,25 +412,25 @@ export default function FleetPage() {
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Mileage (km)</label>
-                  <input type="number" value={form.current_mileage} onChange={e => setForm({ ...form, current_mileage: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500" />
+                  <label className="block text-sm text-gray-500 mb-1">Mileage (km)</label>
+                  <input type="number" value={form.current_mileage} onChange={e => setForm({ ...form, current_mileage: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500" />
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">License Expiry</label>
-                  <input type="date" value={form.license_expiry} onChange={e => setForm({ ...form, license_expiry: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500" />
+                  <label className="block text-sm text-gray-500 mb-1">License Expiry</label>
+                  <input type="date" value={form.license_expiry} onChange={e => setForm({ ...form, license_expiry: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500" />
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Service Due</label>
-                  <input type="date" value={form.service_due_date} onChange={e => setForm({ ...form, service_due_date: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500" />
+                  <label className="block text-sm text-gray-500 mb-1">Service Due</label>
+                  <input type="date" value={form.service_due_date} onChange={e => setForm({ ...form, service_due_date: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500" />
                 </div>
               </div>
               <div>
-                <label className="block text-sm text-slate-400 mb-1">Notes</label>
-                <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500 resize-none" />
+                <label className="block text-sm text-gray-500 mb-1">Notes</label>
+                <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500 resize-none" />
               </div>
             </div>
-            <div className="flex justify-end gap-3 p-5 border-t border-slate-700">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-slate-700 rounded-lg transition-colors">Cancel</button>
+            <div className="flex justify-end gap-3 p-5 border-t border-gray-200">
+              <button onClick={() => setShowModal(false)} className="px-4 py-2.5 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">Cancel</button>
               <button onClick={handleSubmit} disabled={!form.registration} className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors">
                 {editItem ? 'Save Changes' : 'Add Vehicle'}
               </button>

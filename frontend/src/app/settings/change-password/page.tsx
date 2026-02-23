@@ -100,9 +100,9 @@ export default function ChangePasswordPage() {
   if (success) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
-          <ShieldCheck className="w-16 h-16 text-green-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <div className="max-w-md w-full bg-white rounded-xl border border-gray-200 shadow-sm p-8 text-center">
+          <ShieldCheck className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">
             Password Changed
           </h2>
           <p className="text-gray-600 mb-6">
@@ -132,9 +132,9 @@ export default function ChangePasswordPage() {
           Back to Settings
         </button>
 
-        <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-semibold text-gray-900">
               Change Password
             </h1>
             <p className="text-gray-600 mt-1">
@@ -143,7 +143,7 @@ export default function ChangePasswordPage() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm border border-red-200">
                 {error}

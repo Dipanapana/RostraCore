@@ -59,17 +59,17 @@ interface Run {
 const RUN_STATUS = {
   in_progress: {
     label: "In Progress",
-    classes: "bg-blue-900/50 text-blue-300",
+    classes: "bg-blue-100 text-blue-700",
     icon: <Clock size={12} />,
   },
   completed: {
     label: "Completed",
-    classes: "bg-green-900/50 text-green-300",
+    classes: "bg-emerald-50 text-emerald-700",
     icon: <CheckCircle2 size={12} />,
   },
   abandoned: {
     label: "Abandoned",
-    classes: "bg-red-900/50 text-red-300",
+    classes: "bg-red-100 text-red-700",
     icon: <XCircle size={12} />,
   },
 };
@@ -107,7 +107,7 @@ function ProgressBar({ pct, status }: { pct: number; status: string }) {
       ? "bg-red-500"
       : "bg-blue-500";
   return (
-    <div className="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden">
+    <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
       <div
         className={`h-full rounded-full transition-all ${colour}`}
         style={{ width: `${pct}%` }}
@@ -174,15 +174,15 @@ export default function PatrolsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
             <Route className="text-violet-400" size={24} />
             Patrol Monitoring
           </h1>
-          <p className="text-sm text-slate-400 mt-1">Guard patrol tours and checkpoint completion</p>
+          <p className="text-sm text-gray-500 mt-1">Guard patrol tours and checkpoint completion</p>
         </div>
         <button
           onClick={() => { fetchTours(); fetchRuns(); }}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-sm text-slate-300 transition-colors"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-100 text-sm text-gray-700 transition-colors"
         >
           <RefreshCw size={14} className={(loading || runsLoading) ? "animate-spin" : ""} />
           Refresh
@@ -192,33 +192,33 @@ export default function PatrolsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* ── LEFT: Tour list ────────────────────────────────────────── */}
         <div className="lg:col-span-1">
-          <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-slate-700">
-              <h2 className="text-sm font-semibold text-slate-300">Patrol Tours ({tours.length})</h2>
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-200">
+              <h2 className="text-sm font-semibold text-gray-700">Patrol Tours ({tours.length})</h2>
             </div>
 
             {loading ? (
-              <div className="flex items-center justify-center py-12 text-slate-500 text-sm">Loading…</div>
+              <div className="flex items-center justify-center py-12 text-gray-400 text-sm">Loading…</div>
             ) : tours.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 gap-3">
-                <Route size={28} className="text-slate-600" />
-                <p className="text-slate-500 text-sm">No patrol tours configured</p>
+                <Route size={28} className="text-gray-400" />
+                <p className="text-gray-400 text-sm">No patrol tours configured</p>
               </div>
             ) : (
-              <ul className="divide-y divide-slate-700/50">
+              <ul className="divide-y divide-gray-200">
                 {tours.map(tour => {
                   const isSelected = selectedTour?.tour_id === tour.tour_id;
                   return (
                     <li key={tour.tour_id}>
                       <button
                         onClick={() => { setSelectedTour(tour); setExpandedRun(null); }}
-                        className={`w-full text-left px-4 py-3 hover:bg-slate-700/50 transition-colors flex items-center justify-between gap-2 ${isSelected ? "bg-slate-700/60 border-l-2 border-violet-500" : ""}`}
+                        className={`w-full text-left px-4 py-3 hover:bg-gray-100 transition-colors flex items-center justify-between gap-2 ${isSelected ? "bg-gray-100 border-l-2 border-violet-500" : ""}`}
                       >
                         <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-medium truncate ${isSelected ? "text-violet-300" : "text-slate-200"}`}>
+                          <p className={`text-sm font-medium truncate ${isSelected ? "text-violet-600" : "text-gray-800"}`}>
                             {tour.name}
                           </p>
-                          <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                          <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
                             <MapPin size={10} />
                             {tour.site_name ?? `Site #${tour.site_id ?? "?"}`}
                             <span className="mx-1">·</span>
@@ -228,9 +228,9 @@ export default function PatrolsPage() {
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
                           {!tour.is_active && (
-                            <span className="text-xs px-1.5 py-0.5 rounded bg-slate-700 text-slate-500">inactive</span>
+                            <span className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-400">inactive</span>
                           )}
-                          <ChevronRight size={14} className="text-slate-600" />
+                          <ChevronRight size={14} className="text-gray-400" />
                         </div>
                       </button>
                     </li>
@@ -244,20 +244,20 @@ export default function PatrolsPage() {
         {/* ── RIGHT: Runs for selected tour ──────────────────────────── */}
         <div className="lg:col-span-2">
           {!selectedTour ? (
-            <div className="bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center py-24">
-              <p className="text-slate-500 text-sm">Select a patrol tour to view runs</p>
+            <div className="bg-white border border-gray-200 rounded-xl flex items-center justify-center py-24">
+              <p className="text-gray-400 text-sm">Select a patrol tour to view runs</p>
             </div>
           ) : (
             <>
               {/* Tour summary cards */}
               <div className="grid grid-cols-3 gap-3 mb-4">
                 {[
-                  { label: "Completed", value: completed, color: "text-green-400" },
-                  { label: "In Progress", value: inProgress, color: "text-blue-400" },
-                  { label: "Abandoned",  value: abandoned,  color: "text-red-400" },
+                  { label: "Completed", value: completed, color: "text-green-600" },
+                  { label: "In Progress", value: inProgress, color: "text-blue-600" },
+                  { label: "Abandoned",  value: abandoned,  color: "text-red-600" },
                 ].map(c => (
-                  <div key={c.label} className="bg-slate-800 border border-slate-700 rounded-xl p-3 text-center">
-                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">{c.label}</p>
+                  <div key={c.label} className="bg-white border border-gray-200 rounded-xl p-3 text-center">
+                    <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">{c.label}</p>
                     <p className={`text-2xl font-bold ${c.color}`}>{c.value}</p>
                   </div>
                 ))}
@@ -265,13 +265,13 @@ export default function PatrolsPage() {
 
               {/* Filter bar */}
               <div className="flex items-center gap-3 mb-3">
-                <p className="text-sm font-semibold text-slate-300 flex-1">
+                <p className="text-sm font-semibold text-gray-700 flex-1">
                   {selectedTour.name} — Recent Runs
                 </p>
                 <select
                   value={runFilter}
                   onChange={e => setRunFilter(e.target.value)}
-                  className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-violet-500"
                 >
                   <option value="">All Statuses</option>
                   <option value="completed">Completed</option>
@@ -281,16 +281,16 @@ export default function PatrolsPage() {
               </div>
 
               {/* Runs list */}
-              <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+              <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
                 {runsLoading ? (
-                  <div className="flex items-center justify-center py-12 text-slate-500 text-sm">Loading runs…</div>
+                  <div className="flex items-center justify-center py-12 text-gray-400 text-sm">Loading runs…</div>
                 ) : runs.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 gap-3">
-                    <Route size={28} className="text-slate-600" />
-                    <p className="text-slate-500 text-sm">No patrol runs found</p>
+                    <Route size={28} className="text-gray-400" />
+                    <p className="text-gray-400 text-sm">No patrol runs found</p>
                   </div>
                 ) : (
-                  <ul className="divide-y divide-slate-700/50">
+                  <ul className="divide-y divide-gray-200">
                     {runs.map(run => {
                       const sts = RUN_STATUS[run.status] ?? RUN_STATUS.abandoned;
                       const pct = completionPct(run.scans_completed, run.total_checkpoints);
@@ -299,7 +299,7 @@ export default function PatrolsPage() {
                         <li key={run.run_id}>
                           <button
                             onClick={() => setExpandedRun(isExpanded ? null : run.run_id)}
-                            className="w-full text-left px-4 py-3 hover:bg-slate-700/30 transition-colors"
+                            className="w-full text-left px-4 py-3 hover:bg-gray-100 transition-colors"
                           >
                             <div className="flex items-center gap-3">
                               {/* Status badge */}
@@ -310,21 +310,21 @@ export default function PatrolsPage() {
 
                               {/* Date + duration */}
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm text-slate-300">{fmtDate(run.started_at)}</p>
+                                <p className="text-sm text-gray-700">{fmtDate(run.started_at)}</p>
                               </div>
 
-                              <div className="text-xs text-slate-500 shrink-0">
+                              <div className="text-xs text-gray-400 shrink-0">
                                 {duration(run.started_at, run.completed_at)}
                               </div>
 
                               {/* Checkpoint count */}
-                              <div className="text-xs text-slate-400 shrink-0 w-16 text-right">
+                              <div className="text-xs text-gray-500 shrink-0 w-16 text-right">
                                 {run.scans_completed}/{run.total_checkpoints} CPs
                               </div>
 
                               <ChevronRight
                                 size={14}
-                                className={`text-slate-600 transition-transform shrink-0 ${isExpanded ? "rotate-90" : ""}`}
+                                className={`text-gray-400 transition-transform shrink-0 ${isExpanded ? "rotate-90" : ""}`}
                               />
                             </div>
 
@@ -336,18 +336,18 @@ export default function PatrolsPage() {
 
                           {/* Expanded: scan details */}
                           {isExpanded && (
-                            <div className="px-4 pb-3 bg-slate-900/40">
+                            <div className="px-4 pb-3 bg-gray-50">
                               {run.scans.length === 0 ? (
-                                <p className="text-xs text-slate-600 italic py-2">No checkpoints scanned</p>
+                                <p className="text-xs text-gray-400 italic py-2">No checkpoints scanned</p>
                               ) : (
                                 <ul className="space-y-1 pt-1">
                                   {run.scans.map((scan, i) => (
-                                    <li key={scan.scan_id} className="flex items-center gap-3 text-xs text-slate-400">
-                                      <span className="w-5 h-5 rounded-full bg-green-900/40 text-green-400 flex items-center justify-center font-bold shrink-0">
+                                    <li key={scan.scan_id} className="flex items-center gap-3 text-xs text-gray-500">
+                                      <span className="w-5 h-5 rounded-full bg-emerald-50 text-green-600 flex items-center justify-center font-bold shrink-0">
                                         {i + 1}
                                       </span>
-                                      <span className="flex-1 text-slate-300">{scan.checkpoint_name}</span>
-                                      <span className="text-slate-500">{fmtDate(scan.scanned_at)}</span>
+                                      <span className="flex-1 text-gray-700">{scan.checkpoint_name}</span>
+                                      <span className="text-gray-400">{fmtDate(scan.scanned_at)}</span>
                                     </li>
                                   ))}
                                 </ul>
@@ -361,7 +361,7 @@ export default function PatrolsPage() {
                 )}
               </div>
 
-              <p className="text-xs text-slate-600 mt-2 text-right">{runs.length} run{runs.length !== 1 ? "s" : ""} shown</p>
+              <p className="text-xs text-gray-400 mt-2 text-right">{runs.length} run{runs.length !== 1 ? "s" : ""} shown</p>
             </>
           )}
         </div>

@@ -55,13 +55,13 @@ interface Employee {
 // ---------------------------------------------------------------------------
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ComponentType<any> }> = {
-  pending_peer:     { label: 'Awaiting Peer',    color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',     icon: Clock },
-  pending_approval: { label: 'Awaiting Manager', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400',         icon: UserCheck },
-  approved:         { label: 'Approved',          color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400', icon: CheckCircle },
-  rejected:         { label: 'Rejected',          color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400',             icon: XCircle },
-  declined:         { label: 'Declined',          color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400', icon: XCircle },
-  cancelled:        { label: 'Cancelled',         color: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',           icon: X },
-  expired:          { label: 'Expired',           color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500',           icon: AlertCircle },
+  pending_peer:     { label: 'Awaiting Peer',    color: 'bg-amber-100 text-amber-700',     icon: Clock },
+  pending_approval: { label: 'Awaiting Manager', color: 'bg-blue-100 text-blue-700',         icon: UserCheck },
+  approved:         { label: 'Approved',          color: 'bg-emerald-100 text-emerald-700', icon: CheckCircle },
+  rejected:         { label: 'Rejected',          color: 'bg-red-100 text-red-700',             icon: XCircle },
+  declined:         { label: 'Declined',          color: 'bg-orange-100 text-orange-700', icon: XCircle },
+  cancelled:        { label: 'Cancelled',         color: 'bg-gray-100 text-gray-600',           icon: X },
+  expired:          { label: 'Expired',           color: 'bg-gray-100 text-gray-500',           icon: AlertCircle },
 }
 
 // ---------------------------------------------------------------------------
@@ -196,18 +196,18 @@ export default function ShiftSwapsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <ArrowLeftRight className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
+          <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
+            <ArrowLeftRight className="h-7 w-7 text-indigo-600" />
             Shift Swap Requests
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-gray-500 mt-1">
             Guards can request to swap shifts with colleagues. Managers review and approve.
           </p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={fetchSwaps}
-            className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+            className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700"
           >
             <RefreshCw className="h-4 w-4" />
           </button>
@@ -222,21 +222,21 @@ export default function ShiftSwapsPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-          <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total Requests</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{total}</p>
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="text-xs text-gray-500 uppercase tracking-wide">Total Requests</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{total}</p>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-          <p className="text-xs text-amber-600 dark:text-amber-400 uppercase tracking-wide">Pending</p>
-          <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">{pending}</p>
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="text-xs text-amber-600 uppercase tracking-wide">Pending</p>
+          <p className="text-2xl font-bold text-amber-600 mt-1">{pending}</p>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-          <p className="text-xs text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Approved</p>
-          <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">{approved}</p>
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="text-xs text-emerald-600 uppercase tracking-wide">Approved</p>
+          <p className="text-2xl font-bold text-emerald-600 mt-1">{approved}</p>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-          <p className="text-xs text-red-600 dark:text-red-400 uppercase tracking-wide">Rejected / Declined</p>
-          <p className="text-2xl font-bold text-red-600 dark:text-red-400 mt-1">{rejected}</p>
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="text-xs text-red-600 uppercase tracking-wide">Rejected / Declined</p>
+          <p className="text-2xl font-bold text-red-600 mt-1">{rejected}</p>
         </div>
       </div>
 
@@ -246,7 +246,7 @@ export default function ShiftSwapsPage() {
         <select
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
-          className="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+          className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white text-gray-700"
         >
           <option value="">All Statuses</option>
           <option value="pending_peer">Awaiting Peer</option>
@@ -259,14 +259,14 @@ export default function ShiftSwapsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
           </div>
         ) : swaps.length === 0 ? (
-          <div className="text-center py-16 text-gray-500 dark:text-gray-400">
-            <ArrowLeftRight className="h-12 w-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
+          <div className="text-center py-16 text-gray-500">
+            <ArrowLeftRight className="h-12 w-12 mx-auto mb-3 text-gray-300" />
             <p className="font-medium">No swap requests found</p>
             <p className="text-sm mt-1">Create a new swap request to get started.</p>
           </div>
@@ -274,7 +274,7 @@ export default function ShiftSwapsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 dark:bg-gray-700/50 text-left text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                <tr className="bg-gray-50 text-left text-xs uppercase tracking-wider text-gray-500">
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Requester</th>
                   <th className="px-4 py-3">Shift (From)</th>
@@ -285,22 +285,22 @@ export default function ShiftSwapsPage() {
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+              <tbody className="divide-y divide-gray-100">
                 {swaps.map(swap => {
                   const cfg = STATUS_CONFIG[swap.status] || STATUS_CONFIG.expired
                   const StatusIcon = cfg.icon
                   return (
-                    <tr key={swap.swap_id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                    <tr key={swap.swap_id} className="hover:bg-gray-50">
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.color}`}>
                           <StatusIcon className="h-3 w-3" />
                           {cfg.label}
                         </span>
                       </td>
-                      <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
+                      <td className="px-4 py-3 font-medium text-gray-900">
                         {swap.requester_name}
                       </td>
-                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                      <td className="px-4 py-3 text-gray-600">
                         {swap.requester_shift_date && (
                           <div>
                             <span className="font-medium">{swap.requester_shift_date}</span>
@@ -311,10 +311,10 @@ export default function ShiftSwapsPage() {
                           </div>
                         )}
                       </td>
-                      <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
+                      <td className="px-4 py-3 font-medium text-gray-900">
                         {swap.target_name}
                       </td>
-                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                      <td className="px-4 py-3 text-gray-600">
                         {swap.target_shift_date ? (
                           <div>
                             <span className="font-medium">{swap.target_shift_date}</span>
@@ -327,7 +327,7 @@ export default function ShiftSwapsPage() {
                           <span className="text-xs text-gray-400 italic">One-way swap</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-gray-500 dark:text-gray-400 max-w-[200px] truncate">
+                      <td className="px-4 py-3 text-gray-500 max-w-[200px] truncate">
                         {swap.reason || '—'}
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-400">
@@ -340,7 +340,7 @@ export default function ShiftSwapsPage() {
                               <button
                                 onClick={() => handlePeerRespond(swap, true)}
                                 disabled={actionLoading}
-                                className="px-2 py-1 text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 rounded hover:bg-emerald-200 dark:hover:bg-emerald-900/60"
+                                className="px-2 py-1 text-xs bg-emerald-100 text-emerald-700 rounded hover:bg-emerald-200"
                                 title="Accept (as peer)"
                               >
                                 Accept
@@ -348,7 +348,7 @@ export default function ShiftSwapsPage() {
                               <button
                                 onClick={() => handlePeerRespond(swap, false)}
                                 disabled={actionLoading}
-                                className="px-2 py-1 text-xs bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/60"
+                                className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
                                 title="Decline (as peer)"
                               >
                                 Decline
@@ -358,7 +358,7 @@ export default function ShiftSwapsPage() {
                           {swap.status === 'pending_approval' && (
                             <button
                               onClick={() => { setShowReview(swap); setRejectionReason('') }}
-                              className="px-2 py-1 text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/60"
+                              className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
                             >
                               Review
                             </button>
@@ -367,7 +367,7 @@ export default function ShiftSwapsPage() {
                             <button
                               onClick={() => handleCancel(swap)}
                               disabled={actionLoading}
-                              className="px-2 py-1 text-xs bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                              className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
                             >
                               Cancel
                             </button>
@@ -391,10 +391,10 @@ export default function ShiftSwapsPage() {
       {/* ── Create Modal ──────────────────────────────────────── */}
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg p-6">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">New Shift Swap Request</h2>
-              <button onClick={() => setShowCreate(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+              <h2 className="text-lg font-semibold text-gray-900">New Shift Swap Request</h2>
+              <button onClick={() => setShowCreate(false)} className="text-gray-400 hover:text-gray-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -402,13 +402,13 @@ export default function ShiftSwapsPage() {
             <div className="space-y-4">
               {/* Assignment to swap */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Shift Assignment to Swap
                 </label>
                 <select
                   value={form.requester_assignment_id}
                   onChange={e => setForm({ ...form, requester_assignment_id: Number(e.target.value) })}
-                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 text-sm"
                 >
                   <option value={0}>Select assignment...</option>
                   {assignments.map((a: any) => (
@@ -423,13 +423,13 @@ export default function ShiftSwapsPage() {
 
               {/* Target guard */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Swap With (Target Guard)
                 </label>
                 <select
                   value={form.target_employee_id}
                   onChange={e => setForm({ ...form, target_employee_id: Number(e.target.value) })}
-                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 text-sm"
                 >
                   <option value={0}>Select guard...</option>
                   {employees.map((emp: Employee) => (
@@ -442,14 +442,14 @@ export default function ShiftSwapsPage() {
 
               {/* Reason */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Reason (optional)
                 </label>
                 <textarea
                   value={form.reason}
                   onChange={e => setForm({ ...form, reason: e.target.value })}
                   rows={2}
-                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 text-sm"
                   placeholder="e.g. Medical appointment, family commitment..."
                 />
               </div>
@@ -458,7 +458,7 @@ export default function ShiftSwapsPage() {
             <div className="flex justify-end gap-2 mt-6">
               <button
                 onClick={() => setShowCreate(false)}
-                className="px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
               >
                 Cancel
               </button>
@@ -477,10 +477,10 @@ export default function ShiftSwapsPage() {
       {/* ── Review Modal ──────────────────────────────────────── */}
       {showReview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg p-6">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Review Swap Request</h2>
-              <button onClick={() => setShowReview(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+              <h2 className="text-lg font-semibold text-gray-900">Review Swap Request</h2>
+              <button onClick={() => setShowReview(null)} className="text-gray-400 hover:text-gray-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -488,10 +488,10 @@ export default function ShiftSwapsPage() {
             <div className="space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase">Requester</p>
-                  <p className="font-medium text-gray-900 dark:text-white">{showReview.requester_name}</p>
+                  <p className="text-xs text-gray-500 uppercase">Requester</p>
+                  <p className="font-medium text-gray-900">{showReview.requester_name}</p>
                   {showReview.requester_shift_date && (
-                    <p className="text-gray-500 dark:text-gray-400">
+                    <p className="text-gray-500">
                       {showReview.requester_shift_date} {showReview.requester_shift_time}
                     </p>
                   )}
@@ -500,11 +500,11 @@ export default function ShiftSwapsPage() {
                   )}
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase">Target Guard</p>
-                  <p className="font-medium text-gray-900 dark:text-white">{showReview.target_name}</p>
+                  <p className="text-xs text-gray-500 uppercase">Target Guard</p>
+                  <p className="font-medium text-gray-900">{showReview.target_name}</p>
                   {showReview.target_shift_date ? (
                     <>
-                      <p className="text-gray-500 dark:text-gray-400">
+                      <p className="text-gray-500">
                         {showReview.target_shift_date} {showReview.target_shift_time}
                       </p>
                       {showReview.target_site_name && (
@@ -518,20 +518,20 @@ export default function ShiftSwapsPage() {
               </div>
               {showReview.reason && (
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase">Reason</p>
-                  <p className="text-gray-700 dark:text-gray-300">{showReview.reason}</p>
+                  <p className="text-xs text-gray-500 uppercase">Reason</p>
+                  <p className="text-gray-700">{showReview.reason}</p>
                 </div>
               )}
 
               <div>
-                <label className="block text-xs text-gray-500 dark:text-gray-400 uppercase mb-1">
+                <label className="block text-xs text-gray-500 uppercase mb-1">
                   Rejection Reason (if rejecting)
                 </label>
                 <textarea
                   value={rejectionReason}
                   onChange={e => setRejectionReason(e.target.value)}
                   rows={2}
-                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-900 text-sm"
                   placeholder="Optional — explain why the swap is rejected"
                 />
               </div>
@@ -540,7 +540,7 @@ export default function ShiftSwapsPage() {
             <div className="flex justify-end gap-2 mt-6">
               <button
                 onClick={() => setShowReview(null)}
-                className="px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
               >
                 Cancel
               </button>
@@ -554,7 +554,7 @@ export default function ShiftSwapsPage() {
               <button
                 onClick={() => handleReview(true)}
                 disabled={actionLoading}
-                className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+                className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
                 {actionLoading ? 'Processing...' : 'Approve Swap'}
               </button>

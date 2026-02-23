@@ -13,9 +13,9 @@ interface EmployeeFormProps {
 const STEP_LABELS = ['Basic Info', 'Compensation', 'Contact & Banking', 'Assignments & Review']
 
 const INPUT_CLASS =
-  'w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500'
+  'w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500'
 
-const LABEL_CLASS = 'block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1'
+const LABEL_CLASS = 'block text-sm font-medium text-gray-700 mb-1'
 
 const ROLE_OPTIONS: { value: EmployeeRole; label: string }[] = [
   { value: 'armed', label: 'Armed' },
@@ -325,7 +325,7 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
                     ? 'bg-green-500 border-green-500 text-white'
                     : isCurrent
                       ? 'bg-blue-600 border-blue-600 text-white'
-                      : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-400 dark:text-slate-500'
+                      : 'bg-white border-gray-300 text-gray-400'
                 }`}
               >
                 {isCompleted ? (
@@ -344,10 +344,10 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
               <span
                 className={`text-xs mt-1.5 whitespace-nowrap ${
                   isCurrent
-                    ? 'text-blue-600 dark:text-blue-400 font-medium'
+                    ? 'text-blue-600 font-medium'
                     : isCompleted
-                      ? 'text-green-600 dark:text-green-400'
-                      : 'text-slate-400 dark:text-slate-500'
+                      ? 'text-green-600'
+                      : 'text-gray-400'
                 }`}
               >
                 {label}
@@ -359,7 +359,7 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
                 className={`w-12 sm:w-20 h-0.5 mx-1 mb-5 ${
                   stepNum < currentStep
                     ? 'bg-green-500'
-                    : 'bg-slate-300 dark:bg-slate-600'
+                    : 'bg-gray-300'
                 }`}
               />
             )}
@@ -372,7 +372,7 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
   // ---- Step 1: Basic Info ----
   const renderStep1 = () => (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">
         Basic Information
       </h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -411,7 +411,7 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
             onChange={handleChange}
             className={INPUT_CLASS}
           />
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs text-gray-500 mt-1">
             South African ID: 13 digits (YYMMDD SSSS C A Z)
           </p>
         </div>
@@ -441,7 +441,7 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
                 onChange={handleChange}
                 className="w-4 h-4 text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-sm text-slate-700 dark:text-slate-300">Hourly</span>
+              <span className="text-sm text-gray-700">Hourly</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -452,7 +452,7 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
                 onChange={handleChange}
                 className="w-4 h-4 text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-sm text-slate-700 dark:text-slate-300">
+              <span className="text-sm text-gray-700">
                 Monthly Fixed Salary
               </span>
             </label>
@@ -514,12 +514,12 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
     const showPsira = PSIRA_ELIGIBLE_ROLES.includes(formData.role)
     return (
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
           Compensation
         </h3>
 
         {gradeRoleWarning && (
-          <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-400 dark:border-amber-600 text-amber-700 dark:text-amber-300 px-4 py-3 rounded-lg mb-4">
+          <div className="bg-amber-50 border border-amber-400 text-amber-700 px-4 py-3 rounded-lg mb-4">
             {gradeRoleWarning}
           </div>
         )}
@@ -540,7 +540,7 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
                 className={INPUT_CLASS}
               />
               {rateHint && (
-                <p className="text-xs text-green-600 dark:text-green-400 mt-1">{rateHint}</p>
+                <p className="text-xs text-green-600 mt-1">{rateHint}</p>
               )}
             </div>
           ) : (
@@ -612,7 +612,7 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
   // ---- Step 3: Contact & Banking ----
   const renderStep3 = () => (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">
         Contact Details
       </h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -701,8 +701,8 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
       </div>
 
       {/* Banking Details Divider */}
-      <div className="border-t border-slate-200 dark:border-slate-700 pt-6 mt-6">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
+      <div className="border-t border-gray-200 pt-6 mt-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
           Banking Details
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -783,23 +783,23 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
 
     return (
       <div className="space-y-6">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
           Assignments
         </h3>
 
         {/* Client Assignment */}
         <div>
           <label className={LABEL_CLASS}>Assigned Clients</label>
-          <div className="max-h-40 overflow-y-auto border border-slate-300 dark:border-slate-600 rounded-lg p-2 space-y-1 bg-white dark:bg-slate-800">
+          <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-2 space-y-1 bg-white">
             {clients.length === 0 ? (
-              <p className="text-sm text-slate-500 dark:text-slate-400 p-2">
+              <p className="text-sm text-gray-500 p-2">
                 No clients available
               </p>
             ) : (
               clients.map((client) => (
                 <label
                   key={client.client_id}
-                  className="flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded cursor-pointer"
+                  className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer"
                 >
                   <input
                     type="checkbox"
@@ -820,16 +820,16 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
                         }))
                       }
                     }}
-                    className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
+                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
-                  <span className="text-sm text-slate-700 dark:text-slate-300">
+                  <span className="text-sm text-gray-700">
                     {client.client_name}
                   </span>
                 </label>
               ))
             )}
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs text-gray-500 mt-1">
             Select which clients this employee can work for. Leave empty to allow all clients.
           </p>
         </div>
@@ -848,46 +848,46 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
         </div>
 
         {/* Summary / Review Card */}
-        <div className="border-t border-slate-200 dark:border-slate-700 pt-6 mt-4">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-3">
+        <div className="border-t border-gray-200 pt-6 mt-4">
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">
             Review Summary
           </h3>
-          <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-5 space-y-3 text-sm">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 space-y-3 text-sm">
             {/* Row 1: Identity */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2">
               <div>
-                <span className="text-slate-500 dark:text-slate-400">Name</span>
-                <p className="font-medium text-slate-900 dark:text-slate-100">
+                <span className="text-gray-500">Name</span>
+                <p className="font-medium text-gray-900">
                   {formData.first_name} {formData.last_name}
                 </p>
               </div>
               <div>
-                <span className="text-slate-500 dark:text-slate-400">ID Number</span>
-                <p className="font-medium text-slate-900 dark:text-slate-100">
+                <span className="text-gray-500">ID Number</span>
+                <p className="font-medium text-gray-900">
                   {formData.id_number}
                 </p>
               </div>
               <div>
-                <span className="text-slate-500 dark:text-slate-400">Role</span>
-                <p className="font-medium text-slate-900 dark:text-slate-100 capitalize">
+                <span className="text-gray-500">Role</span>
+                <p className="font-medium text-gray-900 capitalize">
                   {formData.role.replace('_', ' ')}
                 </p>
               </div>
             </div>
 
             {/* Row 2: Compensation */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 border-t border-slate-200 dark:border-slate-600 pt-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 border-t border-gray-200 pt-3">
               <div>
-                <span className="text-slate-500 dark:text-slate-400">Pay Type</span>
-                <p className="font-medium text-slate-900 dark:text-slate-100">
+                <span className="text-gray-500">Pay Type</span>
+                <p className="font-medium text-gray-900">
                   {formData.pay_type === 'hourly' ? 'Hourly' : 'Monthly Fixed'}
                 </p>
               </div>
               <div>
-                <span className="text-slate-500 dark:text-slate-400">
+                <span className="text-gray-500">
                   {formData.pay_type === 'hourly' ? 'Hourly Rate' : 'Monthly Salary'}
                 </span>
-                <p className="font-medium text-slate-900 dark:text-slate-100">
+                <p className="font-medium text-gray-900">
                   {formData.pay_type === 'hourly'
                     ? formData.hourly_rate
                       ? `R ${parseFloat(formData.hourly_rate).toFixed(2)}`
@@ -898,35 +898,35 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
                 </p>
               </div>
               <div>
-                <span className="text-slate-500 dark:text-slate-400">Status</span>
-                <p className="font-medium text-slate-900 dark:text-slate-100 capitalize">
+                <span className="text-gray-500">Status</span>
+                <p className="font-medium text-gray-900 capitalize">
                   {formData.status}
                 </p>
               </div>
             </div>
 
             {/* Row 3: Contact */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 border-t border-slate-200 dark:border-slate-600 pt-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 border-t border-gray-200 pt-3">
               {formData.email && (
                 <div>
-                  <span className="text-slate-500 dark:text-slate-400">Email</span>
-                  <p className="font-medium text-slate-900 dark:text-slate-100">
+                  <span className="text-gray-500">Email</span>
+                  <p className="font-medium text-gray-900">
                     {formData.email}
                   </p>
                 </div>
               )}
               {formData.phone && (
                 <div>
-                  <span className="text-slate-500 dark:text-slate-400">Phone</span>
-                  <p className="font-medium text-slate-900 dark:text-slate-100">
+                  <span className="text-gray-500">Phone</span>
+                  <p className="font-medium text-gray-900">
                     {formData.phone}
                   </p>
                 </div>
               )}
               {formData.province && (
                 <div>
-                  <span className="text-slate-500 dark:text-slate-400">Province</span>
-                  <p className="font-medium text-slate-900 dark:text-slate-100">
+                  <span className="text-gray-500">Province</span>
+                  <p className="font-medium text-gray-900">
                     {formData.province}
                   </p>
                 </div>
@@ -935,25 +935,25 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
 
             {/* Row 4: Banking (if any set) */}
             {formData.bank_name && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 border-t border-slate-200 dark:border-slate-600 pt-3">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 border-t border-gray-200 pt-3">
                 <div>
-                  <span className="text-slate-500 dark:text-slate-400">Bank</span>
-                  <p className="font-medium text-slate-900 dark:text-slate-100">
+                  <span className="text-gray-500">Bank</span>
+                  <p className="font-medium text-gray-900">
                     {formData.bank_name}
                   </p>
                 </div>
                 {formData.account_type && (
                   <div>
-                    <span className="text-slate-500 dark:text-slate-400">Account Type</span>
-                    <p className="font-medium text-slate-900 dark:text-slate-100 capitalize">
+                    <span className="text-gray-500">Account Type</span>
+                    <p className="font-medium text-gray-900 capitalize">
                       {formData.account_type}
                     </p>
                   </div>
                 )}
                 {formData.account_number && (
                   <div>
-                    <span className="text-slate-500 dark:text-slate-400">Account No.</span>
-                    <p className="font-medium text-slate-900 dark:text-slate-100">
+                    <span className="text-gray-500">Account No.</span>
+                    <p className="font-medium text-gray-900">
                       {'****' + formData.account_number.slice(-4)}
                     </p>
                   </div>
@@ -963,9 +963,9 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
 
             {/* Row 5: Assignments */}
             {assignedClientNames.length > 0 && (
-              <div className="border-t border-slate-200 dark:border-slate-600 pt-3">
-                <span className="text-slate-500 dark:text-slate-400">Assigned Clients</span>
-                <p className="font-medium text-slate-900 dark:text-slate-100">
+              <div className="border-t border-gray-200 pt-3">
+                <span className="text-gray-500">Assigned Clients</span>
+                <p className="font-medium text-gray-900">
                   {assignedClientNames.join(', ')}
                 </p>
               </div>
@@ -994,16 +994,16 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="p-6 pb-0">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+            <h2 className="text-2xl font-bold text-gray-900">
               {employee ? 'Edit Employee' : 'Enroll New Employee'}
             </h2>
             <button
               onClick={onClose}
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-2xl leading-none"
+              className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
             >
               &times;
             </button>
@@ -1015,14 +1015,14 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
         <div className="flex-1 overflow-y-auto px-6 pb-2">
           {/* Global error */}
           {error && (
-            <div className="bg-red-50 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg mb-4">
+            <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4">
               {error}
             </div>
           )}
 
           {/* Step validation errors */}
           {stepErrors[currentStep] && stepErrors[currentStep].length > 0 && (
-            <div className="bg-red-50 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg mb-4">
+            <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4">
               <ul className="list-disc list-inside space-y-1 text-sm">
                 {stepErrors[currentStep].map((err, i) => (
                   <li key={i}>{err}</li>
@@ -1035,13 +1035,13 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
         </div>
 
         {/* Footer navigation */}
-        <div className="p-6 pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
+        <div className="p-6 pt-4 border-t border-gray-200 flex justify-between items-center">
           <div>
             {currentStep > 1 && (
               <button
                 type="button"
                 onClick={goToPrevious}
-                className="px-5 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                className="px-5 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 Previous
               </button>
@@ -1051,7 +1051,7 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              className="px-5 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
@@ -1068,7 +1068,7 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
                 type="button"
                 onClick={handleSubmit}
                 disabled={loading}
-                className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
+                className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
               >
                 {loading
                   ? 'Saving...'

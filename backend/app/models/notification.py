@@ -13,6 +13,7 @@ class NotificationType(str, enum.Enum):
     INCIDENT = "incident"
     LEAVE_UPDATE = "leave_update"
     GENERAL = "general"
+    EMERGENCY = "emergency"
 
 
 class Notification(Base):
@@ -29,7 +30,7 @@ class Notification(Base):
     # Content
     title = Column(String(200), nullable=False)
     message = Column(Text, nullable=False)
-    notification_type = Column(SQLEnum(NotificationType), nullable=False, default=NotificationType.GENERAL)
+    notification_type = Column(String(50), nullable=False, default="general")
 
     # Read state
     is_read = Column(Boolean, nullable=False, default=False, index=True)

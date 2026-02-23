@@ -151,3 +151,117 @@ export interface PatrolRun {
   scans_completed: number;
   scans: PatrolScan[];
 }
+
+// ---------------------------------------------------------------------------
+// Emergency Alerts
+// ---------------------------------------------------------------------------
+
+export type AlertType = 'panic' | 'duress' | 'medical' | 'fire';
+export type AlertStatus = 'active' | 'acknowledged' | 'dispatched' | 'resolved' | 'false_alarm';
+
+export interface EmergencyAlert {
+  alert_id: number;
+  org_id: number;
+  employee_id?: number;
+  triggered_by_user_id: number;
+  alert_type: AlertType;
+  status: AlertStatus;
+  latitude?: number;
+  longitude?: number;
+  site_id?: number;
+  site_name?: string;
+  notes?: string;
+  triggered_at: string;
+  acknowledged_at?: string;
+  resolved_at?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Lone Worker
+// ---------------------------------------------------------------------------
+
+export type LoneWorkerStatus = 'active' | 'overdue' | 'escalated' | 'ended';
+
+export interface LoneWorkerSession {
+  session_id: number;
+  org_id: number;
+  employee_id: number;
+  employee_name?: string;
+  status: LoneWorkerStatus;
+  check_in_interval_minutes: number;
+  last_check_in: string;
+  next_check_in_due: string;
+  missed_check_ins: number;
+  escalation_level: number;
+  site_name?: string;
+  started_at: string;
+  ended_at?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Messaging
+// ---------------------------------------------------------------------------
+
+export interface ChatChannel {
+  channel_id: number;
+  org_id: number;
+  channel_type: 'direct' | 'group' | 'site' | 'broadcast';
+  name?: string;
+  site_id?: number;
+  is_active: boolean;
+  created_at: string;
+  unread_count?: number;
+  last_message?: string;
+}
+
+export interface ChatMessage {
+  message_id: number;
+  channel_id: number;
+  sender_id: number;
+  sender_name?: string;
+  content: string;
+  message_type: string;
+  sent_at: string;
+}
+
+// ---------------------------------------------------------------------------
+// Post Orders
+// ---------------------------------------------------------------------------
+
+export interface PostOrder {
+  post_order_id: number;
+  org_id: number;
+  site_id: number;
+  site_name?: string;
+  title: string;
+  content: string;
+  version: number;
+  status: 'draft' | 'active' | 'archived';
+  requires_acknowledgment: boolean;
+  created_at: string;
+  acknowledged?: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Custom Forms
+// ---------------------------------------------------------------------------
+
+export interface FormTemplate {
+  template_id: number;
+  org_id: number;
+  name: string;
+  description?: string;
+  form_type: string;
+  fields: any[];
+  status: 'draft' | 'active' | 'archived';
+  requires_signature: boolean;
+}
+
+export interface FormSubmission {
+  submission_id: number;
+  template_id: number;
+  template_name?: string;
+  data: Record<string, any>;
+  site_id?: number;
+  submitted_at: string;
+}

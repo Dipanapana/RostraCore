@@ -139,10 +139,10 @@ export default function ContractValuesPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
             <DollarSign className="w-7 h-7 text-green-400" /> Contract Values
           </h1>
-          <p className="text-slate-400 text-sm mt-1">Financial contract tracking, billing rates, and profitability targets</p>
+          <p className="text-gray-500 text-sm mt-1">Financial contract tracking, billing rates, and profitability targets</p>
         </div>
         <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors">
           <Plus className="w-4 h-4" /> Add Contract
@@ -150,9 +150,9 @@ export default function ContractValuesPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-slate-800/50 rounded-lg p-1 w-fit">
+      <div className="flex gap-1 bg-white rounded-lg p-1 w-fit">
         {(['list', 'dashboard'] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)} className={`px-4 py-2 rounded-md text-sm font-medium transition-colors capitalize ${tab === t ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}>
+          <button key={t} onClick={() => setTab(t)} className={`px-4 py-2 rounded-md text-sm font-medium transition-colors capitalize ${tab === t ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-900'}`}>
             {t === 'list' ? 'Contracts' : 'Dashboard'}
           </button>
         ))}
@@ -162,58 +162,58 @@ export default function ContractValuesPage() {
       {tab === 'list' && (
         <div className="space-y-4">
           <div className="flex flex-wrap gap-3">
-            <select value={clientFilter} onChange={e => setClientFilter(e.target.value)} className="px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500">
+            <select value={clientFilter} onChange={e => setClientFilter(e.target.value)} className="px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500">
               <option value="">All Clients</option>
               {clients.map((c: any) => <option key={c.client_id} value={c.client_id}>{c.client_name}</option>)}
             </select>
           </div>
 
-          <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl overflow-hidden">
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-700">
-                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Client</th>
-                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Site</th>
-                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Contract #</th>
-                    <th className="text-right px-4 py-3 text-slate-400 font-medium">Monthly Value</th>
-                    <th className="text-right px-4 py-3 text-slate-400 font-medium">Bill Rate/hr</th>
-                    <th className="text-right px-4 py-3 text-slate-400 font-medium">Wage %</th>
-                    <th className="text-right px-4 py-3 text-slate-400 font-medium">Wage Budget</th>
-                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Period</th>
-                    <th className="text-right px-4 py-3 text-slate-400 font-medium">Actions</th>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left px-4 py-3 text-gray-500 font-medium">Client</th>
+                    <th className="text-left px-4 py-3 text-gray-500 font-medium">Site</th>
+                    <th className="text-left px-4 py-3 text-gray-500 font-medium">Contract #</th>
+                    <th className="text-right px-4 py-3 text-gray-500 font-medium">Monthly Value</th>
+                    <th className="text-right px-4 py-3 text-gray-500 font-medium">Bill Rate/hr</th>
+                    <th className="text-right px-4 py-3 text-gray-500 font-medium">Wage %</th>
+                    <th className="text-right px-4 py-3 text-gray-500 font-medium">Wage Budget</th>
+                    <th className="text-left px-4 py-3 text-gray-500 font-medium">Period</th>
+                    <th className="text-right px-4 py-3 text-gray-500 font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
-                    <tr><td colSpan={9} className="px-4 py-12 text-center text-slate-500">Loading…</td></tr>
+                    <tr><td colSpan={9} className="px-4 py-12 text-center text-gray-400">Loading…</td></tr>
                   ) : contracts.length === 0 ? (
-                    <tr><td colSpan={9} className="px-4 py-12 text-center text-slate-500">No contract values found</td></tr>
+                    <tr><td colSpan={9} className="px-4 py-12 text-center text-gray-400">No contract values found</td></tr>
                   ) : contracts.map((cv: any) => {
                     const isExpired = cv.end_date && new Date(cv.end_date) <= new Date()
                     const isExpiring = cv.end_date && !isExpired && ((new Date(cv.end_date).getTime() - Date.now()) / 86400000) <= 90
                     return (
-                      <tr key={cv.contract_value_id} className="border-b border-slate-700/50 hover:bg-slate-700/20 transition-colors">
-                        <td className="px-4 py-3 text-white font-medium">{cv.client_name || '—'}</td>
-                        <td className="px-4 py-3 text-slate-300">{cv.site_name || '—'}</td>
-                        <td className="px-4 py-3 text-slate-400">{cv.contract_number || '—'}</td>
+                      <tr key={cv.contract_value_id} className="border-b border-gray-200 hover:bg-gray-100/20 transition-colors">
+                        <td className="px-4 py-3 text-gray-900 font-medium">{cv.client_name || '—'}</td>
+                        <td className="px-4 py-3 text-gray-700">{cv.site_name || '—'}</td>
+                        <td className="px-4 py-3 text-gray-500">{cv.contract_number || '—'}</td>
                         <td className="px-4 py-3 text-right text-green-400 font-semibold">{fmtZAR(cv.monthly_value)}</td>
-                        <td className="px-4 py-3 text-right text-slate-300">{cv.hourly_bill_rate ? fmtZAR(cv.hourly_bill_rate) : '—'}</td>
-                        <td className="px-4 py-3 text-right text-slate-300">{cv.wage_budget_pct ? `${cv.wage_budget_pct}%` : '—'}</td>
-                        <td className="px-4 py-3 text-right text-slate-300">{cv.monthly_wage_budget ? fmtZAR(cv.monthly_wage_budget) : '—'}</td>
+                        <td className="px-4 py-3 text-right text-gray-700">{cv.hourly_bill_rate ? fmtZAR(cv.hourly_bill_rate) : '—'}</td>
+                        <td className="px-4 py-3 text-right text-gray-700">{cv.wage_budget_pct ? `${cv.wage_budget_pct}%` : '—'}</td>
+                        <td className="px-4 py-3 text-right text-gray-700">{cv.monthly_wage_budget ? fmtZAR(cv.monthly_wage_budget) : '—'}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1 text-xs">
                             {isExpired && <AlertTriangle className="w-3 h-3 text-red-400" />}
                             {isExpiring && <Clock className="w-3 h-3 text-amber-400" />}
-                            <span className={isExpired ? 'text-red-400' : isExpiring ? 'text-amber-400' : 'text-slate-400'}>
+                            <span className={isExpired ? 'text-red-400' : isExpiring ? 'text-amber-400' : 'text-gray-500'}>
                               {fmtDate(cv.start_date)} — {fmtDate(cv.end_date)}
                             </span>
                           </div>
                         </td>
                         <td className="px-4 py-3 text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <button onClick={() => openEdit(cv)} className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"><Edit2 className="w-4 h-4" /></button>
-                            <button onClick={() => handleDelete(cv.contract_value_id)} className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
+                            <button onClick={() => openEdit(cv)} className="p-1.5 text-gray-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"><Edit2 className="w-4 h-4" /></button>
+                            <button onClick={() => handleDelete(cv.contract_value_id)} className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
                           </div>
                         </td>
                       </tr>
@@ -237,48 +237,48 @@ export default function ContractValuesPage() {
               { label: 'Annual Revenue', value: fmtZAR(dashboard.annual_revenue), icon: TrendingUp, colour: 'emerald' },
               { label: 'Avg Wage Target', value: `${dashboard.avg_wage_budget_pct}%`, icon: BarChart3, colour: 'purple' },
             ].map((kpi, i) => (
-              <div key={i} className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
+              <div key={i} className="bg-white border border-gray-200 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-slate-400 text-xs font-medium">{kpi.label}</span>
+                  <span className="text-gray-500 text-xs font-medium">{kpi.label}</span>
                   <kpi.icon className={`w-4 h-4 text-${kpi.colour}-400`} />
                 </div>
-                <p className="text-xl font-bold text-white truncate">{kpi.value}</p>
+                <p className="text-xl font-bold text-gray-900 truncate">{kpi.value}</p>
               </div>
             ))}
           </div>
 
           {/* Secondary stats */}
           <div className="grid grid-cols-3 gap-4">
-            <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 text-center">
-              <p className="text-2xl font-bold text-white">{fmtZAR(dashboard.total_wage_budget)}</p>
-              <p className="text-slate-400 text-xs mt-1">Total Wage Budget / month</p>
+            <div className="bg-white border border-gray-200 rounded-xl p-4 text-center">
+              <p className="text-2xl font-bold text-gray-900">{fmtZAR(dashboard.total_wage_budget)}</p>
+              <p className="text-gray-500 text-xs mt-1">Total Wage Budget / month</p>
             </div>
-            <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 text-center">
+            <div className="bg-white border border-gray-200 rounded-xl p-4 text-center">
               <p className="text-2xl font-bold text-amber-400">{dashboard.expiring_soon}</p>
-              <p className="text-slate-400 text-xs mt-1">Expiring (90 days)</p>
+              <p className="text-gray-500 text-xs mt-1">Expiring (90 days)</p>
             </div>
-            <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 text-center">
+            <div className="bg-white border border-gray-200 rounded-xl p-4 text-center">
               <p className="text-2xl font-bold text-red-400">{dashboard.expired}</p>
-              <p className="text-slate-400 text-xs mt-1">Expired</p>
+              <p className="text-gray-500 text-xs mt-1">Expired</p>
             </div>
           </div>
 
           {/* By Client */}
-          <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
-            <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+          <div className="bg-white border border-gray-200 rounded-xl p-5">
+            <h3 className="text-gray-900 font-semibold mb-4 flex items-center gap-2">
               <Building className="w-4 h-4 text-blue-400" /> Revenue by Client
             </h3>
             {(dashboard.by_client || []).length === 0 ? (
-              <p className="text-slate-500 text-sm">No contract data yet</p>
+              <p className="text-gray-400 text-sm">No contract data yet</p>
             ) : (
               <div className="space-y-3">
                 {dashboard.by_client.map((c: any) => (
                   <div key={c.client_id}>
                     <div className="flex items-center justify-between text-sm mb-1">
-                      <span className="text-slate-300">{c.client_name} <span className="text-slate-500">({c.contracts} contracts)</span></span>
+                      <span className="text-gray-700">{c.client_name} <span className="text-gray-400">({c.contracts} contracts)</span></span>
                       <span className="text-green-400 font-medium">{fmtZAR(c.monthly_total)}/mo</span>
                     </div>
-                    <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                       <div className="h-full bg-green-500 rounded-full" style={{ width: `${Math.min(100, (c.monthly_total / dashboard.total_monthly_revenue) * 100)}%` }} />
                     </div>
                   </div>
@@ -292,75 +292,75 @@ export default function ContractValuesPage() {
       {/* ── CREATE / EDIT MODAL ── */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-5 border-b border-slate-700">
-              <h2 className="text-lg font-semibold text-white">{editItem ? 'Edit Contract Value' : 'Add Contract Value'}</h2>
-              <button onClick={() => setShowModal(false)} className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"><X className="w-5 h-5" /></button>
+          <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">{editItem ? 'Edit Contract Value' : 'Add Contract Value'}</h2>
+              <button onClick={() => setShowModal(false)} className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-4">
               <div>
-                <label className="block text-sm text-slate-400 mb-1">Client *</label>
-                <select value={form.client_id} onChange={e => setForm({ ...form, client_id: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500">
+                <label className="block text-sm text-gray-500 mb-1">Client *</label>
+                <select value={form.client_id} onChange={e => setForm({ ...form, client_id: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500">
                   <option value="">Select client…</option>
                   {clients.map((c: any) => <option key={c.client_id} value={c.client_id}>{c.client_name}</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Site</label>
-                  <select value={form.site_id} onChange={e => setForm({ ...form, site_id: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500">
+                  <label className="block text-sm text-gray-500 mb-1">Site</label>
+                  <select value={form.site_id} onChange={e => setForm({ ...form, site_id: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500">
                     <option value="">— All sites —</option>
                     {sites.map((s: any) => <option key={s.site_id} value={s.site_id}>{s.site_name}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Contract Number</label>
-                  <input value={form.contract_number} onChange={e => setForm({ ...form, contract_number: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500" placeholder="e.g. SEC-2026-001" />
+                  <label className="block text-sm text-gray-500 mb-1">Contract Number</label>
+                  <input value={form.contract_number} onChange={e => setForm({ ...form, contract_number: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500" placeholder="e.g. SEC-2026-001" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Monthly Value (ZAR) *</label>
-                  <input type="number" step="0.01" value={form.monthly_value} onChange={e => setForm({ ...form, monthly_value: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500" placeholder="0.00" />
+                  <label className="block text-sm text-gray-500 mb-1">Monthly Value (ZAR) *</label>
+                  <input type="number" step="0.01" value={form.monthly_value} onChange={e => setForm({ ...form, monthly_value: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500" placeholder="0.00" />
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Billing Frequency</label>
-                  <select value={form.billing_frequency} onChange={e => setForm({ ...form, billing_frequency: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500">
+                  <label className="block text-sm text-gray-500 mb-1">Billing Frequency</label>
+                  <select value={form.billing_frequency} onChange={e => setForm({ ...form, billing_frequency: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500">
                     {Object.entries(FREQ_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                   </select>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Bill Rate/hr (ZAR)</label>
-                  <input type="number" step="0.01" value={form.hourly_bill_rate} onChange={e => setForm({ ...form, hourly_bill_rate: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500" />
+                  <label className="block text-sm text-gray-500 mb-1">Bill Rate/hr (ZAR)</label>
+                  <input type="number" step="0.01" value={form.hourly_bill_rate} onChange={e => setForm({ ...form, hourly_bill_rate: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500" />
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Wage Target %</label>
-                  <input type="number" step="0.1" value={form.wage_budget_pct} onChange={e => setForm({ ...form, wage_budget_pct: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500" placeholder="e.g. 65" />
+                  <label className="block text-sm text-gray-500 mb-1">Wage Target %</label>
+                  <input type="number" step="0.1" value={form.wage_budget_pct} onChange={e => setForm({ ...form, wage_budget_pct: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500" placeholder="e.g. 65" />
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Wage Budget (ZAR)</label>
-                  <input type="number" step="0.01" value={form.monthly_wage_budget} onChange={e => setForm({ ...form, monthly_wage_budget: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500" placeholder="Auto from %" />
+                  <label className="block text-sm text-gray-500 mb-1">Wage Budget (ZAR)</label>
+                  <input type="number" step="0.01" value={form.monthly_wage_budget} onChange={e => setForm({ ...form, monthly_wage_budget: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500" placeholder="Auto from %" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Start Date</label>
-                  <input type="date" value={form.start_date} onChange={e => setForm({ ...form, start_date: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500" />
+                  <label className="block text-sm text-gray-500 mb-1">Start Date</label>
+                  <input type="date" value={form.start_date} onChange={e => setForm({ ...form, start_date: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500" />
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">End Date</label>
-                  <input type="date" value={form.end_date} onChange={e => setForm({ ...form, end_date: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500" />
+                  <label className="block text-sm text-gray-500 mb-1">End Date</label>
+                  <input type="date" value={form.end_date} onChange={e => setForm({ ...form, end_date: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500" />
                 </div>
               </div>
               <div>
-                <label className="block text-sm text-slate-400 mb-1">Notes</label>
-                <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500 resize-none" />
+                <label className="block text-sm text-gray-500 mb-1">Notes</label>
+                <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500 resize-none" />
               </div>
             </div>
-            <div className="flex justify-end gap-3 p-5 border-t border-slate-700">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-slate-700 rounded-lg transition-colors">Cancel</button>
+            <div className="flex justify-end gap-3 p-5 border-t border-gray-200">
+              <button onClick={() => setShowModal(false)} className="px-4 py-2.5 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">Cancel</button>
               <button onClick={handleSubmit} disabled={!form.client_id || !form.monthly_value} className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors">
                 {editItem ? 'Save Changes' : 'Add Contract'}
               </button>

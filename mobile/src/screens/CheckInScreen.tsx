@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
@@ -9,6 +10,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import { attendanceApi } from '../services/api';
 
 // ---------------------------------------------------------------------------
@@ -64,6 +67,9 @@ export default function CheckInScreen({ route, navigation }: CheckInScreenProps)
   const [submitting, setSubmitting] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [distance, setDistance] = useState<number | null>(null);
+  const [selfieUri, setSelfieUri] = useState<string | null>(null);
+  const [selfieBase64, setSelfieBase64] = useState<string | null>(null);
+  const [photoVerification, setPhotoVerification] = useState<any>(null);
 
   const isCheckIn = action === 'check-in';
 
@@ -105,26 +111,77 @@ export default function CheckInScreen({ route, navigation }: CheckInScreenProps)
   const isWithinGeofence =
     distance === null || distance <= MAX_DISTANCE_METERS;
 
+  const takeSelfie = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Camera permission is needed for biometric verification.');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        cameraType: ImagePicker.CameraType.front,
+        quality: 0.5,
+        allowsEditing: false,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setSelfieUri(result.assets[0].uri);
+        if (result.assets[0].base64) {
+          setSelfieBase64(result.assets[0].base64);
+        } else if (result.assets[0].uri) {
+          const b64 = await FileSystem.readAsStringAsync(result.assets[0].uri, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          setSelfieBase64(b64);
+        }
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Failed to capture photo. Please try again.');
+    }
+  };
+
+  const clearSelfie = () => {
+    setSelfieUri(null);
+    setSelfieBase64(null);
+    setPhotoVerification(null);
+  };
+
   const handleSubmit = async () => {
     if (!location) return;
 
     setSubmitting(true);
     try {
-      const data = {
+      const data: any = {
         shift_assignment_id: assignmentId,
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
       };
 
+      if (selfieBase64) {
+        data.photo_base64 = selfieBase64;
+      }
+
+      let response;
       if (isCheckIn) {
-        await attendanceApi.checkIn(data);
+        response = await attendanceApi.checkIn(data);
       } else {
-        await attendanceApi.checkOut(data);
+        response = await attendanceApi.checkOut(data);
+      }
+
+      // Check photo verification result
+      const verification = response?.data?.photo_verification;
+      if (verification) {
+        setPhotoVerification(verification);
       }
 
       Alert.alert(
         'Success',
-        `${isCheckIn ? 'Check-in' : 'Check-out'} recorded successfully!`,
+        `${isCheckIn ? 'Check-in' : 'Check-out'} recorded successfully!${
+          verification?.match === true ? ' Photo verified.' :
+          verification?.match === false ? ' Photo verification pending review.' : ''
+        }`,
         [{ text: 'OK', onPress: () => navigation.goBack() }],
       );
     } catch (err: any) {
@@ -215,6 +272,27 @@ export default function CheckInScreen({ route, navigation }: CheckInScreenProps)
               </View>
             </>
           )}
+        </View>
+
+        {/* Selfie capture */}
+        <View style={styles.selfieCard}>
+          <Text style={styles.selfieTitle}>Biometric Verification</Text>
+          {selfieUri ? (
+            <View style={styles.selfiePreview}>
+              <Image source={{ uri: selfieUri }} style={styles.selfieImage} />
+              <TouchableOpacity onPress={clearSelfie} style={styles.retakeButton}>
+                <Text style={styles.retakeText}>Retake</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity onPress={takeSelfie} style={styles.captureButton}>
+              <Text style={styles.captureIcon}>📷</Text>
+              <Text style={styles.captureText}>Take Selfie</Text>
+            </TouchableOpacity>
+          )}
+          <Text style={styles.selfieHint}>
+            {selfieUri ? 'Photo captured. Ready to submit.' : 'Optional: Take a selfie for identity verification.'}
+          </Text>
         </View>
 
         {/* Submit button */}
@@ -380,6 +458,67 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '700',
+  },
+  selfieCard: {
+    backgroundColor: '#1e293b',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#334155',
+    marginBottom: 24,
+  },
+  selfieTitle: {
+    color: '#e2e8f0',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  selfiePreview: {
+    alignItems: 'center',
+    gap: 12,
+  },
+  selfieImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 3,
+    borderColor: '#4ade80',
+  },
+  retakeButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#334155',
+    borderRadius: 8,
+  },
+  retakeText: {
+    color: '#94a3b8',
+    fontSize: 14,
+  },
+  captureButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 16,
+    backgroundColor: '#0f172a',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#475569',
+    borderStyle: 'dashed',
+  },
+  captureIcon: {
+    fontSize: 24,
+  },
+  captureText: {
+    color: '#94a3b8',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  selfieHint: {
+    color: '#64748b',
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 8,
   },
   warningNote: {
     color: '#fbbf24',

@@ -46,10 +46,10 @@ const CATEGORIES = ['general', 'policy', 'safety', 'hr', 'operations']
 
 const priorityColor = (p: string) => {
   const colors: Record<string, string> = {
-    urgent: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-    high: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-    normal: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-    low: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
+    urgent: 'bg-red-100 text-red-700',
+    high: 'bg-orange-100 text-orange-700',
+    normal: 'bg-blue-100 text-blue-700',
+    low: 'bg-gray-100 text-gray-600',
   }
   return colors[p] || colors.normal
 }
@@ -158,8 +158,8 @@ export default function AnnouncementsPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Announcements</h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+          <h1 className="text-2xl font-semibold text-gray-900">Announcements</h1>
+          <p className="text-gray-500 text-sm mt-1">
             Company-wide and site-specific announcements
           </p>
         </div>
@@ -173,7 +173,7 @@ export default function AnnouncementsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-700">
+      <div className="border-b border-gray-200">
         <nav className="flex space-x-8">
           {[
             { key: 'list', label: 'Announcements', icon: Megaphone },
@@ -184,8 +184,8 @@ export default function AnnouncementsPage() {
               onClick={() => setTab(key as any)}
               className={`flex items-center gap-2 py-3 px-1 border-b-2 text-sm font-medium transition-colors ${
                 tab === key
-                  ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -206,34 +206,34 @@ export default function AnnouncementsPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search announcements..."
-                className="pl-9 pr-3 py-2 border rounded-lg text-sm w-56 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                className="pl-9 pr-3 py-2 border rounded-lg text-sm w-56"
               />
             </div>
             <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)}
-              className="px-3 py-2 border rounded-lg text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+              className="px-3 py-2 border rounded-lg text-sm">
               <option value="">All Priorities</option>
               {PRIORITIES.map((p) => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
             </select>
             <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}
-              className="px-3 py-2 border rounded-lg text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+              className="px-3 py-2 border rounded-lg text-sm">
               <option value="">All Categories</option>
               {CATEGORIES.map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
             </select>
-            <span className="text-sm text-gray-500 dark:text-gray-400">{total} active announcements</span>
+            <span className="text-sm text-gray-500">{total} active announcements</span>
           </div>
 
           <div className="space-y-3">
             {items.length === 0 ? (
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-8 text-center text-gray-400 shadow-sm border border-gray-100 dark:border-gray-700">
+              <div className="bg-white rounded-xl p-8 text-center text-gray-400 shadow-sm border border-gray-100">
                 {loading ? 'Loading...' : 'No announcements found'}
               </div>
             ) : (
               items.map((a) => (
                 <div key={a.announcement_id}
-                  className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm border p-4 ${
+                  className={`bg-white rounded-xl shadow-sm border p-4 ${
                     a.is_pinned
-                      ? 'border-blue-300 dark:border-blue-700 bg-blue-50/50 dark:bg-blue-900/10'
-                      : 'border-gray-100 dark:border-gray-700'
+                      ? 'border-blue-300 bg-blue-50/50'
+                      : 'border-gray-100'
                   }`}>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -243,7 +243,7 @@ export default function AnnouncementsPage() {
                           {a.priority}
                         </span>
                         {a.category && (
-                          <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
+                          <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
                             {a.category}
                           </span>
                         )}
@@ -251,8 +251,8 @@ export default function AnnouncementsPage() {
                           <span className="text-xs text-gray-400">Site: {a.site_name}</span>
                         )}
                       </div>
-                      <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{a.title}</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-300 mt-1 whitespace-pre-line">{a.content}</p>
+                      <h3 className="text-sm font-semibold text-gray-900">{a.title}</h3>
+                      <p className="text-sm text-gray-600 mt-1 whitespace-pre-line">{a.content}</p>
                       <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
                         <span>By {a.author_name || 'Unknown'}</span>
                         <span>{formatDate(a.published_at)}</span>
@@ -292,16 +292,16 @@ export default function AnnouncementsPage() {
               { label: 'Expired', value: dashboard.expired, color: 'text-orange-600' },
               { label: 'Last 7 Days', value: dashboard.recent_7d, color: 'text-green-600' },
             ].map((card) => (
-              <div key={card.label} className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{card.label}</p>
+              <div key={card.label} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                <p className="text-xs text-gray-500 mb-1">{card.label}</p>
                 <p className={`text-2xl font-bold ${card.color}`}>{card.value}</p>
               </div>
             ))}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-3">By Priority</h3>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+              <h3 className="font-semibold text-gray-900 mb-3">By Priority</h3>
               {dashboard.by_priority.length === 0 ? (
                 <p className="text-gray-400 text-sm">No data</p>
               ) : (
@@ -309,23 +309,23 @@ export default function AnnouncementsPage() {
                   {dashboard.by_priority.map(([p, count]) => (
                     <div key={p} className="flex items-center justify-between py-1.5">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${priorityColor(p)}`}>{p}</span>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">{count}</span>
+                      <span className="text-sm font-medium text-gray-900">{count}</span>
                     </div>
                   ))}
                 </div>
               )}
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-3">By Category</h3>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+              <h3 className="font-semibold text-gray-900 mb-3">By Category</h3>
               {dashboard.by_category.length === 0 ? (
                 <p className="text-gray-400 text-sm">No data</p>
               ) : (
                 <div className="space-y-2">
                   {dashboard.by_category.map(([cat, count]) => (
                     <div key={cat} className="flex items-center justify-between py-1.5">
-                      <span className="text-sm text-gray-700 dark:text-gray-300 capitalize">{cat}</span>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">{count}</span>
+                      <span className="text-sm text-gray-700 capitalize">{cat}</span>
+                      <span className="text-sm font-medium text-gray-900">{count}</span>
                     </div>
                   ))}
                 </div>
@@ -342,66 +342,66 @@ export default function AnnouncementsPage() {
       {/* ── CREATE MODAL ─────────────────────────────────────────────────── */}
       {showCreate && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white">New Announcement</h3>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h3 className="font-semibold text-gray-900">New Announcement</h3>
               <button onClick={() => setShowCreate(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
                 <input type="text" value={createForm.title}
                   onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
                   placeholder="Announcement title..." />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Content *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Content *</label>
                 <textarea value={createForm.content} onChange={(e) => setCreateForm({ ...createForm, content: e.target.value })}
-                  rows={4} className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  rows={4} className="w-full px-3 py-2 border rounded-lg text-sm"
                   placeholder="Announcement details..." />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
                   <select value={createForm.priority} onChange={(e) => setCreateForm({ ...createForm, priority: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    className="w-full px-3 py-2 border rounded-lg text-sm">
                     {PRIORITIES.map((p) => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                   <select value={createForm.category} onChange={(e) => setCreateForm({ ...createForm, category: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    className="w-full px-3 py-2 border rounded-lg text-sm">
                     {CATEGORIES.map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
                   </select>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Site (optional)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Site (optional)</label>
                   <select value={createForm.site_id} onChange={(e) => setCreateForm({ ...createForm, site_id: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    className="w-full px-3 py-2 border rounded-lg text-sm">
                     <option value={0}>All sites</option>
                     {sites.map((s) => <option key={s.site_id} value={s.site_id}>{s.site_name}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expires</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Expires</label>
                   <input type="date" value={createForm.expires_at}
                     onChange={(e) => setCreateForm({ ...createForm, expires_at: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                    className="w-full px-3 py-2 border rounded-lg text-sm" />
                 </div>
               </div>
-              <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <label className="flex items-center gap-2 text-sm text-gray-700">
                 <input type="checkbox" checked={createForm.is_pinned}
                   onChange={(e) => setCreateForm({ ...createForm, is_pinned: e.target.checked })}
-                  className="rounded border-gray-300 dark:border-gray-600" />
+                  className="rounded border-gray-300" />
                 Pin this announcement
               </label>
             </div>
-            <div className="flex justify-end gap-2 p-4 border-t border-gray-200 dark:border-gray-700">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">Cancel</button>
+            <div className="flex justify-end gap-2 p-4 border-t border-gray-200">
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-sm text-gray-600">Cancel</button>
               <button onClick={handleCreate} disabled={!createForm.title || !createForm.content}
                 className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
                 Publish
@@ -414,39 +414,39 @@ export default function AnnouncementsPage() {
       {/* ── EDIT MODAL ───────────────────────────────────────────────────── */}
       {editItem && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white">Edit Announcement</h3>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h3 className="font-semibold text-gray-900">Edit Announcement</h3>
               <button onClick={() => setEditItem(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
                 <input type="text" value={editForm.title}
                   onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                  className="w-full px-3 py-2 border rounded-lg text-sm" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Content</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
                 <textarea value={editForm.content} onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
-                  rows={4} className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                  rows={4} className="w-full px-3 py-2 border rounded-lg text-sm" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
                   <select value={editForm.priority} onChange={(e) => setEditForm({ ...editForm, priority: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    className="w-full px-3 py-2 border rounded-lg text-sm">
                     {PRIORITIES.map((p) => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
                   </select>
                 </div>
                 <div className="flex flex-col justify-end gap-2">
-                  <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <label className="flex items-center gap-2 text-sm text-gray-700">
                     <input type="checkbox" checked={editForm.is_pinned}
                       onChange={(e) => setEditForm({ ...editForm, is_pinned: e.target.checked })}
                       className="rounded border-gray-300" />
                     Pinned
                   </label>
-                  <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <label className="flex items-center gap-2 text-sm text-gray-700">
                     <input type="checkbox" checked={editForm.is_active}
                       onChange={(e) => setEditForm({ ...editForm, is_active: e.target.checked })}
                       className="rounded border-gray-300" />
@@ -455,8 +455,8 @@ export default function AnnouncementsPage() {
                 </div>
               </div>
             </div>
-            <div className="flex justify-end gap-2 p-4 border-t border-gray-200 dark:border-gray-700">
-              <button onClick={() => setEditItem(null)} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">Cancel</button>
+            <div className="flex justify-end gap-2 p-4 border-t border-gray-200">
+              <button onClick={() => setEditItem(null)} className="px-4 py-2 text-sm text-gray-600">Cancel</button>
               <button onClick={handleUpdate}
                 className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                 Save Changes

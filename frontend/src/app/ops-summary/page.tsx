@@ -2,17 +2,18 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { opsSummaryApi } from '@/services/api'
-import { Zap, Users, Building2, Shield, AlertTriangle, DollarSign, Clock, Calendar, FileText, CheckCircle } from 'lucide-react'
+import PageHeader from '@/components/ui/PageHeader'
+import { Zap, Users, Building2, Shield, AlertTriangle, DollarSign, Clock, Calendar, FileText, CheckCircle, RefreshCw } from 'lucide-react'
 
 function formatCurrency(val: number): string {
   return `R${val.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
-function MetricCard({ icon: Icon, label, value, subtext, color = 'text-gray-900 dark:text-white' }: {
+function MetricCard({ icon: Icon, label, value, subtext, color = 'text-gray-900' }: {
   icon: any; label: string; value: string | number; subtext?: string; color?: string
 }) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4">
+    <div className="bg-white rounded-xl shadow p-4">
       <div className="flex items-center gap-2 text-sm text-gray-500 mb-1"><Icon className="w-4 h-4" />{label}</div>
       <div className={`text-xl font-bold ${color}`}>{value}</div>
       {subtext && <div className="text-xs text-gray-400 mt-0.5">{subtext}</div>}
@@ -47,31 +48,33 @@ export default function OpsSummaryPage() {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Zap className="w-7 h-7 text-amber-500" />
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Operational Summary</h1>
-            <p className="text-sm text-gray-500">{data.date} &middot; Generated {data.generated_at?.split('T')[1]?.split('.')[0]}</p>
-          </div>
-        </div>
-        <button onClick={fetchData} className="text-sm text-blue-600 hover:underline font-medium">Refresh</button>
-      </div>
+      <PageHeader
+        backHref="/dashboard"
+        backLabel="Back to Dashboard"
+        title="Operational Summary"
+        subtitle={`${data.date} · Generated ${data.generated_at?.split('T')[1]?.split('.')[0] || ''}`}
+        icon={<Zap className="text-amber-500" size={28} />}
+        actions={
+          <button onClick={fetchData} className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+            <RefreshCw size={14} /> Refresh
+          </button>
+        }
+      />
 
       {/* Workforce Section */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2"><Users className="w-5 h-5" />Workforce</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2"><Users className="w-5 h-5" />Workforce</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <MetricCard icon={Users} label="Active Employees" value={w.active_employees} />
           <MetricCard icon={CheckCircle} label="Available Today" value={w.available_today} color="text-green-600" />
-          <MetricCard icon={Calendar} label="On Leave Today" value={w.on_leave_today} color={w.on_leave_today > 0 ? 'text-yellow-600' : 'text-gray-900 dark:text-white'} />
+          <MetricCard icon={Calendar} label="On Leave Today" value={w.on_leave_today} color={w.on_leave_today > 0 ? 'text-yellow-600' : 'text-gray-900'} />
           <MetricCard icon={Shield} label="Certs Expiring 30d" value={w.certs_expiring_30d} color={w.certs_expiring_30d > 0 ? 'text-red-600' : 'text-green-600'} />
         </div>
       </div>
 
       {/* Operations Section */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2"><Building2 className="w-5 h-5" />Operations</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2"><Building2 className="w-5 h-5" />Operations</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <MetricCard icon={Building2} label="Sites" value={o.total_sites} subtext={`${o.total_clients} clients`} />
           <MetricCard icon={Clock} label="Today's Shifts" value={o.today_shifts} subtext={`${o.today_assignments} assignments`} />
@@ -82,7 +85,7 @@ export default function OpsSummaryPage() {
 
       {/* Incidents Section */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2"><AlertTriangle className="w-5 h-5" />Incidents</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2"><AlertTriangle className="w-5 h-5" />Incidents</h2>
         <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
           <MetricCard icon={AlertTriangle} label="Last 30 Days" value={inc.last_30_days} color={inc.last_30_days > 0 ? 'text-orange-600' : 'text-green-600'} />
           <MetricCard icon={AlertTriangle} label="Open/Investigating" value={inc.open} color={inc.open > 0 ? 'text-red-600' : 'text-green-600'} />
@@ -91,7 +94,7 @@ export default function OpsSummaryPage() {
 
       {/* Financial Section */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2"><DollarSign className="w-5 h-5" />Financial</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2"><DollarSign className="w-5 h-5" />Financial</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <MetricCard icon={DollarSign} label="Monthly MRR" value={formatCurrency(f.monthly_contract_value)} color="text-indigo-600" />
           <MetricCard icon={DollarSign} label="Annual Value" value={formatCurrency(f.annual_contract_value)} subtext={`${f.active_contracts} contracts`} />

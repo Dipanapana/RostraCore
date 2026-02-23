@@ -5,13 +5,19 @@ export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
 import { getApiUrl } from "@/lib/config";
+import { CheckCircle2, XCircle, Loader2, ArrowLeft, Mail, RefreshCw } from "lucide-react";
 
 export default function VerifyEmailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState("");
+  const [resendEmail, setResendEmail] = useState("");
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState("");
 
   useEffect(() => {
     const verifyEmail = async () => {
@@ -57,120 +63,154 @@ export default function VerifyEmailPage() {
     verifyEmail();
   }, [searchParams, router]);
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div className="max-w-md w-full mx-4">
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 shadow-2xl">
-          {/* Logo/Title */}
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-white mb-2">RostraCore</h1>
-            <p className="text-gray-300">Email Verification</p>
-          </div>
+  const handleResendVerification = async () => {
+    if (!resendEmail) return;
+    setResendLoading(true);
+    setResendSuccess("");
+    try {
+      const response = await fetch(`${getApiUrl()}/api/v1/auth/resend-verification`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resendEmail }),
+      });
+      if (response.ok) {
+        setResendSuccess("Verification email sent! Please check your inbox.");
+      }
+    } catch {
+      // Silent
+    } finally {
+      setResendLoading(false);
+    }
+  };
 
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 relative overflow-hidden">
+      {/* Background Effects */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl pointer-events-none">
+        <div className="absolute top-20 left-10 w-96 h-96 bg-blue-500/10 rounded-full blur-[100px]" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px]" />
+      </div>
+
+      <div className="max-w-md w-full mx-4 relative z-10">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-flex justify-center mb-6 hover:scale-105 transition-transform duration-300">
+            <Image
+              src="/rostracore-logo.svg"
+              alt="RostraCore"
+              width={200}
+              height={60}
+              className="w-52 h-auto"
+              priority
+            />
+          </Link>
+        </div>
+
+        {/* Card */}
+        <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-200 text-center">
           {/* Status Icon */}
           <div className="flex justify-center mb-6">
             {status === "loading" && (
-              <svg
-                className="animate-spin h-16 w-16 text-purple-500"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
+              <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+              </div>
             )}
-
             {status === "success" && (
-              <svg
-                className="h-16 w-16 text-green-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
+              <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center">
+                <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+              </div>
             )}
-
             {status === "error" && (
-              <svg
-                className="h-16 w-16 text-red-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
+              <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center">
+                <XCircle className="w-8 h-8 text-red-600" />
+              </div>
             )}
           </div>
 
           {/* Message */}
-          <div className="text-center mb-8">
+          <div className="mb-6">
             {status === "loading" && (
-              <p className="text-gray-300">Verifying your email address...</p>
+              <>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">Verifying Your Email</h2>
+                <p className="text-gray-500">Please wait while we verify your email address...</p>
+              </>
             )}
 
             {status === "success" && (
               <>
-                <p className="text-green-300 font-semibold mb-2">{message}</p>
-                <p className="text-sm text-gray-400">
-                  Redirecting to login page...
-                </p>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">Email Verified!</h2>
+                <p className="text-emerald-600 font-medium mb-2">{message}</p>
+                <p className="text-sm text-gray-400">Redirecting to login page...</p>
               </>
             )}
 
             {status === "error" && (
               <>
-                <p className="text-red-300 font-semibold mb-4">{message}</p>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">Verification Failed</h2>
+                <p className="text-red-600 mb-4">{message}</p>
                 <button
                   onClick={() => router.push("/login")}
-                  className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-6 rounded-lg transition duration-200"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-xl transition-colors"
                 >
                   Go to Login
                 </button>
+
+                {/* Divider */}
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-200" />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-3 bg-white text-gray-400">or</span>
+                  </div>
+                </div>
+
+                {/* Resend Verification */}
+                <div>
+                  <p className="text-sm text-gray-600 mb-3">Request a new verification link</p>
+                  <div className="relative mb-3">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="email"
+                      placeholder="Enter your email address"
+                      value={resendEmail}
+                      onChange={(e) => setResendEmail(e.target.value)}
+                      className="w-full pl-11 pr-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <button
+                    onClick={handleResendVerification}
+                    disabled={resendLoading || !resendEmail}
+                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2"
+                  >
+                    {resendLoading ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4" />
+                    )}
+                    Resend Verification Email
+                  </button>
+                  {resendSuccess && (
+                    <div className="mt-3 flex items-center justify-center gap-2 text-emerald-600 text-sm">
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>{resendSuccess}</span>
+                    </div>
+                  )}
+                </div>
               </>
             )}
           </div>
 
           {/* Back to Home Link */}
           {status !== "loading" && (
-            <div className="mt-6 text-center">
-              <button
-                onClick={() => router.push("/")}
-                className="text-gray-400 hover:text-gray-300 text-sm transition"
-              >
-                ← Back to Home
-              </button>
-            </div>
+            <Link
+              href="/"
+              className="inline-flex items-center text-sm text-gray-500 hover:text-gray-900 transition-colors gap-2 group"
+            >
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              Back to home
+            </Link>
           )}
-        </div>
-
-        {/* Footer */}
-        <div className="mt-8 text-center">
-          <p className="text-gray-400 text-sm">
-            RostraCore v1.0 • Algorithmic Roster Engine
-          </p>
         </div>
       </div>
     </div>

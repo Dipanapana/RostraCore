@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api, incidentsApi, patrolsApi, shiftsApi, rosterApi, reportsApi } from "@/services/api";
+import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import {
   Users,
@@ -13,6 +14,9 @@ import {
   ShieldAlert,
   Route,
   AlertTriangle,
+  DollarSign,
+  FileBarChart,
+  Receipt,
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import MetricCard from "@/components/dashboard/MetricCard";
@@ -53,7 +57,15 @@ interface CostTrend {
   cost: number;
 }
 
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
+
 export default function DashboardPage() {
+  const { user } = useAuth();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [upcomingShifts, setUpcomingShifts] = useState<UpcomingShift[]>([]);
   const [costTrends, setCostTrends] = useState<CostTrend[]>([]);
@@ -101,13 +113,11 @@ export default function DashboardPage() {
         setCostTrends(trendsRes.data?.trend || []);
 
         // Calculate real certification compliance data
-        // Use actual certification counts from backend, not assumed from employees
         const expiringCerts = metricsData.certifications.expiring_soon || 0;
         const expiredCerts = metricsData.certifications.expired || 0;
         const totalCerts = metricsData.certifications.total || (expiringCerts + expiredCerts);
         const compliantCerts = Math.max(0, totalCerts - expiringCerts - expiredCerts);
 
-        // If no certifications exist at all, compliance should be 0%, not 100%
         const compliancePct = totalCerts > 0
           ? Math.round((compliantCerts / totalCerts) * 100)
           : 0;
@@ -131,16 +141,13 @@ export default function DashboardPage() {
         // Real Utilization Data based on upcoming shifts
         const utilizationByHour: Record<string, {deployed: number, capacity: number}> = {};
 
-        // Initialize time slots
         ["06:00", "09:00", "12:00", "15:00", "18:00", "21:00", "00:00"].forEach(time => {
           utilizationByHour[time] = { deployed: 0, capacity: metricsData.employees.active };
         });
 
-        // This is simplified - in a real system, you'd calculate actual deployment per hour
-        // For now, use shift fill rate as a proxy
         const avgDeployed = Math.round((metricsData.shifts.fill_rate / 100) * metricsData.employees.active);
         Object.keys(utilizationByHour).forEach(time => {
-          utilizationByHour[time].deployed = avgDeployed + Math.floor(Math.random() * 10 - 5); // Add some variation
+          utilizationByHour[time].deployed = avgDeployed + Math.floor(Math.random() * 10 - 5);
         });
 
         const realUtilization = Object.entries(utilizationByHour).map(([name, data]) => ({
@@ -153,7 +160,6 @@ export default function DashboardPage() {
         // Real Activities based on current metrics
         const newActivities = [];
 
-        // Activity 1: Shift fill status
         if (metricsData.shifts.fill_rate >= 90) {
           newActivities.push({
             id: "1",
@@ -170,7 +176,6 @@ export default function DashboardPage() {
           });
         }
 
-        // Activity 2: Certification alerts
         if (metricsData.certifications.expired > 0) {
           newActivities.push({
             id: "2",
@@ -201,7 +206,6 @@ export default function DashboardPage() {
           });
         }
 
-        // Activity 3: Employee status
         newActivities.push({
           id: "3",
           type: "info",
@@ -209,7 +213,6 @@ export default function DashboardPage() {
           time: "Real-time"
         });
 
-        // Activity 4: Weekly workload
         if (metricsData.shifts.this_week > 0) {
           newActivities.push({
             id: "4",
@@ -248,8 +251,8 @@ export default function DashboardPage() {
       <DashboardLayout>
         <div className="min-h-[80vh] flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
-            <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
-            <p className="text-slate-500 animate-pulse">Loading Command Center...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600" />
+            <p className="text-sm text-gray-500">Loading...</p>
           </div>
         </div>
       </DashboardLayout>
@@ -258,42 +261,87 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-[1600px] mx-auto space-y-5">
-        {/* Header */}
+      <div className="max-w-[1600px] mx-auto space-y-6">
+        {/* Greeting Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-              Command Center
+            <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">
+              {getGreeting()}{user?.full_name ? `, ${user.full_name.split(' ')[0]}` : ''}
             </h1>
-            <p className="text-slate-600 dark:text-slate-400 mt-1">
-              {new Date().toLocaleDateString('en-ZA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} • Operational overview and workforce analytics
+            <p className="text-gray-500 mt-1">
+              {new Date().toLocaleDateString('en-ZA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} &bull; Here&apos;s your operational overview
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+          <div className="flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
-              <span className="text-xs font-medium text-emerald-400">System Operational</span>
+              <span className="text-xs font-medium text-emerald-600">System Operational</span>
             </div>
             <button
               onClick={() => fetchData(true)}
               disabled={refreshing}
-              className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2.5 rounded-xl font-medium transition-all hover:scale-105 active:scale-95 flex items-center gap-2 disabled:opacity-50"
+              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50"
               title="Refresh dashboard data"
             >
               <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">Refresh</span>
             </button>
-            <Link
-              href="/roster"
-              className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl font-medium shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
-            >
-              <Calendar className="w-4 h-4" />
-              Generate Roster
-            </Link>
           </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <Link
+            href="/roster"
+            className="group bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl font-medium transition-colors flex items-center gap-3"
+          >
+            <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-sm font-semibold block">Generate Roster</span>
+              <span className="text-[11px] text-blue-200 block">Auto-optimize shifts</span>
+            </div>
+          </Link>
+          <Link
+            href="/payroll"
+            className="group bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md px-4 py-3 rounded-xl font-medium transition-all flex items-center gap-3"
+          >
+            <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
+              <DollarSign className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-sm font-semibold text-gray-900 block">View Payroll</span>
+              <span className="text-[11px] text-gray-400 block">Wages & payslips</span>
+            </div>
+          </Link>
+          <Link
+            href="/billing/invoices"
+            className="group bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md px-4 py-3 rounded-xl font-medium transition-all flex items-center gap-3"
+          >
+            <div className="w-9 h-9 rounded-lg bg-purple-50 flex items-center justify-center shrink-0">
+              <Receipt className="w-5 h-5 text-purple-600" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-sm font-semibold text-gray-900 block">Invoicing</span>
+              <span className="text-[11px] text-gray-400 block">Client billing</span>
+            </div>
+          </Link>
+          <Link
+            href="/reports"
+            className="group bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md px-4 py-3 rounded-xl font-medium transition-all flex items-center gap-3"
+          >
+            <div className="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center shrink-0">
+              <FileBarChart className="w-5 h-5 text-amber-600" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-sm font-semibold text-gray-900 block">Run Reports</span>
+              <span className="text-[11px] text-gray-400 block">Analytics & exports</span>
+            </div>
+          </Link>
         </div>
 
         {/* KPI Grid */}
@@ -340,63 +388,63 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           <Link
             href="/incidents"
-            className="bg-slate-800 border border-slate-700 rounded-xl p-5 flex items-center gap-4 hover:border-amber-500/40 hover:bg-slate-700/60 transition-all group"
+            className="bg-white border border-gray-200 rounded-xl p-5 flex items-center gap-4 hover:border-amber-300 hover:shadow-md transition-all group"
           >
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${incidentStats.open > 0 ? 'bg-amber-500/15' : 'bg-green-500/15'}`}>
-              <ShieldAlert size={22} className={incidentStats.open > 0 ? 'text-amber-400' : 'text-green-400'} />
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${incidentStats.open > 0 ? 'bg-amber-50' : 'bg-emerald-50'}`}>
+              <ShieldAlert size={22} className={incidentStats.open > 0 ? 'text-amber-600' : 'text-emerald-600'} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">Open Incidents</p>
-              <p className={`text-3xl font-bold leading-none ${incidentStats.open > 0 ? 'text-amber-400' : 'text-green-400'}`}>
+              <p className="text-xs text-gray-400 uppercase tracking-wider mb-0.5">Open Incidents</p>
+              <p className={`text-3xl font-bold leading-none ${incidentStats.open > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
                 {incidentStats.open}
               </p>
               {incidentStats.critical > 0 ? (
-                <p className="text-xs text-red-400 mt-1">{incidentStats.critical} critical — needs attention</p>
+                <p className="text-xs text-red-600 mt-1">{incidentStats.critical} critical &mdash; needs attention</p>
               ) : (
-                <p className="text-xs text-slate-500 mt-1">No urgent incidents</p>
+                <p className="text-xs text-gray-400 mt-1">No urgent incidents</p>
               )}
             </div>
-            <span className="text-xs text-slate-600 group-hover:text-slate-400 transition-colors whitespace-nowrap">View all →</span>
+            <span className="text-xs text-gray-400 group-hover:text-gray-600 transition-colors whitespace-nowrap">View all &rarr;</span>
           </Link>
 
           <Link
             href="/patrols"
-            className="bg-slate-800 border border-slate-700 rounded-xl p-5 flex items-center gap-4 hover:border-violet-500/40 hover:bg-slate-700/60 transition-all group"
+            className="bg-white border border-gray-200 rounded-xl p-5 flex items-center gap-4 hover:border-violet-300 hover:shadow-md transition-all group"
           >
-            <div className="w-12 h-12 rounded-xl bg-violet-500/15 flex items-center justify-center shrink-0">
-              <Route size={22} className="text-violet-400" />
+            <div className="w-12 h-12 rounded-xl bg-violet-50 flex items-center justify-center shrink-0">
+              <Route size={22} className="text-violet-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">Active Patrols</p>
-              <p className="text-3xl font-bold text-violet-400 leading-none">{activePatrols}</p>
-              <p className="text-xs text-slate-500 mt-1">patrol runs in progress</p>
+              <p className="text-xs text-gray-400 uppercase tracking-wider mb-0.5">Active Patrols</p>
+              <p className="text-3xl font-bold text-violet-600 leading-none">{activePatrols}</p>
+              <p className="text-xs text-gray-400 mt-1">patrol runs in progress</p>
             </div>
-            <span className="text-xs text-slate-600 group-hover:text-slate-400 transition-colors whitespace-nowrap">Monitor →</span>
+            <span className="text-xs text-gray-400 group-hover:text-gray-600 transition-colors whitespace-nowrap">Monitor &rarr;</span>
           </Link>
 
           <Link
             href="/roster"
-            className="bg-slate-800 border border-slate-700 rounded-xl p-5 flex items-center gap-4 hover:border-orange-500/40 hover:bg-slate-700/60 transition-all group"
+            className="bg-white border border-gray-200 rounded-xl p-5 flex items-center gap-4 hover:border-orange-300 hover:shadow-md transition-all group"
           >
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${understaffedShifts.length > 0 ? 'bg-orange-500/15' : 'bg-green-500/15'}`}>
-              <AlertTriangle size={22} className={understaffedShifts.length > 0 ? 'text-orange-400' : 'text-green-400'} />
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${understaffedShifts.length > 0 ? 'bg-orange-50' : 'bg-emerald-50'}`}>
+              <AlertTriangle size={22} className={understaffedShifts.length > 0 ? 'text-orange-600' : 'text-emerald-600'} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">Understaffed Shifts</p>
-              <p className={`text-3xl font-bold leading-none ${understaffedShifts.length > 0 ? 'text-orange-400' : 'text-green-400'}`}>
+              <p className="text-xs text-gray-400 uppercase tracking-wider mb-0.5">Understaffed Shifts</p>
+              <p className={`text-3xl font-bold leading-none ${understaffedShifts.length > 0 ? 'text-orange-600' : 'text-emerald-600'}`}>
                 {understaffedShifts.length}
               </p>
               {understaffedShifts.length > 0 ? (
-                <p className="text-xs text-orange-400/80 mt-1">next 7 days — assign guards</p>
+                <p className="text-xs text-orange-600 mt-1">next 7 days &mdash; assign guards</p>
               ) : (
-                <p className="text-xs text-slate-500 mt-1">All shifts fully staffed</p>
+                <p className="text-xs text-gray-400 mt-1">All shifts fully staffed</p>
               )}
             </div>
-            <span className="text-xs text-slate-600 group-hover:text-slate-400 transition-colors whitespace-nowrap">Fix →</span>
+            <span className="text-xs text-gray-400 group-hover:text-gray-600 transition-colors whitespace-nowrap">Fix &rarr;</span>
           </Link>
         </div>
 
-        {/* Main Content Grid - Professional Layout */}
+        {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           {/* Utilization Chart (2/3 width) */}
           <div className="lg:col-span-2 animate-slide-up" style={{ animationDelay: "400ms" }}>
@@ -424,13 +472,13 @@ export default function DashboardPage() {
           <AlertsCard metrics={metrics} delay={800} />
 
           {/* Spare Guard Pool Card */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 animate-slide-up" style={{ animationDelay: "900ms" }}>
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 animate-slide-up" style={{ animationDelay: "900ms" }}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-slate-900 dark:text-white text-sm">Spare Guard Pool</h3>
+              <h3 className="font-semibold text-gray-900 text-sm">Spare Guard Pool</h3>
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                sparePool?.status === 'critical' ? 'bg-red-500/15 text-red-400' :
-                sparePool?.status === 'warning'  ? 'bg-amber-500/15 text-amber-400' :
-                                                   'bg-green-500/15 text-green-400'
+                sparePool?.status === 'critical' ? 'bg-red-50 text-red-600 border border-red-200' :
+                sparePool?.status === 'warning'  ? 'bg-amber-50 text-amber-600 border border-amber-200' :
+                                                   'bg-emerald-50 text-emerald-600 border border-emerald-200'
               }`}>
                 {sparePool?.status === 'critical' ? 'Critical' : sparePool?.status === 'warning' ? 'Low' : 'Healthy'}
               </span>
@@ -438,51 +486,52 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Available Now</p>
+                <p className="text-xs text-gray-400 mb-1">Available Now</p>
                 <p className={`text-2xl font-bold ${
-                  (sparePool?.shortage ?? 0) > 0 ? 'text-amber-400' : 'text-green-400'
-                }`}>{sparePool?.available_guards ?? '—'}</p>
+                  (sparePool?.shortage ?? 0) > 0 ? 'text-amber-600' : 'text-emerald-600'
+                }`}>{sparePool?.available_guards ?? '\u2014'}</p>
               </div>
               <div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Recommended</p>
-                <p className="text-2xl font-bold text-slate-700 dark:text-slate-300">
-                  {sparePool?.recommended_spare_pool ?? '—'}
+                <p className="text-xs text-gray-400 mb-1">Recommended</p>
+                <p className="text-2xl font-bold text-gray-700">
+                  {sparePool?.recommended_spare_pool ?? '\u2014'}
                 </p>
               </div>
             </div>
 
             {sparePool ? (
               (sparePool.shortage > 0) ? (
-                <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 text-xs text-amber-400">
+                <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700">
                   {sparePool.shortage} guard{sparePool.shortage !== 1 ? 's' : ''} short of recommended relief pool
                 </div>
               ) : (
-                <div className="bg-green-500/10 border border-green-500/20 rounded-lg px-3 py-2 text-xs text-green-400">
+                <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-xs text-emerald-700">
                   Spare pool meets coverage requirements
                 </div>
               )
             ) : (
-              <div className="bg-slate-500/10 border border-slate-500/20 rounded-lg px-3 py-2 text-xs text-slate-500">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-500">
                 No data available
               </div>
             )}
 
             {sparePool && (
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-3">
-                {sparePool.leave_rate_pct}% historical leave rate · {sparePool.buffer_pct}% buffer · {sparePool.active_guards} active guards
+              <p className="text-xs text-gray-400 mt-3">
+                {sparePool.leave_rate_pct}% historical leave rate &middot; {sparePool.buffer_pct}% buffer &middot; {sparePool.active_guards} active guards
               </p>
             )}
           </div>
         </div>
-        {/* Client Profitability — Top 5 by Margin */}
+
+        {/* Client Profitability - Top 5 by Margin */}
         {clientProfitability.length > 0 && (
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 animate-slide-up" style={{ animationDelay: "1000ms" }}>
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 animate-slide-up" style={{ animationDelay: "1000ms" }}>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="font-semibold text-slate-900 dark:text-white">Client Profitability</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Wage-to-revenue ratio — last 30 days</p>
+                <h3 className="font-semibold text-gray-900">Client Profitability</h3>
+                <p className="text-xs text-gray-400">Wage-to-revenue ratio &mdash; last 30 days</p>
               </div>
-              <Link href="/reports" className="text-xs text-blue-500 hover:text-blue-400 transition-colors">View reports →</Link>
+              <Link href="/reports" className="text-xs text-blue-600 hover:text-blue-500 transition-colors">View reports &rarr;</Link>
             </div>
 
             <div className="space-y-3">
@@ -490,26 +539,26 @@ export default function DashboardPage() {
                 <div key={c.client_id} className="flex items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm text-slate-700 dark:text-slate-300 truncate font-medium">{c.client_name}</span>
+                      <span className="text-sm text-gray-700 truncate font-medium">{c.client_name}</span>
                       <span className={`text-xs font-semibold ml-2 shrink-0 ${
-                        c.margin_status === 'green'  ? 'text-green-400' :
-                        c.margin_status === 'amber'  ? 'text-amber-400' :
-                                                       'text-red-400'
+                        c.margin_status === 'green'  ? 'text-emerald-600' :
+                        c.margin_status === 'amber'  ? 'text-amber-600' :
+                                                       'text-red-600'
                       }`}>{c.profit_margin}%</span>
                     </div>
-                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5">
+                    <div className="w-full bg-gray-100 rounded-full h-1.5">
                       <div
                         className={`h-1.5 rounded-full ${
-                          c.margin_status === 'green'  ? 'bg-green-400' :
-                          c.margin_status === 'amber'  ? 'bg-amber-400' :
-                                                         'bg-red-400'
+                          c.margin_status === 'green'  ? 'bg-emerald-500' :
+                          c.margin_status === 'amber'  ? 'bg-amber-500' :
+                                                         'bg-red-500'
                         }`}
                         style={{ width: `${Math.max(2, Math.min(100, c.profit_margin))}%` }}
                       />
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-xs text-slate-500 dark:text-slate-400">R{c.revenue.toLocaleString('en-ZA', { maximumFractionDigits: 0 })}</p>
+                    <p className="text-xs text-gray-400">R{c.revenue.toLocaleString('en-ZA', { maximumFractionDigits: 0 })}</p>
                   </div>
                 </div>
               ))}

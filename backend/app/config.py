@@ -137,6 +137,9 @@ class Settings(BaseSettings):
     RATE_LIMIT_PER_MINUTE: int = 60
     RATE_LIMIT_PER_HOUR: int = 1000
 
+    # Biometric Verification
+    BIOMETRIC_ENCRYPTION_KEY: str = ""  # 64-char hex string (32 bytes) — set in .env
+
     # SuperAdmin Settings (Phase 5)
     SUPERADMIN_SECRET_TOKEN: Optional[str] = None  # Set in .env for superadmin registration
 

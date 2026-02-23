@@ -34,7 +34,7 @@ def _notification_to_dict(n: Notification) -> dict:
         "notification_id": n.notification_id,
         "title": n.title,
         "message": n.message,
-        "notification_type": n.notification_type,
+        "notification_type": n.notification_type.value if hasattr(n.notification_type, 'value') else n.notification_type,
         "is_read": n.is_read,
         "read_at": n.read_at.isoformat() if n.read_at else None,
         "reference_type": n.reference_type,

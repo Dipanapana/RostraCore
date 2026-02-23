@@ -211,3 +211,21 @@ class PushService:
                 {"type": "incident", "incident_id": incident.incident_id},
             )
         self.db.commit()
+
+    def notify_emergency_alert(self, alert, org_id: int) -> None:
+        """Notify ALL admin/scheduler users of an emergency panic/duress alert with high priority."""
+        admins = self._admin_users(org_id)
+        if not admins:
+            return
+        alert_type = alert.alert_type.value.upper() if hasattr(alert.alert_type, "value") else str(alert.alert_type).upper()
+        employee_name = f"{alert.employee.first_name} {alert.employee.last_name}" if alert.employee else "Unknown"
+        title = f"EMERGENCY: {alert_type} Alert"
+        body = f"{employee_name} triggered a {alert_type} alert!"
+        for admin in admins:
+            self._notify_user(
+                admin, org_id, title, body,
+                NotificationType.EMERGENCY,
+                "emergency_alert", alert.alert_id,
+                {"type": "emergency_alert", "alert_id": alert.alert_id, "priority": "critical"},
+            )
+        self.db.commit()

@@ -44,13 +44,16 @@ export default function Navbar() {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-8">
-              {['Features', 'Pricing', 'About'].map((item) => (
+              {[
+                { label: 'Features', href: '#features' },
+                { label: 'Pricing', href: '#pricing' },
+              ].map((item) => (
                 <a
-                  key={item}
-                  href={`#${item.toLowerCase()}`}
-                  className="text-sm font-medium text-slate-700 hover:text-slate-900 transition-all"
+                  key={item.label}
+                  href={item.href}
+                  className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-all"
                 >
-                  {item}
+                  {item.label}
                 </a>
               ))}
             </nav>
@@ -59,7 +62,7 @@ export default function Navbar() {
             <div className="hidden md:flex items-center gap-4">
               <Link
                 href="/login"
-                className="text-sm font-medium text-slate-700 hover:text-slate-900 transition-colors"
+                className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
               >
                 Login
               </Link>
@@ -73,7 +76,7 @@ export default function Navbar() {
 
             {/* Mobile Menu Button */}
             <button
-              className="md:hidden p-2 text-slate-700 hover:text-slate-900"
+              className="md:hidden p-2 text-gray-700 hover:text-gray-900"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
               {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -86,20 +89,23 @@ export default function Navbar() {
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-full left-0 right-0 px-4 mt-2">
           <div className="glass-panel rounded-xl p-4 space-y-4 flex flex-col animate-slide-up">
-            {['Features', 'Pricing', 'About'].map((item) => (
+            {[
+              { label: 'Features', href: '#features' },
+              { label: 'Pricing', href: '#pricing' },
+            ].map((item) => (
               <a
-                key={item}
-                href={`#${item.toLowerCase()}`}
-                className="text-slate-700 hover:text-slate-900 py-2 px-4 rounded-lg hover:bg-slate-100 transition-colors"
+                key={item.label}
+                href={item.href}
+                className="text-gray-700 hover:text-gray-900 py-2 px-4 rounded-lg hover:bg-gray-100 transition-colors"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                {item}
+                {item.label}
               </a>
             ))}
-            <div className="h-px bg-white/10 my-2" />
+            <div className="h-px bg-gray-200 my-2" />
             <Link
               href="/login"
-              className="text-slate-700 hover:text-slate-900 py-2 px-4 rounded-lg hover:bg-slate-100 transition-colors"
+              className="text-gray-700 hover:text-gray-900 py-2 px-4 rounded-lg hover:bg-gray-100 transition-colors"
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Login

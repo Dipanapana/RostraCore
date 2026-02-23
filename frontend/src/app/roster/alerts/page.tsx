@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { rosterApi, sitesApi, clientsApi } from '@/services/api'
+import { rosterApi, sitesApi, clientsApi, employeesApi, shiftsApi } from '@/services/api'
+import Modal from '@/components/ui/Modal'
+import EmployeeCombobox from '@/components/ui/EmployeeCombobox'
 import {
   AlertTriangle,
   AlertCircle,
@@ -11,6 +13,11 @@ import {
   RefreshCw,
   Filter,
   Clock,
+  UserPlus,
+  Search,
+  Shield,
+  MapPin,
+  Calendar,
 } from 'lucide-react'
 
 interface PostingAlert {
@@ -44,6 +51,17 @@ interface AlertsResponse {
   alerts: PostingAlert[]
 }
 
+interface Employee {
+  employee_id: number
+  first_name: string
+  last_name: string
+  id_number: string
+  role: string
+  status?: string
+  psira_grade?: string
+  hourly_rate?: number
+}
+
 function todayISO() {
   return new Date().toISOString().split('T')[0]
 }
@@ -59,32 +77,42 @@ function formatShiftTime(iso: string) {
   return d.toLocaleString('en-ZA', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })
 }
 
+function formatTimeOnly(iso: string) {
+  const d = new Date(iso)
+  return d.toLocaleString('en-ZA', { hour: '2-digit', minute: '2-digit', hour12: false })
+}
+
+function formatDateOnly(iso: string) {
+  const d = new Date(iso)
+  return d.toLocaleString('en-ZA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+}
+
 const SEVERITY_CONFIG = {
   critical: {
     label: 'Critical',
     description: 'No guards assigned — shift starts within 24 h',
-    bg: 'bg-red-50 dark:bg-red-900/20',
-    border: 'border-red-200 dark:border-red-800',
-    text: 'text-red-700 dark:text-red-400',
-    badge: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400',
+    bg: 'bg-red-50',
+    border: 'border-red-200',
+    text: 'text-red-700',
+    badge: 'bg-red-100 text-red-700',
     icon: AlertCircle,
   },
   warning: {
     label: 'Under-posted',
     description: 'Fewer guards assigned than required',
-    bg: 'bg-amber-50 dark:bg-amber-900/20',
-    border: 'border-amber-200 dark:border-amber-800',
-    text: 'text-amber-700 dark:text-amber-400',
-    badge: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
+    bg: 'bg-amber-50',
+    border: 'border-amber-200',
+    text: 'text-amber-700',
+    badge: 'bg-amber-100 text-amber-700',
     icon: AlertTriangle,
   },
   over_posted: {
     label: 'Over-posted',
     description: 'More guards assigned than required',
-    bg: 'bg-blue-50 dark:bg-blue-900/20',
-    border: 'border-blue-200 dark:border-blue-800',
-    text: 'text-blue-700 dark:text-blue-400',
-    badge: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400',
+    bg: 'bg-blue-50',
+    border: 'border-blue-200',
+    text: 'text-blue-700',
+    badge: 'bg-blue-100 text-blue-700',
     icon: TrendingUp,
   },
 }
@@ -104,6 +132,24 @@ export default function PostingAlertsPage() {
   const [sites, setSites] = useState<any[]>([])
   const [clients, setClients] = useState<any[]>([])
 
+  // Employee data for assignment
+  const [employees, setEmployees] = useState<Employee[]>([])
+  const [employeesLoaded, setEmployeesLoaded] = useState(false)
+
+  // Assign Guard modal state
+  const [assignModalOpen, setAssignModalOpen] = useState(false)
+  const [selectedAlert, setSelectedAlert] = useState<PostingAlert | null>(null)
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null)
+  const [assigning, setAssigning] = useState(false)
+  const [assignError, setAssignError] = useState<string | null>(null)
+  const [assignSuccess, setAssignSuccess] = useState(false)
+
+  // Find Available panel state
+  const [findAvailableAlert, setFindAvailableAlert] = useState<PostingAlert | null>(null)
+  const [availableEmployees, setAvailableEmployees] = useState<Employee[]>([])
+  const [findingAvailable, setFindingAvailable] = useState(false)
+  const [availableSearch, setAvailableSearch] = useState('')
+
   // Load filter options
   useEffect(() => {
     Promise.allSettled([sitesApi.getAll(), clientsApi.getAll()]).then(([sitesRes, clientsRes]) => {
@@ -111,6 +157,19 @@ export default function PostingAlertsPage() {
       if (clientsRes.status === 'fulfilled') setClients(clientsRes.value.data || [])
     })
   }, [])
+
+  // Load employees for assignment (lazy load on first use)
+  const ensureEmployeesLoaded = useCallback(async () => {
+    if (employeesLoaded) return
+    try {
+      const res = await employeesApi.getAll({ status: 'active', limit: 1000 })
+      const list = res.data?.data || res.data || []
+      setEmployees(Array.isArray(list) ? list : [])
+      setEmployeesLoaded(true)
+    } catch {
+      // Silently handle -- employee list will be empty
+    }
+  }, [employeesLoaded])
 
   const fetchAlerts = useCallback(async () => {
     setLoading(true)
@@ -138,20 +197,113 @@ export default function PostingAlertsPage() {
 
   const totalAlerts = data ? data.summary.critical + data.summary.warning + data.summary.over_posted : 0
 
+  // ------ Assign Guard handlers ------
+
+  const handleOpenAssignModal = async (alert: PostingAlert) => {
+    setSelectedAlert(alert)
+    setSelectedEmployeeId(null)
+    setAssignError(null)
+    setAssignSuccess(false)
+    setAssignModalOpen(true)
+    await ensureEmployeesLoaded()
+  }
+
+  const handleAssignGuard = async () => {
+    if (!selectedAlert || !selectedEmployeeId) return
+    setAssigning(true)
+    setAssignError(null)
+    setAssignSuccess(false)
+    try {
+      await shiftsApi.assignEmployee(selectedAlert.shift_id, selectedEmployeeId)
+      setAssignSuccess(true)
+      // Refresh alerts after short delay so user sees the success state
+      setTimeout(() => {
+        setAssignModalOpen(false)
+        setSelectedAlert(null)
+        setSelectedEmployeeId(null)
+        setAssignSuccess(false)
+        fetchAlerts()
+      }, 1200)
+    } catch (err: any) {
+      const detail = err.response?.data?.detail
+      setAssignError(typeof detail === 'string' ? detail : 'Failed to assign guard. The employee may already be assigned or unavailable.')
+    } finally {
+      setAssigning(false)
+    }
+  }
+
+  const handleCloseAssignModal = () => {
+    if (assigning) return
+    setAssignModalOpen(false)
+    setSelectedAlert(null)
+    setSelectedEmployeeId(null)
+    setAssignError(null)
+    setAssignSuccess(false)
+  }
+
+  // ------ Find Available handlers ------
+
+  const handleFindAvailable = async (alert: PostingAlert) => {
+    setFindAvailableAlert(alert)
+    setAvailableSearch('')
+    setFindingAvailable(true)
+    await ensureEmployeesLoaded()
+
+    try {
+      // Fetch all active employees; the list is filtered client-side by search
+      const res = await employeesApi.getAll({ status: 'active', limit: 1000 })
+      const list = res.data?.data || res.data || []
+      setAvailableEmployees(Array.isArray(list) ? list : [])
+    } catch {
+      setAvailableEmployees(employees) // fallback to cached list
+    } finally {
+      setFindingAvailable(false)
+    }
+  }
+
+  const handleCloseFindAvailable = () => {
+    setFindAvailableAlert(null)
+    setAvailableEmployees([])
+    setAvailableSearch('')
+  }
+
+  const handleAssignFromAvailable = (employee: Employee) => {
+    if (!findAvailableAlert) return
+    // Close find-available and open assign modal pre-filled
+    const alert = findAvailableAlert
+    handleCloseFindAvailable()
+    setSelectedAlert(alert)
+    setSelectedEmployeeId(employee.employee_id)
+    setAssignError(null)
+    setAssignSuccess(false)
+    setAssignModalOpen(true)
+  }
+
+  // Filter available employees by search query
+  const filteredAvailableEmployees = availableEmployees.filter((e) => {
+    if (!availableSearch.trim()) return true
+    const q = availableSearch.toLowerCase()
+    const fullName = `${e.first_name} ${e.last_name}`.toLowerCase()
+    return fullName.includes(q) || e.role?.toLowerCase().includes(q) || e.id_number?.toLowerCase().includes(q) || e.psira_grade?.toLowerCase().includes(q)
+  })
+
+  // Check if an alert is for an understaffed shift (critical or warning)
+  const isUnderstaffed = (alert: PostingAlert) => alert.severity === 'critical' || alert.severity === 'warning'
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Posting Alerts</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">
+          <h1 className="text-2xl font-semibold text-gray-900">Posting Alerts</h1>
+          <p className="text-gray-500 mt-1">
             Real-time over/under-staffing alerts across all sites
           </p>
         </div>
         <button
           onClick={fetchAlerts}
           disabled={loading}
-          className="flex items-center gap-2 px-3 py-2 text-sm bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-white/10 transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           Refresh
@@ -159,36 +311,36 @@ export default function PostingAlertsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-white/10 p-4">
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
         <div className="flex items-center gap-2 mb-3">
-          <Filter className="w-4 h-4 text-slate-400" />
-          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Filters</span>
+          <Filter className="w-4 h-4 text-gray-400" />
+          <span className="text-sm font-medium text-gray-700">Filters</span>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div>
-            <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">From</label>
+            <label className="block text-xs text-gray-500 mb-1">From</label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full border border-slate-200 dark:border-white/10 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+              className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white text-gray-900"
             />
           </div>
           <div>
-            <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">To</label>
+            <label className="block text-xs text-gray-500 mb-1">To</label>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full border border-slate-200 dark:border-white/10 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+              className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white text-gray-900"
             />
           </div>
           <div>
-            <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Client</label>
+            <label className="block text-xs text-gray-500 mb-1">Client</label>
             <select
               value={clientFilter}
               onChange={(e) => setClientFilter(e.target.value)}
-              className="w-full border border-slate-200 dark:border-white/10 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+              className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white text-gray-900"
             >
               <option value="">All Clients</option>
               {clients.map((c) => (
@@ -197,11 +349,11 @@ export default function PostingAlertsPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Severity</label>
+            <label className="block text-xs text-gray-500 mb-1">Severity</label>
             <select
               value={severityFilter}
               onChange={(e) => setSeverityFilter(e.target.value)}
-              className="w-full border border-slate-200 dark:border-white/10 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+              className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white text-gray-900"
             >
               <option value="all">All Alerts</option>
               <option value="critical">Critical only</option>
@@ -213,7 +365,7 @@ export default function PostingAlertsPage() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 dark:text-red-400">
+        <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600">
           <AlertTriangle className="w-5 h-5 flex-shrink-0" />
           <p>{error}</p>
         </div>
@@ -222,48 +374,48 @@ export default function PostingAlertsPage() {
       {/* Summary KPIs */}
       {data && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-white/10 p-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
             <div className="flex items-center gap-2 mb-1">
-              <Users className="w-4 h-4 text-slate-400" />
-              <span className="text-xs text-slate-500 dark:text-slate-400">Total Shifts</span>
+              <Users className="w-4 h-4 text-gray-400" />
+              <span className="text-xs text-gray-500">Total Shifts</span>
             </div>
-            <p className="text-2xl font-bold text-slate-900 dark:text-white">{data.summary.total_shifts}</p>
+            <p className="text-2xl font-bold text-gray-900">{data.summary.total_shifts}</p>
           </div>
 
-          <div className="bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 p-4">
+          <div className="bg-red-50 rounded-xl border border-red-200 p-4">
             <div className="flex items-center gap-2 mb-1">
               <AlertCircle className="w-4 h-4 text-red-500" />
-              <span className="text-xs text-red-600 dark:text-red-400">Critical</span>
+              <span className="text-xs text-red-600">Critical</span>
             </div>
-            <p className="text-2xl font-bold text-red-700 dark:text-red-400">{data.summary.critical}</p>
-            <p className="text-xs text-red-500/70 dark:text-red-400/60 mt-0.5">0 guards, starts ≤24h</p>
+            <p className="text-2xl font-bold text-red-700">{data.summary.critical}</p>
+            <p className="text-xs text-red-500/70 mt-0.5">0 guards, starts ≤24h</p>
           </div>
 
-          <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800 p-4">
+          <div className="bg-amber-50 rounded-xl border border-amber-200 p-4">
             <div className="flex items-center gap-2 mb-1">
               <AlertTriangle className="w-4 h-4 text-amber-500" />
-              <span className="text-xs text-amber-600 dark:text-amber-400">Under-posted</span>
+              <span className="text-xs text-amber-600">Under-posted</span>
             </div>
-            <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">{data.summary.warning}</p>
-            <p className="text-xs text-amber-500/70 dark:text-amber-400/60 mt-0.5">Fewer than required</p>
+            <p className="text-2xl font-bold text-amber-700">{data.summary.warning}</p>
+            <p className="text-xs text-amber-500/70 mt-0.5">Fewer than required</p>
           </div>
 
-          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 p-4">
+          <div className="bg-blue-50 rounded-xl border border-blue-200 p-4">
             <div className="flex items-center gap-2 mb-1">
               <TrendingUp className="w-4 h-4 text-blue-500" />
-              <span className="text-xs text-blue-600 dark:text-blue-400">Over-posted</span>
+              <span className="text-xs text-blue-600">Over-posted</span>
             </div>
-            <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">{data.summary.over_posted}</p>
-            <p className="text-xs text-blue-500/70 dark:text-blue-400/60 mt-0.5">More than required</p>
+            <p className="text-2xl font-bold text-blue-700">{data.summary.over_posted}</p>
+            <p className="text-xs text-blue-500/70 mt-0.5">More than required</p>
           </div>
 
-          <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800 p-4">
+          <div className="bg-emerald-50 rounded-xl border border-emerald-200 p-4">
             <div className="flex items-center gap-2 mb-1">
               <CheckCircle className="w-4 h-4 text-emerald-500" />
-              <span className="text-xs text-emerald-600 dark:text-emerald-400">Correctly Posted</span>
+              <span className="text-xs text-emerald-600">Correctly Posted</span>
             </div>
-            <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{data.summary.ok}</p>
-            <p className="text-xs text-emerald-500/70 dark:text-emerald-400/60 mt-0.5">Exactly as required</p>
+            <p className="text-2xl font-bold text-emerald-700">{data.summary.ok}</p>
+            <p className="text-xs text-emerald-500/70 mt-0.5">Exactly as required</p>
           </div>
         </div>
       )}
@@ -272,8 +424,8 @@ export default function PostingAlertsPage() {
       {data && totalAlerts === 0 && !loading && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <CheckCircle className="w-16 h-16 text-emerald-400 mb-4" />
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">All shifts correctly posted</h3>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">
+          <h3 className="text-lg font-semibold text-gray-900">All shifts correctly posted</h3>
+          <p className="text-gray-500 mt-1">
             No over or under-posting issues found for {data.period_start} – {data.period_end}
           </p>
         </div>
@@ -281,14 +433,14 @@ export default function PostingAlertsPage() {
 
       {/* Alert table */}
       {filteredAlerts.length > 0 && (
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden">
-          <div className="p-4 border-b border-slate-200 dark:border-white/10 flex items-center justify-between">
-            <h2 className="font-semibold text-slate-900 dark:text-white">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+            <h2 className="font-semibold text-gray-900">
               {severityFilter === 'all' ? 'All Alerts' : SEVERITY_CONFIG[severityFilter as keyof typeof SEVERITY_CONFIG]?.label}
-              <span className="ml-2 text-sm font-normal text-slate-400">({filteredAlerts.length})</span>
+              <span className="ml-2 text-sm font-normal text-gray-400">({filteredAlerts.length})</span>
             </h2>
             {data && (
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-gray-400">
                 As of {new Date(data.as_of).toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}
               </p>
             )}
@@ -296,7 +448,7 @@ export default function PostingAlertsPage() {
 
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-slate-50 dark:bg-white/5 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <tr>
                   <th className="px-4 py-3 text-left">Severity</th>
                   <th className="px-4 py-3 text-left">Site</th>
@@ -306,9 +458,10 @@ export default function PostingAlertsPage() {
                   <th className="px-4 py-3 text-center">Assigned</th>
                   <th className="px-4 py-3 text-center">Gap</th>
                   <th className="px-4 py-3 text-left">Starts In</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+              <tbody className="divide-y divide-gray-100">
                 {filteredAlerts.map((alert) => {
                   const cfg = SEVERITY_CONFIG[alert.severity]
                   const Icon = cfg.icon
@@ -330,41 +483,63 @@ export default function PostingAlertsPage() {
                           {cfg.label}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm font-medium text-slate-900 dark:text-white">
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900">
                         {alert.site_name}
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
-                        {alert.client_name ?? '—'}
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {alert.client_name ?? '---'}
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
+                      <td className="px-4 py-3 text-sm text-gray-700">
                         {formatShiftTime(alert.shift_start)}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <span className="inline-flex items-center gap-1 text-sm font-medium text-slate-700 dark:text-slate-300">
-                          <Users className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="inline-flex items-center gap-1 text-sm font-medium text-gray-700">
+                          <Users className="w-3.5 h-3.5 text-gray-400" />
                           {alert.required_staff}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <span className={`text-sm font-bold ${alert.assigned_staff === 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-700 dark:text-slate-300'}`}>
+                        <span className={`text-sm font-bold ${alert.assigned_staff === 0 ? 'text-red-600' : 'text-gray-700'}`}>
                           {alert.assigned_staff}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <span className={`text-sm font-bold ${alert.gap < 0 ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}`}>
+                        <span className={`text-sm font-bold ${alert.gap < 0 ? 'text-red-600' : 'text-blue-600'}`}>
                           {alert.gap > 0 ? `+${alert.gap}` : alert.gap}
                         </span>
                       </td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center gap-1 text-xs font-medium ${
-                          hoursUntil <= 0 ? 'text-slate-400' :
-                          hoursUntil <= 2 ? 'text-red-600 dark:text-red-400' :
-                          hoursUntil <= 24 ? 'text-amber-600 dark:text-amber-400' :
-                          'text-slate-500 dark:text-slate-400'
+                          hoursUntil <= 0 ? 'text-gray-400' :
+                          hoursUntil <= 2 ? 'text-red-600' :
+                          hoursUntil <= 24 ? 'text-amber-600' :
+                          'text-gray-500'
                         }`}>
                           <Clock className="w-3 h-3" />
                           {timeLabel}
                         </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {isUnderstaffed(alert) && (
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleOpenAssignModal(alert)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                              title="Assign a guard to this shift"
+                            >
+                              <UserPlus className="w-3 h-3" />
+                              Assign
+                            </button>
+                            <button
+                              onClick={() => handleFindAvailable(alert)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors"
+                              title="Find available employees for this time slot"
+                            >
+                              <Search className="w-3 h-3" />
+                              Find Available
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   )
@@ -377,9 +552,241 @@ export default function PostingAlertsPage() {
 
       {loading && (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500" />
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600" />
         </div>
       )}
+
+      {/* ===== Assign Guard Modal ===== */}
+      <Modal
+        isOpen={assignModalOpen}
+        onClose={handleCloseAssignModal}
+        title="Assign Guard to Shift"
+        maxWidth="lg"
+        footer={
+          <>
+            <button
+              onClick={handleCloseAssignModal}
+              disabled={assigning}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleAssignGuard}
+              disabled={!selectedEmployeeId || assigning || assignSuccess}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {assigning ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white" />
+                  Assigning...
+                </>
+              ) : assignSuccess ? (
+                <>
+                  <CheckCircle className="w-4 h-4" />
+                  Assigned!
+                </>
+              ) : (
+                <>
+                  <UserPlus className="w-4 h-4" />
+                  Assign Guard
+                </>
+              )}
+            </button>
+          </>
+        }
+      >
+        {selectedAlert && (
+          <div className="space-y-5">
+            {/* Shift details card */}
+            <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 space-y-3">
+              <h4 className="text-sm font-semibold text-gray-900">Shift Details</h4>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="flex items-start gap-2">
+                  <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs text-gray-500">Site</p>
+                    <p className="font-medium text-gray-900">{selectedAlert.site_name}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Calendar className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs text-gray-500">Date</p>
+                    <p className="font-medium text-gray-900">{formatDateOnly(selectedAlert.shift_start)}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Clock className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs text-gray-500">Time</p>
+                    <p className="font-medium text-gray-900">
+                      {formatTimeOnly(selectedAlert.shift_start)} - {formatTimeOnly(selectedAlert.shift_end)}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Users className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs text-gray-500">Staffing</p>
+                    <p className="font-medium text-gray-900">
+                      <span className={selectedAlert.assigned_staff === 0 ? 'text-red-600' : ''}>
+                        {selectedAlert.assigned_staff}
+                      </span>
+                      {' / '}
+                      {selectedAlert.required_staff} assigned
+                      <span className="text-red-600 font-bold ml-1">
+                        ({Math.abs(selectedAlert.gap)} needed)
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Employee selector */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Employee to Assign
+              </label>
+              <EmployeeCombobox
+                value={selectedEmployeeId}
+                onChange={setSelectedEmployeeId}
+                employees={employees}
+                placeholder="Search by name or ID number..."
+              />
+            </div>
+
+            {/* Error message */}
+            {assignError && (
+              <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <p>{assignError}</p>
+              </div>
+            )}
+
+            {/* Success message */}
+            {assignSuccess && (
+              <div className="flex items-start gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-700">
+                <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <p>Guard assigned successfully. Refreshing alerts...</p>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
+
+      {/* ===== Find Available Employees Modal ===== */}
+      <Modal
+        isOpen={findAvailableAlert !== null}
+        onClose={handleCloseFindAvailable}
+        title="Available Employees"
+        maxWidth="xl"
+      >
+        {findAvailableAlert && (
+          <div className="space-y-4">
+            {/* Shift context */}
+            <div className="bg-gray-50 rounded-lg border border-gray-200 p-3">
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-1.5 text-gray-700">
+                  <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                  <span className="font-medium">{findAvailableAlert.site_name}</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-gray-600">
+                  <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                  <span>{formatShiftTime(findAvailableAlert.shift_start)}</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-gray-600">
+                  <Clock className="w-3.5 h-3.5 text-gray-400" />
+                  <span>{formatTimeOnly(findAvailableAlert.shift_start)} - {formatTimeOnly(findAvailableAlert.shift_end)}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-red-600 font-medium text-xs">
+                    {Math.abs(findAvailableAlert.gap)} guard{Math.abs(findAvailableAlert.gap) !== 1 ? 's' : ''} needed
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Search bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                value={availableSearch}
+                onChange={(e) => setAvailableSearch(e.target.value)}
+                placeholder="Search by name, role, or grade..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400"
+              />
+            </div>
+
+            {/* Employee list */}
+            {findingAvailable ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-200 border-t-blue-600" />
+                <span className="ml-3 text-sm text-gray-500">Loading available employees...</span>
+              </div>
+            ) : filteredAvailableEmployees.length === 0 ? (
+              <div className="text-center py-8">
+                <Users className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                <p className="text-sm text-gray-500">
+                  {availableSearch ? 'No employees match your search.' : 'No available employees found.'}
+                </p>
+              </div>
+            ) : (
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="max-h-80 overflow-y-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider sticky top-0">
+                      <tr>
+                        <th className="px-4 py-2.5 text-left">Employee</th>
+                        <th className="px-4 py-2.5 text-left">Role</th>
+                        <th className="px-4 py-2.5 text-left">Grade</th>
+                        <th className="px-4 py-2.5 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {filteredAvailableEmployees.map((emp) => (
+                        <tr key={emp.employee_id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-4 py-2.5">
+                            <div className="text-sm font-medium text-gray-900">
+                              {emp.first_name} {emp.last_name}
+                            </div>
+                            <div className="text-xs text-gray-500">{emp.id_number}</div>
+                          </td>
+                          <td className="px-4 py-2.5">
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-600">
+                              <Shield className="w-3 h-3 text-gray-400" />
+                              {emp.role}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5 text-sm text-gray-600">
+                            {emp.psira_grade || '---'}
+                          </td>
+                          <td className="px-4 py-2.5 text-right">
+                            <button
+                              onClick={() => handleAssignFromAvailable(emp)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                            >
+                              <UserPlus className="w-3 h-3" />
+                              Assign
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="bg-gray-50 border-t border-gray-200 px-4 py-2">
+                  <p className="text-xs text-gray-500">
+                    Showing {filteredAvailableEmployees.length} active employee{filteredAvailableEmployees.length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }

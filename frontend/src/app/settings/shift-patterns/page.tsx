@@ -188,17 +188,17 @@ export default function ShiftPatternsPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-slate-900">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
       <main className="flex-1 p-8 ml-64">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
               <Clock className="w-6 h-6 text-blue-600" />
               Shift Pattern Templates
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-gray-600 mt-1">
               Manage rotation patterns for guard scheduling (4-on-4-off, 2-2-3, etc.)
             </p>
           </div>
@@ -232,7 +232,7 @@ export default function ShiftPatternsPage() {
 
         {/* Success message */}
         {seedSuccess && (
-          <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-2 text-green-700 dark:text-green-400">
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2 text-green-700">
             <CheckCircle className="w-5 h-5" />
             Common shift patterns have been added successfully!
           </div>
@@ -240,7 +240,7 @@ export default function ShiftPatternsPage() {
 
         {/* Error message */}
         {error && (
-          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2 text-red-700 dark:text-red-400">
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700">
             <AlertTriangle className="w-5 h-5" />
             {error}
             <button onClick={() => setError(null)} className="ml-auto text-red-500 hover:text-red-700">×</button>
@@ -254,10 +254,10 @@ export default function ShiftPatternsPage() {
           </div>
         ) : templates.length === 0 ? (
           /* Empty state */
-          <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
-            <Clock className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Shift Patterns Yet</h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+          <div className="text-center py-12 bg-white rounded-xl shadow-sm">
+            <Clock className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Shift Patterns Yet</h3>
+            <p className="text-gray-600 mb-4">
               Get started with common SA security industry patterns or create your own.
             </p>
             <button
@@ -274,10 +274,10 @@ export default function ShiftPatternsPage() {
             {templates.map((template) => (
               <div
                 key={template.template_id}
-                className={`bg-white dark:bg-slate-800 rounded-xl shadow-sm border ${
+                className={`bg-white rounded-xl shadow-sm border ${
                   template.is_default
-                    ? 'border-amber-400 ring-2 ring-amber-200 dark:ring-amber-800'
-                    : 'border-gray-200 dark:border-slate-700'
+                    ? 'border-amber-400 ring-2 ring-amber-200'
+                    : 'border-gray-200'
                 } ${!template.is_active ? 'opacity-60' : ''}`}
               >
                 {/* Template header */}
@@ -290,14 +290,14 @@ export default function ShiftPatternsPage() {
                       <div className={`p-2 rounded-lg ${
                         template.pattern_type === '4_on_4_off' ? 'bg-blue-100 text-blue-600' :
                         template.pattern_type === '2_2_3' ? 'bg-purple-100 text-purple-600' :
-                        template.pattern_type === '6_on_3_off' ? 'bg-green-100 text-green-600' :
+                        template.pattern_type === '6_on_3_off' ? 'bg-emerald-50 text-green-600' :
                         template.pattern_type === '5_on_2_off' ? 'bg-orange-100 text-orange-600' :
                         'bg-gray-100 text-gray-600'
                       }`}>
                         <Calendar className="w-5 h-5" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                        <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                           {template.name}
                           {template.is_default && (
                             <span className="px-2 py-0.5 text-xs bg-amber-100 text-amber-700 rounded-full">
@@ -310,7 +310,7 @@ export default function ShiftPatternsPage() {
                             </span>
                           )}
                         </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <p className="text-sm text-gray-500">
                           {getPatternTypeLabel(template.pattern_type)} • {template.shift_duration_hours}h shifts
                         </p>
                       </div>
@@ -331,7 +331,7 @@ export default function ShiftPatternsPage() {
                       )}
 
                       {/* Quick stats */}
-                      <div className="flex gap-4 text-sm text-gray-500 dark:text-gray-400">
+                      <div className="flex gap-4 text-sm text-gray-500">
                         <span className="flex items-center gap-1">
                           <Sun className="w-4 h-4 text-amber-500" />
                           {template.days_on}d on
@@ -354,34 +354,34 @@ export default function ShiftPatternsPage() {
 
                 {/* Expanded details */}
                 {expandedTemplates.has(template.template_id) && (
-                  <div className="border-t dark:border-slate-700 p-4">
+                  <div className="border-t p-4">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                       {/* Shift timing */}
-                      <div className="bg-gray-50 dark:bg-slate-700/50 p-3 rounded-lg">
-                        <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <h4 className="text-xs font-medium text-gray-500 mb-1 flex items-center gap-1">
                           <Sun className="w-3 h-3" /> Day Shift
                         </h4>
-                        <p className="font-semibold text-gray-900 dark:text-white">
+                        <p className="font-semibold text-gray-900">
                           {formatTime(template.day_shift_start)} - {formatTime(template.day_shift_end)}
                         </p>
                       </div>
-                      <div className="bg-gray-50 dark:bg-slate-700/50 p-3 rounded-lg">
-                        <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <h4 className="text-xs font-medium text-gray-500 mb-1 flex items-center gap-1">
                           <Moon className="w-3 h-3" /> Night Shift
                         </h4>
-                        <p className="font-semibold text-gray-900 dark:text-white">
+                        <p className="font-semibold text-gray-900">
                           {formatTime(template.night_shift_start)} - {formatTime(template.night_shift_end)}
                         </p>
                       </div>
-                      <div className="bg-gray-50 dark:bg-slate-700/50 p-3 rounded-lg">
-                        <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Avg Hours/Week</h4>
-                        <p className="font-semibold text-gray-900 dark:text-white">
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <h4 className="text-xs font-medium text-gray-500 mb-1">Avg Hours/Week</h4>
+                        <p className="font-semibold text-gray-900">
                           {template.average_hours_per_week.toFixed(1)}h
                         </p>
                       </div>
-                      <div className="bg-gray-50 dark:bg-slate-700/50 p-3 rounded-lg">
-                        <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Working Days</h4>
-                        <p className="font-semibold text-gray-900 dark:text-white">
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <h4 className="text-xs font-medium text-gray-500 mb-1">Working Days</h4>
+                        <p className="font-semibold text-gray-900">
                           {template.working_days_per_cycle} / {template.cycle_length_days} days
                         </p>
                       </div>
@@ -390,20 +390,20 @@ export default function ShiftPatternsPage() {
                     {/* BCEA Compliance Details */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                       <div className="text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">Max consecutive days:</span>
-                        <span className="ml-2 font-medium text-gray-900 dark:text-white">{template.max_consecutive_days}</span>
+                        <span className="text-gray-500">Max consecutive days:</span>
+                        <span className="ml-2 font-medium text-gray-900">{template.max_consecutive_days}</span>
                       </div>
                       <div className="text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">Max consecutive nights:</span>
-                        <span className="ml-2 font-medium text-gray-900 dark:text-white">{template.max_consecutive_nights}</span>
+                        <span className="text-gray-500">Max consecutive nights:</span>
+                        <span className="ml-2 font-medium text-gray-900">{template.max_consecutive_nights}</span>
                       </div>
                       <div className="text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">Min rest between shifts:</span>
-                        <span className="ml-2 font-medium text-gray-900 dark:text-white">{template.min_rest_between_shifts}h</span>
+                        <span className="text-gray-500">Min rest between shifts:</span>
+                        <span className="ml-2 font-medium text-gray-900">{template.min_rest_between_shifts}h</span>
                       </div>
                       <div className="text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">Meal break:</span>
-                        <span className="ml-2 font-medium text-gray-900 dark:text-white">
+                        <span className="text-gray-500">Meal break:</span>
+                        <span className="ml-2 font-medium text-gray-900">
                           {template.include_meal_break ? `${template.meal_break_duration_minutes} min` : 'No'}
                         </span>
                       </div>
@@ -411,9 +411,9 @@ export default function ShiftPatternsPage() {
 
                     {/* BCEA Violations */}
                     {!template.is_bcea_compliant && (
-                      <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
-                        <h4 className="font-medium text-amber-700 dark:text-amber-400 mb-1">BCEA Compliance Issues:</h4>
-                        <ul className="text-sm text-amber-600 dark:text-amber-300 list-disc list-inside">
+                      <div className="mb-4 p-3 bg-amber-50 rounded-lg">
+                        <h4 className="font-medium text-amber-700 mb-1">BCEA Compliance Issues:</h4>
+                        <ul className="text-sm text-amber-600 list-disc list-inside">
                           {template.bcea_violations.map((v, i) => (
                             <li key={i}>{v}</li>
                           ))}
@@ -422,21 +422,21 @@ export default function ShiftPatternsPage() {
                     )}
 
                     {/* Guard Calculator */}
-                    <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                      <h4 className="font-medium text-blue-700 dark:text-blue-400 mb-2 flex items-center gap-2">
+                    <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+                      <h4 className="font-medium text-blue-700 mb-2 flex items-center gap-2">
                         <Users className="w-4 h-4" />
                         Guard Calculator
                       </h4>
                       <div className="flex items-center gap-4">
                         <div>
-                          <label className="text-sm text-blue-600 dark:text-blue-300">Number of posts:</label>
+                          <label className="text-sm text-blue-600">Number of posts:</label>
                           <input
                             type="number"
                             min="1"
                             max="10"
                             value={calcPosts}
                             onChange={(e) => setCalcPosts(parseInt(e.target.value) || 1)}
-                            className="ml-2 w-16 px-2 py-1 border rounded dark:bg-slate-700 dark:border-slate-600"
+                            className="ml-2 w-16 px-2 py-1 border rounded"
                           />
                         </div>
                         <button
@@ -451,11 +451,11 @@ export default function ShiftPatternsPage() {
                         </button>
                       </div>
                       {guardCalc && selectedTemplateForCalc === template.template_id && (
-                        <div className="mt-3 p-3 bg-white dark:bg-slate-700 rounded border dark:border-slate-600">
-                          <p className="font-semibold text-gray-900 dark:text-white">
+                        <div className="mt-3 p-3 bg-white rounded border">
+                          <p className="font-semibold text-gray-900">
                             You need <span className="text-blue-600">{guardCalc.guards_needed} guards</span> for 24/7 coverage
                           </p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                          <p className="text-sm text-gray-600 mt-1">
                             {guardCalc.explanation}
                           </p>
                         </div>
@@ -463,14 +463,14 @@ export default function ShiftPatternsPage() {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center gap-2 border-t dark:border-slate-700 pt-4">
+                    <div className="flex items-center gap-2 border-t pt-4">
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
                           setEditingTemplate(template)
                           setShowModal(true)
                         }}
-                        className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded"
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded"
                       >
                         <Edit2 className="w-4 h-4" />
                         Edit
@@ -480,7 +480,7 @@ export default function ShiftPatternsPage() {
                           e.stopPropagation()
                           handleToggleActive(template)
                         }}
-                        className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded"
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded"
                       >
                         {template.is_active ? 'Deactivate' : 'Activate'}
                       </button>
@@ -490,7 +490,7 @@ export default function ShiftPatternsPage() {
                             e.stopPropagation()
                             handleSetDefault(template.template_id)
                           }}
-                          className="flex items-center gap-1 px-3 py-1.5 text-sm text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded"
+                          className="flex items-center gap-1 px-3 py-1.5 text-sm text-amber-600 hover:bg-amber-50 rounded"
                         >
                           Set as Default
                         </button>
@@ -500,7 +500,7 @@ export default function ShiftPatternsPage() {
                           e.stopPropagation()
                           handleDelete(template.template_id)
                         }}
-                        className="flex items-center gap-1 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded ml-auto"
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded ml-auto"
                       >
                         <Trash2 className="w-4 h-4" />
                         Delete

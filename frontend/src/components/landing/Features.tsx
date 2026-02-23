@@ -7,37 +7,43 @@ const features = [
         icon: Calendar,
         title: "Automated Roster Generation",
         description: "Generate optimal shift schedules in minutes using our AI-driven algorithm that considers availability and certifications.",
-        color: "blue"
+        iconBg: "bg-blue-500/10 border-blue-500/20",
+        iconColor: "text-blue-500",
     },
     {
         icon: Users,
         title: "Guard Management",
         description: "Centralized database for all your security officers. Track performance, history, and client assignments.",
-        color: "indigo"
+        iconBg: "bg-indigo-500/10 border-indigo-500/20",
+        iconColor: "text-indigo-500",
     },
     {
         icon: Shield,
         title: "PSIRA Compliance",
         description: "Never miss a renewal. Automated tracking and alerts for PSIRA certifications and firearm competencies.",
-        color: "emerald"
+        iconBg: "bg-emerald-500/10 border-emerald-500/20",
+        iconColor: "text-emerald-500",
     },
     {
         icon: Briefcase,
         title: "Client & Site Management",
         description: "Organize contracts by site. Set specific billing rates and requirements for each location.",
-        color: "purple"
+        iconBg: "bg-purple-500/10 border-purple-500/20",
+        iconColor: "text-purple-500",
     },
     {
         icon: Calculator,
         title: "Payroll Integration",
         description: "Automatically calculate hours worked, overtime, and Sunday time. Export directly to your payroll system.",
-        color: "pink"
+        iconBg: "bg-pink-500/10 border-pink-500/20",
+        iconColor: "text-pink-500",
     },
     {
         icon: Clock,
         title: "Time & Attendance",
         description: "Real-time tracking of guard attendance. GPS-verified clock-ins and exception reporting.",
-        color: "cyan"
+        iconBg: "bg-cyan-500/10 border-cyan-500/20",
+        iconColor: "text-cyan-500",
     }
 ];
 
@@ -47,13 +53,13 @@ export default function Features() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 {/* Section Header */}
                 <div className="text-center max-w-3xl mx-auto mb-16">
-                    <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mb-6">
+                    <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-6">
                         Everything You Need to <br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
                             Secure Your Operations
                         </span>
                     </h2>
-                    <p className="text-lg text-slate-600">
+                    <p className="text-lg text-gray-600">
                         Powerful tools designed specifically for the unique challenges of the South African security industry.
                     </p>
                 </div>
@@ -63,15 +69,15 @@ export default function Features() {
                     {features.map((feature, index) => (
                         <div
                             key={index}
-                            className="glass-card p-8 rounded-2xl hover:bg-white/5 transition-all duration-300 group border border-white/5 hover:border-blue-500/30"
+                            className="glass-card p-8 rounded-2xl hover:shadow-md transition-all duration-300 group hover:border-blue-500/30"
                         >
-                            <div className={`w-14 h-14 rounded-xl bg-${feature.color}-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 border border-${feature.color}-500/20`}>
-                                <feature.icon className={`w-7 h-7 text-${feature.color}-400`} />
+                            <div className={`w-14 h-14 rounded-xl ${feature.iconBg} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 border`}>
+                                <feature.icon className={`w-7 h-7 ${feature.iconColor}`} />
                             </div>
-                            <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-blue-600 transition-colors">
+                            <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors">
                                 {feature.title}
                             </h3>
-                            <p className="text-slate-600 leading-relaxed">
+                            <p className="text-gray-600 leading-relaxed">
                                 {feature.description}
                             </p>
                         </div>

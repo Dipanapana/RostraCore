@@ -233,7 +233,7 @@ export default function UnfilledShiftsPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Unfilled Shifts</h1>
+            <h1 className="text-2xl font-semibold text-gray-900">Unfilled Shifts</h1>
             <p className="text-gray-600 mt-1">
               Manage and assign employees to unfilled shifts
             </p>
@@ -245,7 +245,7 @@ export default function UnfilledShiftsPage() {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
@@ -317,7 +317,7 @@ export default function UnfilledShiftsPage() {
                 <button
                   onClick={handleBulkAssign}
                   disabled={!bulkAssignEmployee || loading}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
                 >
                   Assign to Selected
                 </button>
@@ -350,7 +350,7 @@ export default function UnfilledShiftsPage() {
         )}
 
         {/* Shifts List */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           {loading ? (
             <div className="p-8 text-center">
               <RefreshCw className="w-8 h-8 animate-spin mx-auto text-blue-600" />
@@ -482,7 +482,7 @@ export default function UnfilledShiftsPage() {
         {/* Summary Stats */}
         {unfilledShifts.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white rounded-lg shadow p-4">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-red-100 rounded-lg">
                   <AlertCircle className="w-5 h-5 text-red-600" />
@@ -493,7 +493,7 @@ export default function UnfilledShiftsPage() {
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-lg shadow p-4">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-100 rounded-lg">
                   <Clock className="w-5 h-5 text-blue-600" />
@@ -506,9 +506,9 @@ export default function UnfilledShiftsPage() {
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-lg shadow p-4">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
+                <div className="p-2 bg-emerald-50 rounded-lg">
                   <Users className="w-5 h-5 text-green-600" />
                 </div>
                 <div>

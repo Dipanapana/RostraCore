@@ -9,10 +9,10 @@ import enum
 
 class ShiftStatus(str, enum.Enum):
     """Shift status enum."""
-    PLANNED = "planned"
-    CONFIRMED = "confirmed"
-    COMPLETED = "completed"
-    CANCELLED = "cancelled"
+    PLANNED = "PLANNED"
+    CONFIRMED = "CONFIRMED"
+    COMPLETED = "COMPLETED"
+    CANCELLED = "CANCELLED"
 
 
 class Shift(Base):

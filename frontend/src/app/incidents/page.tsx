@@ -28,7 +28,7 @@ interface Incident {
 // ---------------------------------------------------------------------------
 
 const SEVERITY_CONFIG: Record<string, { label: string; classes: string }> = {
-  low:      { label: "Low",      classes: "bg-slate-700 text-slate-200" },
+  low:      { label: "Low",      classes: "bg-gray-200 text-gray-700" },
   medium:   { label: "Medium",   classes: "bg-amber-900/60 text-amber-300" },
   high:     { label: "High",     classes: "bg-orange-900/60 text-orange-300" },
   critical: { label: "Critical", classes: "bg-red-900/60 text-red-300 font-bold" },
@@ -38,7 +38,7 @@ const STATUS_CONFIG: Record<string, { label: string; classes: string; icon: Reac
   reported:     { label: "Reported",     classes: "bg-blue-900/50 text-blue-300",   icon: <AlertTriangle size={12} /> },
   investigating:{ label: "Investigating",classes: "bg-yellow-900/50 text-yellow-300",icon: <Clock size={12} /> },
   resolved:     { label: "Resolved",     classes: "bg-green-900/50 text-green-300", icon: <CheckCircle size={12} /> },
-  closed:       { label: "Closed",       classes: "bg-slate-700 text-slate-400",    icon: <CheckCircle size={12} /> },
+  closed:       { label: "Closed",       classes: "bg-gray-200 text-gray-500",    icon: <CheckCircle size={12} /> },
 };
 
 function fmtDate(iso: string | null): string {
@@ -80,12 +80,12 @@ function ResolveModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-slate-800 border border-slate-700 rounded-xl w-full max-w-md p-6 shadow-2xl">
-        <h2 className="text-lg font-semibold text-white mb-1">Resolve Incident #{incident.incident_id}</h2>
-        <p className="text-sm text-slate-400 mb-4">{incident.site_name ?? "Unknown site"} — {incident.incident_type}</p>
-        <label className="block text-sm text-slate-300 mb-2">Resolution Notes</label>
+      <div className="bg-white border border-gray-200 rounded-xl w-full max-w-md p-6 shadow-2xl">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Resolve Incident #{incident.incident_id}</h2>
+        <p className="text-sm text-gray-500 mb-4">{incident.site_name ?? "Unknown site"} — {incident.incident_type}</p>
+        <label className="block text-sm text-gray-700 mb-2">Resolution Notes</label>
         <textarea
-          className="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm text-white placeholder-slate-500 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500"
+          className="w-full bg-white border border-gray-300 rounded-lg p-3 text-sm text-gray-900 placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500"
           rows={4}
           placeholder="Describe how the incident was resolved…"
           value={notes}
@@ -94,14 +94,14 @@ function ResolveModal({
         <div className="flex gap-3 mt-4 justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-700 transition-colors"
+            className="px-4 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2 rounded-lg text-sm font-semibold bg-green-600 hover:bg-green-500 text-white disabled:opacity-50 transition-colors"
+            className="px-4 py-2 rounded-lg text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 transition-colors"
           >
             {saving ? "Saving…" : "Mark Resolved"}
           </button>
@@ -181,15 +181,15 @@ export default function IncidentsPage() {
       {/* Page header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
             <ShieldAlert className="text-red-400" size={24} />
             Incident Reports
           </h1>
-          <p className="text-sm text-slate-400 mt-1">Security incidents filed by guards via the mobile app</p>
+          <p className="text-sm text-gray-500 mt-1">Security incidents filed by guards via the mobile app</p>
         </div>
         <button
           onClick={fetchIncidents}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-sm text-slate-300 transition-colors"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm text-gray-700 transition-colors"
         >
           <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
           Refresh
@@ -199,13 +199,13 @@ export default function IncidentsPage() {
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         {[
-          { label: "Total",    value: counts.total,    color: "text-slate-300" },
+          { label: "Total",    value: counts.total,    color: "text-gray-700" },
           { label: "Critical", value: counts.critical, color: "text-red-400" },
           { label: "Open",     value: counts.open,     color: "text-amber-400" },
           { label: "Resolved", value: counts.resolved, color: "text-green-400" },
         ].map(c => (
-          <div key={c.label} className="bg-slate-800 border border-slate-700 rounded-xl p-4">
-            <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">{c.label}</p>
+          <div key={c.label} className="bg-white border border-gray-200 rounded-xl p-4">
+            <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">{c.label}</p>
             <p className={`text-3xl font-bold ${c.color}`}>{c.value}</p>
           </div>
         ))}
@@ -214,19 +214,19 @@ export default function IncidentsPage() {
       {/* Filters */}
       <div className="flex flex-wrap gap-3 mb-4">
         <div className="relative flex-1 min-w-[200px]">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             placeholder="Search description, site, type…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-8 pr-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
+            className="w-full pl-8 pr-3 py-2 rounded-lg bg-white border border-gray-200 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
           />
         </div>
         <select
           value={severityFilter}
           onChange={e => setSeverityFilter(e.target.value)}
-          className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+          className="px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-violet-500"
         >
           <option value="">All Severities</option>
           <option value="low">Low</option>
@@ -237,7 +237,7 @@ export default function IncidentsPage() {
         <select
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
-          className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+          className="px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-violet-500"
         >
           <option value="">All Statuses</option>
           <option value="reported">Reported</option>
@@ -248,27 +248,27 @@ export default function IncidentsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         {loading ? (
-          <div className="flex items-center justify-center py-16 text-slate-500 text-sm">Loading incidents…</div>
+          <div className="flex items-center justify-center py-16 text-gray-400 text-sm">Loading incidents…</div>
         ) : displayed.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <AlertTriangle size={32} className="text-slate-600" />
-            <p className="text-slate-500 text-sm">No incidents found</p>
+            <AlertTriangle size={32} className="text-gray-400" />
+            <p className="text-gray-400 text-sm">No incidents found</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-700 text-left">
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">#</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Site</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Type</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Severity</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Description</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Reported</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Actions</th>
+                <tr className="border-b border-gray-200 text-left">
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">#</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Site</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Severity</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Reported</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -280,18 +280,18 @@ export default function IncidentsPage() {
                   return (
                     <tr
                       key={inc.incident_id}
-                      className={`border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors ${idx % 2 === 0 ? "" : "bg-slate-800/50"}`}
+                      className={`border-b border-gray-200 hover:bg-gray-50 transition-colors ${idx % 2 === 0 ? "" : "bg-gray-50"}`}
                     >
-                      <td className="px-4 py-3 text-slate-500 font-mono text-xs">{inc.incident_id}</td>
-                      <td className="px-4 py-3 text-slate-200 font-medium">{inc.site_name ?? <span className="text-slate-600">—</span>}</td>
-                      <td className="px-4 py-3 text-slate-300 capitalize">{inc.incident_type.replace(/_/g, " ")}</td>
+                      <td className="px-4 py-3 text-gray-400 font-mono text-xs">{inc.incident_id}</td>
+                      <td className="px-4 py-3 text-gray-800 font-medium">{inc.site_name ?? <span className="text-gray-400">—</span>}</td>
+                      <td className="px-4 py-3 text-gray-700 capitalize">{inc.incident_type.replace(/_/g, " ")}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex px-2 py-0.5 rounded-full text-xs ${sev.classes}`}>
                           {sev.label}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-slate-400 max-w-xs">{truncate(inc.description)}</td>
-                      <td className="px-4 py-3 text-slate-400 whitespace-nowrap text-xs">{fmtDate(inc.reported_at)}</td>
+                      <td className="px-4 py-3 text-gray-500 max-w-xs">{truncate(inc.description)}</td>
+                      <td className="px-4 py-3 text-gray-500 whitespace-nowrap text-xs">{fmtDate(inc.reported_at)}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${sts.classes}`}>
                           {sts.icon}
@@ -320,7 +320,7 @@ export default function IncidentsPage() {
                           </div>
                         )}
                         {inc.status === "resolved" && inc.resolution_notes && (
-                          <span className="text-xs text-slate-500 italic">{truncate(inc.resolution_notes, 40)}</span>
+                          <span className="text-xs text-gray-400 italic">{truncate(inc.resolution_notes, 40)}</span>
                         )}
                       </td>
                     </tr>
@@ -332,7 +332,7 @@ export default function IncidentsPage() {
         )}
       </div>
 
-      <p className="text-xs text-slate-600 mt-3 text-right">{displayed.length} incident{displayed.length !== 1 ? "s" : ""} shown</p>
+      <p className="text-xs text-gray-400 mt-3 text-right">{displayed.length} incident{displayed.length !== 1 ? "s" : ""} shown</p>
 
       {/* Resolve modal */}
       {resolveTarget && (

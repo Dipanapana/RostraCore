@@ -23,7 +23,7 @@ export default function Hero() {
                         </div>
 
                         {/* Headline */}
-                        <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-slate-900 mb-6 leading-tight animate-slide-up delay-100">
+                        <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight animate-slide-up delay-100">
                             Security Management <br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
                                 Reimagined
@@ -31,7 +31,7 @@ export default function Hero() {
                         </h1>
 
                         {/* Subheadline */}
-                        <p className="text-lg sm:text-xl text-slate-600 mb-10 leading-relaxed max-w-2xl mx-auto lg:mx-0 animate-slide-up delay-200">
+                        <p className="text-lg sm:text-xl text-gray-600 mb-10 leading-relaxed max-w-2xl mx-auto lg:mx-0 animate-slide-up delay-200">
                             Automate rosters, track PSIRA compliance, and manage your workforce with military-grade precision. The all-in-one platform for modern security operations.
                         </p>
 
@@ -46,14 +46,14 @@ export default function Hero() {
                             </Link>
                             <a
                                 href="#features"
-                                className="inline-flex items-center justify-center px-8 py-4 rounded-xl font-bold text-lg text-slate-700 hover:text-slate-900 border border-slate-300 hover:border-slate-400 hover:bg-slate-50 transition-all"
+                                className="inline-flex items-center justify-center px-8 py-4 rounded-xl font-bold text-lg text-gray-700 hover:text-gray-900 border border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-all"
                             >
                                 View Features
                             </a>
                         </div>
 
                         {/* Trust Signals */}
-                        <div className="mt-12 flex flex-wrap items-center justify-center lg:justify-start gap-x-8 gap-y-4 text-sm text-slate-500 animate-slide-up delay-300">
+                        <div className="mt-12 flex flex-wrap items-center justify-center lg:justify-start gap-x-8 gap-y-4 text-sm text-gray-500 animate-slide-up delay-300">
                             {['PSIRA Compliant', 'POPIA Certified', 'South African Owned'].map((item) => (
                                 <div key={item} className="flex items-center gap-2">
                                     <CheckCircle2 className="w-4 h-4 text-emerald-500" />
@@ -67,10 +67,10 @@ export default function Hero() {
                     <div className="relative lg:h-[600px] flex items-center justify-center animate-float">
                         <div className="relative w-full max-w-lg aspect-square">
                             {/* Abstract Dashboard Representation */}
-                            <div className="absolute inset-0 bg-white rounded-3xl border-2 border-slate-200 p-6 transform rotate-3 hover:rotate-0 transition-all duration-500 shadow-2xl hover:shadow-3xl">
-                                <div className="h-full w-full bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl overflow-hidden relative border border-slate-200">
+                            <div className="absolute inset-0 bg-white rounded-3xl border-2 border-gray-200 p-6 transform rotate-3 hover:rotate-0 transition-all duration-500 shadow-2xl hover:shadow-2xl">
+                                <div className="h-full w-full bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl overflow-hidden relative border border-gray-200">
                                     {/* Header Bar */}
-                                    <div className="h-14 border-b border-slate-200 flex items-center px-5 gap-2.5 bg-white">
+                                    <div className="h-14 border-b border-gray-200 flex items-center px-5 gap-2.5 bg-white">
                                         <div className="w-3.5 h-3.5 rounded-full bg-red-500 shadow-lg shadow-red-500/30" />
                                         <div className="w-3.5 h-3.5 rounded-full bg-yellow-500 shadow-lg shadow-yellow-500/30" />
                                         <div className="w-3.5 h-3.5 rounded-full bg-green-500 shadow-lg shadow-green-500/30" />
@@ -82,10 +82,10 @@ export default function Hero() {
                                             <div className="w-1/3 h-24 rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100 border-2 border-indigo-200 shadow-md" />
                                             <div className="w-1/3 h-24 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100 border-2 border-emerald-200 shadow-md" />
                                         </div>
-                                        <div className="h-40 rounded-xl bg-white border-2 border-slate-200 shadow-md" />
+                                        <div className="h-40 rounded-xl bg-white border-2 border-gray-200 shadow-md" />
                                         <div className="space-y-2">
-                                            <div className="h-8 w-3/4 rounded-lg bg-white border border-slate-200 shadow-sm" />
-                                            <div className="h-8 w-1/2 rounded-lg bg-white border border-slate-200 shadow-sm" />
+                                            <div className="h-8 w-3/4 rounded-lg bg-white border border-gray-200 shadow-sm" />
+                                            <div className="h-8 w-1/2 rounded-lg bg-white border border-gray-200 shadow-sm" />
                                         </div>
                                     </div>
                                 </div>
@@ -98,7 +98,7 @@ export default function Hero() {
                                         <ShieldCheck className="w-7 h-7 text-white" />
                                     </div>
                                     <div>
-                                        <p className="text-xs text-slate-600 font-medium">Compliance Status</p>
+                                        <p className="text-xs text-gray-600 font-medium">Compliance Status</p>
                                         <p className="text-base font-bold text-emerald-600">100% Verified</p>
                                     </div>
                                 </div>
@@ -110,7 +110,7 @@ export default function Hero() {
                                         <CheckCircle2 className="w-7 h-7 text-white" />
                                     </div>
                                     <div>
-                                        <p className="text-xs text-slate-600 font-medium">Active Guards</p>
+                                        <p className="text-xs text-gray-600 font-medium">Active Guards</p>
                                         <p className="text-base font-bold text-blue-600">Shift Active</p>
                                     </div>
                                 </div>

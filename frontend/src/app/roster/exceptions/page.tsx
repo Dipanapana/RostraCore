@@ -33,20 +33,20 @@ interface ShiftException {
 }
 
 const TYPE_CONFIG: Record<string, { label: string; color: string }> = {
-  no_show:         { label: 'No Show',          color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400' },
-  late_arrival:    { label: 'Late Arrival',      color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' },
-  early_departure: { label: 'Early Departure',   color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400' },
-  awol:            { label: 'AWOL',              color: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300' },
-  relief_required: { label: 'Relief Required',   color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400' },
-  equipment_issue: { label: 'Equipment Issue',   color: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400' },
-  other:           { label: 'Other',             color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400' },
+  no_show:         { label: 'No Show',          color: 'bg-red-100 text-red-700' },
+  late_arrival:    { label: 'Late Arrival',      color: 'bg-amber-100 text-amber-700' },
+  early_departure: { label: 'Early Departure',   color: 'bg-orange-100 text-orange-700' },
+  awol:            { label: 'AWOL',              color: 'bg-red-50 text-red-700' },
+  relief_required: { label: 'Relief Required',   color: 'bg-purple-100 text-purple-700' },
+  equipment_issue: { label: 'Equipment Issue',   color: 'bg-gray-100 text-gray-700' },
+  other:           { label: 'Other',             color: 'bg-gray-100 text-gray-700' },
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ComponentType<any> }> = {
-  open:        { label: 'Open',        color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400',         icon: AlertCircle },
-  in_progress: { label: 'In Progress', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400', icon: Clock },
-  resolved:    { label: 'Resolved',    color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400', icon: CheckCircle },
-  escalated:   { label: 'Escalated',   color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400', icon: AlertTriangle },
+  open:        { label: 'Open',        color: 'bg-red-100 text-red-700',         icon: AlertCircle },
+  in_progress: { label: 'In Progress', color: 'bg-amber-100 text-amber-700', icon: Clock },
+  resolved:    { label: 'Resolved',    color: 'bg-emerald-100 text-emerald-700', icon: CheckCircle },
+  escalated:   { label: 'Escalated',   color: 'bg-purple-100 text-purple-700', icon: AlertTriangle },
 }
 
 function todayISO() { return new Date().toISOString().split('T')[0] }
@@ -189,8 +189,8 @@ export default function ExceptionsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Exception Log</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">
+          <h1 className="text-2xl font-semibold text-gray-900">Exception Log</h1>
+          <p className="text-gray-500 mt-1">
             Track and resolve operational exceptions — no-shows, AWOL, late arrivals, and more
           </p>
         </div>
@@ -198,7 +198,7 @@ export default function ExceptionsPage() {
           <button
             onClick={fetchData}
             disabled={loading}
-            className="flex items-center gap-2 px-3 py-2 text-sm bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-white/10 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
@@ -216,33 +216,33 @@ export default function ExceptionsPage() {
       {/* Summary KPIs */}
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-white/10 p-4">
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Total Active</p>
-            <p className="text-2xl font-bold text-slate-900 dark:text-white">{summary.total_active}</p>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-xs text-gray-500 mb-1">Total Active</p>
+            <p className="text-2xl font-bold text-gray-900">{summary.total_active}</p>
           </div>
           {(['open', 'in_progress', 'escalated'] as const).map((s) => {
             const cfg = STATUS_CONFIG[s]
             const Icon = cfg.icon
             return (
               <div key={s} className={`rounded-xl border p-4 ${
-                s === 'open' ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' :
-                s === 'in_progress' ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800' :
-                'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800'
+                s === 'open' ? 'bg-red-50 border-red-200' :
+                s === 'in_progress' ? 'bg-amber-50 border-amber-200' :
+                'bg-purple-50 border-purple-200'
               }`}>
                 <div className="flex items-center gap-1.5 mb-1">
                   <Icon className={`w-3.5 h-3.5 ${
                     s === 'open' ? 'text-red-500' : s === 'in_progress' ? 'text-amber-500' : 'text-purple-500'
                   }`} />
                   <p className={`text-xs ${
-                    s === 'open' ? 'text-red-600 dark:text-red-400' :
-                    s === 'in_progress' ? 'text-amber-600 dark:text-amber-400' :
-                    'text-purple-600 dark:text-purple-400'
+                    s === 'open' ? 'text-red-600' :
+                    s === 'in_progress' ? 'text-amber-600' :
+                    'text-purple-600'
                   }`}>{cfg.label}</p>
                 </div>
                 <p className={`text-2xl font-bold ${
-                  s === 'open' ? 'text-red-700 dark:text-red-400' :
-                  s === 'in_progress' ? 'text-amber-700 dark:text-amber-400' :
-                  'text-purple-700 dark:text-purple-400'
+                  s === 'open' ? 'text-red-700' :
+                  s === 'in_progress' ? 'text-amber-700' :
+                  'text-purple-700'
                 }`}>{summary.by_status[s] || 0}</p>
               </div>
             )
@@ -251,26 +251,26 @@ export default function ExceptionsPage() {
       )}
 
       {/* Filters */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-white/10 p-4">
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
         <div className="flex items-center gap-2 mb-3">
-          <Filter className="w-4 h-4 text-slate-400" />
-          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Filters</span>
+          <Filter className="w-4 h-4 text-gray-400" />
+          <span className="text-sm font-medium text-gray-700">Filters</span>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <div>
-            <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">From</label>
+            <label className="block text-xs text-gray-500 mb-1">From</label>
             <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
-              className="w-full border border-slate-200 dark:border-white/10 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white" />
+              className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white text-gray-900" />
           </div>
           <div>
-            <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">To</label>
+            <label className="block text-xs text-gray-500 mb-1">To</label>
             <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)}
-              className="w-full border border-slate-200 dark:border-white/10 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white" />
+              className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white text-gray-900" />
           </div>
           <div>
-            <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Status</label>
+            <label className="block text-xs text-gray-500 mb-1">Status</label>
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full border border-slate-200 dark:border-white/10 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
+              className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white text-gray-900">
               <option value="">All Statuses</option>
               <option value="open">Open</option>
               <option value="in_progress">In Progress</option>
@@ -279,9 +279,9 @@ export default function ExceptionsPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Type</label>
+            <label className="block text-xs text-gray-500 mb-1">Type</label>
             <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}
-              className="w-full border border-slate-200 dark:border-white/10 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
+              className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white text-gray-900">
               <option value="">All Types</option>
               {Object.entries(TYPE_CONFIG).map(([k, v]) => (
                 <option key={k} value={k}>{v.label}</option>
@@ -289,9 +289,9 @@ export default function ExceptionsPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Site</label>
+            <label className="block text-xs text-gray-500 mb-1">Site</label>
             <select value={siteFilter} onChange={(e) => setSiteFilter(e.target.value)}
-              className="w-full border border-slate-200 dark:border-white/10 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
+              className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white text-gray-900">
               <option value="">All Sites</option>
               {sites.map((s) => <option key={s.site_id} value={s.site_id}>{s.site_name}</option>)}
             </select>
@@ -300,22 +300,22 @@ export default function ExceptionsPage() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 dark:text-red-400">
+        <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600">
           <AlertTriangle className="w-5 h-5 flex-shrink-0" /><p>{error}</p>
         </div>
       )}
 
       {/* Exception list */}
       {exceptions.length > 0 ? (
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden">
-          <div className="p-4 border-b border-slate-200 dark:border-white/10 flex items-center justify-between">
-            <h2 className="font-semibold text-slate-900 dark:text-white">
-              Exceptions <span className="ml-1.5 text-sm font-normal text-slate-400">({total})</span>
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+            <h2 className="font-semibold text-gray-900">
+              Exceptions <span className="ml-1.5 text-sm font-normal text-gray-400">({total})</span>
             </h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-slate-50 dark:bg-white/5 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <tr>
                   <th className="px-4 py-3 text-left">Type</th>
                   <th className="px-4 py-3 text-left">Date</th>
@@ -326,26 +326,26 @@ export default function ExceptionsPage() {
                   <th className="px-4 py-3 text-left">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+              <tbody className="divide-y divide-gray-100">
                 {exceptions.map((ex) => {
                   const typeCfg = TYPE_CONFIG[ex.exception_type] || { label: ex.exception_type, color: 'bg-gray-100 text-gray-700' }
                   const statusCfg = STATUS_CONFIG[ex.status] || { label: ex.status, color: 'bg-gray-100 text-gray-700', icon: ChevronDown }
                   const StatusIcon = statusCfg.icon
 
                   return (
-                    <tr key={ex.exception_id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                    <tr key={ex.exception_id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${typeCfg.color}`}>
                           {typeCfg.label}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
+                      <td className="px-4 py-3 text-sm text-gray-700">
                         {ex.exception_date}
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
+                      <td className="px-4 py-3 text-sm text-gray-700">
                         {ex.employee_name || '—'}
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
+                      <td className="px-4 py-3 text-sm text-gray-500">
                         {ex.site_name || '—'}
                       </td>
                       <td className="px-4 py-3">
@@ -354,7 +354,7 @@ export default function ExceptionsPage() {
                           {statusCfg.label}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
+                      <td className="px-4 py-3 text-sm text-gray-500">
                         {ex.reported_by_name || '—'}
                       </td>
                       <td className="px-4 py-3">
@@ -362,14 +362,14 @@ export default function ExceptionsPage() {
                           {ex.status !== 'resolved' && (
                             <button
                               onClick={() => { setResolvingId(ex.exception_id); setResolveStatus('resolved'); setResolveNotes('') }}
-                              className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                              className="text-xs text-blue-600 hover:underline"
                             >
                               Update
                             </button>
                           )}
                           <button
                             onClick={() => handleDelete(ex.exception_id)}
-                            className="text-xs text-red-500 dark:text-red-400 hover:underline"
+                            className="text-xs text-red-500 hover:underline"
                           >
                             Delete
                           </button>
@@ -385,8 +385,8 @@ export default function ExceptionsPage() {
       ) : !loading && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <CheckCircle className="w-16 h-16 text-emerald-400 mb-4" />
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">No exceptions found</h3>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">
+          <h3 className="text-lg font-semibold text-gray-900">No exceptions found</h3>
+          <p className="text-gray-500 mt-1">
             No {statusFilter || 'active'} exceptions for the selected period.
           </p>
         </div>
@@ -394,73 +394,73 @@ export default function ExceptionsPage() {
 
       {loading && (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500" />
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600" />
         </div>
       )}
 
       {/* Log Exception Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg">
-            <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-white/10">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Log Exception</h3>
-              <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+            <div className="flex items-center justify-between p-5 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Log Exception</h3>
+              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <form onSubmit={handleCreate} className="p-5 space-y-4">
               {formError && (
-                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-400">
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
                   {formError}
                 </div>
               )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Exception Type *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Exception Type *</label>
                   <select value={formData.exception_type} onChange={(e) => setFormData({...formData, exception_type: e.target.value})}
-                    className="w-full border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white" required>
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white text-gray-900" required>
                     {Object.entries(TYPE_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Date *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
                   <input type="date" value={formData.exception_date} onChange={(e) => setFormData({...formData, exception_date: e.target.value})}
-                    className="w-full border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white" required />
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white text-gray-900" required />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Employee</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Employee</label>
                   <select value={formData.employee_id} onChange={(e) => setFormData({...formData, employee_id: e.target.value})}
-                    className="w-full border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white text-gray-900">
                     <option value="">Select employee…</option>
                     {employees.map((emp) => <option key={emp.employee_id} value={emp.employee_id}>{emp.first_name} {emp.last_name}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Site</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Site</label>
                   <select value={formData.site_id} onChange={(e) => setFormData({...formData, site_id: e.target.value})}
-                    className="w-full border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white text-gray-900">
                     <option value="">Select site…</option>
                     {sites.map((s) => <option key={s.site_id} value={s.site_id}>{s.site_name}</option>)}
                   </select>
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Shift ID (optional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Shift ID (optional)</label>
                 <input type="number" value={formData.shift_id} onChange={(e) => setFormData({...formData, shift_id: e.target.value})}
                   placeholder="Leave blank if unknown"
-                  className="w-full border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400" />
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white text-gray-900 placeholder-gray-400" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                 <textarea value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})}
                   rows={3} placeholder="Brief description of the exception…"
-                  className="w-full border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none" />
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white text-gray-900 placeholder-gray-400 resize-none" />
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setShowForm(false)}
-                  className="px-4 py-2 text-sm border border-slate-200 dark:border-white/10 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5">
+                  className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50">
                   Cancel
                 </button>
                 <button type="submit" disabled={formSaving}
@@ -476,32 +476,32 @@ export default function ExceptionsPage() {
       {/* Resolve / Update Status Modal */}
       {resolvingId && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-white/10">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Update Status</h3>
-              <button onClick={() => setResolvingId(null)} className="text-slate-400 hover:text-slate-600">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between p-5 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Update Status</h3>
+              <button onClick={() => setResolvingId(null)} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="p-5 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">New Status</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">New Status</label>
                 <select value={resolveStatus} onChange={(e) => setResolveStatus(e.target.value)}
-                  className="w-full border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white text-gray-900">
                   <option value="in_progress">In Progress</option>
                   <option value="resolved">Resolved</option>
                   <option value="escalated">Escalated</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Resolution Notes</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Resolution Notes</label>
                 <textarea value={resolveNotes} onChange={(e) => setResolveNotes(e.target.value)} rows={3}
                   placeholder="What action was taken?"
-                  className="w-full border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 resize-none" />
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white text-gray-900 placeholder-gray-400 resize-none" />
               </div>
               <div className="flex justify-end gap-3">
                 <button onClick={() => setResolvingId(null)}
-                  className="px-4 py-2 text-sm border border-slate-200 dark:border-white/10 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50">
+                  className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50">
                   Cancel
                 </button>
                 <button onClick={handleResolve} disabled={resolveSaving}

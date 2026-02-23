@@ -16,6 +16,11 @@ import PayslipScreen from '../screens/PayslipScreen';
 import MyIncidentsScreen from '../screens/MyIncidentsScreen';
 import LeaveApprovalScreen from '../screens/LeaveApprovalScreen';
 import ChangePasswordScreen from '../screens/ChangePasswordScreen';
+import PanicButtonScreen from '../screens/PanicButtonScreen';
+import LoneWorkerScreen from '../screens/LoneWorkerScreen';
+import MessagingScreen from '../screens/MessagingScreen';
+import PostOrdersScreen from '../screens/PostOrdersScreen';
+import FormsScreen from '../screens/FormsScreen';
 import { useAuthStore } from '../context/authStore';
 
 // ---------------------------------------------------------------------------
@@ -142,6 +147,31 @@ export default function AppNavigator() {
       <RootStack.Screen
         name="ChangePassword"
         component={ChangePasswordScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <RootStack.Screen
+        name="PanicButton"
+        component={PanicButtonScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <RootStack.Screen
+        name="LoneWorker"
+        component={LoneWorkerScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <RootStack.Screen
+        name="Messaging"
+        component={MessagingScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <RootStack.Screen
+        name="PostOrders"
+        component={PostOrdersScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <RootStack.Screen
+        name="Forms"
+        component={FormsScreen}
         options={{ presentation: 'modal' }}
       />
     </RootStack.Navigator>

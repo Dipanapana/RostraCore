@@ -43,13 +43,13 @@ const typeLabel = (t: string) => t.replace(/_/g, ' ').replace(/\b\w/g, c => c.to
 
 const typeColor = (t: string) => {
   const colors: Record<string, string> = {
-    verbal_warning: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-    written_warning: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-    final_warning: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-    suspension: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-    dismissal: 'bg-red-200 text-red-800 dark:bg-red-900/50 dark:text-red-300',
+    verbal_warning: 'bg-blue-100 text-blue-700',
+    written_warning: 'bg-amber-50 text-amber-700',
+    final_warning: 'bg-orange-100 text-orange-700',
+    suspension: 'bg-red-100 text-red-700',
+    dismissal: 'bg-red-100 text-red-700',
   }
-  return colors[t] || 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+  return colors[t] || 'bg-gray-100 text-gray-600'
 }
 
 export default function DisciplinaryPage() {
@@ -157,8 +157,8 @@ export default function DisciplinaryPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Disciplinary Records</h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+          <h1 className="text-2xl font-semibold text-gray-900">Disciplinary Records</h1>
+          <p className="text-gray-500 text-sm mt-1">
             Formal disciplinary case log for all employees
           </p>
         </div>
@@ -172,7 +172,7 @@ export default function DisciplinaryPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-700">
+      <div className="border-b border-gray-200">
         <nav className="flex space-x-8">
           {[
             { key: 'cases', label: 'Cases', icon: Gavel },
@@ -183,8 +183,8 @@ export default function DisciplinaryPage() {
               onClick={() => setTab(key as any)}
               className={`flex items-center gap-2 py-3 px-1 border-b-2 text-sm font-medium transition-colors ${
                 tab === key
-                  ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -205,32 +205,32 @@ export default function DisciplinaryPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search cases..."
-                className="pl-9 pr-3 py-2 border rounded-lg text-sm w-56 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                className="pl-9 pr-3 py-2 border rounded-lg text-sm w-56"
               />
             </div>
             <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}
-              className="px-3 py-2 border rounded-lg text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+              className="px-3 py-2 border rounded-lg text-sm">
               <option value="">All Types</option>
               {CASE_TYPES.map((t) => <option key={t} value={t}>{typeLabel(t)}</option>)}
             </select>
-            <span className="text-sm text-gray-500 dark:text-gray-400">{total} cases (last 12 months)</span>
+            <span className="text-sm text-gray-500">{total} cases (last 12 months)</span>
           </div>
 
           {/* Table */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-700/50">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Employee</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Type</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Incident Date</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Reason</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Outcome</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Issued By</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Incident Date</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reason</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Outcome</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Issued By</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="divide-y divide-gray-200">
                 {cases.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
@@ -239,8 +239,8 @@ export default function DisciplinaryPage() {
                   </tr>
                 ) : (
                   cases.map((c) => (
-                    <tr key={c.case_id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
-                      <td className="px-4 py-3 text-sm text-gray-900 dark:text-white font-medium">
+                    <tr key={c.case_id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm text-gray-900 font-medium">
                         {c.employee_name || `Employee #${c.employee_id}`}
                       </td>
                       <td className="px-4 py-3">
@@ -248,10 +248,10 @@ export default function DisciplinaryPage() {
                           {typeLabel(c.case_type)}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{formatDate(c.incident_date)}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 max-w-xs truncate">{c.reason}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 max-w-xs truncate">{c.outcome || '-'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{c.issued_by_name || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{formatDate(c.incident_date)}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate">{c.reason}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate">{c.outcome || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-500">{c.issued_by_name || '-'}</td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex justify-end gap-1">
                           <button onClick={() => { setEditCase(c); setEditOutcome(c.outcome || '') }}
@@ -276,15 +276,15 @@ export default function DisciplinaryPage() {
       {/* ── DASHBOARD TAB ────────────────────────────────────────────────── */}
       {tab === 'dashboard' && dashboard && (
         <div className="space-y-6">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Cases ({dashboard.period_days}d)</p>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">{dashboard.total}</p>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <p className="text-xs text-gray-500 mb-1">Total Cases ({dashboard.period_days}d)</p>
+            <p className="text-3xl font-bold text-gray-900">{dashboard.total}</p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* By Type */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-3">By Type</h3>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+              <h3 className="font-semibold text-gray-900 mb-3">By Type</h3>
               {dashboard.by_type.length === 0 ? (
                 <p className="text-gray-400 text-sm">No data</p>
               ) : (
@@ -294,7 +294,7 @@ export default function DisciplinaryPage() {
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${typeColor(type)}`}>
                         {typeLabel(type)}
                       </span>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">{count}</span>
+                      <span className="text-sm font-medium text-gray-900">{count}</span>
                     </div>
                   ))}
                 </div>
@@ -302,16 +302,16 @@ export default function DisciplinaryPage() {
             </div>
 
             {/* By Employee */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Most Cases (Employees)</h3>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+              <h3 className="font-semibold text-gray-900 mb-3">Most Cases (Employees)</h3>
               {dashboard.by_employee.length === 0 ? (
                 <p className="text-gray-400 text-sm">No data</p>
               ) : (
                 <div className="space-y-2">
                   {dashboard.by_employee.map((e) => (
                     <div key={e.employee_id} className="flex items-center justify-between py-1.5">
-                      <span className="text-sm text-gray-700 dark:text-gray-300">{e.employee_name}</span>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">{e.count}</span>
+                      <span className="text-sm text-gray-700">{e.employee_name}</span>
+                      <span className="text-sm font-medium text-gray-900">{e.count}</span>
                     </div>
                   ))}
                 </div>
@@ -319,8 +319,8 @@ export default function DisciplinaryPage() {
             </div>
 
             {/* Monthly Trend */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Monthly Trend</h3>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+              <h3 className="font-semibold text-gray-900 mb-3">Monthly Trend</h3>
               {dashboard.monthly_trend.length === 0 ? (
                 <p className="text-gray-400 text-sm">No data</p>
               ) : (
@@ -329,14 +329,14 @@ export default function DisciplinaryPage() {
                     const max = Math.max(...dashboard.monthly_trend.map((t) => t.count), 1)
                     return (
                       <div key={d.month} className="flex items-center gap-2">
-                        <span className="text-xs text-gray-500 dark:text-gray-400 w-16 shrink-0">{d.month}</span>
-                        <div className="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-4 overflow-hidden">
+                        <span className="text-xs text-gray-500 w-16 shrink-0">{d.month}</span>
+                        <div className="flex-1 bg-gray-100 rounded-full h-4 overflow-hidden">
                           <div
                             className="bg-red-500 h-full rounded-full"
                             style={{ width: `${(d.count / max) * 100}%` }}
                           />
                         </div>
-                        <span className="text-xs text-gray-600 dark:text-gray-300 w-6 text-right">{d.count}</span>
+                        <span className="text-xs text-gray-600 w-6 text-right">{d.count}</span>
                       </div>
                     )
                   })}
@@ -354,50 +354,50 @@ export default function DisciplinaryPage() {
       {/* ── CREATE MODAL ─────────────────────────────────────────────────── */}
       {showCreate && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white">New Disciplinary Case</h3>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h3 className="font-semibold text-gray-900">New Disciplinary Case</h3>
               <button onClick={() => setShowCreate(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-4 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Employee *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Employee *</label>
                   <select value={createForm.employee_id} onChange={(e) => setCreateForm({ ...createForm, employee_id: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    className="w-full px-3 py-2 border rounded-lg text-sm">
                     <option value={0}>Select employee...</option>
                     {employees.map((e) => <option key={e.employee_id} value={e.employee_id}>{e.first_name} {e.last_name}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
                   <select value={createForm.case_type} onChange={(e) => setCreateForm({ ...createForm, case_type: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    className="w-full px-3 py-2 border rounded-lg text-sm">
                     {CASE_TYPES.map((t) => <option key={t} value={t}>{typeLabel(t)}</option>)}
                   </select>
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Incident Date *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Incident Date *</label>
                 <input type="date" value={createForm.incident_date}
                   onChange={(e) => setCreateForm({ ...createForm, incident_date: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                  className="w-full px-3 py-2 border rounded-lg text-sm" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reason / Offence *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Reason / Offence *</label>
                 <textarea value={createForm.reason} onChange={(e) => setCreateForm({ ...createForm, reason: e.target.value })}
-                  rows={3} className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  rows={3} className="w-full px-3 py-2 border rounded-lg text-sm"
                   placeholder="Describe the offence or reason for disciplinary action..." />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Outcome</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Outcome</label>
                 <textarea value={createForm.outcome} onChange={(e) => setCreateForm({ ...createForm, outcome: e.target.value })}
-                  rows={2} className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  rows={2} className="w-full px-3 py-2 border rounded-lg text-sm"
                   placeholder="Corrective action or resolution..." />
               </div>
             </div>
-            <div className="flex justify-end gap-2 p-4 border-t border-gray-200 dark:border-gray-700">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">Cancel</button>
+            <div className="flex justify-end gap-2 p-4 border-t border-gray-200">
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-sm text-gray-600">Cancel</button>
               <button onClick={handleCreate} disabled={!createForm.employee_id || !createForm.reason}
                 className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
                 Log Case
@@ -410,30 +410,30 @@ export default function DisciplinaryPage() {
       {/* ── EDIT OUTCOME MODAL ───────────────────────────────────────────── */}
       {editCase && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white">Update Outcome</h3>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h3 className="font-semibold text-gray-900">Update Outcome</h3>
               <button onClick={() => setEditCase(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-4 space-y-4">
-              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+              <div className="bg-gray-50 rounded-lg p-3">
                 <div className="flex items-center gap-2 mb-1">
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${typeColor(editCase.case_type)}`}>
                     {typeLabel(editCase.case_type)}
                   </span>
-                  <span className="text-sm text-gray-900 dark:text-white font-medium">{editCase.employee_name}</span>
+                  <span className="text-sm text-gray-900 font-medium">{editCase.employee_name}</span>
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-300">{editCase.reason}</p>
+                <p className="text-sm text-gray-600">{editCase.reason}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Outcome / Resolution</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Outcome / Resolution</label>
                 <textarea value={editOutcome} onChange={(e) => setEditOutcome(e.target.value)}
-                  rows={3} className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  rows={3} className="w-full px-3 py-2 border rounded-lg text-sm"
                   placeholder="Corrective action taken or resolution..." />
               </div>
             </div>
-            <div className="flex justify-end gap-2 p-4 border-t border-gray-200 dark:border-gray-700">
-              <button onClick={() => setEditCase(null)} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">Cancel</button>
+            <div className="flex justify-end gap-2 p-4 border-t border-gray-200">
+              <button onClick={() => setEditCase(null)} className="px-4 py-2 text-sm text-gray-600">Cancel</button>
               <button onClick={handleUpdate}
                 className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                 Save Outcome

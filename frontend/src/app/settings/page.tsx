@@ -208,8 +208,8 @@ export default function SettingsPage() {
 
   const getLevelBadgeColor = (level: string) => {
     switch (level) {
-      case 'hard': return 'bg-red-100 text-red-800'
-      case 'soft': return 'bg-yellow-100 text-yellow-800'
+      case 'hard': return 'bg-red-50 text-red-700'
+      case 'soft': return 'bg-amber-50 text-amber-700'
       case 'warning': return 'bg-orange-100 text-orange-800'
       case 'disabled': return 'bg-gray-100 text-gray-800'
       default: return 'bg-gray-100 text-gray-800'
@@ -230,12 +230,12 @@ export default function SettingsPage() {
             </svg>
             Back
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">Settings</h1>
           <p className="text-gray-600 mt-1">Configure your organization settings</p>
         </div>
 
         {/* Security Section */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-1">Security</h2>
           <p className="text-sm text-gray-600 mb-4">Manage your account security settings</p>
           <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
@@ -245,7 +245,7 @@ export default function SettingsPage() {
             </div>
             <button
               onClick={() => router.push('/settings/change-password')}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
             >
               Change Password
             </button>
@@ -253,7 +253,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Client Management Section */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
           <div className="flex justify-between items-center mb-4">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Client Management</h2>
@@ -264,13 +264,13 @@ export default function SettingsPage() {
           </div>
 
           {clientManagementError && (
-            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md mb-4">
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
               {clientManagementError}
             </div>
           )}
 
           {clientManagementSuccess && (
-            <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-md mb-4">
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg mb-4">
               Settings saved successfully!
             </div>
           )}
@@ -357,7 +357,7 @@ export default function SettingsPage() {
                 <button
                   onClick={saveClientManagement}
                   disabled={clientManagementSaving}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {clientManagementSaving ? 'Saving...' : 'Save Client Settings'}
                 </button>
@@ -367,7 +367,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Roster Constraint Settings Section */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
           <div className="flex justify-between items-center mb-6">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Roster Constraint Settings</h2>
@@ -375,7 +375,7 @@ export default function SettingsPage() {
             </div>
             <button
               onClick={handleCreate}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
             >
               Add Preference
             </button>
@@ -398,7 +398,7 @@ export default function SettingsPage() {
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md mb-4">
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
               {error}
             </div>
           )}
@@ -487,7 +487,7 @@ export default function SettingsPage() {
         {/* Preference Form Modal */}
         {showForm && (
           <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white">
+            <div className="relative top-20 mx-auto p-5 border border-gray-200 w-full max-w-4xl shadow-lg rounded-xl bg-white">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium text-gray-900">
                   {editingPreference ? 'Edit Preference' : 'Create Preference'}
@@ -784,13 +784,13 @@ export default function SettingsPage() {
                   <button
                     type="button"
                     onClick={() => setShowForm(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                   >
                     {editingPreference ? 'Update' : 'Create'}
                   </button>

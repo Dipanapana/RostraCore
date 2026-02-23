@@ -1,8 +1,11 @@
 """Mobile attendance endpoints — GPS-verified check-in / check-out via ShiftAssignment."""
 
+import logging
 import math
 from datetime import datetime, date
 from typing import Optional, List
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from pydantic import BaseModel
@@ -103,6 +106,7 @@ class AttendanceRequest(BaseModel):
     latitude: float
     longitude: float
     photo_url: Optional[str] = None
+    photo_base64: Optional[str] = None  # Base64 encoded JPEG for biometric verification
 
 
 # ---------------------------------------------------------------------------
@@ -138,12 +142,51 @@ def check_in(
     db.commit()
     db.refresh(assignment)
 
-    return {
+    # Biometric photo verification (optional)
+    photo_result = None
+    if data.photo_base64:
+        try:
+            import base64
+            from app.services.biometric_service import BiometricService
+
+            photo_bytes = base64.b64decode(data.photo_base64)
+
+            # Store the check-in photo
+            BiometricService.store_checkin_photo(
+                db=db, org_id=employee.org_id,
+                assignment_id=assignment.assignment_id,
+                employee_id=employee.employee_id,
+                photo_bytes=photo_bytes, photo_type="check_in",
+                gps_lat=data.latitude, gps_lng=data.longitude
+            )
+
+            # Verify against reference photo if one exists
+            verification = BiometricService.verify_checkin_photo(
+                db=db, employee_id=employee.employee_id,
+                photo_bytes=photo_bytes
+            )
+
+            if verification.get("match") is not None:
+                assignment.check_in_photo_verified = verification["match"]
+                assignment.check_in_photo_confidence = verification.get("confidence", 0)
+                db.commit()
+                photo_result = verification
+            else:
+                photo_result = {"status": "no_reference", "message": "No reference photo enrolled"}
+
+        except Exception as e:
+            logger.warning(f"Photo verification failed: {e}")
+            photo_result = {"status": "error", "message": "Photo processing failed"}
+
+    result = {
         "message": "Checked in successfully.",
         "assignment_id": assignment.assignment_id,
         "check_in_time": assignment.check_in_time.isoformat(),
         "site_name": site.site_name if site else None,
     }
+    if photo_result is not None:
+        result["photo_verification"] = photo_result
+    return result
 
 
 @router.post("/check-out")
@@ -184,13 +227,51 @@ def check_out(
         (assignment.check_out_time - assignment.check_in_time).total_seconds() / 60
     )
 
-    return {
+    # Biometric photo verification (optional)
+    photo_result = None
+    if data.photo_base64:
+        try:
+            import base64
+            from app.services.biometric_service import BiometricService
+
+            photo_bytes = base64.b64decode(data.photo_base64)
+
+            # Store the check-out photo
+            BiometricService.store_checkin_photo(
+                db=db, org_id=employee.org_id,
+                assignment_id=assignment.assignment_id,
+                employee_id=employee.employee_id,
+                photo_bytes=photo_bytes, photo_type="check_out",
+                gps_lat=data.latitude, gps_lng=data.longitude
+            )
+
+            # Verify against reference photo if one exists
+            verification = BiometricService.verify_checkin_photo(
+                db=db, employee_id=employee.employee_id,
+                photo_bytes=photo_bytes
+            )
+
+            if verification.get("match") is not None:
+                assignment.check_out_photo_verified = verification["match"]
+                db.commit()
+                photo_result = verification
+            else:
+                photo_result = {"status": "no_reference", "message": "No reference photo enrolled"}
+
+        except Exception as e:
+            logger.warning(f"Photo verification failed: {e}")
+            photo_result = {"status": "error", "message": "Photo processing failed"}
+
+    result = {
         "message": "Checked out successfully.",
         "assignment_id": assignment.assignment_id,
         "check_out_time": assignment.check_out_time.isoformat(),
         "duration_minutes": duration_minutes,
         "site_name": site.site_name if site else None,
     }
+    if photo_result is not None:
+        result["photo_verification"] = photo_result
+    return result
 
 
 # ---------------------------------------------------------------------------

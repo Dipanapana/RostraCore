@@ -5,9 +5,9 @@ import { deploymentMapApi } from '@/services/api'
 import { Map, Users, Building2, AlertTriangle, CheckCircle, XCircle, Shield } from 'lucide-react'
 
 const STATUS_STYLES: Record<string, string> = {
-  adequately_staffed: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-  understaffed: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-  no_coverage: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+  adequately_staffed: 'bg-emerald-50 text-emerald-700',
+  understaffed: 'bg-amber-50 text-amber-700',
+  no_coverage: 'bg-red-100 text-red-700',
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -47,7 +47,7 @@ export default function DeploymentMapPage() {
         <div className="flex items-center gap-3">
           <Map className="w-7 h-7 text-blue-600" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Deployment Map</h1>
+            <h1 className="text-2xl font-semibold text-gray-900">Deployment Map</h1>
             <p className="text-sm text-gray-500">Today: {data.date}</p>
           </div>
         </div>
@@ -56,23 +56,23 @@ export default function DeploymentMapPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4">
+        <div className="bg-white rounded-xl shadow p-4">
           <div className="flex items-center gap-2 text-sm text-gray-500"><Building2 className="w-4 h-4" />Total Sites</div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">{data.total_sites}</div>
+          <div className="text-2xl font-bold text-gray-900">{data.total_sites}</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4">
+        <div className="bg-white rounded-xl shadow p-4">
           <div className="flex items-center gap-2 text-sm text-green-600"><CheckCircle className="w-4 h-4" />Covered</div>
           <div className="text-2xl font-bold text-green-600">{data.sites_covered}</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4">
+        <div className="bg-white rounded-xl shadow p-4">
           <div className="flex items-center gap-2 text-sm text-yellow-600"><AlertTriangle className="w-4 h-4" />Understaffed</div>
           <div className="text-2xl font-bold text-yellow-600">{data.sites_understaffed}</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4">
+        <div className="bg-white rounded-xl shadow p-4">
           <div className="flex items-center gap-2 text-sm text-red-600"><XCircle className="w-4 h-4" />No Coverage</div>
           <div className="text-2xl font-bold text-red-600">{data.sites_no_coverage}</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4">
+        <div className="bg-white rounded-xl shadow p-4">
           <div className="flex items-center gap-2 text-sm text-gray-500"><Users className="w-4 h-4" />Guards Deployed</div>
           <div className="text-2xl font-bold text-blue-600">{data.total_guards_deployed}</div>
         </div>
@@ -87,7 +87,7 @@ export default function DeploymentMapPage() {
             className={`px-3 py-1.5 text-sm rounded-lg font-medium transition ${
               filter === f
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
             {f === 'all' ? `All (${data.total_sites})` :
@@ -101,19 +101,19 @@ export default function DeploymentMapPage() {
       {/* Site Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredSites.map((site: any) => (
-          <div key={site.site_id} className={`bg-white dark:bg-gray-800 rounded-xl shadow p-4 border-l-4 ${
+          <div key={site.site_id} className={`bg-white rounded-xl shadow p-4 border-l-4 ${
             site.staffing_status === 'adequately_staffed' ? 'border-green-500' :
             site.staffing_status === 'understaffed' ? 'border-yellow-500' : 'border-red-500'
           }`}>
             <div className="flex items-center justify-between mb-3">
               <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white">{site.site_name}</h3>
+                <h3 className="font-semibold text-gray-900">{site.site_name}</h3>
                 <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${STATUS_STYLES[site.staffing_status]}`}>
                   {STATUS_LABELS[site.staffing_status]}
                 </span>
               </div>
               <div className="text-right">
-                <div className="text-lg font-bold text-gray-900 dark:text-white">{site.assigned_guards}</div>
+                <div className="text-lg font-bold text-gray-900">{site.assigned_guards}</div>
                 <div className="text-xs text-gray-500">/ {site.min_staff} min</div>
               </div>
             </div>
@@ -124,13 +124,13 @@ export default function DeploymentMapPage() {
                   <div key={`${g.employee_id}-${g.shift_id}`} className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
                       <Shield className="w-3.5 h-3.5 text-gray-400" />
-                      <span className="text-gray-700 dark:text-gray-300">{g.employee_name}</span>
+                      <span className="text-gray-700">{g.employee_name}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       {g.checked_in ? (
-                        <span className="px-1.5 py-0.5 text-[10px] rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">In</span>
+                        <span className="px-1.5 py-0.5 text-[10px] rounded bg-emerald-50 text-emerald-700">In</span>
                       ) : (
-                        <span className="px-1.5 py-0.5 text-[10px] rounded bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400">{g.status}</span>
+                        <span className="px-1.5 py-0.5 text-[10px] rounded bg-gray-100 text-gray-500">{g.status}</span>
                       )}
                     </div>
                   </div>
@@ -144,7 +144,7 @@ export default function DeploymentMapPage() {
       </div>
 
       {filteredSites.length === 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-8 text-center">
+        <div className="bg-white rounded-xl shadow p-8 text-center">
           <p className="text-gray-500">No sites match this filter.</p>
         </div>
       )}

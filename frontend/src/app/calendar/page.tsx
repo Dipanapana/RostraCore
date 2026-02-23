@@ -93,14 +93,14 @@ const DraggableEmployee = ({ employee }: { employee: Employee }) => {
     return (
         <div
             ref={drag as unknown as React.LegacyRef<HTMLDivElement>}
-            className={`p-3 bg-white border border-slate-200 rounded-lg cursor-move hover:bg-blue-50 hover:border-blue-300 transition-colors ${
+            className={`p-3 bg-white border border-gray-200 rounded-lg cursor-move hover:bg-blue-50 hover:border-blue-300 transition-colors ${
                 isDragging ? "opacity-50" : "opacity-100"
             }`}
         >
-            <p className="font-medium text-slate-900">
+            <p className="font-medium text-gray-900">
                 {employee.first_name} {employee.last_name}
             </p>
-            <p className="text-xs text-slate-600 capitalize">{employee.role}</p>
+            <p className="text-xs text-gray-600 capitalize">{employee.role}</p>
         </div>
     );
 };
@@ -366,8 +366,8 @@ export default function CalendarPage() {
         return (
             <div className="flex items-center justify-center h-screen">
                 <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-slate-600">Loading calendar...</p>
+                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading calendar...</p>
                 </div>
             </div>
         );
@@ -395,21 +395,21 @@ export default function CalendarPage() {
             <div className="flex h-screen overflow-hidden">
                 {/* Employee Sidebar */}
                 {showEmployeeSidebar && (
-                    <div className="w-80 bg-white border-r border-slate-200 overflow-y-auto">
-                        <div className="p-4 border-b border-slate-200 sticky top-0 bg-white z-10">
+                    <div className="w-80 bg-white border-r border-gray-200 overflow-y-auto">
+                        <div className="p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                                     <Users className="w-5 h-5" />
                                     Available Employees
                                 </h3>
                                 <button
                                     onClick={() => setShowEmployeeSidebar(false)}
-                                    className="p-1 hover:bg-slate-100 rounded"
+                                    className="p-1 hover:bg-gray-100 rounded"
                                 >
                                     <X className="w-4 h-4" />
                                 </button>
                             </div>
-                            <p className="text-xs text-slate-600">
+                            <p className="text-xs text-gray-600">
                                 Drag employees onto shifts to assign them
                             </p>
                         </div>
@@ -433,8 +433,8 @@ export default function CalendarPage() {
                         <CalendarDays className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900">Calendar View</h1>
-                        <p className="text-sm text-slate-600">
+                        <h1 className="text-2xl font-semibold text-gray-900">Calendar View</h1>
+                        <p className="text-sm text-gray-600">
                             View shifts and assignments by date
                         </p>
                     </div>
@@ -446,7 +446,7 @@ export default function CalendarPage() {
                         className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors shadow-sm ${
                             showEmployeeSidebar
                                 ? "bg-blue-600 text-white hover:bg-blue-700"
-                                : "bg-white border border-slate-300 hover:bg-slate-50"
+                                : "bg-white border border-gray-300 hover:bg-gray-50"
                         }`}
                     >
                         <Users className="w-4 h-4" />
@@ -461,7 +461,7 @@ export default function CalendarPage() {
                     </button>
                     <button
                         onClick={() => setShowFilters(!showFilters)}
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                         <Filter className="w-4 h-4" />
                         Filters
@@ -474,9 +474,9 @@ export default function CalendarPage() {
 
             {/* Filters Panel */}
             {showFilters && (
-                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-semibold text-slate-900">Filters</h3>
+                        <h3 className="font-semibold text-gray-900">Filters</h3>
                         <button
                             onClick={() => {
                                 setSiteFilter(null);
@@ -491,7 +491,7 @@ export default function CalendarPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Site Filter */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Filter by Site
                             </label>
                             <select
@@ -499,7 +499,7 @@ export default function CalendarPage() {
                                 onChange={(e) =>
                                     setSiteFilter(e.target.value ? Number(e.target.value) : null)
                                 }
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             >
                                 <option value="">All Sites</option>
                                 {uniqueSites.map((site) => (
@@ -512,7 +512,7 @@ export default function CalendarPage() {
 
                         {/* Employee Filter */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Filter by Employee
                             </label>
                             <select
@@ -522,7 +522,7 @@ export default function CalendarPage() {
                                         e.target.value ? Number(e.target.value) : null
                                     )
                                 }
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             >
                                 <option value="">All Employees</option>
                                 {uniqueEmployees.map((employee) => (
@@ -537,7 +537,7 @@ export default function CalendarPage() {
             )}
 
             {/* Calendar */}
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm calendar-container">
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm calendar-container">
                 <Calendar
                     localizer={localizer}
                     events={events}
@@ -570,10 +570,10 @@ export default function CalendarPage() {
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-xl font-bold text-slate-900">Shift Details</h3>
+                            <h3 className="text-xl font-semibold text-gray-900">Shift Details</h3>
                             <button
                                 onClick={() => setSelectedEvent(null)}
-                                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                             >
                                 <X className="w-5 h-5" />
                             </button>
@@ -581,8 +581,8 @@ export default function CalendarPage() {
 
                         <div className="space-y-3">
                             <div>
-                                <p className="text-sm text-slate-600">Employee</p>
-                                <p className="font-semibold text-slate-900">
+                                <p className="text-sm text-gray-600">Employee</p>
+                                <p className="font-semibold text-gray-900">
                                     {selectedEvent.resource.shift.employee
                                         ? `${selectedEvent.resource.shift.employee.first_name} ${selectedEvent.resource.shift.employee.last_name}`
                                         : "Unassigned"}
@@ -590,31 +590,31 @@ export default function CalendarPage() {
                             </div>
 
                             <div>
-                                <p className="text-sm text-slate-600">Site</p>
-                                <p className="font-semibold text-slate-900">
+                                <p className="text-sm text-gray-600">Site</p>
+                                <p className="font-semibold text-gray-900">
                                     {selectedEvent.resource.shift.site?.site_name || "Unknown"}
                                 </p>
                             </div>
 
                             {selectedEvent.resource.shift.site?.client && (
                                 <div>
-                                    <p className="text-sm text-slate-600">Client</p>
-                                    <p className="font-semibold text-slate-900">
+                                    <p className="text-sm text-gray-600">Client</p>
+                                    <p className="font-semibold text-gray-900">
                                         {selectedEvent.resource.shift.site.client.client_name}
                                     </p>
                                 </div>
                             )}
 
                             <div>
-                                <p className="text-sm text-slate-600">Role</p>
-                                <p className="font-semibold text-slate-900">
+                                <p className="text-sm text-gray-600">Role</p>
+                                <p className="font-semibold text-gray-900">
                                     {selectedEvent.resource.shift.role}
                                 </p>
                             </div>
 
                             <div>
-                                <p className="text-sm text-slate-600">Time</p>
-                                <p className="font-semibold text-slate-900">
+                                <p className="text-sm text-gray-600">Time</p>
+                                <p className="font-semibold text-gray-900">
                                     {format(selectedEvent.start, "PPp")} -{" "}
                                     {format(selectedEvent.end, "p")}
                                 </p>
@@ -642,7 +642,7 @@ export default function CalendarPage() {
                             </button>
                             <button
                                 onClick={() => setSelectedEvent(null)}
-                                className="flex-1 px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors"
+                                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
                             >
                                 Close
                             </button>
@@ -656,10 +656,10 @@ export default function CalendarPage() {
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6">
                         <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-xl font-bold text-slate-900">Create New Shift</h3>
+                            <h3 className="text-xl font-semibold text-gray-900">Create New Shift</h3>
                             <button
                                 onClick={() => setShowCreateModal(false)}
-                                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                             >
                                 <X className="w-5 h-5" />
                             </button>
@@ -667,14 +667,14 @@ export default function CalendarPage() {
 
                         <form onSubmit={handleCreateShift} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Site *
                                 </label>
                                 <select
                                     value={formData.site_id}
                                     onChange={(e) => setFormData({ ...formData, site_id: e.target.value })}
                                     required
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 >
                                     <option value="">Select a site</option>
                                     {sites.map((site) => (
@@ -686,14 +686,14 @@ export default function CalendarPage() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Role *
                                 </label>
                                 <select
                                     value={formData.role}
                                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                                     required
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 >
                                     <option value="">Select a role</option>
                                     <option value="armed">Armed Guard</option>
@@ -704,7 +704,7 @@ export default function CalendarPage() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
                                         Start Time *
                                     </label>
                                     <input
@@ -712,12 +712,12 @@ export default function CalendarPage() {
                                         value={formData.start_time}
                                         onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
                                         required
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
                                         End Time *
                                     </label>
                                     <input
@@ -725,13 +725,13 @@ export default function CalendarPage() {
                                         value={formData.end_time}
                                         onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
                                         required
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Required Staff *
                                 </label>
                                 <input
@@ -740,7 +740,7 @@ export default function CalendarPage() {
                                     value={formData.required_staff}
                                     onChange={(e) => setFormData({ ...formData, required_staff: Number(e.target.value) })}
                                     required
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 />
                             </div>
 
@@ -754,7 +754,7 @@ export default function CalendarPage() {
                                 <button
                                     type="button"
                                     onClick={() => setShowCreateModal(false)}
-                                    className="flex-1 px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors"
+                                    className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
                                 >
                                     Cancel
                                 </button>
@@ -769,13 +769,13 @@ export default function CalendarPage() {
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6">
                         <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-xl font-bold text-slate-900">Edit Shift</h3>
+                            <h3 className="text-xl font-semibold text-gray-900">Edit Shift</h3>
                             <button
                                 onClick={() => {
                                     setShowEditModal(false);
                                     setSelectedEvent(null);
                                 }}
-                                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                             >
                                 <X className="w-5 h-5" />
                             </button>
@@ -783,14 +783,14 @@ export default function CalendarPage() {
 
                         <form onSubmit={handleUpdateShift} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Site *
                                 </label>
                                 <select
                                     value={formData.site_id}
                                     onChange={(e) => setFormData({ ...formData, site_id: e.target.value })}
                                     required
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 >
                                     <option value="">Select a site</option>
                                     {sites.map((site) => (
@@ -802,14 +802,14 @@ export default function CalendarPage() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Role *
                                 </label>
                                 <select
                                     value={formData.role}
                                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                                     required
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 >
                                     <option value="">Select a role</option>
                                     <option value="armed">Armed Guard</option>
@@ -820,7 +820,7 @@ export default function CalendarPage() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
                                         Start Time *
                                     </label>
                                     <input
@@ -828,12 +828,12 @@ export default function CalendarPage() {
                                         value={formData.start_time}
                                         onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
                                         required
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
                                         End Time *
                                     </label>
                                     <input
@@ -841,13 +841,13 @@ export default function CalendarPage() {
                                         value={formData.end_time}
                                         onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
                                         required
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Required Staff *
                                 </label>
                                 <input
@@ -856,7 +856,7 @@ export default function CalendarPage() {
                                     value={formData.required_staff}
                                     onChange={(e) => setFormData({ ...formData, required_staff: Number(e.target.value) })}
                                     required
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 />
                             </div>
 
@@ -880,7 +880,7 @@ export default function CalendarPage() {
                                         setShowEditModal(false);
                                         setSelectedEvent(null);
                                     }}
-                                    className="flex-1 px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors"
+                                    className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
                                 >
                                     Cancel
                                 </button>

@@ -15,6 +15,7 @@ import {
   MapPin,
   Filter,
   Activity,
+  Camera,
 } from "lucide-react";
 import { format, parseISO, startOfWeek, endOfWeek } from "date-fns";
 
@@ -39,6 +40,10 @@ interface AttendanceRecord {
   actual_hours: number | null;
   attendance_status: "present" | "in_progress" | "no_show" | "scheduled";
   is_late: boolean;
+  check_in_photo_url?: string | null;
+  check_out_photo_url?: string | null;
+  check_in_photo_verified?: boolean | null;
+  check_out_photo_verified?: boolean | null;
 }
 
 interface AttendanceSummary {
@@ -104,22 +109,22 @@ function StatusBadge({
   const map = {
     present: {
       label: "Present",
-      cls: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+      cls: "bg-emerald-50 text-emerald-700",
       icon: CheckCircle2,
     },
     in_progress: {
       label: "On Duty",
-      cls: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+      cls: "bg-blue-100 text-blue-700",
       icon: Activity,
     },
     no_show: {
       label: "No Show",
-      cls: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+      cls: "bg-red-100 text-red-700",
       icon: XCircle,
     },
     scheduled: {
       label: "Scheduled",
-      cls: "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400",
+      cls: "bg-gray-100 text-gray-500",
       icon: Clock,
     },
   };
@@ -135,7 +140,7 @@ function StatusBadge({
         {label}
       </span>
       {isLate && status !== "no_show" && (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
           <AlertTriangle className="w-3 h-3" />
           Late
         </span>
@@ -160,14 +165,14 @@ function KpiCard({
   color: string;
 }) {
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-sm text-slate-500 dark:text-slate-400">{label}</span>
+        <span className="text-sm text-gray-500">{label}</span>
         <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${color}`}>
           <Icon className="w-4 h-4 text-white" />
         </div>
       </div>
-      <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">{value}</p>
+      <p className="text-3xl font-bold text-gray-900">{value}</p>
     </div>
   );
 }
@@ -234,40 +239,40 @@ export default function AttendancePage() {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+          <h1 className="text-2xl font-semibold text-gray-900">
             Attendance
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-sm text-gray-500 mt-1">
             Guard check-in and check-out records with GPS verification
           </p>
         </div>
 
         {/* Filters */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
           <div className="flex flex-wrap gap-3 items-end">
             <div className="flex items-center gap-1.5">
-              <Calendar className="w-4 h-4 text-slate-400" />
+              <Calendar className="w-4 h-4 text-gray-400" />
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 outline-none"
+                className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-purple-500 outline-none"
               />
-              <span className="text-slate-400 text-sm">to</span>
+              <span className="text-gray-400 text-sm">to</span>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 outline-none"
+                className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-purple-500 outline-none"
               />
             </div>
 
             <div className="flex items-center gap-1.5">
-              <Users className="w-4 h-4 text-slate-400" />
+              <Users className="w-4 h-4 text-gray-400" />
               <select
                 value={filterEmployee}
                 onChange={(e) => setFilterEmployee(e.target.value)}
-                className="px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 outline-none"
+                className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-purple-500 outline-none"
               >
                 <option value="">All Employees</option>
                 {employees.map((e) => (
@@ -279,11 +284,11 @@ export default function AttendancePage() {
             </div>
 
             <div className="flex items-center gap-1.5">
-              <MapPin className="w-4 h-4 text-slate-400" />
+              <MapPin className="w-4 h-4 text-gray-400" />
               <select
                 value={filterSite}
                 onChange={(e) => setFilterSite(e.target.value)}
-                className="px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 outline-none"
+                className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-purple-500 outline-none"
               >
                 <option value="">All Sites</option>
                 {sites.map((s) => (
@@ -295,11 +300,11 @@ export default function AttendancePage() {
             </div>
 
             <div className="flex items-center gap-1.5">
-              <Filter className="w-4 h-4 text-slate-400" />
+              <Filter className="w-4 h-4 text-gray-400" />
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 outline-none"
+                className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-purple-500 outline-none"
               >
                 <option value="">All Statuses</option>
                 <option value="present">Present</option>
@@ -318,7 +323,7 @@ export default function AttendancePage() {
               label="Total Shifts"
               value={summary.total}
               icon={Clock}
-              color="bg-slate-500"
+              color="bg-gray-500"
             />
             <KpiCard
               label="Present"
@@ -342,17 +347,17 @@ export default function AttendancePage() {
         )}
 
         {/* Table */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           {loading ? (
-            <div className="flex items-center justify-center py-20 text-slate-400">
+            <div className="flex items-center justify-center py-20 text-gray-400">
               <Loader2 className="w-7 h-7 animate-spin mr-3" />
               Loading attendance…
             </div>
           ) : records.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+            <div className="flex flex-col items-center justify-center py-20 text-gray-400">
               <Clock className="w-10 h-10 mb-3 opacity-30" />
               <p className="text-sm font-medium">No records for this period</p>
-              <p className="text-xs mt-1 text-slate-400">
+              <p className="text-xs mt-1 text-gray-400">
                 Adjust the date range or filters
               </p>
             </div>
@@ -360,80 +365,86 @@ export default function AttendancePage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
-                    <th className="px-4 py-3 text-left font-medium text-slate-600 dark:text-slate-400">
+                  <tr className="border-b border-gray-200 bg-gray-50">
+                    <th className="px-4 py-3 text-left font-medium text-gray-600">
                       Guard
                     </th>
-                    <th className="px-4 py-3 text-left font-medium text-slate-600 dark:text-slate-400">
+                    <th className="px-4 py-3 text-left font-medium text-gray-600">
                       Site
                     </th>
-                    <th className="px-4 py-3 text-left font-medium text-slate-600 dark:text-slate-400">
+                    <th className="px-4 py-3 text-left font-medium text-gray-600">
                       Date
                     </th>
-                    <th className="px-4 py-3 text-left font-medium text-slate-600 dark:text-slate-400">
+                    <th className="px-4 py-3 text-left font-medium text-gray-600">
                       Scheduled
                     </th>
-                    <th className="px-4 py-3 text-left font-medium text-slate-600 dark:text-slate-400">
+                    <th className="px-4 py-3 text-left font-medium text-gray-600">
                       Checked In
                     </th>
-                    <th className="px-4 py-3 text-left font-medium text-slate-600 dark:text-slate-400">
+                    <th className="px-4 py-3 text-left font-medium text-gray-600">
                       Checked Out
                     </th>
-                    <th className="px-4 py-3 text-left font-medium text-slate-600 dark:text-slate-400">
+                    <th className="px-4 py-3 text-left font-medium text-gray-600">
                       Actual Hrs
                     </th>
-                    <th className="px-4 py-3 text-left font-medium text-slate-600 dark:text-slate-400">
+                    <th className="px-4 py-3 text-left font-medium text-gray-600">
                       Status
+                    </th>
+                    <th className="px-4 py-3 text-center font-medium text-gray-600">
+                      Photo
+                    </th>
+                    <th className="px-4 py-3 text-center font-medium text-gray-600">
+                      Verified
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                <tbody className="divide-y divide-gray-100">
                   {records.map((r) => (
                     <tr
                       key={r.assignment_id}
-                      className={`hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors ${
+                      className={`hover:bg-gray-50 transition-colors ${
                         r.attendance_status === "no_show"
-                          ? "bg-red-50/40 dark:bg-red-900/10"
+                          ? "bg-red-50/40"
                           : ""
                       }`}
                     >
-                      <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
+                      <td className="px-4 py-3 font-medium text-gray-900">
                         {r.employee_name}
                       </td>
-                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
+                      <td className="px-4 py-3 text-gray-600">
                         {r.site_name}
                       </td>
-                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
+                      <td className="px-4 py-3 text-gray-600">
                         {fmtDate(r.shift_start)}
                       </td>
-                      <td className="px-4 py-3 text-slate-500 dark:text-slate-400 font-mono text-xs">
+                      <td className="px-4 py-3 text-gray-500 font-mono text-xs">
                         {r.shift_start ? fmtTime(r.shift_start) : "—"}
                         {" – "}
                         {r.shift_end ? fmtTime(r.shift_end) : "—"}
                       </td>
                       <td className="px-4 py-3 font-mono text-xs">
                         {r.check_in_time ? (
-                          <span className="text-green-600 dark:text-green-400 font-medium">
+                          <span className="text-green-600 font-medium">
                             {fmtTime(r.check_in_time)}
                           </span>
                         ) : (
-                          <span className="text-slate-400">—</span>
+                          <span className="text-gray-400">—</span>
                         )}
                       </td>
                       <td className="px-4 py-3 font-mono text-xs">
                         {r.check_out_time ? (
-                          <span className="text-blue-600 dark:text-blue-400 font-medium">
+                          <span className="text-blue-600 font-medium">
                             {fmtTime(r.check_out_time)}
                           </span>
                         ) : (
-                          <span className="text-slate-400">—</span>
+                          <span className="text-gray-400">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
+                      <td className="px-4 py-3 text-gray-600">
                         {r.actual_hours != null ? (
                           <span className="font-medium">{r.actual_hours.toFixed(1)}h</span>
                         ) : r.scheduled_hours != null ? (
-                          <span className="text-slate-400">
+                          <span className="text-gray-400">
                             {r.scheduled_hours.toFixed(1)}h sched.
                           </span>
                         ) : (
@@ -445,6 +456,43 @@ export default function AttendancePage() {
                           status={r.attendance_status}
                           isLate={r.is_late}
                         />
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {r.check_in_photo_url ? (
+                          <a
+                            href={r.check_in_photo_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center w-8 h-8 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                            title="View check-in photo"
+                          >
+                            <Camera className="w-4 h-4 text-blue-600" />
+                          </a>
+                        ) : (
+                          <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-50 rounded-lg">
+                            <Camera className="w-4 h-4 text-gray-300" />
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {r.check_in_photo_verified === true ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700">
+                            <CheckCircle2 className="w-3 h-3" />
+                            Verified
+                          </span>
+                        ) : r.check_in_photo_verified === false ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                            <XCircle className="w-3 h-3" />
+                            Failed
+                          </span>
+                        ) : r.check_in_photo_url ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                            <Clock className="w-3 h-3" />
+                            Pending
+                          </span>
+                        ) : (
+                          <span className="text-gray-300 text-xs">--</span>
+                        )}
                       </td>
                     </tr>
                   ))}

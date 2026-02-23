@@ -3,7 +3,7 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
-from app.models.shift import Shift
+from app.models.shift import Shift, ShiftStatus
 from app.models.site import Site
 from app.models.schemas import ShiftCreate, ShiftUpdate
 from app.services.client_filter_service import ClientFilterService
@@ -174,7 +174,7 @@ class ShiftService:
 
         # Update shift assignment (old system - kept for backward compatibility)
         db_shift.assigned_employee_id = employee_id
-        db_shift.status = "confirmed"
+        db_shift.status = ShiftStatus.CONFIRMED
 
         # FIXED: Create or update ShiftAssignment record (new system)
         # Check if assignment already exists

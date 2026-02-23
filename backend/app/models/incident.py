@@ -45,8 +45,8 @@ class Incident(Base):
     # Incident details
     incident_type = Column(String(100), nullable=False)  # theft, violence, medical, trespassing, fire, vandalism, other
     description = Column(Text, nullable=False)
-    severity = Column(SQLEnum(IncidentSeverity), nullable=False, default=IncidentSeverity.MEDIUM)
-    status = Column(SQLEnum(IncidentStatus), nullable=False, default=IncidentStatus.REPORTED, index=True)
+    severity = Column(SQLEnum(IncidentSeverity, values_callable=lambda x: [e.value for e in x]), nullable=False, default=IncidentSeverity.MEDIUM)
+    status = Column(SQLEnum(IncidentStatus, values_callable=lambda x: [e.value for e in x]), nullable=False, default=IncidentStatus.REPORTED, index=True)
 
     # GPS coordinates where the incident occurred
     latitude = Column(Float, nullable=True)

@@ -142,19 +142,19 @@ export default function CommLogPage() {
 
   const priorityColor = (p: string) => {
     switch (p) {
-      case 'urgent': return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-      case 'high': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-      case 'normal': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-      default: return 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+      case 'urgent': return 'bg-red-100 text-red-700'
+      case 'high': return 'bg-orange-100 text-orange-700'
+      case 'normal': return 'bg-blue-100 text-blue-700'
+      default: return 'bg-gray-100 text-gray-600'
     }
   }
 
   const resolvedColor = (r: string) => {
     switch (r) {
-      case 'open': return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-      case 'resolved': return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-      case 'escalated': return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-      default: return 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+      case 'open': return 'bg-amber-50 text-amber-700'
+      case 'resolved': return 'bg-emerald-50 text-emerald-700'
+      case 'escalated': return 'bg-red-100 text-red-700'
+      default: return 'bg-gray-100 text-gray-600'
     }
   }
 
@@ -172,8 +172,8 @@ export default function CommLogPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Communication Log</h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+          <h1 className="text-2xl font-semibold text-gray-900">Communication Log</h1>
+          <p className="text-gray-500 text-sm mt-1">
             Control room communications, alerts, and escalations
           </p>
         </div>
@@ -187,7 +187,7 @@ export default function CommLogPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-700">
+      <div className="border-b border-gray-200">
         <nav className="flex space-x-8">
           {[
             { key: 'log', label: 'Log', icon: Radio },
@@ -198,8 +198,8 @@ export default function CommLogPage() {
               onClick={() => setTab(key as any)}
               className={`flex items-center gap-2 py-3 px-1 border-b-2 text-sm font-medium transition-colors ${
                 tab === key
-                  ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -220,41 +220,41 @@ export default function CommLogPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search subject..."
-                className="pl-9 pr-3 py-2 border rounded-lg text-sm w-56 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                className="pl-9 pr-3 py-2 border rounded-lg text-sm w-56"
               />
             </div>
             <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}
-              className="px-3 py-2 border rounded-lg text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+              className="px-3 py-2 border rounded-lg text-sm">
               <option value="">All Types</option>
               {COMM_TYPES.map((t) => <option key={t} value={t}>{t.replace('_', ' ')}</option>)}
             </select>
             <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)}
-              className="px-3 py-2 border rounded-lg text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+              className="px-3 py-2 border rounded-lg text-sm">
               <option value="">All Priorities</option>
               {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
             <select value={resolvedFilter} onChange={(e) => setResolvedFilter(e.target.value)}
-              className="px-3 py-2 border rounded-lg text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+              className="px-3 py-2 border rounded-lg text-sm">
               <option value="">All Status</option>
               <option value="open">Open</option>
               <option value="resolved">Resolved</option>
               <option value="escalated">Escalated</option>
             </select>
-            <span className="text-sm text-gray-500 dark:text-gray-400">{entryTotal} entries</span>
+            <span className="text-sm text-gray-500">{entryTotal} entries</span>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-x-auto">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700 text-left">
-                  <th className="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Type</th>
-                  <th className="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Priority</th>
-                  <th className="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Subject</th>
-                  <th className="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Site</th>
-                  <th className="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">From / To</th>
-                  <th className="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Status</th>
-                  <th className="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">When</th>
-                  <th className="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Actions</th>
+                <tr className="border-b border-gray-200 text-left">
+                  <th className="px-4 py-3 font-medium text-gray-500">Type</th>
+                  <th className="px-4 py-3 font-medium text-gray-500">Priority</th>
+                  <th className="px-4 py-3 font-medium text-gray-500">Subject</th>
+                  <th className="px-4 py-3 font-medium text-gray-500">Site</th>
+                  <th className="px-4 py-3 font-medium text-gray-500">From / To</th>
+                  <th className="px-4 py-3 font-medium text-gray-500">Status</th>
+                  <th className="px-4 py-3 font-medium text-gray-500">When</th>
+                  <th className="px-4 py-3 font-medium text-gray-500">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -266,9 +266,9 @@ export default function CommLogPage() {
                   </tr>
                 ) : (
                   entries.map((c) => (
-                    <tr key={c.log_id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750">
+                    <tr key={c.log_id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
+                        <div className="flex items-center gap-1.5 text-gray-600">
                           {typeIcon(c.comm_type)}
                           <span className="capitalize text-xs">{c.comm_type.replace('_', ' ')}</span>
                         </div>
@@ -278,9 +278,9 @@ export default function CommLogPage() {
                           {c.priority}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-900 dark:text-white font-medium max-w-[250px] truncate">{c.subject}</td>
-                      <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">{c.site_name || '-'}</td>
-                      <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">
+                      <td className="px-4 py-3 text-gray-900 font-medium max-w-[250px] truncate">{c.subject}</td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">{c.site_name || '-'}</td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">
                         {c.from_name && <span>{c.from_name}</span>}
                         {c.from_name && c.to_name && <span> → </span>}
                         {c.to_name && <span>{c.to_name}</span>}
@@ -291,19 +291,19 @@ export default function CommLogPage() {
                           {c.resolved}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">{formatDate(c.created_at)}</td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">{formatDate(c.created_at)}</td>
                       <td className="px-4 py-3">
                         {c.resolved === 'open' && (
                           <div className="flex gap-2">
                             <button
                               onClick={() => { setResolveModal(c); setResolveForm({ resolved: 'resolved', resolution_notes: '' }) }}
-                              className="text-green-600 hover:text-green-800 dark:text-green-400 text-xs font-medium"
+                              className="text-green-600 hover:text-green-800 text-xs font-medium"
                             >
                               Resolve
                             </button>
                             <button
                               onClick={() => { setResolveModal(c); setResolveForm({ resolved: 'escalated', resolution_notes: '' }) }}
-                              className="text-red-600 hover:text-red-800 dark:text-red-400 text-xs font-medium"
+                              className="text-red-600 hover:text-red-800 text-xs font-medium"
                             >
                               Escalate
                             </button>
@@ -323,36 +323,36 @@ export default function CommLogPage() {
       {tab === 'dashboard' && dashboard && (
         <div className="space-y-6">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{dashboard.total}</p>
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+              <p className="text-xs text-gray-500 mb-1">Total</p>
+              <p className="text-2xl font-bold text-gray-900">{dashboard.total}</p>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Open</p>
-              <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{dashboard.open}</p>
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+              <p className="text-xs text-gray-500 mb-1">Open</p>
+              <p className="text-2xl font-bold text-yellow-600">{dashboard.open}</p>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Resolved</p>
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400">{dashboard.resolved}</p>
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+              <p className="text-xs text-gray-500 mb-1">Resolved</p>
+              <p className="text-2xl font-bold text-green-600">{dashboard.resolved}</p>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Escalated</p>
-              <p className="text-2xl font-bold text-red-600 dark:text-red-400">{dashboard.escalated}</p>
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+              <p className="text-xs text-gray-500 mb-1">Escalated</p>
+              <p className="text-2xl font-bold text-red-600">{dashboard.escalated}</p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* By Type */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-3">By Type</h3>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+              <h3 className="font-semibold text-gray-900 mb-3">By Type</h3>
               {dashboard.by_type.length === 0 ? (
                 <p className="text-gray-400 text-sm">No data</p>
               ) : (
                 <div className="space-y-2">
                   {dashboard.by_type.map(([type, count]) => (
                     <div key={type} className="flex items-center justify-between py-1.5">
-                      <span className="text-sm text-gray-700 dark:text-gray-300 capitalize">{type.replace('_', ' ')}</span>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">{count}</span>
+                      <span className="text-sm text-gray-700 capitalize">{type.replace('_', ' ')}</span>
+                      <span className="text-sm font-medium text-gray-900">{count}</span>
                     </div>
                   ))}
                 </div>
@@ -360,30 +360,30 @@ export default function CommLogPage() {
             </div>
 
             {/* By Priority */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-3">By Priority</h3>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+              <h3 className="font-semibold text-gray-900 mb-3">By Priority</h3>
               {PRIORITIES.map((p) => (
                 <div key={p} className="flex items-center justify-between py-1.5">
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${priorityColor(p)}`}>{p}</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">{dashboard.by_priority[p] || 0}</span>
+                  <span className="text-sm font-medium text-gray-900">{dashboard.by_priority[p] || 0}</span>
                 </div>
               ))}
             </div>
 
             {/* By Site */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-3">By Site</h3>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+              <h3 className="font-semibold text-gray-900 mb-3">By Site</h3>
               {dashboard.sites.length === 0 ? (
                 <p className="text-gray-400 text-sm">No data</p>
               ) : (
                 <div className="space-y-2">
                   {dashboard.sites.map((s) => (
                     <div key={s.site_id} className="flex items-center justify-between py-1.5">
-                      <span className="text-sm text-gray-700 dark:text-gray-300">{s.site_name}</span>
+                      <span className="text-sm text-gray-700">{s.site_name}</span>
                       <div className="flex items-center gap-2 text-xs">
                         <span className="text-gray-500">{s.total}</span>
                         {s.open > 0 && (
-                          <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 rounded-full">
+                          <span className="px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded-full">
                             {s.open} open
                           </span>
                         )}
@@ -404,61 +404,61 @@ export default function CommLogPage() {
       {/* ── CREATE MODAL ───────────────────────────────────────────────────── */}
       {showCreate && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white">New Communication Log</h3>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h3 className="font-semibold text-gray-900">New Communication Log</h3>
               <button onClick={() => setShowCreate(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-4 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
                   <select value={createForm.comm_type} onChange={(e) => setCreateForm({ ...createForm, comm_type: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    className="w-full px-3 py-2 border rounded-lg text-sm">
                     {COMM_TYPES.map((t) => <option key={t} value={t}>{t.replace('_', ' ')}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
                   <select value={createForm.priority} onChange={(e) => setCreateForm({ ...createForm, priority: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    className="w-full px-3 py-2 border rounded-lg text-sm">
                     {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Site</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Site</label>
                 <select value={createForm.site_id} onChange={(e) => setCreateForm({ ...createForm, site_id: Number(e.target.value) })}
-                  className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                  className="w-full px-3 py-2 border rounded-lg text-sm">
                   <option value={0}>General (no site)</option>
                   {sites.map((s) => <option key={s.site_id} value={s.site_id}>{s.site_name}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subject *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Subject *</label>
                 <input type="text" value={createForm.subject} onChange={(e) => setCreateForm({ ...createForm, subject: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                  className="w-full px-3 py-2 border rounded-lg text-sm" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Message</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
                 <textarea value={createForm.message} onChange={(e) => setCreateForm({ ...createForm, message: e.target.value })}
-                  rows={3} className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                  rows={3} className="w-full px-3 py-2 border rounded-lg text-sm" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">From</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">From</label>
                   <input type="text" value={createForm.from_name} onChange={(e) => setCreateForm({ ...createForm, from_name: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                    className="w-full px-3 py-2 border rounded-lg text-sm" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">To</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
                   <input type="text" value={createForm.to_name} onChange={(e) => setCreateForm({ ...createForm, to_name: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                    className="w-full px-3 py-2 border rounded-lg text-sm" />
                 </div>
               </div>
             </div>
-            <div className="flex justify-end gap-2 p-4 border-t border-gray-200 dark:border-gray-700">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">Cancel</button>
+            <div className="flex justify-end gap-2 p-4 border-t border-gray-200">
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-sm text-gray-600">Cancel</button>
               <button onClick={handleCreate} disabled={!createForm.subject}
                 className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">Log Entry</button>
             </div>
@@ -469,34 +469,34 @@ export default function CommLogPage() {
       {/* ── RESOLVE MODAL ──────────────────────────────────────────────────── */}
       {resolveModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h3 className="font-semibold text-gray-900">
                 {resolveForm.resolved === 'escalated' ? 'Escalate' : 'Resolve'} Entry
               </h3>
               <button onClick={() => setResolveModal(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-4 space-y-4">
-              <div className="text-sm text-gray-600 dark:text-gray-300">
+              <div className="text-sm text-gray-600">
                 <p><strong>Subject:</strong> {resolveModal.subject}</p>
                 <p><strong>Type:</strong> {resolveModal.comm_type} | <strong>Priority:</strong> {resolveModal.priority}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Resolution</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Resolution</label>
                 <select value={resolveForm.resolved} onChange={(e) => setResolveForm({ ...resolveForm, resolved: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                  className="w-full px-3 py-2 border rounded-lg text-sm">
                   <option value="resolved">Resolved</option>
                   <option value="escalated">Escalated</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea value={resolveForm.resolution_notes} onChange={(e) => setResolveForm({ ...resolveForm, resolution_notes: e.target.value })}
-                  rows={3} className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                  rows={3} className="w-full px-3 py-2 border rounded-lg text-sm" />
               </div>
             </div>
-            <div className="flex justify-end gap-2 p-4 border-t border-gray-200 dark:border-gray-700">
-              <button onClick={() => setResolveModal(null)} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">Cancel</button>
+            <div className="flex justify-end gap-2 p-4 border-t border-gray-200">
+              <button onClick={() => setResolveModal(null)} className="px-4 py-2 text-sm text-gray-600">Cancel</button>
               <button onClick={handleResolve}
                 className={`px-4 py-2 text-sm text-white rounded-lg ${resolveForm.resolved === 'escalated' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}>
                 {resolveForm.resolved === 'escalated' ? 'Escalate' : 'Resolve'}

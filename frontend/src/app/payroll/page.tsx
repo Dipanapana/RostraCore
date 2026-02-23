@@ -77,32 +77,32 @@ function formatMonthLabel(year: number, month: number) {
 // Status workflow constants
 const STATUS_CONFIG: Record<
   string,
-  { color: string; darkColor: string; label: string; next?: string; nextLabel?: string }
+  { color: string; label: string; next?: string; nextLabel?: string }
 > = {
   draft: {
     color: "bg-gray-100 text-gray-800",
-    darkColor: "dark:bg-gray-700 dark:text-gray-300",
+
     label: "Draft",
     next: "reviewed",
     nextLabel: "Review",
   },
   reviewed: {
-    color: "bg-yellow-100 text-yellow-800",
-    darkColor: "dark:bg-yellow-900/30 dark:text-yellow-400",
+    color: "bg-amber-50 text-amber-700",
+
     label: "Reviewed",
     next: "approved",
     nextLabel: "Approve",
   },
   approved: {
-    color: "bg-green-100 text-green-800",
-    darkColor: "dark:bg-green-900/30 dark:text-green-400",
+    color: "bg-emerald-50 text-emerald-700",
+
     label: "Approved",
     next: "paid",
     nextLabel: "Mark as Paid",
   },
   paid: {
     color: "bg-blue-100 text-blue-800",
-    darkColor: "dark:bg-blue-900/30 dark:text-blue-400",
+
     label: "Paid",
   },
 };
@@ -111,7 +111,7 @@ function getStatusConfig(status: string) {
   return (
     STATUS_CONFIG[status.toLowerCase()] ?? {
       color: "bg-gray-100 text-gray-800",
-      darkColor: "dark:bg-gray-700 dark:text-gray-300",
+  
       label: status,
     }
   );
@@ -556,9 +556,9 @@ export default function PayrollPage() {
       <DashboardLayout>
         <div className="flex items-center justify-center py-24">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-            <p className="mt-4 text-slate-600 dark:text-slate-400">
-              Loading payroll records...
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600 mx-auto"></div>
+            <p className="mt-3 text-sm text-gray-500">
+              Loading...
             </p>
           </div>
         </div>
@@ -572,10 +572,10 @@ export default function PayrollPage() {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+            <h1 className="text-2xl font-semibold text-gray-900">
               Payroll Management
             </h1>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            <p className="mt-1 text-sm text-gray-500">
               Generate and manage employee payroll records
             </p>
           </div>
@@ -583,7 +583,7 @@ export default function PayrollPage() {
             <button
               onClick={handleExportExcel}
               disabled={exporting || filteredPayrolls.length === 0}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2 text-sm transition-colors"
+              className="px-4 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg disabled:opacity-50 flex items-center gap-2 text-sm transition-colors"
             >
               <FileSpreadsheet className="w-4 h-4" />
               Export Excel
@@ -599,8 +599,8 @@ export default function PayrollPage() {
                 Export to Payroll System ▾
               </button>
               {showPayrollExportMenu && (
-                <div className="absolute right-0 mt-1 w-52 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-10">
-                  <p className="text-xs text-slate-500 dark:text-slate-400 px-3 pt-2 pb-1 font-medium uppercase tracking-wide">Select format</p>
+                <div className="absolute right-0 mt-1 w-52 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                  <p className="text-xs text-gray-500 px-3 pt-2 pb-1 font-medium uppercase tracking-wide">Select format</p>
                   {[
                     { key: 'sage300', label: 'Sage 300' },
                     { key: 'pastel', label: 'Pastel Evolution' },
@@ -609,7 +609,7 @@ export default function PayrollPage() {
                     <button
                       key={key}
                       onClick={() => handleExportPayrollSystem(key as 'sage300' | 'pastel' | 'vip')}
-                      className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                     >
                       {label}
                     </button>
@@ -621,14 +621,14 @@ export default function PayrollPage() {
             <button
               onClick={handleBulkPayslipPDF}
               disabled={exporting || filteredPayrolls.length === 0}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-2 text-sm transition-colors"
+              className="px-4 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg disabled:opacity-50 flex items-center gap-2 text-sm transition-colors"
             >
               <FileText className="w-4 h-4" />
               All Payslips PDF
             </button>
             <button
               onClick={openGenerateModal}
-              className="px-5 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2 text-sm font-medium transition-colors"
+              className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm font-medium transition-colors"
             >
               + Generate Payroll
             </button>
@@ -637,11 +637,11 @@ export default function PayrollPage() {
 
         {/* Error banner */}
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 px-4 py-3 rounded-lg flex items-center justify-between">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center justify-between">
             <span>{error}</span>
             <button
               onClick={() => setError("")}
-              className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 font-bold text-lg leading-none"
+              className="text-red-600 hover:text-red-800 font-bold text-lg leading-none"
             >
               x
             </button>
@@ -649,7 +649,7 @@ export default function PayrollPage() {
         )}
 
         {/* Month Quick-Selector Bar */}
-        <div className="bg-white dark:bg-slate-800 shadow rounded-lg p-4">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             {/* Quick buttons */}
             <div className="flex items-center gap-2">
@@ -657,8 +657,8 @@ export default function PayrollPage() {
                 onClick={selectThisMonth}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   monthMode === "this"
-                    ? "bg-purple-600 text-white"
-                    : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
                 This Month
@@ -667,37 +667,37 @@ export default function PayrollPage() {
                 onClick={selectLastMonth}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   monthMode === "last"
-                    ? "bg-purple-600 text-white"
-                    : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
                 Last Month
               </button>
 
               {/* Divider */}
-              <div className="hidden sm:block w-px h-8 bg-slate-300 dark:bg-slate-600 mx-1" />
+              <div className="hidden sm:block w-px h-8 bg-gray-300 mx-1" />
             </div>
 
             {/* Month picker with arrows */}
             <div className="flex items-center gap-1">
               <button
                 onClick={goToPreviousMonth}
-                className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-colors"
+                className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
                 aria-label="Previous month"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
 
-              <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-900 rounded-lg min-w-[180px] justify-center">
-                <Calendar className="w-4 h-4 text-purple-500" />
-                <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+              <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-lg min-w-[180px] justify-center">
+                <Calendar className="w-4 h-4 text-blue-500" />
+                <span className="text-sm font-semibold text-gray-800">
                   {formatMonthLabel(selectedYear, selectedMonth)}
                 </span>
               </div>
 
               <button
                 onClick={goToNextMonth}
-                className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-colors"
+                className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
                 aria-label="Next month"
               >
                 <ChevronRight className="w-5 h-5" />
@@ -705,7 +705,7 @@ export default function PayrollPage() {
             </div>
 
             {/* Record count */}
-            <div className="sm:ml-auto text-sm text-slate-500 dark:text-slate-400">
+            <div className="sm:ml-auto text-sm text-gray-500">
               Showing {filteredPayrolls.length} of {payrolls.length} records
             </div>
           </div>
@@ -715,69 +715,69 @@ export default function PayrollPage() {
         {computedSummary && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {/* Total Gross Pay */}
-            <div className="bg-white dark:bg-slate-800 shadow rounded-lg p-5 border-l-4 border-green-500">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 border-l-4 border-green-500">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Total Gross Pay
                   </p>
-                  <p className="mt-1 text-xl font-bold text-green-600 dark:text-green-400">
+                  <p className="mt-1 text-xl font-bold text-green-600">
                     R {computedSummary.total_gross.toLocaleString("en-ZA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-full">
+                <div className="p-3 bg-green-50 rounded-full">
                   <DollarSign className="w-5 h-5 text-green-500" />
                 </div>
               </div>
             </div>
 
             {/* Total Net Pay */}
-            <div className="bg-white dark:bg-slate-800 shadow rounded-lg p-5 border-l-4 border-blue-500">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 border-l-4 border-blue-500">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Total Net Pay
                   </p>
-                  <p className="mt-1 text-xl font-bold text-blue-600 dark:text-blue-400">
+                  <p className="mt-1 text-xl font-bold text-blue-600">
                     R {computedSummary.total_net.toLocaleString("en-ZA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-full">
+                <div className="p-3 bg-blue-50 rounded-full">
                   <DollarSign className="w-5 h-5 text-blue-500" />
                 </div>
               </div>
             </div>
 
             {/* Total Deductions */}
-            <div className="bg-white dark:bg-slate-800 shadow rounded-lg p-5 border-l-4 border-red-500">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 border-l-4 border-red-500">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Total Deductions
                   </p>
-                  <p className="mt-1 text-xl font-bold text-red-600 dark:text-red-400">
+                  <p className="mt-1 text-xl font-bold text-red-600">
                     R {computedSummary.total_deductions.toLocaleString("en-ZA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-full">
+                <div className="p-3 bg-red-50 rounded-full">
                   <TrendingDown className="w-5 h-5 text-red-500" />
                 </div>
               </div>
             </div>
 
             {/* Employee Count */}
-            <div className="bg-white dark:bg-slate-800 shadow rounded-lg p-5 border-l-4 border-slate-400">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 border-l-4 border-gray-400">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Employee Count
                   </p>
-                  <p className="mt-1 text-xl font-bold text-slate-700 dark:text-slate-300">
+                  <p className="mt-1 text-xl font-bold text-gray-700">
                     {computedSummary.employee_count}
                   </p>
                 </div>
-                <div className="p-3 bg-slate-100 dark:bg-slate-700 rounded-full">
-                  <Users className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+                <div className="p-3 bg-gray-100 rounded-full">
+                  <Users className="w-5 h-5 text-gray-500" />
                 </div>
               </div>
             </div>
@@ -787,45 +787,45 @@ export default function PayrollPage() {
         {/* Comprehensive summary from generate (SA deductions breakdown) */}
         {payrollSummary && (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-            <div className="bg-white dark:bg-slate-800 shadow rounded-lg p-4">
-              <p className="text-xs text-slate-500 dark:text-slate-400 uppercase">Employees</p>
-              <p className="text-xl font-bold text-slate-900 dark:text-slate-100">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+              <p className="text-xs text-gray-500 uppercase">Employees</p>
+              <p className="text-xl font-bold text-gray-900">
                 {payrollSummary.employee_count ?? 0}
               </p>
             </div>
-            <div className="bg-white dark:bg-slate-800 shadow rounded-lg p-4">
-              <p className="text-xs text-slate-500 dark:text-slate-400 uppercase">Total Gross</p>
-              <p className="text-xl font-bold text-slate-900 dark:text-slate-100">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+              <p className="text-xs text-gray-500 uppercase">Total Gross</p>
+              <p className="text-xl font-bold text-gray-900">
                 R {(payrollSummary.total_gross ?? 0).toLocaleString()}
               </p>
             </div>
-            <div className="bg-white dark:bg-slate-800 shadow rounded-lg p-4">
-              <p className="text-xs text-slate-500 dark:text-slate-400 uppercase">PAYE</p>
-              <p className="text-xl font-bold text-red-600 dark:text-red-400">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+              <p className="text-xs text-gray-500 uppercase">PAYE</p>
+              <p className="text-xl font-bold text-red-600">
                 R {(payrollSummary.total_paye ?? 0).toLocaleString()}
               </p>
             </div>
-            <div className="bg-white dark:bg-slate-800 shadow rounded-lg p-4">
-              <p className="text-xs text-slate-500 dark:text-slate-400 uppercase">UIF (Employee)</p>
-              <p className="text-xl font-bold text-red-600 dark:text-red-400">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+              <p className="text-xs text-gray-500 uppercase">UIF (Employee)</p>
+              <p className="text-xl font-bold text-red-600">
                 R {(payrollSummary.total_uif_employee ?? 0).toLocaleString()}
               </p>
             </div>
-            <div className="bg-white dark:bg-slate-800 shadow rounded-lg p-4">
-              <p className="text-xs text-slate-500 dark:text-slate-400 uppercase">UIF (Employer)</p>
-              <p className="text-xl font-bold text-orange-600 dark:text-orange-400">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+              <p className="text-xs text-gray-500 uppercase">UIF (Employer)</p>
+              <p className="text-xl font-bold text-orange-600">
                 R {(payrollSummary.total_uif_employer ?? 0).toLocaleString()}
               </p>
             </div>
-            <div className="bg-white dark:bg-slate-800 shadow rounded-lg p-4">
-              <p className="text-xs text-slate-500 dark:text-slate-400 uppercase">SDL</p>
-              <p className="text-xl font-bold text-orange-600 dark:text-orange-400">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+              <p className="text-xs text-gray-500 uppercase">SDL</p>
+              <p className="text-xl font-bold text-orange-600">
                 R {(payrollSummary.total_sdl ?? 0).toLocaleString()}
               </p>
             </div>
-            <div className="bg-white dark:bg-slate-800 shadow rounded-lg p-4">
-              <p className="text-xs text-slate-500 dark:text-slate-400 uppercase">Total Net</p>
-              <p className="text-xl font-bold text-green-600 dark:text-green-400">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+              <p className="text-xs text-gray-500 uppercase">Total Net</p>
+              <p className="text-xl font-bold text-green-600">
                 R {(payrollSummary.total_net ?? 0).toLocaleString()}
               </p>
             </div>
@@ -833,46 +833,46 @@ export default function PayrollPage() {
         )}
 
         {/* Payroll Table */}
-        <div className="bg-white dark:bg-slate-800 shadow rounded-lg overflow-hidden">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-              <thead className="bg-slate-50 dark:bg-slate-900/50">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Employee
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Period
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Hours
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Gross Pay
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     PAYE
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     UIF
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Net Pay
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+              <tbody className="divide-y divide-gray-200">
                 {filteredPayrolls.length === 0 ? (
                   <tr>
                     <td
                       colSpan={9}
-                      className="px-6 py-12 text-center text-slate-500 dark:text-slate-400"
+                      className="px-6 py-12 text-center text-gray-500"
                     >
                       {payrolls.length === 0
                         ? 'No payroll records found. Click "Generate Payroll" to create one.'
@@ -885,48 +885,48 @@ export default function PayrollPage() {
                     return (
                       <tr
                         key={payroll.payroll_id}
-                        className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                        className="hover:bg-gray-50 transition-colors"
                       >
                         <td className="px-4 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                          <div className="text-sm font-medium text-gray-900">
                             {payroll.employee_name}
                           </div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400">
+                          <div className="text-xs text-gray-500">
                             ID: {payroll.employee_id}
                           </div>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
-                          <div className="text-sm text-slate-900 dark:text-slate-200">
+                          <div className="text-sm text-gray-900">
                             {new Date(payroll.period_start).toLocaleDateString()} -
                           </div>
-                          <div className="text-sm text-slate-900 dark:text-slate-200">
+                          <div className="text-sm text-gray-900">
                             {new Date(payroll.period_end).toLocaleDateString()}
                           </div>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
-                          <div className="text-sm text-slate-900 dark:text-slate-200">
+                          <div className="text-sm text-gray-900">
                             {payroll.total_hours.toFixed(1)}h
                           </div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400">
+                          <div className="text-xs text-gray-500">
                             OT: {payroll.overtime_hours.toFixed(1)}h
                           </div>
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-slate-200">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                           R {payroll.gross_pay.toFixed(2)}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-red-600 dark:text-red-400">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-red-600">
                           R {(payroll.paye || 0).toFixed(2)}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-red-600 dark:text-red-400">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-red-600">
                           R {(payroll.uif_employee || 0).toFixed(2)}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-green-700 dark:text-green-400">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-green-700">
                           R {payroll.net_pay.toFixed(2)}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             <span
-                              className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${cfg.color} ${cfg.darkColor}`}
+                              className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${cfg.color}`}
                             >
                               {cfg.label}
                             </span>
@@ -941,10 +941,10 @@ export default function PayrollPage() {
                                 disabled={updatingStatus === payroll.payroll_id}
                                 className={`px-2 py-1 text-xs font-medium rounded transition-colors disabled:opacity-50 ${
                                   cfg.next === "reviewed"
-                                    ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:hover:bg-yellow-900/50"
+                                    ? "bg-amber-50 text-amber-700 hover:bg-yellow-200"
                                     : cfg.next === "approved"
-                                      ? "bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50"
-                                      : "bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
+                                      ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                      : "bg-blue-100 text-blue-800 hover:bg-blue-200"
                                 }`}
                               >
                                 {updatingStatus === payroll.payroll_id
@@ -962,7 +962,7 @@ export default function PayrollPage() {
                                 payroll.employee_name,
                               )
                             }
-                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                            className="text-red-600 hover:text-red-900"
                             title="Download Payslip PDF"
                           >
                             <FileText className="w-4 h-4 inline" />
@@ -974,7 +974,7 @@ export default function PayrollPage() {
                                 "_blank",
                               )
                             }
-                            className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300"
+                            className="text-blue-600 hover:text-purple-900"
                           >
                             View
                           </button>
@@ -982,7 +982,7 @@ export default function PayrollPage() {
                             onClick={() =>
                               handleDeletePayroll(payroll.payroll_id)
                             }
-                            className="text-slate-600 hover:text-red-900 dark:text-slate-400 dark:hover:text-red-400"
+                            className="text-gray-600 hover:text-red-900"
                           >
                             Delete
                           </button>
@@ -1000,14 +1000,14 @@ export default function PayrollPage() {
       {/* Generate Payroll Modal */}
       {showGenerateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-slate-800 rounded-lg p-8 max-w-md w-full mx-4 shadow-xl">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">
+          <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4 shadow-xl">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-6">
               Generate Payroll
             </h2>
 
             <div className="space-y-4">
               {/* All Employees Toggle */}
-              <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <label className="flex items-center cursor-pointer">
                   <input
                     type="checkbox"
@@ -1016,16 +1016,16 @@ export default function PayrollPage() {
                       setGenerateAll(e.target.checked);
                       if (e.target.checked) setSelectedEmployee(null);
                     }}
-                    className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
+                    className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
                   />
                   <span className="ml-3 flex items-center gap-2">
-                    <Users className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                    <span className="font-medium text-slate-900 dark:text-slate-100">
+                    <Users className="w-5 h-5 text-blue-600" />
+                    <span className="font-medium text-gray-900">
                       Generate for All Employees
                     </span>
                   </span>
                 </label>
-                <p className="mt-2 ml-8 text-xs text-slate-600 dark:text-slate-400">
+                <p className="mt-2 ml-8 text-xs text-gray-600">
                   Calculate SA deductions (PAYE, UIF, SDL) for all active
                   employees
                 </p>
@@ -1044,33 +1044,33 @@ export default function PayrollPage() {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Period Start
                 </label>
                 <input
                   type="date"
                   value={periodStart}
                   onChange={(e) => setPeriodStart(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Period End
                 </label>
                 <input
                   type="date"
                   value={periodEnd}
                   onChange={(e) => setPeriodEnd(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 />
               </div>
 
               {/* SA Deductions Info */}
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-xs text-blue-800 dark:text-blue-300">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
                 <p className="font-medium mb-1">
                   SA Statutory Deductions Applied:
                 </p>
@@ -1091,13 +1091,13 @@ export default function PayrollPage() {
                   setPeriodStart("");
                   setPeriodEnd("");
                 }}
-                className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleGeneratePayroll}
-                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center justify-center gap-2 transition-colors"
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2 transition-colors"
               >
                 {generateAll ? (
                   <Users className="w-4 h-4" />

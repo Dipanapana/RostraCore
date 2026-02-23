@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
-import * as SecureStore from 'expo-secure-store';
+import tokenStorage from '../utils/tokenStorage';
 import { useAuthStore } from '../context/authStore';
 
 // ---------------------------------------------------------------------------
@@ -7,7 +7,7 @@ import { useAuthStore } from '../context/authStore';
 // ---------------------------------------------------------------------------
 
 const WS_BASE_URL = __DEV__
-  ? 'ws://192.168.1.100:8001'
+  ? 'ws://172.20.10.6:8000'
   : 'wss://api.rostracore.com';
 
 const RECONNECT_DELAY_MS = 3000;
@@ -40,7 +40,7 @@ export function useWebSocket(handlers?: Record<string, MessageHandler>) {
   const connect = useCallback(async () => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
-    const token = await SecureStore.getItemAsync('access_token');
+    const token = await tokenStorage.getItem('access_token');
     if (!token) return;
 
     const ws = new WebSocket(`${WS_BASE_URL}/api/v1/ws?token=${token}`);

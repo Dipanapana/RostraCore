@@ -82,10 +82,10 @@ export default function BillingPage() {
     if (!status) return null
 
     const statusColors: Record<string, string> = {
-      active: 'bg-green-100 text-green-800 border-green-200',
+      active: 'bg-emerald-50 text-emerald-700 border-emerald-200',
       trial: 'bg-blue-100 text-blue-800 border-blue-200',
-      past_due: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      suspended: 'bg-red-100 text-red-800 border-red-200',
+      past_due: 'bg-amber-50 text-amber-700 border-amber-200',
+      suspended: 'bg-red-50 text-red-700 border-red-200',
       cancelled: 'bg-gray-100 text-gray-800 border-gray-200',
     }
 
@@ -118,7 +118,7 @@ export default function BillingPage() {
     return (
       <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading billing information...</p>
         </div>
       </div>
@@ -129,7 +129,7 @@ export default function BillingPage() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
           <div className="flex justify-between items-center">
             <div>
               <button
@@ -141,7 +141,7 @@ export default function BillingPage() {
                 </svg>
                 Back
               </button>
-              <h1 className="text-2xl font-bold text-gray-900">Billing & Subscription</h1>
+              <h1 className="text-2xl font-semibold text-gray-900">Billing & Subscription</h1>
               <p className="text-gray-600 mt-1">Manage your GuardianOS subscription</p>
             </div>
             {getStatusBadge()}
@@ -149,7 +149,7 @@ export default function BillingPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md mb-6">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
             {error}
           </div>
         )}
@@ -181,7 +181,7 @@ export default function BillingPage() {
               <button
                 onClick={handleSubscribe}
                 disabled={processingPayment}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
               >
                 {processingPayment ? 'Processing...' : 'Subscribe Now'}
               </button>
@@ -190,12 +190,12 @@ export default function BillingPage() {
         )}
 
         {/* Subscription Overview */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Subscription Overview</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Current Plan */}
-            <div className="border rounded-lg p-4">
+            <div className="border border-gray-200 rounded-xl p-4">
               <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Current Plan</h3>
               <p className="text-2xl font-bold text-gray-900">Per-Guard Billing</p>
               <p className="text-gray-600 mt-1">
@@ -204,14 +204,14 @@ export default function BillingPage() {
             </div>
 
             {/* Active Guards */}
-            <div className="border rounded-lg p-4">
+            <div className="border border-gray-200 rounded-xl p-4">
               <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Active Guards</h3>
               <p className="text-2xl font-bold text-gray-900">{status?.active_guard_count || 0}</p>
               <p className="text-gray-600 mt-1">Currently employed guards</p>
             </div>
 
             {/* Monthly Cost */}
-            <div className="border rounded-lg p-4 bg-green-50">
+            <div className="border border-gray-200 rounded-xl p-4 bg-green-50">
               <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Estimated Monthly Cost</h3>
               <p className="text-2xl font-bold text-green-700">
                 {formatCurrency(status?.estimated_monthly_cost || 0)}
@@ -222,7 +222,7 @@ export default function BillingPage() {
             </div>
 
             {/* Next Billing */}
-            <div className="border rounded-lg p-4">
+            <div className="border border-gray-200 rounded-xl p-4">
               <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Next Billing Date</h3>
               <p className="text-2xl font-bold text-gray-900">
                 {status?.next_billing_date ? formatDate(status.next_billing_date) : 'Not scheduled'}
@@ -235,7 +235,7 @@ export default function BillingPage() {
         </div>
 
         {/* Payment Method */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Payment Method</h2>
 
           {status?.payfast_active ? (
@@ -249,7 +249,7 @@ export default function BillingPage() {
                   <p className="text-sm text-gray-500">Automatically billed monthly</p>
                 </div>
               </div>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700">
                 Active
               </span>
             </div>
@@ -262,7 +262,7 @@ export default function BillingPage() {
               <button
                 onClick={handleSubscribe}
                 disabled={processingPayment || (status?.active_guard_count || 0) === 0}
-                className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
               >
                 {processingPayment ? 'Processing...' : 'Set Up Payment'}
               </button>
@@ -274,7 +274,7 @@ export default function BillingPage() {
         </div>
 
         {/* Features Access */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">What&apos;s Included</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -314,7 +314,7 @@ export default function BillingPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
               <div>
-                <p className="font-semibold text-red-800">Account Restricted</p>
+                <p className="font-semibold text-red-700">Account Restricted</p>
                 <p className="text-sm text-red-600">
                   Roster generation is disabled. Please subscribe or contact support.
                 </p>

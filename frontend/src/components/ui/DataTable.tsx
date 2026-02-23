@@ -19,6 +19,7 @@ interface DataTableProps<T> {
     onRowClick?: (item: T) => void
     actions?: (item: T) => React.ReactNode
     emptyMessage?: string
+    emptyAction?: React.ReactNode
 }
 
 export default function DataTable<T>({
@@ -30,14 +31,13 @@ export default function DataTable<T>({
     onRowClick,
     actions,
     emptyMessage = 'No data found.',
+    emptyAction,
 }: DataTableProps<T>) {
     const [searchTerm, setSearchTerm] = useState('')
     const [currentPage, setCurrentPage] = useState(1)
 
-    // Filter data based on search term
     const filteredData = useMemo(() => {
         if (!searchTerm) return data
-
         return data.filter((item) => {
             return searchKeys.some((key) => {
                 const value = item[key]
@@ -46,12 +46,10 @@ export default function DataTable<T>({
         })
     }, [data, searchTerm, searchKeys])
 
-    // Pagination logic
     const totalPages = Math.ceil(filteredData.length / itemsPerPage)
     const startIndex = (currentPage - 1) * itemsPerPage
     const currentData = filteredData.slice(startIndex, startIndex + itemsPerPage)
 
-    // Reset page when search changes
     React.useEffect(() => {
         setCurrentPage(1)
     }, [searchTerm])
@@ -62,48 +60,47 @@ export default function DataTable<T>({
             {searchable && (
                 <div className="flex items-center justify-between">
                     <div className="relative w-full max-w-sm">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-400" />
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <input
                             type="text"
                             placeholder="Search..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+                            className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
                         />
                     </div>
                 </div>
             )}
 
             {/* Table */}
-            <div className="glass-panel rounded-xl overflow-hidden shadow-sm">
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="bg-slate-50/50 dark:bg-white/5 border-b border-slate-200 dark:border-white/5">
+                            <tr className="bg-gray-50 border-b border-gray-200">
                                 {columns.map((col, idx) => (
                                     <th
                                         key={idx}
-                                        className={`px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider ${col.className || ''}`}
+                                        className={`px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider ${col.className || ''}`}
                                     >
                                         {col.header}
                                     </th>
                                 ))}
-                                {actions && <th className="px-6 py-4 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>}
+                                {actions && <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>}
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-200 dark:divide-white/5">
+                        <tbody className="divide-y divide-gray-100">
                             {currentData.length > 0 ? (
                                 currentData.map((item, idx) => (
                                     <tr
                                         key={idx}
                                         onClick={() => onRowClick && onRowClick(item)}
-                                        className={`group transition-colors hover:bg-slate-50 dark:hover:bg-white/5 ${onRowClick ? 'cursor-pointer' : ''
-                                            }`}
+                                        className={`group transition-colors hover:bg-gray-50 ${onRowClick ? 'cursor-pointer' : ''}`}
                                     >
                                         {columns.map((col, colIdx) => (
                                             <td
                                                 key={colIdx}
-                                                className={`px-6 py-4 text-sm text-slate-700 dark:text-slate-200 ${col.className || ''}`}
+                                                className={`px-6 py-4 text-sm text-gray-700 ${col.className || ''}`}
                                             >
                                                 {col.cell
                                                     ? col.cell(item)
@@ -125,9 +122,18 @@ export default function DataTable<T>({
                                 <tr>
                                     <td
                                         colSpan={columns.length + (actions ? 1 : 0)}
-                                        className="px-6 py-12 text-center text-slate-600 dark:text-slate-400"
+                                        className="px-6 py-16 text-center"
                                     >
-                                        {emptyMessage}
+                                        <div className="flex flex-col items-center gap-3">
+                                            <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center">
+                                                <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                                </svg>
+                                            </div>
+                                            <p className="text-sm font-medium text-gray-900">{emptyMessage}</p>
+                                            <p className="text-xs text-gray-500">No records match your current filters</p>
+                                            {emptyAction && <div className="mt-1">{emptyAction}</div>}
+                                        </div>
                                     </td>
                                 </tr>
                             )}
@@ -139,31 +145,30 @@ export default function DataTable<T>({
             {/* Pagination */}
             {totalPages > 1 && (
                 <div className="flex items-center justify-between px-2">
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
-                        Showing <span className="font-medium text-slate-900 dark:text-white">{startIndex + 1}</span> to{' '}
-                        <span className="font-medium text-slate-900 dark:text-white">
+                    <p className="text-sm text-gray-600">
+                        Showing <span className="font-medium text-gray-900">{startIndex + 1}</span> to{' '}
+                        <span className="font-medium text-gray-900">
                             {Math.min(startIndex + itemsPerPage, filteredData.length)}
                         </span>{' '}
-                        of <span className="font-medium text-slate-900 dark:text-white">{filteredData.length}</span> results
+                        of <span className="font-medium text-gray-900">{filteredData.length}</span> results
                     </p>
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                             disabled={currentPage === 1}
-                            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
-                            <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+                            <ChevronLeft className="w-5 h-5 text-gray-600" />
                         </button>
-                        <span className="text-sm font-medium text-slate-700 dark:text-slate-400">
+                        <span className="text-sm font-medium text-gray-700">
                             Page {currentPage} of {totalPages}
                         </span>
                         <button
                             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                             disabled={currentPage === totalPages}
-                            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
-                            <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-
+                            <ChevronRight className="w-5 h-5 text-gray-600" />
                         </button>
                     </div>
                 </div>

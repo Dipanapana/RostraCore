@@ -86,7 +86,7 @@ export default function SecurityLoadingSpinner({
   const puzzle = securityPuzzles[currentPuzzle]
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 flex items-center justify-center z-50">
       {/* Animated background grid */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0" style={{
@@ -173,15 +173,15 @@ export default function SecurityLoadingSpinner({
         {/* Current puzzle card */}
         <div className={`bg-gradient-to-br ${puzzle.gradient} p-1 rounded-2xl mb-6
                         transform transition-all duration-500 hover:scale-105 shadow-2xl`}>
-          <div className="bg-slate-900 rounded-2xl p-6">
+          <div className="bg-gray-900 rounded-2xl p-6">
             <div className="flex items-center gap-3 mb-3">
               <div className="text-4xl">{puzzle.icon}</div>
               <h3 className="text-2xl font-bold text-white">{puzzle.title}</h3>
             </div>
-            <p className="text-slate-300 text-lg mb-4">{puzzle.description}</p>
+            <p className="text-gray-300 text-lg mb-4">{puzzle.description}</p>
 
             {/* Progress bar */}
-            <div className="relative h-2 bg-slate-800 rounded-full overflow-hidden">
+            <div className="relative h-2 bg-gray-800 rounded-full overflow-hidden">
               <div
                 className={`absolute inset-y-0 left-0 bg-gradient-to-r ${puzzle.gradient}
                            rounded-full transition-all duration-50 ease-linear`}
@@ -200,7 +200,7 @@ export default function SecurityLoadingSpinner({
           <p className="text-xl text-blue-100 font-medium animate-pulse">
             {message}
           </p>
-          <div className="flex items-center justify-center gap-2 text-slate-400">
+          <div className="flex items-center justify-center gap-2 text-gray-400">
             <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor"
@@ -219,20 +219,20 @@ export default function SecurityLoadingSpinner({
           )}
 
           {/* Processing stats */}
-          <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-slate-700">
+          <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-700">
             <div className="text-center">
               <div className="text-2xl font-bold text-cyan-400">168</div>
-              <div className="text-xs text-slate-400 uppercase tracking-wide">Shifts</div>
+              <div className="text-xs text-gray-400 uppercase tracking-wide">Shifts</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-400">71</div>
-              <div className="text-xs text-slate-400 uppercase tracking-wide">Guards</div>
+              <div className="text-xs text-gray-400 uppercase tracking-wide">Guards</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-400">
                 {currentPuzzle + 1}/{securityPuzzles.length}
               </div>
-              <div className="text-xs text-slate-400 uppercase tracking-wide">Checks</div>
+              <div className="text-xs text-gray-400 uppercase tracking-wide">Checks</div>
             </div>
           </div>
         </div>

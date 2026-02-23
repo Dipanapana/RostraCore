@@ -16,32 +16,32 @@ export interface ToastProps {
 
 const toastStyles = {
   success: {
-    bg: 'bg-emerald-50 dark:bg-emerald-500/10',
-    border: 'border-emerald-200 dark:border-emerald-500/20',
+    bg: 'bg-emerald-50',
+    border: 'border-emerald-200',
     icon: 'text-emerald-500',
-    title: 'text-emerald-800 dark:text-emerald-300',
-    message: 'text-emerald-600 dark:text-emerald-400',
+    title: 'text-emerald-800',
+    message: 'text-emerald-600',
   },
   error: {
-    bg: 'bg-red-50 dark:bg-red-500/10',
-    border: 'border-red-200 dark:border-red-500/20',
+    bg: 'bg-red-50',
+    border: 'border-red-200',
     icon: 'text-red-500',
-    title: 'text-red-800 dark:text-red-300',
-    message: 'text-red-600 dark:text-red-400',
+    title: 'text-red-700',
+    message: 'text-red-600',
   },
   warning: {
-    bg: 'bg-amber-50 dark:bg-amber-500/10',
-    border: 'border-amber-200 dark:border-amber-500/20',
+    bg: 'bg-amber-50',
+    border: 'border-amber-200',
     icon: 'text-amber-500',
-    title: 'text-amber-800 dark:text-amber-300',
-    message: 'text-amber-600 dark:text-amber-400',
+    title: 'text-amber-800',
+    message: 'text-amber-600',
   },
   info: {
-    bg: 'bg-blue-50 dark:bg-blue-500/10',
-    border: 'border-blue-200 dark:border-blue-500/20',
+    bg: 'bg-blue-50',
+    border: 'border-blue-200',
     icon: 'text-blue-500',
-    title: 'text-blue-800 dark:text-blue-300',
-    message: 'text-blue-600 dark:text-blue-400',
+    title: 'text-blue-800',
+    message: 'text-blue-600',
   },
 }
 
@@ -59,12 +59,10 @@ export function Toast({ id, type, title, message, duration = 5000, onClose }: To
   const Icon = toastIcons[type]
 
   useEffect(() => {
-    // Animate in
     requestAnimationFrame(() => {
       setIsVisible(true)
     })
 
-    // Auto-dismiss
     if (duration > 0) {
       const timer = setTimeout(() => {
         handleClose()
@@ -77,7 +75,7 @@ export function Toast({ id, type, title, message, duration = 5000, onClose }: To
     setIsLeaving(true)
     setTimeout(() => {
       onClose(id)
-    }, 300) // Wait for animation
+    }, 300)
   }
 
   return (
@@ -107,10 +105,7 @@ export function Toast({ id, type, title, message, duration = 5000, onClose }: To
           </div>
           <button
             onClick={handleClose}
-            className={`
-              flex-shrink-0 p-1 rounded-lg transition-colors
-              ${styles.message} hover:bg-black/5 dark:hover:bg-white/5
-            `}
+            className={`flex-shrink-0 p-1 rounded-lg transition-colors ${styles.message} hover:bg-black/5`}
           >
             <X className="w-4 h-4" />
           </button>
@@ -119,7 +114,7 @@ export function Toast({ id, type, title, message, duration = 5000, onClose }: To
 
       {/* Progress bar for auto-dismiss */}
       {duration > 0 && (
-        <div className="h-1 bg-black/5 dark:bg-white/5">
+        <div className="h-1 bg-black/5">
           <div
             className={`h-full ${styles.icon.replace('text-', 'bg-')} transition-all ease-linear`}
             style={{
@@ -133,7 +128,6 @@ export function Toast({ id, type, title, message, duration = 5000, onClose }: To
   )
 }
 
-// Toast Container for rendering all toasts
 export interface ToastItem {
   id: string
   type: ToastType

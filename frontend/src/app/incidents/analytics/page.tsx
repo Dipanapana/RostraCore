@@ -5,16 +5,16 @@ import { incidentAnalyticsApi } from '@/services/api'
 import { PieChart, AlertTriangle, CheckCircle, Clock, Building2 } from 'lucide-react'
 
 const SEVERITY_COLORS: Record<string, string> = {
-  LOW: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  MEDIUM: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-  HIGH: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-  CRITICAL: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+  LOW: 'bg-blue-100 text-blue-700',
+  MEDIUM: 'bg-amber-50 text-amber-700',
+  HIGH: 'bg-orange-100 text-orange-700',
+  CRITICAL: 'bg-red-100 text-red-700',
 }
 const STATUS_COLORS: Record<string, string> = {
-  REPORTED: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  INVESTIGATING: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-  RESOLVED: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-  CLOSED: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400',
+  REPORTED: 'bg-blue-100 text-blue-700',
+  INVESTIGATING: 'bg-amber-50 text-amber-700',
+  RESOLVED: 'bg-emerald-50 text-emerald-700',
+  CLOSED: 'bg-gray-100 text-gray-700',
 }
 const TYPE_LABELS: Record<string, string> = {
   theft: 'Theft', violence: 'Violence', medical: 'Medical', trespassing: 'Trespassing',
@@ -49,9 +49,9 @@ export default function IncidentAnalyticsPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <PieChart className="w-7 h-7 text-orange-600" />
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Incident Analytics</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">Incident Analytics</h1>
         </div>
-        <select value={days} onChange={e => setDays(Number(e.target.value))} className="border rounded-lg px-3 py-2 text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+        <select value={days} onChange={e => setDays(Number(e.target.value))} className="border rounded-lg px-3 py-2 text-sm">
           <option value={30}>Last 30 days</option>
           <option value={90}>Last 90 days</option>
           <option value={180}>Last 6 months</option>
@@ -61,25 +61,25 @@ export default function IncidentAnalyticsPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4">
+        <div className="bg-white rounded-xl shadow p-4">
           <div className="text-sm text-gray-500">Total Incidents</div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">{data.total_incidents}</div>
+          <div className="text-2xl font-bold text-gray-900">{data.total_incidents}</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4">
+        <div className="bg-white rounded-xl shadow p-4">
           <div className="flex items-center gap-2 text-sm text-yellow-600"><AlertTriangle className="w-4 h-4" />Open</div>
           <div className="text-2xl font-bold text-yellow-600">{data.open}</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4">
+        <div className="bg-white rounded-xl shadow p-4">
           <div className="flex items-center gap-2 text-sm text-green-600"><CheckCircle className="w-4 h-4" />Resolved</div>
           <div className="text-2xl font-bold text-green-600">{data.resolved}</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4">
+        <div className="bg-white rounded-xl shadow p-4">
           <div className="text-sm text-red-600">Critical</div>
           <div className="text-2xl font-bold text-red-600">{data.critical}</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4">
+        <div className="bg-white rounded-xl shadow p-4">
           <div className="flex items-center gap-2 text-sm text-gray-500"><Clock className="w-4 h-4" />Avg Resolution</div>
-          <div className="text-xl font-bold text-gray-900 dark:text-white">
+          <div className="text-xl font-bold text-gray-900">
             {data.avg_resolution_hours !== null ? `${data.avg_resolution_hours}h` : '—'}
           </div>
         </div>
@@ -87,8 +87,8 @@ export default function IncidentAnalyticsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* By Severity */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-          <h2 className="font-semibold text-gray-900 dark:text-white mb-4">By Severity</h2>
+        <div className="bg-white rounded-xl shadow p-6">
+          <h2 className="font-semibold text-gray-900 mb-4">By Severity</h2>
           {Object.keys(data.by_severity).length === 0 ? (
             <p className="text-sm text-gray-400">No data</p>
           ) : (
@@ -99,7 +99,7 @@ export default function IncidentAnalyticsPage() {
                 return (
                   <div key={sev} className="flex items-center justify-between">
                     <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${SEVERITY_COLORS[sev]}`}>{sev}</span>
-                    <span className="text-sm font-bold text-gray-900 dark:text-white">{count}</span>
+                    <span className="text-sm font-bold text-gray-900">{count}</span>
                   </div>
                 )
               })}
@@ -108,8 +108,8 @@ export default function IncidentAnalyticsPage() {
         </div>
 
         {/* By Status */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-          <h2 className="font-semibold text-gray-900 dark:text-white mb-4">By Status</h2>
+        <div className="bg-white rounded-xl shadow p-6">
+          <h2 className="font-semibold text-gray-900 mb-4">By Status</h2>
           {Object.keys(data.by_status).length === 0 ? (
             <p className="text-sm text-gray-400">No data</p>
           ) : (
@@ -117,7 +117,7 @@ export default function IncidentAnalyticsPage() {
               {Object.entries(data.by_status).map(([status, count]: [string, any]) => (
                 <div key={status} className="flex items-center justify-between">
                   <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${STATUS_COLORS[status] || 'bg-gray-100 text-gray-600'}`}>{status}</span>
-                  <span className="text-sm font-bold text-gray-900 dark:text-white">{count}</span>
+                  <span className="text-sm font-bold text-gray-900">{count}</span>
                 </div>
               ))}
             </div>
@@ -126,8 +126,8 @@ export default function IncidentAnalyticsPage() {
       </div>
 
       {/* By Type — horizontal bar chart */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-        <h2 className="font-semibold text-gray-900 dark:text-white mb-4">By Incident Type</h2>
+      <div className="bg-white rounded-xl shadow p-6">
+        <h2 className="font-semibold text-gray-900 mb-4">By Incident Type</h2>
         {Object.keys(data.by_type).length === 0 ? (
           <p className="text-sm text-gray-400">No data</p>
         ) : (
@@ -138,11 +138,11 @@ export default function IncidentAnalyticsPage() {
                 const pct = (count / maxTypeCount) * 100
                 return (
                   <div key={type} className="flex items-center gap-3">
-                    <span className="w-24 text-sm text-gray-600 dark:text-gray-400 capitalize">{TYPE_LABELS[type] || type}</span>
-                    <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-4">
+                    <span className="w-24 text-sm text-gray-600 capitalize">{TYPE_LABELS[type] || type}</span>
+                    <div className="flex-1 bg-gray-200 rounded-full h-4">
                       <div className="h-4 rounded-full bg-orange-500" style={{ width: `${pct}%` }} />
                     </div>
-                    <span className="w-8 text-sm font-medium text-gray-700 dark:text-gray-300 text-right">{count}</span>
+                    <span className="w-8 text-sm font-medium text-gray-700 text-right">{count}</span>
                   </div>
                 )
               })}
@@ -152,8 +152,8 @@ export default function IncidentAnalyticsPage() {
 
       {/* Monthly Trend */}
       {data.monthly_trend.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-          <h2 className="font-semibold text-gray-900 dark:text-white mb-4">Monthly Trend</h2>
+        <div className="bg-white rounded-xl shadow p-6">
+          <h2 className="font-semibold text-gray-900 mb-4">Monthly Trend</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -164,9 +164,9 @@ export default function IncidentAnalyticsPage() {
               </thead>
               <tbody>
                 {data.monthly_trend.map((t: any) => (
-                  <tr key={t.month} className="border-t border-gray-100 dark:border-gray-700">
-                    <td className="py-2 font-medium text-gray-900 dark:text-white">{t.month}</td>
-                    <td className="py-2 text-right text-gray-700 dark:text-gray-300 font-medium">{t.count}</td>
+                  <tr key={t.month} className="border-t border-gray-100">
+                    <td className="py-2 font-medium text-gray-900">{t.month}</td>
+                    <td className="py-2 text-right text-gray-700 font-medium">{t.count}</td>
                   </tr>
                 ))}
               </tbody>
@@ -177,16 +177,16 @@ export default function IncidentAnalyticsPage() {
 
       {/* Top Sites */}
       {data.top_sites.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-          <h2 className="font-semibold text-gray-900 dark:text-white mb-4">Top Sites by Incident Count</h2>
+        <div className="bg-white rounded-xl shadow p-6">
+          <h2 className="font-semibold text-gray-900 mb-4">Top Sites by Incident Count</h2>
           <div className="space-y-2">
             {data.top_sites.map((s: any, i: number) => (
-              <div key={s.site_id} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
+              <div key={s.site_id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
                 <div className="flex items-center gap-3">
-                  <span className="w-6 h-6 flex items-center justify-center rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 text-xs font-bold">{i + 1}</span>
+                  <span className="w-6 h-6 flex items-center justify-center rounded-full bg-orange-100 text-orange-700 text-xs font-bold">{i + 1}</span>
                   <div className="flex items-center gap-2">
                     <Building2 className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">{s.site_name}</span>
+                    <span className="text-sm font-medium text-gray-900">{s.site_name}</span>
                   </div>
                 </div>
                 <span className="text-sm font-bold text-orange-600">{s.count}</span>

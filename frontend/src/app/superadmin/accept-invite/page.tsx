@@ -108,9 +108,9 @@ export default function AcceptInvitePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-300 text-lg">Validating invitation...</p>
         </div>
       </div>
@@ -119,11 +119,11 @@ export default function AcceptInvitePage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md p-8 text-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-8 text-center">
           <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Invalid Invitation</h1>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Invalid Invitation</h1>
+          <p className="text-gray-600 mb-6">{error}</p>
           <button
             onClick={() => router.push('/login')}
             className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -137,11 +137,11 @@ export default function AcceptInvitePage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md p-8 text-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-8 text-center">
           <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Account Created!</h1>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Account Created!</h1>
+          <p className="text-gray-600 mb-6">
             Your SuperAdmin account has been created successfully. You can now log in with your email and password.
           </p>
           <button
@@ -156,15 +156,15 @@ export default function AcceptInvitePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
         {/* Header */}
-        <div className="px-8 pt-8 pb-4 text-center border-b dark:border-slate-700">
+        <div className="px-8 pt-8 pb-4 text-center border-b">
           <div className="w-16 h-16 bg-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
             <Shield className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Welcome to RostraCore</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
+          <h1 className="text-2xl font-semibold text-gray-900">Welcome to RostraCore</h1>
+          <p className="text-gray-600 mt-2">
             You've been invited to join as a SuperAdmin
           </p>
         </div>
@@ -172,27 +172,27 @@ export default function AcceptInvitePage() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-8">
           {submitError && (
-            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <p className="text-sm text-red-600 dark:text-red-400">{submitError}</p>
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{submitError}</p>
             </div>
           )}
 
           {/* Email (read-only) */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Email Address
             </label>
             <input
               type="email"
               value={invitationData?.email || ''}
               readOnly
-              className="w-full px-3 py-2 border rounded-lg bg-gray-100 dark:bg-slate-700 dark:border-slate-600 text-gray-600 dark:text-gray-300 cursor-not-allowed"
+              className="w-full px-3 py-2 border rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
             />
           </div>
 
           {/* Full Name */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Full Name
             </label>
             <input
@@ -200,13 +200,13 @@ export default function AcceptInvitePage() {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Your full name"
-              className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+              className="w-full px-3 py-2 border rounded-lg bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
             />
           </div>
 
           {/* Password */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Password *
             </label>
             <div className="relative">
@@ -217,7 +217,7 @@ export default function AcceptInvitePage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="Create a strong password"
-                className="w-full pl-10 pr-10 py-2 border rounded-lg bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                className="w-full pl-10 pr-10 py-2 border rounded-lg bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
               />
               <button
                 type="button"
@@ -230,8 +230,8 @@ export default function AcceptInvitePage() {
           </div>
 
           {/* Password Requirements */}
-          <div className="mb-4 p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
-            <p className="text-xs font-medium text-gray-600 dark:text-gray-300 mb-2">Password Requirements:</p>
+          <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+            <p className="text-xs font-medium text-gray-600 mb-2">Password Requirements:</p>
             <div className="grid grid-cols-2 gap-1 text-xs">
               <span className={passwordMinLength ? 'text-green-600' : 'text-gray-400'}>
                 {passwordMinLength ? '✓' : '○'} 8+ characters
@@ -253,7 +253,7 @@ export default function AcceptInvitePage() {
 
           {/* Confirm Password */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Confirm Password *
             </label>
             <div className="relative">
@@ -264,7 +264,7 @@ export default function AcceptInvitePage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 placeholder="Confirm your password"
-                className={`w-full pl-10 pr-10 py-2 border rounded-lg bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 ${
+                className={`w-full pl-10 pr-10 py-2 border rounded-lg bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 ${
                   confirmPassword && !passwordsMatch ? 'border-red-500' : ''
                 }`}
               />

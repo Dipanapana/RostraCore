@@ -40,7 +40,6 @@ export default function OrganizationsPage() {
 
   const fetchOrganizations = async () => {
     try {
-      // Note: This endpoint needs to be implemented in backend
       const response = await fetch(
         `${getApiUrl()}/api/v1/organizations`
       );
@@ -141,7 +140,7 @@ export default function OrganizationsPage() {
       case "business":
         return "bg-blue-100 text-blue-800";
       case "professional":
-        return "bg-green-100 text-green-800";
+        return "bg-emerald-50 text-emerald-700";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -150,11 +149,11 @@ export default function OrganizationsPage() {
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
       case "active":
-        return "bg-green-100 text-green-800";
+        return "bg-emerald-50 text-emerald-700";
       case "trial":
         return "bg-blue-100 text-blue-800";
       case "suspended":
-        return "bg-red-100 text-red-800";
+        return "bg-red-50 text-red-700";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -163,7 +162,7 @@ export default function OrganizationsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600"></div>
       </div>
     );
   }
@@ -172,7 +171,7 @@ export default function OrganizationsPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Organizations</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">Organizations</h1>
           <p className="text-gray-600 mt-1">
             Manage security companies and their subscriptions
           </p>
@@ -194,7 +193,7 @@ export default function OrganizationsPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -298,7 +297,7 @@ export default function OrganizationsPage() {
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-            <h2 className="text-2xl font-bold mb-6">
+            <h2 className="text-2xl font-semibold mb-6">
               {editingOrg ? "Edit Organization" : "Add Organization"}
             </h2>
 

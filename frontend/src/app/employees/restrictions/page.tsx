@@ -197,11 +197,11 @@ export default function GuardRestrictionsPage() {
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
               <ShieldBan className="w-6 h-6 text-red-500" />
               Guard Restrictions
             </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-sm text-gray-500 mt-1">
               Manage personnel blacklists — prevent specific guards from being assigned to clients or sites.
             </p>
           </div>
@@ -214,13 +214,13 @@ export default function GuardRestrictionsPage() {
         </div>
 
         {error && (
-          <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+          <p className="text-sm text-red-600 flex items-center gap-1">
             <AlertTriangle className="w-4 h-4" /> {error}
           </p>
         )}
 
         {loading ? (
-          <div className="flex items-center justify-center min-h-[40vh] text-slate-400">
+          <div className="flex items-center justify-center min-h-[40vh] text-gray-400">
             <Loader2 className="w-6 h-6 animate-spin mr-2" /> Loading restrictions…
           </div>
         ) : (
@@ -228,30 +228,30 @@ export default function GuardRestrictionsPage() {
             {/* KPI row */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {[
-                { label: 'Total Restrictions', value: restrictions.length, icon: ShieldBan, color: 'text-red-500', bg: 'bg-red-50 dark:bg-red-900/20' },
+                { label: 'Total Restrictions', value: restrictions.length, icon: ShieldBan, color: 'text-red-500', bg: 'bg-red-50' },
                 {
                   label: 'Guards Affected',
                   value: new Set(restrictions.map((r) => r.employee_id)).size,
                   icon: Users,
-                  color: 'text-slate-600',
-                  bg: 'bg-slate-50 dark:bg-slate-900/30',
+                  color: 'text-gray-600',
+                  bg: 'bg-gray-50',
                 },
                 {
                   label: 'Clients Affected',
                   value: new Set(restrictions.filter((r) => r.client_id).map((r) => r.client_id)).size,
                   icon: Building2,
                   color: 'text-violet-500',
-                  bg: 'bg-violet-50 dark:bg-violet-900/20',
+                  bg: 'bg-violet-50',
                 },
               ].map(({ label, value, icon: Icon, color, bg }) => (
-                <div key={label} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm">
+                <div key={label} className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
+                    <p className="text-xs font-medium text-gray-500">{label}</p>
                     <div className={`${bg} rounded-lg p-1.5`}>
                       <Icon className={`w-4 h-4 ${color}`} />
                     </div>
                   </div>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{value}</p>
+                  <p className="text-2xl font-bold text-gray-900">{value}</p>
                 </div>
               ))}
             </div>
@@ -259,38 +259,38 @@ export default function GuardRestrictionsPage() {
             {/* Search bar */}
             {restrictions.length > 0 && (
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search by guard, client, site, or reason…"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-800 dark:text-slate-200 placeholder-slate-400"
+                  className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 text-gray-800 placeholder-gray-400"
                 />
               </div>
             )}
 
             {/* Restrictions table */}
             {filtered.length > 0 ? (
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30">
+                      <tr className="border-b border-gray-100 bg-gray-50/50">
                         {['Guard', 'Client', 'Site', 'Reason', 'Date Added', ''].map((h) => (
-                          <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">
+                          <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
                             {h}
                           </th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50 dark:divide-slate-700/30">
+                    <tbody className="divide-y divide-gray-50">
                       {filtered.map((r) => (
-                        <tr key={r.restriction_id} className="hover:bg-slate-50 dark:hover:bg-slate-700/20 transition-colors">
+                        <tr key={r.restriction_id} className="hover:bg-gray-50 transition-colors">
                           <td className="px-4 py-3 whitespace-nowrap">
                             <Link
                               href={`/employees/${r.employee_id}`}
-                              className="font-medium text-violet-600 dark:text-violet-400 hover:underline"
+                              className="font-medium text-violet-600 hover:underline"
                             >
                               {r.employee_name}
                             </Link>
@@ -299,36 +299,36 @@ export default function GuardRestrictionsPage() {
                             {r.client_id ? (
                               <Link
                                 href={`/clients/${r.client_id}`}
-                                className="text-slate-700 dark:text-slate-300 hover:underline flex items-center gap-1"
+                                className="text-gray-700 hover:underline flex items-center gap-1"
                               >
-                                <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                                <Building2 className="w-3.5 h-3.5 text-gray-400" />
                                 {r.client_name}
                               </Link>
                             ) : (
-                              <span className="text-slate-400">—</span>
+                              <span className="text-gray-400">—</span>
                             )}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
                             {r.site_id ? (
-                              <span className="text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                                <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                              <span className="text-gray-700 flex items-center gap-1">
+                                <MapPin className="w-3.5 h-3.5 text-gray-400" />
                                 {r.site_name}
                               </span>
                             ) : (
-                              <span className="text-slate-400">All sites</span>
+                              <span className="text-gray-400">All sites</span>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-slate-500 dark:text-slate-400 max-w-[200px] truncate">
+                          <td className="px-4 py-3 text-gray-500 max-w-[200px] truncate">
                             {r.reason || '—'}
                           </td>
-                          <td className="px-4 py-3 text-slate-500 dark:text-slate-400 whitespace-nowrap text-xs">
+                          <td className="px-4 py-3 text-gray-500 whitespace-nowrap text-xs">
                             {fmtDate(r.created_at)}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-right">
                             <button
                               onClick={() => handleDelete(r.restriction_id)}
                               disabled={deleting === r.restriction_id}
-                              className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-40"
+                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-40"
                               title="Remove restriction"
                             >
                               {deleting === r.restriction_id ? (
@@ -345,15 +345,15 @@ export default function GuardRestrictionsPage() {
                 </div>
               </div>
             ) : restrictions.length > 0 ? (
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-8 text-center">
-                <Search className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-                <p className="text-slate-500 dark:text-slate-400">No restrictions match your search.</p>
+              <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+                <Search className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">No restrictions match your search.</p>
               </div>
             ) : (
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-8 text-center">
-                <ShieldBan className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-                <p className="text-slate-500 dark:text-slate-400">No guard restrictions configured.</p>
-                <p className="text-xs text-slate-400 mt-1">
+              <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+                <ShieldBan className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">No guard restrictions configured.</p>
+                <p className="text-xs text-gray-400 mt-1">
                   Add restrictions to prevent specific guards from being assigned to certain clients or sites.
                 </p>
               </div>
@@ -364,30 +364,30 @@ export default function GuardRestrictionsPage() {
         {/* Add Restriction Modal */}
         {showAdd && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl w-full max-w-md mx-4">
-              <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-700">
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-2xl w-full max-w-md mx-4">
+              <div className="flex items-center justify-between p-5 border-b border-gray-100">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                   <ShieldBan className="w-5 h-5 text-red-500" /> Add Restriction
                 </h2>
-                <button onClick={() => setShowAdd(false)} className="p-1 text-slate-400 hover:text-slate-600 rounded">
+                <button onClick={() => setShowAdd(false)} className="p-1 text-gray-400 hover:text-gray-600 rounded">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               <div className="p-5 space-y-4">
                 {loadingRef ? (
-                  <div className="flex items-center justify-center py-6 text-slate-400">
+                  <div className="flex items-center justify-center py-6 text-gray-400">
                     <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading data…
                   </div>
                 ) : (
                   <>
                     {/* Employee */}
                     <div>
-                      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Guard *</label>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Guard *</label>
                       <select
                         value={formEmployee}
                         onChange={(e) => setFormEmployee(e.target.value)}
-                        className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-violet-500 focus:outline-none text-slate-800 dark:text-slate-200"
+                        className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-violet-500 focus:outline-none text-gray-800"
                       >
                         <option value="">Select employee…</option>
                         {employees.map((e) => (
@@ -400,11 +400,11 @@ export default function GuardRestrictionsPage() {
 
                     {/* Client */}
                     <div>
-                      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Client</label>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Client</label>
                       <select
                         value={formClient}
                         onChange={(e) => setFormClient(e.target.value)}
-                        className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-violet-500 focus:outline-none text-slate-800 dark:text-slate-200"
+                        className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-violet-500 focus:outline-none text-gray-800"
                       >
                         <option value="">All clients (select to filter)…</option>
                         {clients.map((c) => (
@@ -418,11 +418,11 @@ export default function GuardRestrictionsPage() {
                     {/* Site (only if client selected) */}
                     {formClient && (
                       <div>
-                        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Site (optional — leave blank for all sites)</label>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Site (optional — leave blank for all sites)</label>
                         <select
                           value={formSite}
                           onChange={(e) => setFormSite(e.target.value)}
-                          className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-violet-500 focus:outline-none text-slate-800 dark:text-slate-200"
+                          className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-violet-500 focus:outline-none text-gray-800"
                         >
                           <option value="">All sites for this client</option>
                           {sites.map((s) => (
@@ -436,27 +436,27 @@ export default function GuardRestrictionsPage() {
 
                     {/* Reason */}
                     <div>
-                      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Reason</label>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Reason</label>
                       <textarea
                         value={formReason}
                         onChange={(e) => setFormReason(e.target.value)}
                         rows={2}
                         placeholder="Optional — e.g., client complaint, performance issue…"
-                        className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-violet-500 focus:outline-none text-slate-800 dark:text-slate-200 placeholder-slate-400 resize-none"
+                        className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-violet-500 focus:outline-none text-gray-800 placeholder-gray-400 resize-none"
                       />
                     </div>
 
                     {formError && (
-                      <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>
+                      <p className="text-sm text-red-600">{formError}</p>
                     )}
                   </>
                 )}
               </div>
 
-              <div className="flex justify-end gap-3 p-5 border-t border-slate-100 dark:border-slate-700">
+              <div className="flex justify-end gap-3 p-5 border-t border-gray-100">
                 <button
                   onClick={() => setShowAdd(false)}
-                  className="px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                  className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>

@@ -22,7 +22,7 @@ from app.models.user import User, UserRole
 from app.models.employee import Employee, EmployeeStatus
 from app.models.client import Client
 from app.models.site import Site
-from app.models.shift import Shift
+from app.models.shift import Shift, ShiftStatus
 from app.models.certification import Certification
 from app.models.availability import Availability
 from app.auth.security import get_password_hash
@@ -328,7 +328,7 @@ def create_sample_data():
                     end_time=day_shift_end,
                     required_staff=site.min_staff,
                     required_skill=site.required_skill,
-                    status="planned"
+                    status=ShiftStatus.PLANNED
                 )
                 db.add(day_shift)
                 shift_count += 1
@@ -344,7 +344,7 @@ def create_sample_data():
                     end_time=night_shift_end,
                     required_staff=site.min_staff,
                     required_skill=site.required_skill,
-                    status="planned"
+                    status=ShiftStatus.PLANNED
                 )
                 db.add(night_shift)
                 shift_count += 1

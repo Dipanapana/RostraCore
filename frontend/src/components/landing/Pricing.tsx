@@ -20,10 +20,10 @@ export default function Pricing() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Section Header */}
                 <div className="text-center max-w-3xl mx-auto mb-16">
-                    <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mb-6">
+                    <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-6">
                         Simple, Per-Guard Pricing
                     </h2>
-                    <p className="text-lg text-slate-600">
+                    <p className="text-lg text-gray-600">
                         Pay only for active guards. No hidden fees. Cancel anytime.
                     </p>
                 </div>
@@ -39,11 +39,11 @@ export default function Pricing() {
                         {/* Price */}
                         <div className="text-center mb-8 pt-4">
                             <div className="flex items-baseline justify-center gap-1">
-                                <span className="text-2xl text-slate-600">R</span>
-                                <span className="text-7xl font-bold text-slate-900">29</span>
+                                <span className="text-2xl text-gray-600">R</span>
+                                <span className="text-7xl font-bold text-gray-900">29</span>
                             </div>
-                            <p className="text-xl text-slate-600 mt-2">per guard / month</p>
-                            <p className="text-sm text-slate-500 mt-1">Excluding VAT</p>
+                            <p className="text-xl text-gray-600 mt-2">per guard / month</p>
+                            <p className="text-sm text-gray-500 mt-1">Excluding VAT</p>
                         </div>
 
                         {/* CTA Button */}
@@ -61,14 +61,14 @@ export default function Pricing() {
                                     <div className="mt-0.5 p-1 rounded-full bg-blue-500/20">
                                         <Check className="w-4 h-4 text-blue-600" />
                                     </div>
-                                    <span className="text-sm text-slate-700">{feature}</span>
+                                    <span className="text-sm text-gray-700">{feature}</span>
                                 </div>
                             ))}
                         </div>
 
                         {/* Trust Signals */}
                         <div className="mt-8 pt-8 border-t border-blue-200">
-                            <div className="flex flex-wrap justify-center gap-6 text-sm text-slate-600">
+                            <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-600">
                                 <div className="flex items-center gap-2">
                                     <Shield className="w-4 h-4 text-blue-500" />
                                     <span>PSIRA Compliant</span>
@@ -79,14 +79,14 @@ export default function Pricing() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Users className="w-4 h-4 text-blue-500" />
-                                    <span>Unlimited Guards</span>
+                                    <span>Unlimited Sites</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Money Back Guarantee */}
-                    <p className="text-center text-sm text-slate-500 mt-6">
+                    <p className="text-center text-sm text-gray-500 mt-6">
                         No credit card required for trial • Cancel anytime
                     </p>
                 </div>

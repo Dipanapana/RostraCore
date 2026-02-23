@@ -9,31 +9,27 @@ import {
     Tooltip,
     ResponsiveContainer,
 } from "recharts";
-import { useTheme } from '@/context/ThemeContext';
 
 interface UtilizationChartProps {
     data: any[];
 }
 
 export default function UtilizationChart({ data }: UtilizationChartProps) {
-    const { theme } = useTheme();
-    const isDark = theme === 'dark';
-
     return (
-        <div className="glass-panel p-6 rounded-2xl border border-white/5 h-full">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 h-full">
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Workforce Utilization</h3>
-                    <p className="text-slate-600 dark:text-slate-400 text-sm">Employee deployment vs. Capacity</p>
+                    <h3 className="text-lg font-semibold text-gray-900">Workforce Utilization</h3>
+                    <p className="text-gray-500 text-sm">Employee deployment vs. Capacity</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                     <div className="flex items-center gap-1.5">
                         <div className="w-2 h-2 rounded-full bg-blue-500" />
-                        <span className="text-xs text-slate-600 dark:text-slate-400">Deployed</span>
+                        <span className="text-xs text-gray-500">Deployed</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-full bg-slate-400 dark:bg-slate-600" />
-                        <span className="text-xs text-slate-600 dark:text-slate-400">Capacity</span>
+                        <div className="w-2 h-2 rounded-full bg-gray-300" />
+                        <span className="text-xs text-gray-500">Capacity</span>
                     </div>
                 </div>
             </div>
@@ -50,16 +46,16 @@ export default function UtilizationChart({ data }: UtilizationChartProps) {
                                 <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                             </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#1e293b" : "#e2e8f0"} vertical={false} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                         <XAxis
                             dataKey="name"
-                            stroke={isDark ? "#64748b" : "#94a3b8"}
+                            stroke="#94a3b8"
                             fontSize={12}
                             tickLine={false}
                             axisLine={false}
                         />
                         <YAxis
-                            stroke={isDark ? "#64748b" : "#94a3b8"}
+                            stroke="#94a3b8"
                             fontSize={12}
                             tickLine={false}
                             axisLine={false}
@@ -67,18 +63,18 @@ export default function UtilizationChart({ data }: UtilizationChartProps) {
                         />
                         <Tooltip
                             contentStyle={{
-                                backgroundColor: isDark ? "rgba(15, 23, 42, 0.9)" : "rgba(255, 255, 255, 0.9)",
-                                border: isDark ? "1px solid rgba(255, 255, 255, 0.1)" : "1px solid rgba(0, 0, 0, 0.1)",
+                                backgroundColor: "rgba(255, 255, 255, 0.95)",
+                                border: "1px solid #e2e8f0",
                                 borderRadius: "12px",
-                                color: isDark ? "#fff" : "#0f172a",
+                                color: "#0f172a",
                                 boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
                             }}
-                            itemStyle={{ color: isDark ? "#fff" : "#0f172a" }}
+                            itemStyle={{ color: "#0f172a" }}
                         />
                         <Area
                             type="monotone"
                             dataKey="capacity"
-                            stroke={isDark ? "#475569" : "#cbd5e1"}
+                            stroke="#cbd5e1"
                             strokeWidth={2}
                             fill="transparent"
                             strokeDasharray="5 5"

@@ -168,6 +168,19 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {/* Emergency Panic Button */}
+        <TouchableOpacity
+          style={styles.panicBtn}
+          onPress={() => navigation.navigate('PanicButton')}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.panicEmoji}>🚨</Text>
+          <View>
+            <Text style={styles.panicLabel}>EMERGENCY SOS</Text>
+            <Text style={styles.panicSubtext}>Tap for panic / duress alert</Text>
+          </View>
+        </TouchableOpacity>
+
         {/* Quick Actions */}
         <View style={styles.actionsRow}>
           <TouchableOpacity
@@ -201,6 +214,42 @@ export default function HomeScreen() {
           >
             <Text style={styles.actionEmoji}>📋</Text>
             <Text style={styles.actionLabel}>My Reports</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* More Actions */}
+        <View style={styles.actionsRow}>
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => navigation.navigate('LoneWorker')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.actionEmoji}>🛡️</Text>
+            <Text style={styles.actionLabel}>Lone Worker</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => navigation.navigate('Messaging')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.actionEmoji}>💬</Text>
+            <Text style={styles.actionLabel}>Messages</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => navigation.navigate('PostOrders')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.actionEmoji}>📄</Text>
+            <Text style={styles.actionLabel}>Post Orders</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => navigation.navigate('Forms')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.actionEmoji}>📝</Text>
+            <Text style={styles.actionLabel}>Forms</Text>
           </TouchableOpacity>
         </View>
 
@@ -341,10 +390,35 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 4,
   },
+  panicBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#450a0a',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: '#dc2626',
+    gap: 14,
+  },
+  panicEmoji: {
+    fontSize: 32,
+  },
+  panicLabel: {
+    color: '#fca5a5',
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  panicSubtext: {
+    color: '#94a3b8',
+    fontSize: 12,
+    marginTop: 2,
+  },
   actionsRow: {
     flexDirection: 'row',
     gap: 10,
-    marginBottom: 28,
+    marginBottom: 16,
   },
   actionBtn: {
     flex: 1,

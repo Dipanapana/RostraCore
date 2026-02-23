@@ -1,12 +1,12 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
-import * as SecureStore from 'expo-secure-store';
+import tokenStorage from '../utils/tokenStorage';
 
 // ---------------------------------------------------------------------------
 // Configuration
 // ---------------------------------------------------------------------------
 
 const API_BASE_URL = __DEV__
-  ? 'http://192.168.1.100:8001' // Local dev — change to your IP
+  ? 'http://172.20.10.6:8000' // Local dev — change to your IP
   : 'https://api.rostracore.com'; // Production
 
 // ---------------------------------------------------------------------------
@@ -21,7 +21,7 @@ const api: AxiosInstance = axios.create({
 
 // Attach bearer token to every request
 api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
-  const token = await SecureStore.getItemAsync('access_token');
+  const token = await tokenStorage.getItem('access_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -33,8 +33,8 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      await SecureStore.deleteItemAsync('access_token');
-      await SecureStore.deleteItemAsync('refresh_token');
+      await tokenStorage.deleteItem('access_token');
+      await tokenStorage.deleteItem('refresh_token');
       // Auth store will detect missing token and redirect
     }
     return Promise.reject(error);
@@ -92,6 +92,7 @@ export const attendanceApi = {
     latitude: number;
     longitude: number;
     photo_url?: string;
+    photo_base64?: string;
   }) => api.post('/api/v1/attendance/check-in', data),
 
   checkOut: (data: {
@@ -99,6 +100,7 @@ export const attendanceApi = {
     latitude: number;
     longitude: number;
     photo_url?: string;
+    photo_base64?: string;
   }) => api.post('/api/v1/attendance/check-out', data),
 };
 
@@ -208,4 +210,105 @@ export const patrolApi = {
 export const payrollApi = {
   getMyPayslip: (params?: { year?: number; month?: number }) =>
     api.get('/api/v1/payroll/my-payslip', { params }),
+};
+
+// ---------------------------------------------------------------------------
+// Emergency / Panic API
+// ---------------------------------------------------------------------------
+
+export const emergencyApi = {
+  triggerPanic: (data: {
+    alert_type?: string;
+    latitude?: number;
+    longitude?: number;
+    site_id?: number;
+    shift_id?: number;
+    notes?: string;
+  }) => api.post('/api/v1/emergency/panic', data),
+  getActive: () => api.get('/api/v1/emergency/active'),
+  getHistory: (params?: { skip?: number; limit?: number }) =>
+    api.get('/api/v1/emergency/', { params }),
+};
+
+// ---------------------------------------------------------------------------
+// Lone Worker API
+// ---------------------------------------------------------------------------
+
+export const loneWorkerApi = {
+  startSession: (data: {
+    shift_id?: number;
+    site_id?: number;
+    check_in_interval_minutes?: number;
+  }) => api.post('/api/v1/lone-worker/start', data),
+  checkIn: () => api.post('/api/v1/lone-worker/check-in'),
+  endSession: (sessionId: number) =>
+    api.post(`/api/v1/lone-worker/${sessionId}/end`),
+  getActive: () => api.get('/api/v1/lone-worker/active'),
+  getHistory: (params?: { skip?: number; limit?: number }) =>
+    api.get('/api/v1/lone-worker/', { params }),
+};
+
+// ---------------------------------------------------------------------------
+// Messaging API
+// ---------------------------------------------------------------------------
+
+export const messagingApi = {
+  getChannels: () => api.get('/api/v1/messages/channels'),
+  getMessages: (channelId: number, params?: { limit?: number; before?: number }) =>
+    api.get(`/api/v1/messages/channels/${channelId}/messages`, { params }),
+  sendMessage: (channelId: number, content: string) =>
+    api.post(`/api/v1/messages/channels/${channelId}/messages`, { content }),
+  createChannel: (data: { name: string; channel_type?: string; user_ids?: number[] }) =>
+    api.post('/api/v1/messages/channels', data),
+  getMembers: (channelId: number) =>
+    api.get(`/api/v1/messages/channels/${channelId}/members`),
+};
+
+// ---------------------------------------------------------------------------
+// Post Orders API
+// ---------------------------------------------------------------------------
+
+export const postOrdersApi = {
+  getActive: (siteId: number) =>
+    api.get(`/api/v1/post-orders/site/${siteId}/active`),
+  getAll: (params?: { site_id?: number; status?: string }) =>
+    api.get('/api/v1/post-orders/', { params }),
+  getOne: (id: number) => api.get(`/api/v1/post-orders/${id}`),
+  acknowledge: (id: number) =>
+    api.post(`/api/v1/post-orders/${id}/acknowledge`),
+};
+
+// ---------------------------------------------------------------------------
+// Custom Forms API
+// ---------------------------------------------------------------------------
+
+export const formsApi = {
+  getTemplates: (params?: { status?: string }) =>
+    api.get('/api/v1/forms/templates', { params }),
+  getTemplate: (id: number) => api.get(`/api/v1/forms/templates/${id}`),
+  submitForm: (data: {
+    template_id: number;
+    data: Record<string, any>;
+    site_id?: number;
+    shift_id?: number;
+    gps_latitude?: number;
+    gps_longitude?: number;
+  }) => api.post('/api/v1/forms/submit', data),
+  getMySubmissions: (params?: { template_id?: number }) =>
+    api.get('/api/v1/forms/submissions', { params }),
+};
+
+// ---------------------------------------------------------------------------
+// Location Ping API
+// ---------------------------------------------------------------------------
+
+export const locationApi = {
+  sendPing: (data: {
+    shift_id?: number;
+    latitude: number;
+    longitude: number;
+    accuracy?: number;
+    battery_level?: number;
+    is_moving?: boolean;
+  }) => api.post('/api/v1/location/ping', data),
 };

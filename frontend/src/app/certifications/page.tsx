@@ -82,10 +82,10 @@ export default function CertificationsPage() {
     const expiry = new Date(expiryDate)
     const daysUntilExpiry = Math.floor((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 
-    if (daysUntilExpiry < 0) return { status: 'expired', label: 'Expired', color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' }
-    if (daysUntilExpiry <= 30) return { status: 'expiring', label: 'Expiring Soon', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' }
-    if (daysUntilExpiry <= 90) return { status: 'warning', label: 'Expiring', color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' }
-    return { status: 'valid', label: 'Valid', color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' }
+    if (daysUntilExpiry < 0) return { status: 'expired', label: 'Expired', color: 'bg-red-50 text-red-700' }
+    if (daysUntilExpiry <= 30) return { status: 'expiring', label: 'Expiring Soon', color: 'bg-orange-100 text-orange-800' }
+    if (daysUntilExpiry <= 90) return { status: 'warning', label: 'Expiring', color: 'bg-amber-100 text-amber-800' }
+    return { status: 'valid', label: 'Valid', color: 'bg-emerald-100 text-emerald-800' }
   }
 
   // Format date
@@ -124,8 +124,8 @@ export default function CertificationsPage() {
       header: 'Employee',
       cell: (cert) => (
         <div className="flex items-center gap-2">
-          <User className="w-4 h-4 text-slate-400" />
-          <span className="font-medium text-slate-900 dark:text-white">
+          <User className="w-4 h-4 text-gray-400" />
+          <span className="font-medium text-gray-900">
             {getEmployeeName(cert.employee_id)}
           </span>
         </div>
@@ -135,15 +135,15 @@ export default function CertificationsPage() {
       header: 'Type',
       cell: (cert) => (
         <div className="flex items-center gap-2">
-          <Award className="w-4 h-4 text-slate-400" />
-          <span className="text-slate-700 dark:text-slate-300">{cert.cert_type}</span>
+          <Award className="w-4 h-4 text-gray-400" />
+          <span className="text-gray-700">{cert.cert_type}</span>
         </div>
       ),
     },
     {
       header: 'Cert Number',
       cell: (cert) => (
-        <span className="font-mono text-xs text-slate-500 dark:text-slate-400">
+        <span className="font-mono text-xs text-gray-500">
           {cert.cert_number || '-'}
         </span>
       ),
@@ -152,11 +152,11 @@ export default function CertificationsPage() {
       header: 'Dates',
       cell: (cert) => (
         <div className="flex flex-col text-sm">
-          <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+          <div className="flex items-center gap-2 text-gray-600">
             <Calendar className="w-3 h-3" />
             <span className="text-xs">Issued: {formatDate(cert.issue_date)}</span>
           </div>
-          <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 mt-0.5">
+          <div className="flex items-center gap-2 text-gray-600 mt-0.5">
             <Calendar className="w-3 h-3" />
             <span className="text-xs">Expires: {formatDate(cert.expiry_date)}</span>
           </div>
@@ -175,7 +175,7 @@ export default function CertificationsPage() {
               {status.label}
             </span>
             {cert.verified && (
-              <span className="px-2 py-0.5 inline-flex text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+              <span className="px-2 py-0.5 inline-flex text-xs font-medium rounded-full bg-blue-100 text-blue-800">
                 Verified
               </span>
             )}
@@ -189,7 +189,7 @@ export default function CertificationsPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600"></div>
         </div>
       </DashboardLayout>
     )
@@ -201,8 +201,8 @@ export default function CertificationsPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Certifications Management</h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-1">
+            <h1 className="text-2xl font-semibold text-gray-900">Certifications Management</h1>
+            <p className="text-gray-500 mt-1">
               Track and manage employee certifications and licenses
             </p>
           </div>
@@ -210,7 +210,7 @@ export default function CertificationsPage() {
             <ExportButtons type="certifications" />
             <button
               onClick={() => setShowForm(true)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
             >
               <Plus className="w-5 h-5" />
               Add Certification
@@ -221,26 +221,26 @@ export default function CertificationsPage() {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="glass-card p-4 rounded-xl">
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{certifications.length}</div>
-            <div className="text-sm text-slate-600 dark:text-slate-400">Total Certifications</div>
+            <div className="text-2xl font-bold text-blue-600">{certifications.length}</div>
+            <div className="text-sm text-gray-600">Total Certifications</div>
           </div>
           <div className="glass-card p-4 rounded-xl">
-            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{validCount}</div>
-            <div className="text-sm text-slate-600 dark:text-slate-400">Valid</div>
+            <div className="text-2xl font-bold text-emerald-600">{validCount}</div>
+            <div className="text-sm text-gray-600">Valid</div>
           </div>
           <div className="glass-card p-4 rounded-xl">
-            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{expiringSoonCount}</div>
-            <div className="text-sm text-slate-600 dark:text-slate-400">Expiring Soon</div>
+            <div className="text-2xl font-bold text-orange-600">{expiringSoonCount}</div>
+            <div className="text-sm text-gray-600">Expiring Soon</div>
           </div>
           <div className="glass-card p-4 rounded-xl">
-            <div className="text-2xl font-bold text-red-600 dark:text-red-400">{expiredCount}</div>
-            <div className="text-sm text-slate-600 dark:text-slate-400">Expired</div>
+            <div className="text-2xl font-bold text-red-600">{expiredCount}</div>
+            <div className="text-sm text-gray-600">Expired</div>
           </div>
         </div>
 
         {/* Filters */}
         <div className="glass-panel p-4 rounded-xl space-y-4">
-          <div className="flex items-center gap-2 text-sm font-medium text-slate-900 dark:text-white mb-2">
+          <div className="flex items-center gap-2 text-sm font-medium text-gray-900 mb-2">
             <Filter className="w-4 h-4" />
             Filters
           </div>
@@ -248,7 +248,7 @@ export default function CertificationsPage() {
             <select
               value={filterEmployee}
               onChange={(e) => setFilterEmployee(e.target.value)}
-              className="w-full px-3 py-2 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             >
               <option value="">All Employees</option>
               {employees.map(emp => (
@@ -261,7 +261,7 @@ export default function CertificationsPage() {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="w-full px-3 py-2 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             >
               <option value="">All Types</option>
               {certTypes.map(type => (
@@ -274,7 +274,7 @@ export default function CertificationsPage() {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full px-3 py-2 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             >
               <option value="">All Statuses</option>
               <option value="valid">Valid</option>
@@ -289,7 +289,7 @@ export default function CertificationsPage() {
                 setFilterType('')
                 setFilterStatus('')
               }}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 rounded-lg text-sm font-medium transition-colors"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg text-sm font-medium transition-colors"
             >
               <X className="w-4 h-4" />
               Clear Filters
@@ -298,7 +298,7 @@ export default function CertificationsPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl animate-in fade-in slide-in-from-top-2">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl animate-in fade-in slide-in-from-top-2">
             {error}
           </div>
         )}
@@ -315,7 +315,7 @@ export default function CertificationsPage() {
                   e.stopPropagation()
                   handleEdit(cert)
                 }}
-                className="p-2 text-slate-400 dark:text-slate-300 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
                 title="Edit"
               >
                 <Pencil className="w-4 h-4" />
@@ -325,7 +325,7 @@ export default function CertificationsPage() {
                   e.stopPropagation()
                   handleDelete(cert.cert_id)
                 }}
-                className="p-2 text-slate-400 dark:text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                 title="Delete"
               >
                 <Trash2 className="w-4 h-4" />

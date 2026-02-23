@@ -1,6 +1,5 @@
 "use client";
 
-// Force bundle rebuild - Dec 8 2025
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
@@ -26,7 +25,7 @@ interface Client {
 }
 
 export default function ClientsPage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -145,7 +144,7 @@ export default function ClientsPage() {
         },
         body: JSON.stringify({
           ...formData,
-          org_id: 1, // TODO: Get from auth context
+          org_id: user?.org_id ?? 1,
           billing_rate: formData.billing_rate ? Number(formData.billing_rate) : null,
           target_margin_pct: formData.target_margin_pct ? Number(formData.target_margin_pct) : null,
         }),
@@ -229,8 +228,8 @@ export default function ClientsPage() {
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading clients...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600 mx-auto"></div>
+            <p className="mt-3 text-sm text-gray-500">Loading...</p>
           </div>
         </div>
       </DashboardLayout>
@@ -243,7 +242,7 @@ export default function ClientsPage() {
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Client Management</h1>
+            <h1 className="text-2xl font-semibold text-gray-900 mb-2">Client Management</h1>
             <p className="text-gray-600">
               Manage your clients (municipalities, departments, etc.)
             </p>
@@ -254,7 +253,7 @@ export default function ClientsPage() {
               setEditingClient(null);
               setShowModal(true);
             }}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
           >
             + Add Client
           </button>
@@ -263,7 +262,7 @@ export default function ClientsPage() {
         {/* Main Content */}
         <div>
           {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+            <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
               {error}
               <button
                 onClick={() => setError("")}
@@ -276,17 +275,17 @@ export default function ClientsPage() {
 
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white p-6 rounded-lg shadow">
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
               <h3 className="text-gray-500 text-sm font-medium">Total Clients</h3>
               <p className="text-3xl font-bold text-gray-900 mt-2">{clients.length}</p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow">
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
               <h3 className="text-gray-500 text-sm font-medium">Active Contracts</h3>
               <p className="text-3xl font-bold text-green-600 mt-2">
                 {clients.filter(c => c.status === "active").length}
               </p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow">
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
               <h3 className="text-gray-500 text-sm font-medium">Total Sites</h3>
               <p className="text-3xl font-bold text-blue-600 mt-2">
                 {clients.reduce((sum, c) => sum + (c.site_count || 0), 0)}
@@ -295,7 +294,7 @@ export default function ClientsPage() {
           </div>
 
           {/* Date Range Filter */}
-          <div className="bg-white shadow rounded-lg p-4 mb-6">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-6">
             <div className="flex items-center gap-4">
               <label className="text-gray-700 font-medium">Filter by Contract Period:</label>
               <div className="flex items-center gap-2">
@@ -303,7 +302,7 @@ export default function ClientsPage() {
                   type="date"
                   value={filterStartDate}
                   onChange={(e) => setFilterStartDate(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Start Date"
                 />
                 <span className="text-gray-500">to</span>
@@ -311,7 +310,7 @@ export default function ClientsPage() {
                   type="date"
                   value={filterEndDate}
                   onChange={(e) => setFilterEndDate(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="End Date"
                 />
                 {(filterStartDate || filterEndDate) && (
@@ -333,7 +332,7 @@ export default function ClientsPage() {
           </div>
 
           {/* Clients Table */}
-          <div className="bg-white shadow rounded-lg overflow-hidden">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -384,7 +383,7 @@ export default function ClientsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${client.status === "active"
-                            ? "bg-green-100 text-green-800"
+                            ? "bg-emerald-50 text-emerald-700"
                             : "bg-gray-100 text-gray-800"
                           }`}>
                           {client.status}
@@ -411,7 +410,7 @@ export default function ClientsPage() {
                         </Link>
                         <button
                           onClick={() => handleEdit(client)}
-                          className="text-emerald-600 hover:text-emerald-900 mr-4"
+                          className="text-blue-600 hover:text-blue-900 mr-4"
                         >
                           Edit
                         </button>
@@ -434,7 +433,7 @@ export default function ClientsPage() {
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-6">
                 {editingClient ? "Edit Client" : "Add New Client"}
               </h2>
 
@@ -448,7 +447,7 @@ export default function ClientsPage() {
                       type="text"
                       value={formData.client_name}
                       onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       required
                     />
                   </div>
@@ -460,7 +459,7 @@ export default function ClientsPage() {
                     <select
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>
@@ -476,7 +475,7 @@ export default function ClientsPage() {
                       type="text"
                       value={formData.contact_person}
                       onChange={(e) => setFormData({ ...formData, contact_person: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
 
@@ -488,7 +487,7 @@ export default function ClientsPage() {
                       type="email"
                       value={formData.contact_email}
                       onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
 
@@ -500,7 +499,7 @@ export default function ClientsPage() {
                       type="tel"
                       value={formData.contact_phone}
                       onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
 
@@ -513,7 +512,7 @@ export default function ClientsPage() {
                       step="0.01"
                       value={formData.billing_rate}
                       onChange={(e) => setFormData({ ...formData, billing_rate: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
 
@@ -529,7 +528,7 @@ export default function ClientsPage() {
                       value={formData.target_margin_pct}
                       onChange={(e) => setFormData({ ...formData, target_margin_pct: e.target.value })}
                       placeholder="e.g. 30"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
 
@@ -541,7 +540,7 @@ export default function ClientsPage() {
                       type="date"
                       value={formData.contract_start_date}
                       onChange={(e) => setFormData({ ...formData, contract_start_date: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
 
@@ -553,7 +552,7 @@ export default function ClientsPage() {
                       type="date"
                       value={formData.contract_end_date}
                       onChange={(e) => setFormData({ ...formData, contract_end_date: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
                 </div>
@@ -566,7 +565,7 @@ export default function ClientsPage() {
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     rows={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
 
@@ -578,7 +577,7 @@ export default function ClientsPage() {
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
 
@@ -596,7 +595,7 @@ export default function ClientsPage() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                   >
                     {editingClient ? "Update" : "Create"}
                   </button>

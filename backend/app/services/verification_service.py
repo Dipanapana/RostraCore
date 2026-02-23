@@ -2,7 +2,7 @@
 import secrets
 import random
 import string
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict
 from sqlalchemy.orm import Session
 from app.models.user import User
@@ -107,8 +107,13 @@ class VerificationService:
 
         # Check if token is expired (24 hours)
         if user.email_verification_sent_at:
-            expiry_time = user.email_verification_sent_at + timedelta(hours=24)
-            if datetime.utcnow() > expiry_time:
+            sent_at = user.email_verification_sent_at
+            now = datetime.now(timezone.utc)
+            # Handle timezone-naive datetimes from DB
+            if sent_at.tzinfo is None:
+                sent_at = sent_at.replace(tzinfo=timezone.utc)
+            expiry_time = sent_at + timedelta(hours=24)
+            if now > expiry_time:
                 return {
                     "status": "error",
                     "message": "Verification token has expired. Please request a new one."
@@ -222,8 +227,12 @@ class VerificationService:
 
         # Check if code is expired (10 minutes)
         if user.phone_verification_sent_at:
-            expiry_time = user.phone_verification_sent_at + timedelta(minutes=10)
-            if datetime.utcnow() > expiry_time:
+            sent_at = user.phone_verification_sent_at
+            now = datetime.now(timezone.utc)
+            if sent_at.tzinfo is None:
+                sent_at = sent_at.replace(tzinfo=timezone.utc)
+            expiry_time = sent_at + timedelta(minutes=10)
+            if now > expiry_time:
                 return {
                     "status": "error",
                     "message": "Verification code has expired. Please request a new one."
@@ -339,8 +348,12 @@ class VerificationService:
 
         # Check if token is expired (1 hour)
         if user.password_reset_sent_at:
-            expiry_time = user.password_reset_sent_at + timedelta(hours=1)
-            if datetime.utcnow() > expiry_time:
+            sent_at = user.password_reset_sent_at
+            now = datetime.now(timezone.utc)
+            if sent_at.tzinfo is None:
+                sent_at = sent_at.replace(tzinfo=timezone.utc)
+            expiry_time = sent_at + timedelta(hours=1)
+            if now > expiry_time:
                 return {
                     "status": "error",
                     "message": "Reset token has expired. Please request a new one."

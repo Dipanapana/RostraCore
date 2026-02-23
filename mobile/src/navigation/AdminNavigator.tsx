@@ -14,6 +14,11 @@ import PayslipScreen from '../screens/PayslipScreen';
 import MyIncidentsScreen from '../screens/MyIncidentsScreen';
 import LeaveApprovalScreen from '../screens/LeaveApprovalScreen';
 import ChangePasswordScreen from '../screens/ChangePasswordScreen';
+import PanicButtonScreen from '../screens/PanicButtonScreen';
+import LoneWorkerScreen from '../screens/LoneWorkerScreen';
+import MessagingScreen from '../screens/MessagingScreen';
+import PostOrdersScreen from '../screens/PostOrdersScreen';
+import FormsScreen from '../screens/FormsScreen';
 
 // ---------------------------------------------------------------------------
 // Tab icons
@@ -123,6 +128,31 @@ export default function AdminNavigator() {
       <AdminRootStack.Screen
         name="ChangePassword"
         component={ChangePasswordScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <AdminRootStack.Screen
+        name="PanicButton"
+        component={PanicButtonScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <AdminRootStack.Screen
+        name="LoneWorker"
+        component={LoneWorkerScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <AdminRootStack.Screen
+        name="Messaging"
+        component={MessagingScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <AdminRootStack.Screen
+        name="PostOrders"
+        component={PostOrdersScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <AdminRootStack.Screen
+        name="Forms"
+        component={FormsScreen}
         options={{ presentation: 'modal' }}
       />
     </AdminRootStack.Navigator>

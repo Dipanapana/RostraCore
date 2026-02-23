@@ -63,7 +63,7 @@ export default function DashboardsHome() {
         <div className="mb-12">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900">Dashboards</h1>
+              <h1 className="text-2xl font-semibold text-gray-900">Dashboards</h1>
               <p className="text-lg text-gray-600 mt-2">
                 Choose a dashboard tailored to your role and needs
               </p>
@@ -103,7 +103,7 @@ export default function DashboardsHome() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold">{dashboard.name}</h2>
+                <h2 className="text-2xl font-semibold">{dashboard.name}</h2>
               </div>
 
               {/* Content */}
@@ -149,19 +149,19 @@ export default function DashboardsHome() {
 
         {/* Quick Stats */}
         <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg shadow-sm p-4 text-center border border-gray-200">
+          <div className="bg-white rounded-xl shadow-sm p-4 text-center border border-gray-200">
             <div className="text-2xl font-bold text-blue-600">4</div>
             <div className="text-xs text-gray-600 mt-1">Dashboards</div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm p-4 text-center border border-gray-200">
+          <div className="bg-white rounded-xl shadow-sm p-4 text-center border border-gray-200">
             <div className="text-2xl font-bold text-green-600">30+</div>
             <div className="text-xs text-gray-600 mt-1">Metrics Tracked</div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm p-4 text-center border border-gray-200">
+          <div className="bg-white rounded-xl shadow-sm p-4 text-center border border-gray-200">
             <div className="text-2xl font-bold text-purple-600">Real-time</div>
             <div className="text-xs text-gray-600 mt-1">Updates</div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm p-4 text-center border border-gray-200">
+          <div className="bg-white rounded-xl shadow-sm p-4 text-center border border-gray-200">
             <div className="text-2xl font-bold text-orange-600">Cached</div>
             <div className="text-xs text-gray-600 mt-1">Performance</div>
           </div>

@@ -153,9 +153,9 @@ function KpiCard({
   color: string;
 }) {
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
+        <span className="text-sm font-medium text-gray-500">
           {label}
         </span>
         <div
@@ -164,7 +164,7 @@ function KpiCard({
           <Icon className="w-5 h-5 text-white" />
         </div>
       </div>
-      <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+      <p className="text-2xl font-bold text-gray-900">
         {value}
       </p>
       {trend && (
@@ -180,7 +180,7 @@ function KpiCard({
                 ? "text-green-600"
                 : trend === "down"
                 ? "text-red-600"
-                : "text-slate-400"
+                : "text-gray-400"
             }`}
           >
             {trend === "up"
@@ -202,8 +202,8 @@ function KpiCard({
 function CurrencyTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 shadow-lg text-sm">
-      <p className="font-medium text-slate-900 dark:text-slate-100 mb-1">
+    <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg text-sm">
+      <p className="font-medium text-gray-900 mb-1">
         {label}
       </p>
       {payload.map((entry: any, idx: number) => (
@@ -353,35 +353,35 @@ export default function ReportsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+            <h1 className="text-2xl font-semibold text-gray-900">
               Reports
             </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-sm text-gray-500 mt-1">
               Financial performance, site analytics, and workforce insights
             </p>
           </div>
 
           {/* Period filter */}
           <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-slate-400" />
+            <Calendar className="w-4 h-4 text-gray-400" />
             <input
               type="date"
               value={periodStart}
               onChange={(e) => setPeriodStart(e.target.value)}
-              className="px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+              className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
             />
-            <span className="text-slate-400 text-sm">to</span>
+            <span className="text-gray-400 text-sm">to</span>
             <input
               type="date"
               value={periodEnd}
               onChange={(e) => setPeriodEnd(e.target.value)}
-              className="px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+              className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
             />
           </div>
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-20 text-slate-400">
+          <div className="flex items-center justify-center py-20 text-gray-400">
             <Loader2 className="w-8 h-8 animate-spin mr-3" />
             Loading reports...
           </div>
@@ -435,11 +435,11 @@ export default function ReportsPage() {
             {/* Charts row 1: Site Performance + Revenue by Client */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Site Performance Bar Chart */}
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+              <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <BarChart3 className="w-5 h-5 text-purple-500" />
-                    <h2 className="font-semibold text-slate-900 dark:text-slate-100">
+                    <h2 className="font-semibold text-gray-900">
                       Site Performance
                     </h2>
                   </div>
@@ -456,7 +456,7 @@ export default function ReportsPage() {
                       )
                     }
                     disabled={downloading === "coverage"}
-                    className="p-2 text-slate-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
+                    className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
                     title="Download PDF"
                   >
                     {downloading === "coverage" ? (
@@ -502,7 +502,7 @@ export default function ReportsPage() {
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="flex items-center justify-center h-[300px] text-slate-400 text-sm">
+                  <div className="flex items-center justify-center h-[300px] text-gray-400 text-sm">
                     <Building2 className="w-8 h-8 mr-2 opacity-40" />
                     No site data for this period
                   </div>
@@ -510,11 +510,11 @@ export default function ReportsPage() {
               </div>
 
               {/* Revenue by Client Pie Chart */}
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+              <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <PieChartIcon className="w-5 h-5 text-indigo-500" />
-                    <h2 className="font-semibold text-slate-900 dark:text-slate-100">
+                    <h2 className="font-semibold text-gray-900">
                       Revenue by Client
                     </h2>
                   </div>
@@ -531,7 +531,7 @@ export default function ReportsPage() {
                       )
                     }
                     disabled={downloading === "revenue"}
-                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+                    className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                     title="Download PDF"
                   >
                     {downloading === "revenue" ? (
@@ -570,7 +570,7 @@ export default function ReportsPage() {
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="flex items-center justify-center h-[300px] text-slate-400 text-sm">
+                  <div className="flex items-center justify-center h-[300px] text-gray-400 text-sm">
                     <DollarSign className="w-8 h-8 mr-2 opacity-40" />
                     No revenue data for this period
                   </div>
@@ -581,11 +581,11 @@ export default function ReportsPage() {
             {/* Charts row 2: Employee Hours + Outstanding Invoices */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Employee Hours Chart */}
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+              <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Users className="w-5 h-5 text-blue-500" />
-                    <h2 className="font-semibold text-slate-900 dark:text-slate-100">
+                    <h2 className="font-semibold text-gray-900">
                       Top Employees by Hours
                     </h2>
                   </div>
@@ -602,7 +602,7 @@ export default function ReportsPage() {
                       )
                     }
                     disabled={downloading === "payroll"}
-                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                     title="Download PDF"
                   >
                     {downloading === "payroll" ? (
@@ -639,7 +639,7 @@ export default function ReportsPage() {
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="flex items-center justify-center h-[300px] text-slate-400 text-sm">
+                  <div className="flex items-center justify-center h-[300px] text-gray-400 text-sm">
                     <Users className="w-8 h-8 mr-2 opacity-40" />
                     No employee data for this period
                   </div>
@@ -647,11 +647,11 @@ export default function ReportsPage() {
               </div>
 
               {/* Outstanding Invoices */}
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+              <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="w-5 h-5 text-amber-500" />
-                    <h2 className="font-semibold text-slate-900 dark:text-slate-100">
+                    <h2 className="font-semibold text-gray-900">
                       Outstanding Invoices
                     </h2>
                   </div>
@@ -664,7 +664,7 @@ export default function ReportsPage() {
                       )
                     }
                     disabled={downloading === "outstanding"}
-                    className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors"
+                    className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
                     title="Download PDF"
                   >
                     {downloading === "outstanding" ? (
@@ -677,19 +677,19 @@ export default function ReportsPage() {
 
                 {/* Summary */}
                 <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-center">
-                    <p className="text-lg font-bold text-amber-700 dark:text-amber-300">
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center">
+                    <p className="text-lg font-bold text-amber-700">
                       {formatCurrency(totalOutstanding)}
                     </p>
-                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                    <p className="text-xs text-amber-600">
                       Total Outstanding
                     </p>
                   </div>
-                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-center">
-                    <p className="text-lg font-bold text-red-700 dark:text-red-300">
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
+                    <p className="text-lg font-bold text-red-700">
                       {overdueCount}
                     </p>
-                    <p className="text-xs text-red-600 dark:text-red-400">
+                    <p className="text-xs text-red-600">
                       Overdue
                     </p>
                   </div>
@@ -698,7 +698,7 @@ export default function ReportsPage() {
                 {/* Invoice list */}
                 <div className="space-y-2 max-h-[200px] overflow-y-auto">
                   {outstandingInvoices.length === 0 ? (
-                    <div className="flex items-center justify-center py-8 text-slate-400 text-sm">
+                    <div className="flex items-center justify-center py-8 text-gray-400 text-sm">
                       <FileText className="w-6 h-6 mr-2 opacity-40" />
                       No outstanding invoices
                     </div>
@@ -706,18 +706,18 @@ export default function ReportsPage() {
                     outstandingInvoices.slice(0, 8).map((inv) => (
                       <div
                         key={inv.invoice_id}
-                        className="flex items-center justify-between px-3 py-2.5 bg-slate-50 dark:bg-slate-900/50 rounded-lg text-sm"
+                        className="flex items-center justify-between px-3 py-2.5 bg-gray-50 rounded-lg text-sm"
                       >
                         <div>
-                          <p className="font-medium text-slate-900 dark:text-slate-100">
+                          <p className="font-medium text-gray-900">
                             {inv.invoice_number}
                           </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                          <p className="text-xs text-gray-500">
                             {inv.client_name}
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium text-slate-900 dark:text-slate-100">
+                          <p className="font-medium text-gray-900">
                             {formatCurrencyFull(inv.total_amount)}
                           </p>
                           {inv.days_overdue > 0 && (
@@ -734,13 +734,13 @@ export default function ReportsPage() {
             </div>
 
             {/* Profit & Loss download */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+            <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="font-semibold text-slate-900 dark:text-slate-100">
+                  <h2 className="font-semibold text-gray-900">
                     Downloadable Reports
                   </h2>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                  <p className="text-sm text-gray-500 mt-1">
                     Professional PDF reports for management review and SARS
                     compliance
                   </p>
@@ -819,7 +819,7 @@ export default function ReportsPage() {
                       handleDownloadPdf(report.key, report.fn, report.file)
                     }
                     disabled={downloading === report.key}
-                    className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left group"
+                    className="flex items-center gap-3 p-4 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors text-left group"
                   >
                     <div
                       className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${report.color}`}
@@ -831,14 +831,14 @@ export default function ReportsPage() {
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                      <p className="text-sm font-medium text-gray-900 truncate">
                         {report.title}
                       </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                      <p className="text-xs text-gray-500 truncate">
                         {report.desc}
                       </p>
                     </div>
-                    <Download className="w-4 h-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 flex-shrink-0" />
+                    <Download className="w-4 h-4 text-gray-400 group-hover:text-gray-600 flex-shrink-0" />
                   </button>
                 ))}
               </div>

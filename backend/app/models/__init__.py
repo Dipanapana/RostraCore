@@ -53,6 +53,10 @@ from app.models.audit_log import AuditLog
 from app.models.roster_snapshot import RosterSnapshot
 from app.models.attendance_photo import AttendancePhoto
 from app.models.biometric_template import BiometricTemplate
+from app.models.incident import Incident, IncidentSeverity, IncidentStatus
+from app.models.notification import Notification, NotificationType
+from app.models.patrol import PatrolTour, PatrolCheckpoint, PatrolRun, PatrolScan
+from app.models.guard_restriction import GuardRestriction
 from app.models.emergency_alert import EmergencyAlert, AlertType, AlertStatus
 from app.models.lone_worker import LoneWorkerSession, LoneWorkerStatus
 from app.models.messaging import ChatChannel, ChannelMember, ChatMessage, ChannelType
@@ -154,6 +158,16 @@ __all__ = [
     "RosterSnapshot",
     "AttendancePhoto",
     "BiometricTemplate",
+    "Incident",
+    "IncidentSeverity",
+    "IncidentStatus",
+    "Notification",
+    "NotificationType",
+    "PatrolTour",
+    "PatrolCheckpoint",
+    "PatrolRun",
+    "PatrolScan",
+    "GuardRestriction",
     "EmergencyAlert",
     "AlertType",
     "AlertStatus",

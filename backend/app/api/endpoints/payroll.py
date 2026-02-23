@@ -372,6 +372,56 @@ async def get_payroll_detail(
     }
 
 
+@router.patch("/{payroll_id}/status")
+async def update_payroll_status(
+    payroll_id: int,
+    status_update: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_finance_access)
+):
+    """Update payroll status (draft -> approved -> paid)."""
+    from app.models.payroll import PayrollSummary
+    from datetime import datetime
+
+    payroll = db.query(PayrollSummary).filter(
+        PayrollSummary.payroll_id == payroll_id
+    ).first()
+
+    if not payroll:
+        raise HTTPException(status_code=404, detail="Payroll record not found")
+
+    new_status = status_update.get("status", "").lower()
+    valid_transitions = {
+        "draft": ["approved"],
+        "approved": ["paid", "draft"],
+        "paid": []
+    }
+
+    current = payroll.status or "draft"
+    allowed = valid_transitions.get(current, [])
+
+    if new_status not in allowed:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot change status from '{current}' to '{new_status}'. Allowed: {allowed}"
+        )
+
+    payroll.status = new_status
+    if new_status == "approved":
+        payroll.approved_by = current_user.user_id
+        payroll.approved_at = datetime.utcnow()
+    elif new_status == "paid":
+        payroll.paid_at = datetime.utcnow()
+
+    db.commit()
+
+    return {
+        "payroll_id": payroll_id,
+        "status": new_status,
+        "message": f"Payroll status updated to {new_status}"
+    }
+
+
 @router.delete("/{payroll_id}")
 async def delete_payroll(
     payroll_id: int,

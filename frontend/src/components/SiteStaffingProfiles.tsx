@@ -181,10 +181,10 @@ export default function SiteStaffingProfiles({ siteId, siteName, onClose }: Site
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+          <h3 className="text-lg font-semibold text-gray-900">
             Staffing Profiles for {siteName}
           </h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-sm text-gray-500">
             Define different staffing requirements for day/night shifts and weekdays/weekends
           </p>
         </div>
@@ -209,7 +209,7 @@ export default function SiteStaffingProfiles({ siteId, siteName, onClose }: Site
       </div>
 
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
           {error}
         </div>
       )}
@@ -223,12 +223,12 @@ export default function SiteStaffingProfiles({ siteId, siteName, onClose }: Site
 
       {/* Profiles List */}
       {!loading && profiles.length === 0 && (
-        <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center">
-          <Users className="w-12 h-12 mx-auto text-slate-400 mb-3" />
-          <h4 className="text-lg font-medium text-slate-700 dark:text-slate-300 mb-1">
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-8 text-center">
+          <Users className="w-12 h-12 mx-auto text-gray-400 mb-3" />
+          <h4 className="text-lg font-medium text-gray-700 mb-1">
             No Staffing Profiles Yet
           </h4>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+          <p className="text-sm text-gray-500 mb-4">
             Set up staffing profiles to define how many guards are needed at different times.
           </p>
           <button
@@ -246,25 +246,25 @@ export default function SiteStaffingProfiles({ siteId, siteName, onClose }: Site
           {profiles.map(profile => (
             <div
               key={profile.profile_id}
-              className={`bg-white dark:bg-slate-800 border rounded-xl p-4 ${
+              className={`bg-white border rounded-xl p-4 ${
                 profile.is_active
-                  ? 'border-slate-200 dark:border-slate-700'
-                  : 'border-slate-200 dark:border-slate-700 opacity-60'
+                  ? 'border-gray-200'
+                  : 'border-gray-200 opacity-60'
               }`}
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
-                    <h4 className="font-medium text-slate-900 dark:text-white">
+                    <h4 className="font-medium text-gray-900">
                       {profile.profile_name}
                     </h4>
                     {!profile.is_active && (
-                      <span className="px-2 py-0.5 text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 rounded">
+                      <span className="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded">
                         Inactive
                       </span>
                     )}
                   </div>
-                  <div className="flex flex-wrap gap-3 mt-2 text-sm text-slate-600 dark:text-slate-400">
+                  <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-600">
                     <span className="flex items-center gap-1">
                       {profile.period_type === 'day' && <Sun className="w-4 h-4 text-yellow-500" />}
                       {profile.period_type === 'night' && <Moon className="w-4 h-4 text-indigo-500" />}
@@ -275,17 +275,17 @@ export default function SiteStaffingProfiles({ siteId, siteName, onClose }: Site
                       <Calendar className="w-4 h-4" />
                       {getDayLabel(profile.day_type)}
                     </span>
-                    <span className="flex items-center gap-1 font-medium text-blue-600 dark:text-blue-400">
+                    <span className="flex items-center gap-1 font-medium text-blue-600">
                       <Users className="w-4 h-4" />
                       {profile.required_staff} guard{profile.required_staff !== 1 ? 's' : ''}
                     </span>
                     {profile.required_psira_grade && (
-                      <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded text-xs font-medium">
+                      <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">
                         PSIRA {profile.required_psira_grade}
                       </span>
                     )}
                     {profile.requires_firearm && (
-                      <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded text-xs font-medium">
+                      <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-medium">
                         Armed
                       </span>
                     )}
@@ -296,15 +296,15 @@ export default function SiteStaffingProfiles({ siteId, siteName, onClose }: Site
                     onClick={() => handleToggleActive(profile)}
                     className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors ${
                       profile.is_active
-                        ? 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300'
-                        : 'bg-green-100 hover:bg-green-200 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-700 dark:text-green-400'
+                        ? 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                        : 'bg-green-100 hover:bg-green-200 text-green-700'
                     }`}
                   >
                     {profile.is_active ? 'Deactivate' : 'Activate'}
                   </button>
                   <button
                     onClick={() => handleDelete(profile.profile_id)}
-                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -318,18 +318,18 @@ export default function SiteStaffingProfiles({ siteId, siteName, onClose }: Site
       {/* Quick Setup Modal */}
       {showQuickSetup && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
               Quick Setup - Standard Profiles
             </h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+            <p className="text-sm text-gray-500 mb-6">
               Create 4 standard staffing profiles (Weekday Day, Weekday Night, Weekend Day, Weekend Night)
             </p>
 
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Weekday Day
                   </label>
                   <input
@@ -337,11 +337,11 @@ export default function SiteStaffingProfiles({ siteId, siteName, onClose }: Site
                     min="1"
                     value={quickSetup.weekday_day_staff}
                     onChange={(e) => setQuickSetup(prev => ({ ...prev, weekday_day_staff: parseInt(e.target.value) || 1 }))}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Weekday Night
                   </label>
                   <input
@@ -349,11 +349,11 @@ export default function SiteStaffingProfiles({ siteId, siteName, onClose }: Site
                     min="1"
                     value={quickSetup.weekday_night_staff}
                     onChange={(e) => setQuickSetup(prev => ({ ...prev, weekday_night_staff: parseInt(e.target.value) || 1 }))}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Weekend Day
                   </label>
                   <input
@@ -361,11 +361,11 @@ export default function SiteStaffingProfiles({ siteId, siteName, onClose }: Site
                     min="1"
                     value={quickSetup.weekend_day_staff}
                     onChange={(e) => setQuickSetup(prev => ({ ...prev, weekend_day_staff: parseInt(e.target.value) || 1 }))}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Weekend Night
                   </label>
                   <input
@@ -373,7 +373,7 @@ export default function SiteStaffingProfiles({ siteId, siteName, onClose }: Site
                     min="1"
                     value={quickSetup.weekend_night_staff}
                     onChange={(e) => setQuickSetup(prev => ({ ...prev, weekend_night_staff: parseInt(e.target.value) || 1 }))}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
                   />
                 </div>
               </div>
@@ -382,7 +382,7 @@ export default function SiteStaffingProfiles({ siteId, siteName, onClose }: Site
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setShowQuickSetup(false)}
-                className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 Cancel
               </button>
@@ -401,14 +401,14 @@ export default function SiteStaffingProfiles({ siteId, siteName, onClose }: Site
       {/* Add Profile Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
               Add Staffing Profile
             </h3>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Profile Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -417,19 +417,19 @@ export default function SiteStaffingProfiles({ siteId, siteName, onClose }: Site
                   value={formData.profile_name}
                   onChange={(e) => setFormData(prev => ({ ...prev, profile_name: e.target.value }))}
                   placeholder="e.g., Weekday Day Shift"
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Time Period <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={formData.period_type}
                     onChange={(e) => setFormData(prev => ({ ...prev, period_type: e.target.value as PeriodType }))}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
                   >
                     {PERIOD_OPTIONS.map(opt => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -438,13 +438,13 @@ export default function SiteStaffingProfiles({ siteId, siteName, onClose }: Site
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Day Type <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={formData.day_type}
                     onChange={(e) => setFormData(prev => ({ ...prev, day_type: e.target.value as DayType }))}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
                   >
                     {DAY_OPTIONS.map(opt => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -456,7 +456,7 @@ export default function SiteStaffingProfiles({ siteId, siteName, onClose }: Site
               {formData.period_type === 'custom' && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Start Time <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -464,11 +464,11 @@ export default function SiteStaffingProfiles({ siteId, siteName, onClose }: Site
                       required
                       value={formData.custom_start_time}
                       onChange={(e) => setFormData(prev => ({ ...prev, custom_start_time: e.target.value }))}
-                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       End Time <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -476,14 +476,14 @@ export default function SiteStaffingProfiles({ siteId, siteName, onClose }: Site
                       required
                       value={formData.custom_end_time}
                       onChange={(e) => setFormData(prev => ({ ...prev, custom_end_time: e.target.value }))}
-                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
                     />
                   </div>
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Required Guards <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -492,19 +492,19 @@ export default function SiteStaffingProfiles({ siteId, siteName, onClose }: Site
                   min="1"
                   value={formData.required_staff}
                   onChange={(e) => setFormData(prev => ({ ...prev, required_staff: parseInt(e.target.value) || 1 }))}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Required Skill
                   </label>
                   <select
                     value={formData.required_skill}
                     onChange={(e) => setFormData(prev => ({ ...prev, required_skill: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
                   >
                     <option value="">Any</option>
                     <option value="unarmed">Unarmed</option>
@@ -514,13 +514,13 @@ export default function SiteStaffingProfiles({ siteId, siteName, onClose }: Site
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Min PSIRA Grade
                   </label>
                   <select
                     value={formData.required_psira_grade}
                     onChange={(e) => setFormData(prev => ({ ...prev, required_psira_grade: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
                   >
                     <option value="">Any</option>
                     {PSIRA_GRADES.map(grade => (
@@ -536,18 +536,18 @@ export default function SiteStaffingProfiles({ siteId, siteName, onClose }: Site
                   id="requires_firearm"
                   checked={formData.requires_firearm}
                   onChange={(e) => setFormData(prev => ({ ...prev, requires_firearm: e.target.checked }))}
-                  className="w-4 h-4 text-blue-600 rounded border-slate-300 dark:border-slate-600"
+                  className="w-4 h-4 text-blue-600 rounded border-gray-300"
                 />
-                <label htmlFor="requires_firearm" className="text-sm text-slate-700 dark:text-slate-300">
+                <label htmlFor="requires_firearm" className="text-sm text-gray-700">
                   Requires Armed Guard
                 </label>
               </div>
 
-              <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+              <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200">
                 <button
                   type="button"
                   onClick={() => { setShowForm(false); resetForm(); }}
-                  className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>

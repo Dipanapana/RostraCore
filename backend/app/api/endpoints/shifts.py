@@ -11,7 +11,7 @@ from app.models.schemas import (
     BulkShiftGenerateRequest, BulkShiftGenerateResponse
 )
 from app.models.shift_assignment import ShiftAssignment, AssignmentStatus
-from app.models.shift import Shift
+from app.models.shift import Shift, ShiftStatus
 from app.models.site import Site
 from app.models.employee import Employee
 from app.models.user import User
@@ -196,7 +196,7 @@ def get_coverage_gaps(
         .outerjoin(assigned_sq, Shift.shift_id == assigned_sq.c.shift_id)
         .filter(
             Shift.org_id == org_id,
-            Shift.status.notin_(["cancelled", "completed"]),
+            Shift.status.notin_([ShiftStatus.CANCELLED, ShiftStatus.COMPLETED]),
             Shift.start_time >= window_start,
             Shift.start_time <= window_end,
             func.coalesce(assigned_sq.c.assigned_count, 0) < Shift.required_staff,

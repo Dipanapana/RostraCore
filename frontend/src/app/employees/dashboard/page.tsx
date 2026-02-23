@@ -306,7 +306,7 @@ export default function GuardDataQualityDashboard() {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600"></div>
             </div>
         )
     }
@@ -317,7 +317,7 @@ export default function GuardDataQualityDashboard() {
                 <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-6 text-center">
                     <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
                     <h3 className="text-lg font-semibold text-red-500 mb-2">Error Loading Data</h3>
-                    <p className="text-slate-600 dark:text-slate-400 mb-4">{error}</p>
+                    <p className="text-gray-600 mb-4">{error}</p>
                     <button
                         onClick={fetchData}
                         className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
@@ -343,7 +343,7 @@ export default function GuardDataQualityDashboard() {
                         <span className="font-medium">{successMessage}</span>
                         <button
                             onClick={() => setSuccessMessage(null)}
-                            className="ml-2 hover:bg-green-600 rounded p-1 transition-colors"
+                            className="ml-2 hover:bg-blue-600 rounded p-1 transition-colors"
                         >
                             <X className="w-4 h-4" />
                         </button>
@@ -356,23 +356,23 @@ export default function GuardDataQualityDashboard() {
                 <div className="flex items-center gap-4">
                     <button
                         onClick={() => router.back()}
-                        className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg transition-colors"
+                        className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
                         title="Go back"
                     >
                         <ArrowLeft className="w-5 h-5" />
                     </button>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+                        <h1 className="text-2xl font-semibold text-gray-900">
                             Guard Data Quality
                         </h1>
-                        <p className="text-slate-600 dark:text-slate-400 mt-1">
+                        <p className="text-gray-600 mt-1">
                             Monitor and fix data issues for your guards
                         </p>
                     </div>
                 </div>
                 <button
                     onClick={fetchData}
-                    className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                     <RefreshCw className="w-4 h-4" />
                     Refresh
@@ -382,14 +382,14 @@ export default function GuardDataQualityDashboard() {
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Total Guards */}
-                <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-white/10 p-6">
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
                     <div className="flex items-center gap-4">
                         <div className="p-3 bg-blue-500/10 rounded-xl">
                             <Users className="w-6 h-6 text-blue-500" />
                         </div>
                         <div>
-                            <p className="text-sm text-slate-600 dark:text-slate-400">Total Active Guards</p>
-                            <p className="text-3xl font-bold text-slate-900 dark:text-white">
+                            <p className="text-sm text-gray-600">Total Active Guards</p>
+                            <p className="text-3xl font-bold text-gray-900">
                                 {data?.total_guards || 0}
                             </p>
                         </div>
@@ -397,13 +397,13 @@ export default function GuardDataQualityDashboard() {
                 </div>
 
                 {/* Health Score */}
-                <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-white/10 p-6">
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
                     <div className="flex items-center gap-4">
                         <div className={`p-3 rounded-xl ${healthScore >= 80 ? 'bg-green-500/10' : healthScore >= 60 ? 'bg-yellow-500/10' : 'bg-red-500/10'}`}>
                             <ShieldCheck className={`w-6 h-6 ${healthScore >= 80 ? 'text-green-500' : healthScore >= 60 ? 'text-yellow-500' : 'text-red-500'}`} />
                         </div>
                         <div>
-                            <p className="text-sm text-slate-600 dark:text-slate-400">Data Health Score</p>
+                            <p className="text-sm text-gray-600">Data Health Score</p>
                             <p className={`text-3xl font-bold ${healthScore >= 80 ? 'text-green-500' : healthScore >= 60 ? 'text-yellow-500' : 'text-red-500'}`}>
                                 {healthScore}%
                             </p>
@@ -412,13 +412,13 @@ export default function GuardDataQualityDashboard() {
                 </div>
 
                 {/* Issues Count */}
-                <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-white/10 p-6">
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
                     <div className="flex items-center gap-4">
                         <div className="p-3 bg-red-500/10 rounded-xl">
                             <AlertTriangle className="w-6 h-6 text-red-500" />
                         </div>
                         <div>
-                            <p className="text-sm text-slate-600 dark:text-slate-400">Total Issues</p>
+                            <p className="text-sm text-gray-600">Total Issues</p>
                             <p className="text-3xl font-bold text-red-500">
                                 {data ? (
                                     data.guards_without_client.count +
@@ -437,21 +437,21 @@ export default function GuardDataQualityDashboard() {
                 {cards.map((card) => (
                     <div
                         key={card.id}
-                        className={`bg-white dark:bg-slate-900 rounded-xl border ${card.borderColor} overflow-hidden`}
+                        className={`bg-white rounded-xl border ${card.borderColor} overflow-hidden`}
                     >
                         <button
                             onClick={() => setExpandedCard(expandedCard === card.id ? null : card.id)}
-                            className="w-full p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+                            className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
                         >
                             <div className="flex items-center gap-4">
                                 <div className={`p-3 ${card.bgColor} rounded-xl`}>
                                     <card.icon className={`w-6 h-6 ${card.color}`} />
                                 </div>
                                 <div className="text-left">
-                                    <h3 className="font-semibold text-slate-900 dark:text-white">
+                                    <h3 className="font-semibold text-gray-900">
                                         {card.title}
                                     </h3>
-                                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                                    <p className="text-sm text-gray-600">
                                         {card.description}
                                     </p>
                                 </div>
@@ -460,48 +460,48 @@ export default function GuardDataQualityDashboard() {
                                 <span className={`text-2xl font-bold ${card.color}`}>
                                     {card.count}
                                 </span>
-                                <ChevronRight className={`w-5 h-5 text-slate-400 transition-transform ${expandedCard === card.id ? 'rotate-90' : ''}`} />
+                                <ChevronRight className={`w-5 h-5 text-gray-400 transition-transform ${expandedCard === card.id ? 'rotate-90' : ''}`} />
                             </div>
                         </button>
 
                         {/* Expanded Content */}
                         {expandedCard === card.id && card.guards.length > 0 && (
-                            <div className="border-t border-slate-200 dark:border-white/10">
+                            <div className="border-t border-gray-200">
                                 <div className="max-h-64 overflow-y-auto">
                                     <table className="w-full">
-                                        <thead className="bg-slate-50 dark:bg-white/5 sticky top-0">
+                                        <thead className="bg-gray-50 sticky top-0">
                                             <tr>
-                                                <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                     Name
                                                 </th>
-                                                <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                     Contact
                                                 </th>
-                                                <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                     Client
                                                 </th>
-                                                <th className="px-4 py-2 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                     Action
                                                 </th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-slate-200 dark:divide-white/5">
+                                        <tbody className="divide-y divide-gray-200">
                                             {card.guards.map((guard) => (
-                                                <tr key={guard.employee_id} className="hover:bg-slate-50 dark:hover:bg-white/5">
+                                                <tr key={guard.employee_id} className="hover:bg-gray-50">
                                                     <td className="px-4 py-3">
-                                                        <div className="font-medium text-slate-900 dark:text-white">
+                                                        <div className="font-medium text-gray-900">
                                                             {guard.first_name} {guard.last_name}
                                                         </div>
                                                         {guard.psira_grade && (
-                                                            <span className="text-xs text-slate-500 dark:text-slate-400">
+                                                            <span className="text-xs text-gray-500">
                                                                 Grade {guard.psira_grade}
                                                             </span>
                                                         )}
                                                     </td>
-                                                    <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
+                                                    <td className="px-4 py-3 text-sm text-gray-600">
                                                         {guard.email || guard.phone || '-'}
                                                     </td>
-                                                    <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
+                                                    <td className="px-4 py-3 text-sm text-gray-600">
                                                         {getClientName(guard.assigned_client_id)}
                                                     </td>
                                                     <td className="px-4 py-3 text-right">
@@ -547,7 +547,7 @@ export default function GuardDataQualityDashboard() {
                                     </table>
                                 </div>
                                 {card.count > 50 && (
-                                    <div className="px-4 py-2 bg-slate-50 dark:bg-white/5 text-center text-sm text-slate-600 dark:text-slate-400">
+                                    <div className="px-4 py-2 bg-gray-50 text-center text-sm text-gray-600">
                                         Showing first 50 of {card.count} guards
                                     </div>
                                 )}
@@ -556,9 +556,9 @@ export default function GuardDataQualityDashboard() {
 
                         {/* Empty State */}
                         {expandedCard === card.id && card.guards.length === 0 && (
-                            <div className="border-t border-slate-200 dark:border-white/10 p-6 text-center">
+                            <div className="border-t border-gray-200 p-6 text-center">
                                 <ShieldCheck className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                                <p className="text-slate-600 dark:text-slate-400">
+                                <p className="text-gray-600">
                                     All guards have this data complete
                                 </p>
                             </div>
@@ -570,21 +570,21 @@ export default function GuardDataQualityDashboard() {
             {/* Hourly Rate Modal */}
             {hourlyRateModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl max-w-md w-full p-6">
+                    <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                            <h3 className="text-lg font-semibold text-gray-900">
                                 Set Hourly Rate
                             </h3>
-                            <button onClick={() => setHourlyRateModal(null)} className="text-slate-400 hover:text-slate-600">
+                            <button onClick={() => setHourlyRateModal(null)} className="text-gray-400 hover:text-gray-600">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
-                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                        <p className="text-sm text-gray-600 mb-4">
                             {hourlyRateModal.guard.first_name} {hourlyRateModal.guard.last_name}
                             {hourlyRateModal.guard.psira_grade && ` (Grade ${hourlyRateModal.guard.psira_grade})`}
                         </p>
                         <div className="mb-4">
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Hourly Rate (ZAR)
                             </label>
                             <input
@@ -593,14 +593,14 @@ export default function GuardDataQualityDashboard() {
                                 min="0"
                                 value={newHourlyRate}
                                 onChange={(e) => setNewHourlyRate(e.target.value)}
-                                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white"
                                 placeholder="e.g. 45.00"
                             />
                         </div>
                         <div className="flex justify-end gap-3">
                             <button
                                 onClick={() => setHourlyRateModal(null)}
-                                className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+                                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
                             >
                                 Cancel
                             </button>
@@ -619,27 +619,27 @@ export default function GuardDataQualityDashboard() {
             {/* Certification Modal */}
             {certModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl max-w-md w-full p-6">
+                    <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                            <h3 className="text-lg font-semibold text-gray-900">
                                 Add Certification
                             </h3>
-                            <button onClick={() => setCertModal(null)} className="text-slate-400 hover:text-slate-600">
+                            <button onClick={() => setCertModal(null)} className="text-gray-400 hover:text-gray-600">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
-                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                        <p className="text-sm text-gray-600 mb-4">
                             {certModal.guard.first_name} {certModal.guard.last_name}
                         </p>
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Certification Type
                                 </label>
                                 <select
                                     value={newCert.cert_type}
                                     onChange={(e) => setNewCert({ ...newCert, cert_type: e.target.value })}
-                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white"
                                 >
                                     <option value="PSIRA">PSIRA Registration</option>
                                     <option value="PSIRA_A">PSIRA Grade A</option>
@@ -653,44 +653,44 @@ export default function GuardDataQualityDashboard() {
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Certificate Number (Optional)
                                 </label>
                                 <input
                                     type="text"
                                     value={newCert.cert_number}
                                     onChange={(e) => setNewCert({ ...newCert, cert_number: e.target.value })}
-                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white"
                                     placeholder="e.g. PSI-12345678"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Issue Date
                                 </label>
                                 <input
                                     type="date"
                                     value={newCert.issue_date}
                                     onChange={(e) => setNewCert({ ...newCert, issue_date: e.target.value })}
-                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Expiry Date
                                 </label>
                                 <input
                                     type="date"
                                     value={newCert.expiry_date}
                                     onChange={(e) => setNewCert({ ...newCert, expiry_date: e.target.value })}
-                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white"
                                 />
                             </div>
                         </div>
                         <div className="flex justify-end gap-3 mt-6">
                             <button
                                 onClick={() => setCertModal(null)}
-                                className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+                                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
                             >
                                 Cancel
                             </button>
@@ -709,24 +709,24 @@ export default function GuardDataQualityDashboard() {
             {/* Client Assignment Modal */}
             {clientModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl max-w-md w-full p-6">
+                    <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                            <h3 className="text-lg font-semibold text-gray-900">
                                 Assign to Clients
                             </h3>
-                            <button onClick={() => setClientModal(null)} className="text-slate-400 hover:text-slate-600">
+                            <button onClick={() => setClientModal(null)} className="text-gray-400 hover:text-gray-600">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
-                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                        <p className="text-sm text-gray-600 mb-4">
                             {clientModal.guard.first_name} {clientModal.guard.last_name}
                         </p>
-                        <div className="max-h-60 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-lg p-2 space-y-1">
+                        <div className="max-h-60 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-1">
                             {clients.length === 0 ? (
-                                <p className="text-sm text-slate-500 p-2">No clients available</p>
+                                <p className="text-sm text-gray-500 p-2">No clients available</p>
                             ) : (
                                 clients.map(client => (
-                                    <label key={client.client_id} className="flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded cursor-pointer">
+                                    <label key={client.client_id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
                                         <input
                                             type="checkbox"
                                             checked={selectedClientIds.includes(client.client_id)}
@@ -737,20 +737,20 @@ export default function GuardDataQualityDashboard() {
                                                     setSelectedClientIds(selectedClientIds.filter(id => id !== client.client_id))
                                                 }
                                             }}
-                                            className="w-4 h-4 rounded border-slate-300 text-blue-600"
+                                            className="w-4 h-4 rounded border-gray-300 text-blue-600"
                                         />
-                                        <span className="text-sm text-slate-700 dark:text-slate-300">{client.client_name}</span>
+                                        <span className="text-sm text-gray-700">{client.client_name}</span>
                                     </label>
                                 ))
                             )}
                         </div>
-                        <p className="text-xs text-slate-500 mt-2">
+                        <p className="text-xs text-gray-500 mt-2">
                             Select which clients this guard can work for.
                         </p>
                         <div className="flex justify-end gap-3 mt-4">
                             <button
                                 onClick={() => setClientModal(null)}
-                                className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+                                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
                             >
                                 Cancel
                             </button>
@@ -769,12 +769,12 @@ export default function GuardDataQualityDashboard() {
             {/* Full Edit Modal */}
             {editModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
+                    <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                            <h3 className="text-lg font-semibold text-gray-900">
                                 Edit Guard
                             </h3>
-                            <button onClick={() => setEditModal(null)} className="text-slate-400 hover:text-slate-600">
+                            <button onClick={() => setEditModal(null)} className="text-gray-400 hover:text-gray-600">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -782,25 +782,25 @@ export default function GuardDataQualityDashboard() {
                             {/* Name Fields */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
                                         First Name
                                     </label>
                                     <input
                                         type="text"
                                         value={editFormData.first_name}
                                         onChange={(e) => setEditFormData({ ...editFormData, first_name: e.target.value })}
-                                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
                                         Last Name
                                     </label>
                                     <input
                                         type="text"
                                         value={editFormData.last_name}
                                         onChange={(e) => setEditFormData({ ...editFormData, last_name: e.target.value })}
-                                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white"
                                     />
                                 </div>
                             </div>
@@ -808,25 +808,25 @@ export default function GuardDataQualityDashboard() {
                             {/* Contact Fields */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
                                         Email
                                     </label>
                                     <input
                                         type="email"
                                         value={editFormData.email}
                                         onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
-                                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
                                         Phone
                                     </label>
                                     <input
                                         type="tel"
                                         value={editFormData.phone}
                                         onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
-                                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white"
                                     />
                                 </div>
                             </div>
@@ -834,7 +834,7 @@ export default function GuardDataQualityDashboard() {
                             {/* Rate & Grade */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
                                         Hourly Rate (ZAR)
                                     </label>
                                     <input
@@ -843,18 +843,18 @@ export default function GuardDataQualityDashboard() {
                                         min="0"
                                         value={editFormData.hourly_rate}
                                         onChange={(e) => setEditFormData({ ...editFormData, hourly_rate: e.target.value })}
-                                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white"
                                         placeholder="e.g. 45.00"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
                                         PSIRA Grade
                                     </label>
                                     <select
                                         value={editFormData.psira_grade}
                                         onChange={(e) => setEditFormData({ ...editFormData, psira_grade: e.target.value })}
-                                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white"
                                     >
                                         <option value="">Select Grade</option>
                                         <option value="A">Grade A</option>
@@ -868,15 +868,15 @@ export default function GuardDataQualityDashboard() {
 
                             {/* Client Assignment */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Assigned Clients
                                 </label>
-                                <div className="max-h-40 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-lg p-2 space-y-1">
+                                <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-1">
                                     {clients.length === 0 ? (
-                                        <p className="text-sm text-slate-500 p-2">No clients available</p>
+                                        <p className="text-sm text-gray-500 p-2">No clients available</p>
                                     ) : (
                                         clients.map(client => (
-                                            <label key={client.client_id} className="flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded cursor-pointer">
+                                            <label key={client.client_id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
                                                 <input
                                                     type="checkbox"
                                                     checked={editFormData.assigned_client_ids.includes(client.client_id)}
@@ -893,9 +893,9 @@ export default function GuardDataQualityDashboard() {
                                                             })
                                                         }
                                                     }}
-                                                    className="w-4 h-4 rounded border-slate-300 text-blue-600"
+                                                    className="w-4 h-4 rounded border-gray-300 text-blue-600"
                                                 />
-                                                <span className="text-sm text-slate-700 dark:text-slate-300">{client.client_name}</span>
+                                                <span className="text-sm text-gray-700">{client.client_name}</span>
                                             </label>
                                         ))
                                     )}
@@ -905,7 +905,7 @@ export default function GuardDataQualityDashboard() {
                         <div className="flex justify-end gap-3 mt-6">
                             <button
                                 onClick={() => setEditModal(null)}
-                                className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+                                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
                             >
                                 Cancel
                             </button>

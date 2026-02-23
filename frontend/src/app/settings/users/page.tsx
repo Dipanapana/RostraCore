@@ -198,13 +198,13 @@ export default function UsersPage() {
             </span>
           </div>
           <div>
-            <div className="font-medium text-slate-900 dark:text-white flex items-center gap-2">
+            <div className="font-medium text-gray-900 flex items-center gap-2">
               {user.full_name || user.username}
               {user.is_owner && (
                 <Crown className="w-4 h-4 text-amber-500" title="Organization Owner" />
               )}
             </div>
-            <div className="text-xs text-slate-500 dark:text-slate-400">{user.email}</div>
+            <div className="text-xs text-gray-500">{user.email}</div>
           </div>
         </div>
       ),
@@ -215,7 +215,7 @@ export default function UsersPage() {
         <select
           value={user.role}
           onChange={(e) => handleUpdateRole(user.user_id, e.target.value)}
-          className="px-2 py-1 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+          className="px-2 py-1 text-sm rounded-lg border border-gray-200 bg-white text-gray-900"
         >
           {ROLE_OPTIONS.map(opt => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -228,9 +228,9 @@ export default function UsersPage() {
       cell: (user) => (
         <div className="flex items-center gap-2">
           {user.is_owner ? (
-            <span className="text-sm text-amber-600 dark:text-amber-400 font-medium">All Clients</span>
+            <span className="text-sm text-amber-600 font-medium">All Clients</span>
           ) : user.managed_client_ids && user.managed_client_ids.length > 0 ? (
-            <span className="text-sm text-slate-600 dark:text-slate-400">
+            <span className="text-sm text-gray-600">
               {user.managed_client_ids.length} client(s)
             </span>
           ) : (
@@ -239,7 +239,7 @@ export default function UsersPage() {
           {!user.is_owner && (
             <button
               onClick={() => openEditClients(user)}
-              className="p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
+              className="p-1 text-blue-600 hover:bg-blue-50 rounded"
               title="Edit client access"
             >
               <Pencil className="w-4 h-4" />
@@ -253,8 +253,8 @@ export default function UsersPage() {
       cell: (user) => (
         <span className={`px-2.5 py-0.5 inline-flex text-xs font-medium rounded-full ${
           user.is_active
-            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-            : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+            ? 'bg-emerald-50 text-emerald-700'
+            : 'bg-red-50 text-red-700'
         }`}>
           {user.is_active ? 'Active' : 'Inactive'}
         </span>
@@ -268,8 +268,8 @@ export default function UsersPage() {
             onClick={() => handleToggleOwner(user.user_id, user.is_owner)}
             className={`p-2 rounded-lg transition-colors ${
               user.is_owner
-                ? 'text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20'
-                : 'text-slate-400 hover:text-amber-600 hover:bg-slate-100 dark:hover:bg-white/5'
+                ? 'text-amber-600 hover:bg-amber-50'
+                : 'text-gray-400 hover:text-amber-600 hover:bg-gray-100'
             }`}
             title={user.is_owner ? 'Remove ownership' : 'Grant ownership'}
           >
@@ -277,14 +277,14 @@ export default function UsersPage() {
           </button>
           <button
             onClick={() => handleResetPassword(user.user_id)}
-            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors"
+            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-gray-100 rounded-lg transition-colors"
             title="Reset password"
           >
             <Key className="w-4 h-4" />
           </button>
           <button
             onClick={() => handleRemove(user.user_id)}
-            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             title="Remove user"
           >
             <Trash2 className="w-4 h-4" />
@@ -300,14 +300,14 @@ export default function UsersPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">User Management</h1>
-            <p className="text-slate-600 dark:text-slate-400">
+            <h1 className="text-2xl font-semibold text-gray-900">User Management</h1>
+            <p className="text-gray-600">
               Manage users and their access to your organization
             </p>
           </div>
           <button
             onClick={() => setShowInviteModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors shadow-lg shadow-blue-600/20"
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors"
           >
             <Plus className="w-5 h-5" />
             Invite User
@@ -316,13 +316,13 @@ export default function UsersPage() {
 
         {/* Error */}
         {error && (
-          <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-400">
+          <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
             {error}
           </div>
         )}
 
         {/* Users Table */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           <DataTable
             data={users}
             columns={columns}
@@ -341,14 +341,14 @@ export default function UsersPage() {
       >
         {tempPassword ? (
           <div className="space-y-4">
-            <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
-              <p className="text-green-700 dark:text-green-400 font-medium">User invited successfully!</p>
+            <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
+              <p className="text-green-700 font-medium">User invited successfully!</p>
             </div>
-            <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
-              <p className="text-sm text-amber-700 dark:text-amber-400 mb-2">
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+              <p className="text-sm text-amber-700 mb-2">
                 Please share these credentials with the user:
               </p>
-              <div className="font-mono text-sm bg-white dark:bg-slate-800 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
+              <div className="font-mono text-sm bg-white p-3 rounded-lg border border-amber-200">
                 <p><strong>Email:</strong> {inviteForm.email}</p>
                 <p><strong>Temporary Password:</strong> {tempPassword}</p>
               </div>
@@ -363,37 +363,37 @@ export default function UsersPage() {
         ) : (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Email *
               </label>
               <input
                 type="email"
                 value={inviteForm.email}
                 onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
-                className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="user@example.com"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Full Name *
               </label>
               <input
                 type="text"
                 value={inviteForm.full_name}
                 onChange={(e) => setInviteForm({ ...inviteForm, full_name: e.target.value })}
-                className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="John Doe"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Role *
               </label>
               <select
                 value={inviteForm.role}
                 onChange={(e) => setInviteForm({ ...inviteForm, role: e.target.value as UserRole })}
-                className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 {ROLE_OPTIONS.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -401,15 +401,15 @@ export default function UsersPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Assign to Clients
               </label>
-              <div className="max-h-40 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-xl p-2 space-y-1">
+              <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-xl p-2 space-y-1">
                 {clients.length === 0 ? (
-                  <p className="text-sm text-slate-500 dark:text-slate-400 p-2">No clients available</p>
+                  <p className="text-sm text-gray-500 p-2">No clients available</p>
                 ) : (
                   clients.map(client => (
-                    <label key={client.client_id} className="flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg cursor-pointer">
+                    <label key={client.client_id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
                       <input
                         type="checkbox"
                         checked={inviteForm.managed_client_ids.includes(client.client_id)}
@@ -418,14 +418,14 @@ export default function UsersPage() {
                           inviteForm.managed_client_ids,
                           (ids) => setInviteForm({ ...inviteForm, managed_client_ids: ids })
                         )}
-                        className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="text-sm text-slate-700 dark:text-slate-300">{client.client_name}</span>
+                      <span className="text-sm text-gray-700">{client.client_name}</span>
                     </label>
                   ))
                 )}
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              <p className="text-xs text-gray-500 mt-1">
                 Leave empty for no client access, or assign specific clients.
               </p>
             </div>
@@ -435,23 +435,23 @@ export default function UsersPage() {
                 id="send_email"
                 checked={inviteForm.send_email}
                 onChange={(e) => setInviteForm({ ...inviteForm, send_email: e.target.checked })}
-                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <label htmlFor="send_email" className="text-sm text-slate-700 dark:text-slate-300">
+              <label htmlFor="send_email" className="text-sm text-gray-700">
                 Send invitation email with login credentials
               </label>
             </div>
             <div className="flex gap-3 pt-4">
               <button
                 onClick={closeInviteModal}
-                className="flex-1 px-4 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleInvite}
                 disabled={!inviteForm.email || !inviteForm.full_name || actionLoading}
-                className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white rounded-xl font-medium transition-colors"
+                className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-xl font-medium transition-colors"
               >
                 {actionLoading ? 'Inviting...' : 'Invite User'}
               </button>
@@ -468,37 +468,37 @@ export default function UsersPage() {
         maxWidth="md"
       >
         <div className="space-y-4">
-          <div className="max-h-60 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-xl p-2 space-y-1">
+          <div className="max-h-60 overflow-y-auto border border-gray-200 rounded-xl p-2 space-y-1">
             {clients.length === 0 ? (
-              <p className="text-sm text-slate-500 dark:text-slate-400 p-2">No clients available</p>
+              <p className="text-sm text-gray-500 p-2">No clients available</p>
             ) : (
               clients.map(client => (
-                <label key={client.client_id} className="flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg cursor-pointer">
+                <label key={client.client_id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
                   <input
                     type="checkbox"
                     checked={editClientIds.includes(client.client_id)}
                     onChange={() => toggleClientSelection(client.client_id, editClientIds, setEditClientIds)}
-                    className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
-                  <span className="text-sm text-slate-700 dark:text-slate-300">{client.client_name}</span>
+                  <span className="text-sm text-gray-700">{client.client_name}</span>
                 </label>
               ))
             )}
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-gray-500">
             Selected clients: {editClientIds.length === 0 ? 'None (no access)' : editClientIds.length}
           </p>
           <div className="flex gap-3 pt-4">
             <button
               onClick={() => setShowEditClientsModal(false)}
-              className="flex-1 px-4 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleSaveClients}
               disabled={actionLoading}
-              className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white rounded-xl font-medium transition-colors"
+              className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-xl font-medium transition-colors"
             >
               {actionLoading ? 'Saving...' : 'Save Changes'}
             </button>

@@ -1,10 +1,13 @@
 """SA Payroll Deductions API endpoints."""
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
 from decimal import Decimal
 from typing import Optional
 from pydantic import BaseModel
 
+from app.database import get_db
+from app.auth.security import require_finance_access
 from app.services.sa_payroll_service import SAPayrollService, get_tax_tables_reference
 
 
@@ -209,3 +212,79 @@ async def get_tax_tables():
     Returns all tax brackets, rebates, thresholds, and rates.
     """
     return get_tax_tables_reference()
+
+
+@router.get("/config")
+async def get_payroll_config(
+    db: Session = Depends(get_db),
+    current_user=Depends(require_finance_access)
+):
+    """Get organization payroll deduction configuration."""
+    from app.models.organization_payroll_config import OrganizationPayrollConfig
+
+    config = db.query(OrganizationPayrollConfig).filter(
+        OrganizationPayrollConfig.org_id == current_user.org_id
+    ).first()
+
+    if not config:
+        # Create default config
+        config = OrganizationPayrollConfig(org_id=current_user.org_id)
+        db.add(config)
+        db.commit()
+        db.refresh(config)
+
+    return {
+        "config_id": config.config_id,
+        "org_id": config.org_id,
+        "psira_deduction": float(config.psira_deduction),
+        "bargaining_council": float(config.bargaining_council),
+        "provident_fund_pct": float(config.provident_fund_pct),
+        "nucaaw": float(config.nucaaw),
+        "hospital_cover": float(config.hospital_cover),
+        "supervisor_allowance": float(config.supervisor_allowance),
+        "min_hourly_rate": float(config.min_hourly_rate) if config.min_hourly_rate else None,
+    }
+
+
+@router.put("/config")
+async def update_payroll_config(
+    config_data: dict,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_finance_access)
+):
+    """Update organization payroll deduction configuration."""
+    from app.models.organization_payroll_config import OrganizationPayrollConfig
+    from decimal import Decimal
+
+    config = db.query(OrganizationPayrollConfig).filter(
+        OrganizationPayrollConfig.org_id == current_user.org_id
+    ).first()
+
+    if not config:
+        config = OrganizationPayrollConfig(org_id=current_user.org_id)
+        db.add(config)
+
+    # Update fields if provided
+    field_map = {
+        "psira_deduction": "psira_deduction",
+        "bargaining_council": "bargaining_council",
+        "provident_fund_pct": "provident_fund_pct",
+        "nucaaw": "nucaaw",
+        "hospital_cover": "hospital_cover",
+        "supervisor_allowance": "supervisor_allowance",
+        "min_hourly_rate": "min_hourly_rate",
+    }
+
+    for key, attr in field_map.items():
+        if key in config_data:
+            value = config_data[key]
+            setattr(config, attr, Decimal(str(value)) if value is not None else None)
+
+    db.commit()
+    db.refresh(config)
+
+    return {
+        "status": "success",
+        "message": "Payroll configuration updated",
+        "config_id": config.config_id,
+    }

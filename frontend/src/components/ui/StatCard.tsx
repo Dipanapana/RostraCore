@@ -54,7 +54,7 @@ export default function StatCard({
   const colors = colorClasses[color]
 
   return (
-    <div className="bg-white rounded-card shadow-card hover:shadow-card-hover transition-shadow p-6">
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow p-6">
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>

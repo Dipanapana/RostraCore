@@ -11,9 +11,9 @@ function statusColor(s: string) {
 }
 
 function statusBadge(s: string) {
-  if (s === 'adequate') return <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Adequate</span>
-  if (s === 'overstaffed') return <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">Overstaffed</span>
-  return <span className="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">Understaffed</span>
+  if (s === 'adequate') return <span className="px-2 py-0.5 text-xs rounded-full bg-emerald-50 text-emerald-700">Adequate</span>
+  if (s === 'overstaffed') return <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700">Overstaffed</span>
+  return <span className="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700">Understaffed</span>
 }
 
 export default function WorkforceForecastPage() {
@@ -50,29 +50,29 @@ export default function WorkforceForecastPage() {
       {/* Header */}
       <div className="flex items-center gap-3">
         <TrendingUp className="w-7 h-7 text-emerald-600" />
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Workforce Forecasting</h1>
+        <h1 className="text-2xl font-semibold text-gray-900">Workforce Forecasting</h1>
       </div>
 
       {/* Summary Cards */}
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4">
+          <div className="bg-white rounded-xl shadow p-4">
             <div className="flex items-center gap-2 text-sm text-gray-500 mb-1"><Users className="w-4 h-4" />Active Guards</div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{summary.total_active_employees}</div>
+            <div className="text-2xl font-bold text-gray-900">{summary.total_active_employees}</div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4">
+          <div className="bg-white rounded-xl shadow p-4">
             <div className="flex items-center gap-2 text-sm text-gray-500 mb-1"><Building2 className="w-4 h-4" />Sites</div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{summary.total_sites}</div>
+            <div className="text-2xl font-bold text-gray-900">{summary.total_sites}</div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4">
+          <div className="bg-white rounded-xl shadow p-4">
             <div className="flex items-center gap-2 text-sm text-gray-500 mb-1"><Calendar className="w-4 h-4" />Active Contracts</div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{summary.active_contracts}</div>
+            <div className="text-2xl font-bold text-gray-900">{summary.active_contracts}</div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4">
+          <div className="bg-white rounded-xl shadow p-4">
             <div className="flex items-center gap-2 text-sm text-yellow-600 mb-1"><AlertTriangle className="w-4 h-4" />Leave (30d)</div>
             <div className="text-2xl font-bold text-yellow-600">{summary.upcoming_leave_30d}</div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4">
+          <div className="bg-white rounded-xl shadow p-4">
             <div className="flex items-center gap-2 text-sm text-orange-600 mb-1"><Clock className="w-4 h-4" />OT Hours (30d)</div>
             <div className="text-2xl font-bold text-orange-600">{summary.overtime_hours_30d}h</div>
           </div>
@@ -81,16 +81,16 @@ export default function WorkforceForecastPage() {
 
       {/* Staffing Gap Analysis */}
       {gaps && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-          <h2 className="font-semibold text-gray-900 dark:text-white mb-4">Staffing Gap Analysis (Next 30 Days)</h2>
+        <div className="bg-white rounded-xl shadow p-6">
+          <h2 className="font-semibold text-gray-900 mb-4">Staffing Gap Analysis (Next 30 Days)</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             <div>
               <div className="text-sm text-gray-500">Total Employees</div>
-              <div className="text-xl font-bold text-gray-900 dark:text-white">{gaps.total_employees}</div>
+              <div className="text-xl font-bold text-gray-900">{gaps.total_employees}</div>
             </div>
             <div>
               <div className="text-sm text-gray-500">Required (Sites)</div>
-              <div className="text-xl font-bold text-gray-900 dark:text-white">{gaps.total_required}</div>
+              <div className="text-xl font-bold text-gray-900">{gaps.total_required}</div>
             </div>
             <div>
               <div className="text-sm text-gray-500">Avg On Leave</div>
@@ -117,10 +117,10 @@ export default function WorkforceForecastPage() {
 
           {gaps.peak_leave_dates?.length > 0 && (
             <div className="mt-4">
-              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Peak Leave Dates</h3>
+              <h3 className="text-sm font-medium text-gray-600 mb-2">Peak Leave Dates</h3>
               <div className="flex flex-wrap gap-2">
                 {gaps.peak_leave_dates.map((d: any) => (
-                  <span key={d.date} className="px-3 py-1 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 text-xs rounded-full">
+                  <span key={d.date} className="px-3 py-1 bg-yellow-50 text-yellow-700 text-xs rounded-full">
                     {d.date}: {d.on_leave} on leave
                   </span>
                 ))}
@@ -132,14 +132,14 @@ export default function WorkforceForecastPage() {
 
       {/* Site Needs */}
       {siteNeeds?.sites?.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-          <h2 className="font-semibold text-gray-900 dark:text-white mb-4">Staffing by Site</h2>
+        <div className="bg-white rounded-xl shadow p-6">
+          <h2 className="font-semibold text-gray-900 mb-4">Staffing by Site</h2>
           <div className="space-y-2">
             {siteNeeds.sites.map((s: any) => (
-              <div key={s.site_id} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
+              <div key={s.site_id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">{s.site_name}</span>
+                  <span className="text-sm font-medium text-gray-900">{s.site_name}</span>
                 </div>
                 <div className="flex items-center gap-4">
                   <span className="text-xs text-gray-500">Need: {s.required}</span>
@@ -157,8 +157,8 @@ export default function WorkforceForecastPage() {
 
       {/* Monthly Projection */}
       {projection?.projections?.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-          <h2 className="font-semibold text-gray-900 dark:text-white mb-4">Monthly Projection</h2>
+        <div className="bg-white rounded-xl shadow p-6">
+          <h2 className="font-semibold text-gray-900 mb-4">Monthly Projection</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -172,12 +172,12 @@ export default function WorkforceForecastPage() {
               </thead>
               <tbody>
                 {projection.projections.map((p: any) => (
-                  <tr key={p.month} className="border-t border-gray-100 dark:border-gray-700">
-                    <td className="py-2 font-medium text-gray-900 dark:text-white">{p.month_label}</td>
-                    <td className="py-2 text-center text-gray-700 dark:text-gray-300">{p.headcount}</td>
+                  <tr key={p.month} className="border-t border-gray-100">
+                    <td className="py-2 font-medium text-gray-900">{p.month_label}</td>
+                    <td className="py-2 text-center text-gray-700">{p.headcount}</td>
                     <td className="py-2 text-center text-yellow-600">{p.leave_count}</td>
                     <td className="py-2 text-center text-orange-600">{p.expiring_contracts}</td>
-                    <td className="py-2 text-center font-bold text-gray-900 dark:text-white">{p.effective_available}</td>
+                    <td className="py-2 text-center font-bold text-gray-900">{p.effective_available}</td>
                   </tr>
                 ))}
               </tbody>

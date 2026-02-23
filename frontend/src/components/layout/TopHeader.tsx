@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight, Bell } from "lucide-react";
-import ThemeToggle from "@/components/ui/ThemeToggle";
+import { ChevronRight, Bell, ArrowLeft } from "lucide-react";
 import { notificationsApi } from "@/services/api";
 
 // ---------------------------------------------------------------------------
@@ -12,6 +11,7 @@ import { notificationsApi } from "@/services/api";
 // ---------------------------------------------------------------------------
 
 const ROUTE_LABELS: Record<string, string> = {
+  // Main sections
   dashboard: "Dashboard",
   employees: "People",
   clients: "Clients & Sites",
@@ -26,19 +26,84 @@ const ROUTE_LABELS: Record<string, string> = {
   billing: "Billing",
   assets: "Assets",
   settings: "Settings",
-  users: "Users",
+  notifications: "Notifications",
+  attendance: "Attendance",
   certifications: "Certifications",
   documents: "Documents",
   superadmin: "Platform",
+
+  // Operations
+  incidents: "Incidents",
+  patrols: "Patrols",
+  deployments: "Deployments",
+  geofencing: "Geofencing",
+  inspections: "Inspections",
+  maintenance: "Maintenance",
+  iod: "Injury on Duty",
+  visitors: "Visitors",
+  overtime: "Overtime",
+  "daily-activity": "Daily Activity",
+  "shift-handovers": "Shift Handovers",
+  "occurrence-book": "Occurrence Book",
+  "ops-summary": "Ops Summary",
+  "emergency-contacts": "Emergency Contacts",
+  "comm-log": "Comm Log",
+  keys: "Key Management",
+
+  // Compliance
+  "cert-alerts": "Cert Alerts",
+  "compliance-calendar": "Compliance Calendar",
+  "contract-compliance": "Contract Compliance",
+  "sla-compliance": "SLA Compliance",
+  "contract-values": "Contract Values",
+
+  // Business
+  announcements: "Announcements",
+  training: "Training",
+  disciplinary: "Disciplinary",
+  budgets: "Budgets",
+  fleet: "Fleet",
+  organizations: "Organizations",
+  reports: "Reports",
+  revenue: "Revenue",
+  "client-reports": "Client Reports",
+  "site-profitability": "Site Profitability",
+  "workforce-forecast": "Workforce Forecast",
+
+  // Sub-routes
+  users: "Users",
   generate: "Generate",
   assignments: "Assignments",
   unfilled: "Unfilled Shifts",
+  analytics: "Analytics",
+  compliance: "Compliance",
+  alerts: "Alerts",
+  exceptions: "Exceptions",
+  forecast: "Forecast",
+  swaps: "Swaps",
+  coverage: "Coverage",
+  exports: "Exports",
+  invoices: "Invoices",
+  new: "New",
+  heatmap: "Heatmap",
+  map: "Map",
+  costs: "Costs",
+  risk: "Risk",
+  renewals: "Renewals",
+  satisfaction: "Satisfaction",
+  performance: "Performance",
+  restrictions: "Restrictions",
+  turnover: "Turnover",
+  grades: "Grades",
+  "spare-pool": "Spare Pool",
   "hourly-rates": "Hourly Rates",
   "shift-patterns": "Shift Patterns",
   "company-profile": "Company Profile",
   "subscription-plans": "Subscription Plans",
-  notifications: "Notifications",
-  attendance: "Attendance",
+  "skills-matrix": "Skills Matrix",
+  "hr-analytics": "HR Analytics",
+  "accept-invite": "Accept Invite",
+  "change-password": "Change Password",
 };
 
 function getBreadcrumbs(pathname: string): { label: string; href: string }[] {
@@ -66,6 +131,7 @@ function getBreadcrumbs(pathname: string): { label: string; href: string }[] {
 
 export default function TopHeader() {
   const pathname = usePathname();
+  const router = useRouter();
   const breadcrumbs = getBreadcrumbs(pathname);
 
   const [unreadCount, setUnreadCount] = useState(0);
@@ -94,11 +160,26 @@ export default function TopHeader() {
 
   return (
     <header className="sticky top-0 z-20 px-4 sm:px-6 pt-4 pb-2">
-      <div className="rounded-2xl border border-slate-200 dark:border-white/5 px-4 py-3 flex items-center justify-between shadow-sm backdrop-blur-xl bg-white/80 dark:bg-slate-900/50">
-        {/* Left: Breadcrumbs */}
+      <div className="rounded-2xl border border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm backdrop-blur-xl bg-white/80">
+        {/* Left: Back button + Breadcrumbs */}
         <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 min-w-0 overflow-hidden">
+          {breadcrumbs.length >= 1 && pathname !== "/dashboard" && (
+            <button
+              onClick={() => {
+                if (breadcrumbs.length > 1) {
+                  router.push(breadcrumbs[breadcrumbs.length - 2].href);
+                } else {
+                  router.push("/dashboard");
+                }
+              }}
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors mr-1 flex-shrink-0"
+              aria-label="Go back"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+          )}
           {breadcrumbs.length === 0 ? (
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+            <span className="text-sm font-medium text-gray-700">
               Dashboard
             </span>
           ) : (
@@ -107,16 +188,16 @@ export default function TopHeader() {
               return (
                 <span key={crumb.href} className="flex items-center gap-1.5 min-w-0">
                   {index > 0 && (
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 flex-shrink-0" />
+                    <ChevronRight className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
                   )}
                   {isLast ? (
-                    <span className="text-sm font-semibold text-slate-800 dark:text-white truncate">
+                    <span className="text-sm font-semibold text-gray-800 truncate">
                       {crumb.label}
                     </span>
                   ) : (
                     <Link
                       href={crumb.href}
-                      className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors truncate"
+                      className="text-sm text-gray-500 hover:text-gray-700 transition-colors truncate"
                     >
                       {crumb.label}
                     </Link>
@@ -132,7 +213,7 @@ export default function TopHeader() {
           {/* Notification bell */}
           <Link
             href="/notifications"
-            className="relative p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="relative p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
             title="Notifications"
           >
             <Bell className="w-5 h-5" />
@@ -143,11 +224,9 @@ export default function TopHeader() {
             )}
           </Link>
 
-          <ThemeToggle />
-
           {/* Date display */}
           <div className="hidden md:block text-right">
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+            <p className="text-xs font-medium text-gray-500">
               {new Date().toLocaleDateString("en-US", {
                 weekday: "short",
                 month: "short",

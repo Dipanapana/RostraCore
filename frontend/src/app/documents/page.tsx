@@ -38,7 +38,7 @@ function typeBadge(t: string) {
     letter: 'bg-pink-500/20 text-pink-400',
     photo: 'bg-indigo-500/20 text-indigo-400',
   }
-  return colours[t] || 'bg-slate-500/20 text-slate-400'
+  return colours[t] || 'bg-gray-100 text-gray-500'
 }
 
 function formatBytes(b: number | null | undefined): string {
@@ -183,10 +183,10 @@ export default function DocumentsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
             <FileText className="w-7 h-7 text-blue-400" /> Document Management
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-gray-500 text-sm mt-1">
             Employee and organisational document records
           </p>
         </div>
@@ -196,9 +196,9 @@ export default function DocumentsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-slate-800/50 rounded-lg p-1 w-fit">
+      <div className="flex gap-1 bg-white rounded-lg p-1 w-fit">
         {(['list', 'dashboard'] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)} className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${tab === t ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}>
+          <button key={t} onClick={() => setTab(t)} className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${tab === t ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-900'}`}>
             {t === 'list' ? 'Documents' : 'Dashboard'}
           </button>
         ))}
@@ -210,50 +210,50 @@ export default function DocumentsPage() {
           {/* Filters */}
           <div className="flex flex-wrap gap-3">
             <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 value={search} onChange={e => setSearch(e.target.value)}
                 placeholder="Search filename…"
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500"
               />
             </div>
-            <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500">
+            <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500">
               <option value="">All Types</option>
               {DOC_TYPES.map(t => <option key={t} value={t}>{TYPE_LABELS[t] || t}</option>)}
             </select>
-            <select value={employeeFilter} onChange={e => setEmployeeFilter(e.target.value)} className="px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500">
+            <select value={employeeFilter} onChange={e => setEmployeeFilter(e.target.value)} className="px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500">
               <option value="">All Employees</option>
               {employees.map((e: any) => <option key={e.employee_id} value={e.employee_id}>{e.first_name} {e.last_name}</option>)}
             </select>
           </div>
 
           {/* Table */}
-          <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl overflow-hidden">
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-700">
-                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Filename</th>
-                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Type</th>
-                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Employee</th>
-                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Size</th>
-                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Expires</th>
-                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Uploaded</th>
-                    <th className="text-left px-4 py-3 text-slate-400 font-medium">Tags</th>
-                    <th className="text-right px-4 py-3 text-slate-400 font-medium">Actions</th>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left px-4 py-3 text-gray-500 font-medium">Filename</th>
+                    <th className="text-left px-4 py-3 text-gray-500 font-medium">Type</th>
+                    <th className="text-left px-4 py-3 text-gray-500 font-medium">Employee</th>
+                    <th className="text-left px-4 py-3 text-gray-500 font-medium">Size</th>
+                    <th className="text-left px-4 py-3 text-gray-500 font-medium">Expires</th>
+                    <th className="text-left px-4 py-3 text-gray-500 font-medium">Uploaded</th>
+                    <th className="text-left px-4 py-3 text-gray-500 font-medium">Tags</th>
+                    <th className="text-right px-4 py-3 text-gray-500 font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
-                    <tr><td colSpan={8} className="px-4 py-12 text-center text-slate-500">Loading…</td></tr>
+                    <tr><td colSpan={8} className="px-4 py-12 text-center text-gray-400">Loading…</td></tr>
                   ) : docs.length === 0 ? (
-                    <tr><td colSpan={8} className="px-4 py-12 text-center text-slate-500">No documents found</td></tr>
+                    <tr><td colSpan={8} className="px-4 py-12 text-center text-gray-400">No documents found</td></tr>
                   ) : docs.map((d: any) => (
-                    <tr key={d.document_id} className="border-b border-slate-700/50 hover:bg-slate-700/20 transition-colors">
+                    <tr key={d.document_id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <File className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                          <span className="text-white font-medium truncate max-w-[200px]">{d.filename || '—'}</span>
+                          <File className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                          <span className="text-gray-900 font-medium truncate max-w-[200px]">{d.filename || '—'}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3">
@@ -261,32 +261,32 @@ export default function DocumentsPage() {
                           {TYPE_LABELS[d.document_type] || d.document_type || 'Other'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-slate-300">{d.employee_name || '—'}</td>
-                      <td className="px-4 py-3 text-slate-400">{formatBytes(d.file_size)}</td>
+                      <td className="px-4 py-3 text-gray-700">{d.employee_name || '—'}</td>
+                      <td className="px-4 py-3 text-gray-500">{formatBytes(d.file_size)}</td>
                       <td className="px-4 py-3">
                         {d.expires_at ? (
-                          <span className={`flex items-center gap-1 text-xs font-medium ${isExpired(d.expires_at) ? 'text-red-400' : isExpiringSoon(d.expires_at) ? 'text-amber-400' : 'text-slate-400'}`}>
+                          <span className={`flex items-center gap-1 text-xs font-medium ${isExpired(d.expires_at) ? 'text-red-400' : isExpiringSoon(d.expires_at) ? 'text-amber-400' : 'text-gray-500'}`}>
                             {isExpired(d.expires_at) && <AlertTriangle className="w-3 h-3" />}
                             {isExpiringSoon(d.expires_at) && <Clock className="w-3 h-3" />}
                             {fmtDate(d.expires_at)}
                           </span>
-                        ) : <span className="text-slate-500">—</span>}
+                        ) : <span className="text-gray-400">—</span>}
                       </td>
-                      <td className="px-4 py-3 text-slate-400">{fmtDate(d.uploaded_at)}</td>
+                      <td className="px-4 py-3 text-gray-500">{fmtDate(d.uploaded_at)}</td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
                           {(d.tags || []).slice(0, 3).map((tag: string, i: number) => (
-                            <span key={i} className="px-1.5 py-0.5 bg-slate-700 text-slate-300 rounded text-[10px]">{tag}</span>
+                            <span key={i} className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded text-[10px]">{tag}</span>
                           ))}
-                          {(d.tags || []).length > 3 && <span className="text-slate-500 text-[10px]">+{d.tags.length - 3}</span>}
+                          {(d.tags || []).length > 3 && <span className="text-gray-400 text-[10px]">+{d.tags.length - 3}</span>}
                         </div>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <button onClick={() => openEdit(d)} className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors" title="Edit">
+                          <button onClick={() => openEdit(d)} className="p-1.5 text-gray-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors" title="Edit">
                             <Edit2 className="w-4 h-4" />
                           </button>
-                          <button onClick={() => handleDelete(d.document_id)} className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors" title="Delete">
+                          <button onClick={() => handleDelete(d.document_id)} className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors" title="Delete">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -297,7 +297,7 @@ export default function DocumentsPage() {
               </table>
             </div>
             {total > 0 && (
-              <div className="px-4 py-3 border-t border-slate-700 text-sm text-slate-400">
+              <div className="px-4 py-3 border-t border-gray-200 text-sm text-gray-500">
                 Showing {docs.length} of {total} documents
               </div>
             )}
@@ -316,12 +316,12 @@ export default function DocumentsPage() {
               { label: 'Expiring Soon', value: summary.expiring_soon, icon: Clock, colour: 'amber' },
               { label: 'Expired', value: summary.expired, icon: AlertTriangle, colour: 'red' },
             ].map((kpi, i) => (
-              <div key={i} className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
+              <div key={i} className="bg-white border border-gray-200 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-slate-400 text-xs font-medium">{kpi.label}</span>
+                  <span className="text-gray-500 text-xs font-medium">{kpi.label}</span>
                   <kpi.icon className={`w-4 h-4 text-${kpi.colour}-400`} />
                 </div>
-                <p className="text-2xl font-bold text-white">{kpi.value}</p>
+                <p className="text-2xl font-bold text-gray-900">{kpi.value}</p>
               </div>
             ))}
           </div>
@@ -329,21 +329,21 @@ export default function DocumentsPage() {
           {/* By Type + Storage */}
           <div className="grid md:grid-cols-2 gap-6">
             {/* By Type */}
-            <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
-              <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+            <div className="bg-white border border-gray-200 rounded-xl p-5">
+              <h3 className="text-gray-900 font-semibold mb-4 flex items-center gap-2">
                 <BarChart3 className="w-4 h-4 text-blue-400" /> Documents by Type
               </h3>
               {(summary.by_type || []).length === 0 ? (
-                <p className="text-slate-500 text-sm">No documents yet</p>
+                <p className="text-gray-400 text-sm">No documents yet</p>
               ) : (
                 <div className="space-y-3">
                   {summary.by_type.map(([type, count]: [string, number]) => (
                     <div key={type}>
                       <div className="flex items-center justify-between text-sm mb-1">
-                        <span className="text-slate-300">{TYPE_LABELS[type] || type}</span>
-                        <span className="text-white font-medium">{count}</span>
+                        <span className="text-gray-700">{TYPE_LABELS[type] || type}</span>
+                        <span className="text-gray-900 font-medium">{count}</span>
                       </div>
-                      <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(100, (count / summary.total) * 100)}%` }} />
                       </div>
                     </div>
@@ -353,23 +353,23 @@ export default function DocumentsPage() {
             </div>
 
             {/* Storage Summary */}
-            <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
-              <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+            <div className="bg-white border border-gray-200 rounded-xl p-5">
+              <h3 className="text-gray-900 font-semibold mb-4 flex items-center gap-2">
                 <Download className="w-4 h-4 text-green-400" /> Storage Overview
               </h3>
               <div className="space-y-4">
                 <div className="text-center py-6">
-                  <p className="text-4xl font-bold text-white">{formatBytes(summary.total_size_bytes)}</p>
-                  <p className="text-slate-400 text-sm mt-1">Total storage used</p>
+                  <p className="text-4xl font-bold text-gray-900">{formatBytes(summary.total_size_bytes)}</p>
+                  <p className="text-gray-500 text-sm mt-1">Total storage used</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-slate-700/30 rounded-lg p-3 text-center">
-                    <p className="text-lg font-bold text-white">{summary.employee_docs}</p>
-                    <p className="text-slate-400 text-xs">Employee Docs</p>
+                  <div className="bg-gray-50 rounded-lg p-3 text-center">
+                    <p className="text-lg font-bold text-gray-900">{summary.employee_docs}</p>
+                    <p className="text-gray-500 text-xs">Employee Docs</p>
                   </div>
-                  <div className="bg-slate-700/30 rounded-lg p-3 text-center">
-                    <p className="text-lg font-bold text-white">{summary.general_docs}</p>
-                    <p className="text-slate-400 text-xs">General Docs</p>
+                  <div className="bg-gray-50 rounded-lg p-3 text-center">
+                    <p className="text-lg font-bold text-gray-900">{summary.general_docs}</p>
+                    <p className="text-gray-500 text-xs">General Docs</p>
                   </div>
                 </div>
               </div>
@@ -381,54 +381,54 @@ export default function DocumentsPage() {
       {/* ── CREATE / EDIT MODAL ── */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-5 border-b border-slate-700">
-              <h2 className="text-lg font-semibold text-white">{editDoc ? 'Edit Document' : 'Add Document'}</h2>
-              <button onClick={() => setShowModal(false)} className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors">
+          <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">{editDoc ? 'Edit Document' : 'Add Document'}</h2>
+              <button onClick={() => setShowModal(false)} className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="p-5 space-y-4">
               <div>
-                <label className="block text-sm text-slate-400 mb-1">Filename *</label>
-                <input value={form.filename} onChange={e => setForm({ ...form, filename: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500" placeholder="e.g. employment_contract.pdf" />
+                <label className="block text-sm text-gray-500 mb-1">Filename *</label>
+                <input value={form.filename} onChange={e => setForm({ ...form, filename: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500" placeholder="e.g. employment_contract.pdf" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Document Type</label>
-                  <select value={form.document_type} onChange={e => setForm({ ...form, document_type: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500">
+                  <label className="block text-sm text-gray-500 mb-1">Document Type</label>
+                  <select value={form.document_type} onChange={e => setForm({ ...form, document_type: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500">
                     {DOC_TYPES.map(t => <option key={t} value={t}>{TYPE_LABELS[t] || t}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">MIME Type</label>
-                  <input value={form.mime_type} onChange={e => setForm({ ...form, mime_type: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500" placeholder="e.g. application/pdf" />
+                  <label className="block text-sm text-gray-500 mb-1">MIME Type</label>
+                  <input value={form.mime_type} onChange={e => setForm({ ...form, mime_type: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500" placeholder="e.g. application/pdf" />
                 </div>
               </div>
               <div>
-                <label className="block text-sm text-slate-400 mb-1">Employee</label>
-                <select value={form.employee_id} onChange={e => setForm({ ...form, employee_id: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500">
+                <label className="block text-sm text-gray-500 mb-1">Employee</label>
+                <select value={form.employee_id} onChange={e => setForm({ ...form, employee_id: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500">
                   <option value="">— General (no employee) —</option>
                   {employees.map((e: any) => <option key={e.employee_id} value={e.employee_id}>{e.first_name} {e.last_name}</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">File Size (bytes)</label>
-                  <input type="number" value={form.file_size} onChange={e => setForm({ ...form, file_size: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500" placeholder="0" />
+                  <label className="block text-sm text-gray-500 mb-1">File Size (bytes)</label>
+                  <input type="number" value={form.file_size} onChange={e => setForm({ ...form, file_size: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500" placeholder="0" />
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Expires At</label>
-                  <input type="date" value={form.expires_at} onChange={e => setForm({ ...form, expires_at: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500" />
+                  <label className="block text-sm text-gray-500 mb-1">Expires At</label>
+                  <input type="date" value={form.expires_at} onChange={e => setForm({ ...form, expires_at: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500" />
                 </div>
               </div>
               <div>
-                <label className="block text-sm text-slate-400 mb-1">Tags (comma-separated)</label>
-                <input value={form.tags} onChange={e => setForm({ ...form, tags: e.target.value })} className="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500" placeholder="e.g. signed, 2024, urgent" />
+                <label className="block text-sm text-gray-500 mb-1">Tags (comma-separated)</label>
+                <input value={form.tags} onChange={e => setForm({ ...form, tags: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500" placeholder="e.g. signed, 2024, urgent" />
               </div>
             </div>
-            <div className="flex justify-end gap-3 p-5 border-t border-slate-700">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-slate-700 rounded-lg transition-colors">Cancel</button>
+            <div className="flex justify-end gap-3 p-5 border-t border-gray-200">
+              <button onClick={() => setShowModal(false)} className="px-4 py-2.5 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">Cancel</button>
               <button onClick={handleSubmit} disabled={!form.filename} className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors">
                 {editDoc ? 'Save Changes' : 'Add Document'}
               </button>

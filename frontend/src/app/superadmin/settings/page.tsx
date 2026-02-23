@@ -167,12 +167,12 @@ export default function SuperadminSettingsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="flex min-h-screen bg-gray-50 dark:bg-slate-900">
+      <div className="flex min-h-screen bg-gray-50">
         <Sidebar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400 text-lg">Loading Platform Settings...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 text-lg">Loading Platform Settings...</p>
           </div>
         </div>
       </div>
@@ -184,7 +184,7 @@ export default function SuperadminSettingsPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-slate-900">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
       <div className="flex-1 flex flex-col min-h-screen">
         <TopHeader />
@@ -194,16 +194,16 @@ export default function SuperadminSettingsPage() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.push('/superadmin')}
-                className="p-2 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
               >
-                <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                <ArrowLeft className="w-5 h-5 text-gray-600" />
               </button>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-3">
                   <Shield className="w-8 h-8 text-amber-500" />
                   Platform Settings
                 </h1>
-                <p className="text-gray-600 dark:text-gray-400 mt-1">
+                <p className="text-gray-600 mt-1">
                   Configure pricing, billing, and platform-wide settings
                 </p>
               </div>
@@ -219,24 +219,24 @@ export default function SuperadminSettingsPage() {
 
           {/* Status Messages */}
           {error && (
-            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-3">
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
               <AlertTriangle className="w-5 h-5 text-red-500" />
-              <p className="text-red-700 dark:text-red-400">{error}</p>
+              <p className="text-red-700">{error}</p>
             </div>
           )}
 
           {success && (
-            <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-3">
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
               <CheckCircle className="w-5 h-5 text-green-500" />
-              <p className="text-green-700 dark:text-green-400">{success}</p>
+              <p className="text-green-700">{success}</p>
             </div>
           )}
 
           <div className="grid lg:grid-cols-2 gap-6">
             {/* Pricing Configuration Card */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-amber-500 to-orange-500">
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-amber-500 to-orange-500">
+                <h2 className="text-xl font-semibold text-white flex items-center gap-2">
                   <DollarSign className="w-6 h-6" />
                   Per-Guard Pricing
                 </h2>
@@ -248,9 +248,9 @@ export default function SuperadminSettingsPage() {
               <form onSubmit={handleUpdatePricing} className="p-6 space-y-6">
                 {/* Current Price Display */}
                 {pricing && (
-                  <div className="p-4 bg-gray-50 dark:bg-slate-700 rounded-lg">
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Current Price</p>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">Current Price</p>
+                    <p className="text-3xl font-bold text-gray-900">
                       {formatCurrency(pricing.monthly_rate_per_guard)}
                       <span className="text-lg font-normal text-gray-500"> /guard/month</span>
                     </p>
@@ -259,7 +259,7 @@ export default function SuperadminSettingsPage() {
 
                 {/* Price Input */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     New Price (ZAR per guard per month)
                   </label>
                   <div className="relative">
@@ -270,11 +270,11 @@ export default function SuperadminSettingsPage() {
                       onChange={(e) => setNewPrice(e.target.value)}
                       min="0"
                       step="0.01"
-                      className="w-full pl-8 pr-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                       placeholder="29.00"
                     />
                   </div>
-                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                  <p className="mt-2 text-sm text-gray-500 flex items-center gap-1">
                     <Info className="w-4 h-4" />
                     This affects all new invoices and the pricing displayed on the website
                   </p>
@@ -282,27 +282,27 @@ export default function SuperadminSettingsPage() {
 
                 {/* Preview Calculator */}
                 {newPrice && parseFloat(newPrice) > 0 && (
-                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                    <p className="text-sm font-medium text-blue-800 dark:text-blue-300 flex items-center gap-2 mb-3">
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <p className="text-sm font-medium text-blue-800 flex items-center gap-2 mb-3">
                       <Calculator className="w-4 h-4" />
                       Revenue Preview
                     </p>
                     <div className="grid grid-cols-3 gap-4 text-center">
                       <div>
-                        <p className="text-xs text-blue-600 dark:text-blue-400">50 Guards</p>
-                        <p className="font-bold text-blue-900 dark:text-blue-200">
+                        <p className="text-xs text-blue-600">50 Guards</p>
+                        <p className="font-bold text-blue-900">
                           {formatCurrency(parseFloat(newPrice) * 50)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-blue-600 dark:text-blue-400">100 Guards</p>
-                        <p className="font-bold text-blue-900 dark:text-blue-200">
+                        <p className="text-xs text-blue-600">100 Guards</p>
+                        <p className="font-bold text-blue-900">
                           {formatCurrency(parseFloat(newPrice) * 100)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-blue-600 dark:text-blue-400">300 Guards</p>
-                        <p className="font-bold text-blue-900 dark:text-blue-200">
+                        <p className="text-xs text-blue-600">300 Guards</p>
+                        <p className="font-bold text-blue-900">
                           {formatCurrency(parseFloat(newPrice) * 300)}
                         </p>
                       </div>
@@ -332,12 +332,12 @@ export default function SuperadminSettingsPage() {
             </div>
 
             {/* Other Settings Card */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h2 className="text-xl font-semibold text-gray-900">
                   Platform Configuration
                 </h2>
-                <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
+                <p className="text-gray-600 text-sm mt-1">
                   Additional platform-wide settings
                 </p>
               </div>
@@ -345,7 +345,7 @@ export default function SuperadminSettingsPage() {
               <div className="p-6 space-y-6">
                 {/* Free Trial Days */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Free Trial Duration (days)
                   </label>
                   <div className="flex gap-3">
@@ -354,7 +354,7 @@ export default function SuperadminSettingsPage() {
                       value={newTrialDays}
                       onChange={(e) => setNewTrialDays(e.target.value)}
                       min="0"
-                      className="flex-1 px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
                     />
                     <button
                       onClick={() => handleUpdateSetting('free_trial_days', parseInt(newTrialDays))}
@@ -368,7 +368,7 @@ export default function SuperadminSettingsPage() {
 
                 {/* VAT Percentage */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     VAT Percentage (%)
                   </label>
                   <div className="flex gap-3">
@@ -379,7 +379,7 @@ export default function SuperadminSettingsPage() {
                       min="0"
                       max="100"
                       step="0.1"
-                      className="flex-1 px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
                     />
                     <button
                       onClick={() => handleUpdateSetting('vat_percentage', parseFloat(newVat))}
@@ -393,26 +393,26 @@ export default function SuperadminSettingsPage() {
 
                 {/* Current Settings Summary */}
                 {pricing && (
-                  <div className="mt-6 p-4 bg-gray-50 dark:bg-slate-700 rounded-lg">
-                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                  <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3">
                       Current Configuration
                     </h3>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Platform Name</span>
-                        <span className="font-medium text-gray-900 dark:text-white">{pricing.platform_name}</span>
+                        <span className="text-gray-600">Platform Name</span>
+                        <span className="font-medium text-gray-900">{pricing.platform_name}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Currency</span>
-                        <span className="font-medium text-gray-900 dark:text-white">{pricing.currency}</span>
+                        <span className="text-gray-600">Currency</span>
+                        <span className="font-medium text-gray-900">{pricing.currency}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Free Trial</span>
-                        <span className="font-medium text-gray-900 dark:text-white">{pricing.free_trial_days} days</span>
+                        <span className="text-gray-600">Free Trial</span>
+                        <span className="font-medium text-gray-900">{pricing.free_trial_days} days</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">VAT Rate</span>
-                        <span className="font-medium text-gray-900 dark:text-white">{pricing.vat_percentage}%</span>
+                        <span className="text-gray-600">VAT Rate</span>
+                        <span className="font-medium text-gray-900">{pricing.vat_percentage}%</span>
                       </div>
                     </div>
                   </div>
@@ -423,26 +423,26 @@ export default function SuperadminSettingsPage() {
 
           {/* All Settings Debug View (for superadmin) */}
           {allSettings && Object.keys(allSettings).length > 0 && (
-            <div className="mt-6 bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+            <div className="mt-6 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-900">
                   All System Settings (Debug View)
                 </h2>
               </div>
               <div className="p-6">
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+                  <table className="min-w-full divide-y divide-gray-200">
                     <thead>
                       <tr>
                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Key</th>
                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Value</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+                    <tbody className="divide-y divide-gray-100">
                       {Object.entries(allSettings).map(([key, value]) => (
                         <tr key={key}>
-                          <td className="px-4 py-2 text-sm font-mono text-gray-600 dark:text-gray-400">{key}</td>
-                          <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">
+                          <td className="px-4 py-2 text-sm font-mono text-gray-600">{key}</td>
+                          <td className="px-4 py-2 text-sm text-gray-900">
                             {typeof value === 'boolean' ? (value ? 'true' : 'false') : String(value)}
                           </td>
                         </tr>

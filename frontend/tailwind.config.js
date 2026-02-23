@@ -64,7 +64,8 @@ module.exports = {
         'stat': '0 0 0 1px rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.05)',
       },
       borderRadius: {
-        'card': '12px',
+        'card': '0.75rem',
+        'btn': '0.5rem',
       },
       animation: {
         'fadeIn': 'fadeIn 0.3s ease-in-out',

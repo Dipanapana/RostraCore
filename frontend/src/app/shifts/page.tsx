@@ -211,8 +211,8 @@ export default function ShiftsPage() {
     {
       header: 'Site',
       cell: (shift) => (
-        <div className="flex items-center gap-2 text-slate-900 dark:text-white font-medium">
-          <MapPin className="w-4 h-4 text-slate-400" />
+        <div className="flex items-center gap-2 text-gray-900 font-medium">
+          <MapPin className="w-4 h-4 text-gray-400" />
           {getSiteName(shift.site_id)}
         </div>
       ),
@@ -221,11 +221,11 @@ export default function ShiftsPage() {
       header: 'Time',
       cell: (shift) => (
         <div className="flex flex-col text-sm">
-          <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+          <div className="flex items-center gap-2 text-gray-700">
             <Calendar className="w-3 h-3" />
             {new Date(shift.start_time).toLocaleDateString()}
           </div>
-          <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs mt-0.5">
+          <div className="flex items-center gap-2 text-gray-500 text-xs mt-0.5">
             <Clock className="w-3 h-3" />
             {new Date(shift.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} -
             {new Date(shift.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -236,7 +236,7 @@ export default function ShiftsPage() {
     {
       header: 'Assigned To',
       cell: (shift) => (
-        <div className={`flex items-center gap-2 ${!shift.assigned_employee_id ? 'text-amber-600 dark:text-amber-400' : 'text-slate-700 dark:text-slate-300'}`}>
+        <div className={`flex items-center gap-2 ${!shift.assigned_employee_id ? 'text-amber-600' : 'text-gray-700'}`}>
           <User className="w-4 h-4" />
           <span className="font-medium">{getEmployeeName(shift.assigned_employee_id)}</span>
         </div>
@@ -247,16 +247,16 @@ export default function ShiftsPage() {
       cell: (shift) => (
         <div className="flex items-center gap-2">
           <span
-            className={`px-2.5 py-0.5 inline-flex text-xs font-medium rounded-full ${shift.status === 'completed' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' :
-              shift.status === 'confirmed' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
-                shift.status === 'planned' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' :
-                  'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-400'
+            className={`px-2.5 py-0.5 inline-flex text-xs font-medium rounded-full ${shift.status === 'completed' ? 'bg-emerald-100 text-emerald-800' :
+              shift.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
+                shift.status === 'planned' ? 'bg-amber-100 text-amber-800' :
+                  'bg-gray-100 text-gray-800'
               }`}
           >
             {shift.status.toUpperCase()}
           </span>
           {shift.is_overtime && (
-            <span className="px-2 py-0.5 inline-flex text-xs font-medium rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
+            <span className="px-2 py-0.5 inline-flex text-xs font-medium rounded-full bg-purple-100 text-purple-800">
               OT
             </span>
           )}
@@ -269,7 +269,7 @@ export default function ShiftsPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600"></div>
         </div>
       </DashboardLayout>
     )
@@ -281,8 +281,8 @@ export default function ShiftsPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Shift Management</h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-1">
+            <h1 className="text-2xl font-semibold text-gray-900">Shift Management</h1>
+            <p className="text-gray-500 mt-1">
               Schedule and manage security shifts
             </p>
           </div>
@@ -290,14 +290,14 @@ export default function ShiftsPage() {
             <ExportButtons type="shifts" />
             <button
               onClick={() => setShowBulkGenerate(true)}
-              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-purple-500/20 transition-all hover:scale-105 active:scale-95"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
             >
               <Wand2 className="w-5 h-5" />
               Bulk Generate
             </button>
             <button
               onClick={() => setShowForm(true)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
             >
               <Plus className="w-5 h-5" />
               Create Shift
@@ -307,33 +307,33 @@ export default function ShiftsPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="glass-card p-4 rounded-xl">
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{shifts.length}</div>
-            <div className="text-sm text-slate-600 dark:text-slate-400">Total Shifts</div>
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+            <div className="text-2xl font-bold text-blue-600">{shifts.length}</div>
+            <div className="text-sm text-gray-600">Total Shifts</div>
           </div>
-          <div className="glass-card p-4 rounded-xl">
-            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+            <div className="text-2xl font-bold text-emerald-600">
               {shifts.filter(s => s.assigned_employee_id).length}
             </div>
-            <div className="text-sm text-slate-600 dark:text-slate-400">Assigned</div>
+            <div className="text-sm text-gray-600">Assigned</div>
           </div>
-          <div className="glass-card p-4 rounded-xl">
-            <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+            <div className="text-2xl font-bold text-amber-600">
               {shifts.filter(s => !s.assigned_employee_id).length}
             </div>
-            <div className="text-sm text-slate-600 dark:text-slate-400">Unassigned</div>
+            <div className="text-sm text-gray-600">Unassigned</div>
           </div>
-          <div className="glass-card p-4 rounded-xl">
-            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+            <div className="text-2xl font-bold text-purple-600">
               {shifts.filter(s => s.status === 'confirmed').length}
             </div>
-            <div className="text-sm text-slate-600 dark:text-slate-400">Confirmed</div>
+            <div className="text-sm text-gray-600">Confirmed</div>
           </div>
         </div>
 
         {/* Filters */}
         <div className="glass-panel p-4 rounded-xl space-y-4">
-          <div className="flex items-center gap-2 text-sm font-medium text-slate-900 dark:text-white mb-2">
+          <div className="flex items-center gap-2 text-sm font-medium text-gray-900 mb-2">
             <Filter className="w-4 h-4" />
             Filters
           </div>
@@ -341,7 +341,7 @@ export default function ShiftsPage() {
             <select
               value={filterSite}
               onChange={(e) => setFilterSite(e.target.value)}
-              className="w-full px-3 py-2 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             >
               <option value="">All Sites</option>
               {sites.map(site => (
@@ -354,7 +354,7 @@ export default function ShiftsPage() {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full px-3 py-2 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             >
               <option value="">All Statuses</option>
               <option value="planned">Planned</option>
@@ -366,7 +366,7 @@ export default function ShiftsPage() {
             <select
               value={filterEmployee}
               onChange={(e) => setFilterEmployee(e.target.value)}
-              className="w-full px-3 py-2 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             >
               <option value="">All Employees</option>
               {employees.map(emp => (
@@ -382,7 +382,7 @@ export default function ShiftsPage() {
                 setFilterStatus('')
                 setFilterEmployee('')
               }}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 rounded-lg text-sm font-medium transition-colors"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg text-sm font-medium transition-colors"
             >
               <X className="w-4 h-4" />
               Clear Filters
@@ -391,7 +391,7 @@ export default function ShiftsPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl animate-in fade-in slide-in-from-top-2">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl animate-in fade-in slide-in-from-top-2">
             {error}
           </div>
         )}
@@ -408,7 +408,7 @@ export default function ShiftsPage() {
                   e.stopPropagation()
                   handleEdit(shift)
                 }}
-                className="p-2 text-slate-400 dark:text-slate-300 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
                 title="Edit"
               >
                 <Pencil className="w-4 h-4" />
@@ -418,7 +418,7 @@ export default function ShiftsPage() {
                   e.stopPropagation()
                   handleDelete(shift.shift_id)
                 }}
-                className="p-2 text-slate-400 dark:text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                 title="Delete"
               >
                 <Trash2 className="w-4 h-4" />
@@ -454,12 +454,12 @@ export default function ShiftsPage() {
           <div className="space-y-6">
             {/* Success/Error Result */}
             {bulkResult && (
-              <div className={`p-4 rounded-lg ${bulkResult.success ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800' : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'}`}>
-                <h4 className={`font-medium ${bulkResult.success ? 'text-emerald-800 dark:text-emerald-400' : 'text-red-800 dark:text-red-400'}`}>
+              <div className={`p-4 rounded-lg ${bulkResult.success ? 'bg-emerald-50 border border-emerald-200' : 'bg-red-50 border border-red-200'}`}>
+                <h4 className={`font-medium ${bulkResult.success ? 'text-emerald-800' : 'text-red-700'}`}>
                   {bulkResult.success ? '✓ Shifts Generated Successfully' : '✗ Generation Failed'}
                 </h4>
                 {bulkResult.success && (
-                  <div className="mt-2 text-sm text-emerald-700 dark:text-emerald-300">
+                  <div className="mt-2 text-sm text-emerald-700">
                     <p>Created {bulkResult.shifts_created} shifts across {bulkResult.sites_processed} sites</p>
                     <p className="text-xs mt-1">{bulkResult.date_range}</p>
                     {bulkResult.details?.map((d: any, i: number) => (
@@ -468,7 +468,7 @@ export default function ShiftsPage() {
                   </div>
                 )}
                 {bulkResult.errors?.length > 0 && (
-                  <div className="mt-2 text-sm text-red-700 dark:text-red-300 max-h-32 overflow-y-auto">
+                  <div className="mt-2 text-sm text-red-700 max-h-32 overflow-y-auto">
                     {bulkResult.errors.slice(0, 10).map((err: string, i: number) => (
                       <p key={i} className="text-xs">• {err}</p>
                     ))}
@@ -483,46 +483,46 @@ export default function ShiftsPage() {
             {/* Site Selection */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                <label className="block text-sm font-medium text-gray-700">
                   Select Sites ({selectedSites.length} selected)
                 </label>
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={selectAllSites}
-                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                    className="text-xs text-blue-600 hover:underline"
                   >
                     Select All
                   </button>
                   <button
                     type="button"
                     onClick={deselectAllSites}
-                    className="text-xs text-slate-500 dark:text-slate-400 hover:underline"
+                    className="text-xs text-gray-500 hover:underline"
                   >
                     Deselect All
                   </button>
                 </div>
               </div>
-              <div className="max-h-40 overflow-y-auto border border-slate-200 dark:border-white/10 rounded-lg p-2 space-y-1">
+              <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-1">
                 {sites.length === 0 ? (
-                  <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-2">No sites available</p>
+                  <p className="text-sm text-gray-500 text-center py-2">No sites available</p>
                 ) : (
                   sites.map(site => (
                     <label
                       key={site.site_id}
                       className={`flex items-center gap-2 p-2 rounded cursor-pointer transition-colors ${
                         selectedSites.includes(site.site_id)
-                          ? 'bg-blue-50 dark:bg-blue-900/20'
-                          : 'hover:bg-slate-50 dark:hover:bg-white/5'
+                          ? 'bg-blue-50'
+                          : 'hover:bg-gray-50'
                       }`}
                     >
                       <input
                         type="checkbox"
                         checked={selectedSites.includes(site.site_id)}
                         onChange={() => toggleSiteSelection(site.site_id)}
-                        className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                       />
-                      <span className="text-sm text-slate-700 dark:text-slate-300">
+                      <span className="text-sm text-gray-700">
                         {site.site_name || site.client_name}
                       </span>
                     </label>
@@ -534,25 +534,25 @@ export default function ShiftsPage() {
             {/* Date Range */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Start Date
                 </label>
                 <input
                   type="date"
                   value={bulkStartDate}
                   onChange={(e) => setBulkStartDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   End Date
                 </label>
                 <input
                   type="date"
                   value={bulkEndDate}
                   onChange={(e) => setBulkEndDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                 />
               </div>
             </div>
@@ -570,7 +570,7 @@ export default function ShiftsPage() {
                   setBulkStartDate(startOfWeek.toISOString().split('T')[0])
                   setBulkEndDate(endOfWeek.toISOString().split('T')[0])
                 }}
-                className="px-3 py-1 text-xs bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 rounded-full"
+                className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full"
               >
                 This Week
               </button>
@@ -585,7 +585,7 @@ export default function ShiftsPage() {
                   setBulkStartDate(startOfWeek.toISOString().split('T')[0])
                   setBulkEndDate(endOfWeek.toISOString().split('T')[0])
                 }}
-                className="px-3 py-1 text-xs bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 rounded-full"
+                className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full"
               >
                 Next Week
               </button>
@@ -600,7 +600,7 @@ export default function ShiftsPage() {
                   setBulkStartDate(startOfWeek.toISOString().split('T')[0])
                   setBulkEndDate(endOfBiWeek.toISOString().split('T')[0])
                 }}
-                className="px-3 py-1 text-xs bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 rounded-full"
+                className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full"
               >
                 2 Weeks
               </button>
@@ -613,7 +613,7 @@ export default function ShiftsPage() {
                   setBulkStartDate(startOfMonth.toISOString().split('T')[0])
                   setBulkEndDate(endOfMonth.toISOString().split('T')[0])
                 }}
-                className="px-3 py-1 text-xs bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 rounded-full"
+                className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full"
               >
                 This Month
               </button>
@@ -622,13 +622,13 @@ export default function ShiftsPage() {
             {/* Shift Templates */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                <label className="block text-sm font-medium text-gray-700">
                   Shift Templates ({shiftTemplates.length})
                 </label>
                 <button
                   type="button"
                   onClick={addShiftTemplate}
-                  className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                  className="flex items-center gap-1 text-xs text-blue-600 hover:underline"
                 >
                   <Plus className="w-3 h-3" /> Add Template
                 </button>
@@ -637,12 +637,12 @@ export default function ShiftsPage() {
                 {shiftTemplates.map((template, index) => (
                   <div
                     key={index}
-                    className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-white/5 rounded-lg"
+                    className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg"
                   >
                     <select
                       value={template.day_of_week}
                       onChange={(e) => updateShiftTemplate(index, 'day_of_week', parseInt(e.target.value))}
-                      className="px-2 py-1 text-sm bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded text-slate-900 dark:text-white"
+                      className="px-2 py-1 text-sm bg-white border border-gray-200 rounded text-gray-900"
                     >
                       {dayNames.map((day, dayIndex) => (
                         <option key={dayIndex} value={dayIndex}>{day}</option>
@@ -652,14 +652,14 @@ export default function ShiftsPage() {
                       type="time"
                       value={template.start_time}
                       onChange={(e) => updateShiftTemplate(index, 'start_time', e.target.value)}
-                      className="px-2 py-1 text-sm bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded text-slate-900 dark:text-white"
+                      className="px-2 py-1 text-sm bg-white border border-gray-200 rounded text-gray-900"
                     />
-                    <span className="text-slate-400">to</span>
+                    <span className="text-gray-400">to</span>
                     <input
                       type="time"
                       value={template.end_time}
                       onChange={(e) => updateShiftTemplate(index, 'end_time', e.target.value)}
-                      className="px-2 py-1 text-sm bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded text-slate-900 dark:text-white"
+                      className="px-2 py-1 text-sm bg-white border border-gray-200 rounded text-gray-900"
                     />
                     <input
                       type="number"
@@ -667,34 +667,34 @@ export default function ShiftsPage() {
                       max="20"
                       value={template.required_staff}
                       onChange={(e) => updateShiftTemplate(index, 'required_staff', parseInt(e.target.value) || 1)}
-                      className="w-16 px-2 py-1 text-sm bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded text-slate-900 dark:text-white"
+                      className="w-16 px-2 py-1 text-sm bg-white border border-gray-200 rounded text-gray-900"
                       title="Guards needed"
                     />
-                    <span className="text-xs text-slate-500">guards</span>
+                    <span className="text-xs text-gray-500">guards</span>
                     <button
                       type="button"
                       onClick={() => removeShiftTemplate(index)}
-                      className="ml-auto p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                      className="ml-auto p-1 text-red-500 hover:bg-red-50 rounded"
                     >
                       <X className="w-4 h-4" />
                     </button>
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+              <p className="text-xs text-gray-500 mt-2">
                 Templates apply to all selected days in the date range. For overnight shifts (e.g., 18:00 to 06:00), end time is assumed to be the next day.
               </p>
             </div>
 
             {/* Generate Button */}
-            <div className="flex justify-end gap-3 pt-4 border-t dark:border-white/10">
+            <div className="flex justify-end gap-3 pt-4 border-t">
               <button
                 type="button"
                 onClick={() => {
                   setShowBulkGenerate(false)
                   setBulkResult(null)
                 }}
-                className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors"
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 Cancel
               </button>
@@ -702,7 +702,7 @@ export default function ShiftsPage() {
                 type="button"
                 onClick={handleBulkGenerate}
                 disabled={bulkLoading || selectedSites.length === 0 || !bulkStartDate || !bulkEndDate}
-                className="flex items-center gap-2 px-6 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-400 text-white rounded-lg font-medium transition-colors disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors disabled:cursor-not-allowed"
               >
                 {bulkLoading ? (
                   <>

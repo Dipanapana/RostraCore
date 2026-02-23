@@ -200,7 +200,7 @@ export default function EmployeeCombobox({
     return (
         <div ref={containerRef} className={`relative ${className}`}>
             {label && (
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     {label}
                     {required && (
                         <span className="text-red-500 ml-0.5">*</span>
@@ -211,7 +211,7 @@ export default function EmployeeCombobox({
             {/* Input container */}
             <div className="relative">
                 {/* Search icon */}
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
 
                 <input
                     ref={inputRef}
@@ -227,7 +227,7 @@ export default function EmployeeCombobox({
                     onKeyDown={handleKeyDown}
                     placeholder={placeholder}
                     disabled={disabled}
-                    className={`w-full px-3 py-2.5 pl-10 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400 dark:placeholder:text-slate-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+                    className={`w-full px-3 py-2.5 pl-10 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
                         selectedEmployee && !isOpen ? 'pr-16' : 'pr-10'
                     }`}
                 />
@@ -239,7 +239,7 @@ export default function EmployeeCombobox({
                         <button
                             type="button"
                             onClick={handleClear}
-                            className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                            className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
                             aria-label="Clear selection"
                             tabIndex={-1}
                         >
@@ -256,7 +256,7 @@ export default function EmployeeCombobox({
                                 inputRef.current?.focus()
                             }
                         }}
-                        className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                        className="p-1 rounded text-gray-400 hover:text-gray-600 transition-colors"
                         aria-label="Toggle dropdown"
                         tabIndex={-1}
                     >
@@ -274,10 +274,10 @@ export default function EmployeeCombobox({
                 <ul
                     ref={listRef}
                     role="listbox"
-                    className="absolute z-50 mt-1 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-xl max-h-60 overflow-y-auto"
+                    className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto"
                 >
                     {filteredEmployees.length === 0 ? (
-                        <li className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400 text-center">
+                        <li className="px-4 py-3 text-sm text-gray-500 text-center">
                             No employees found
                         </li>
                     ) : (
@@ -299,11 +299,11 @@ export default function EmployeeCombobox({
                                     }
                                     className={`px-4 py-2.5 cursor-pointer transition-colors ${
                                         isSelected
-                                            ? 'bg-blue-50 dark:bg-blue-900/20'
+                                            ? 'bg-blue-50'
                                             : ''
                                     } ${
                                         isHighlighted && !isSelected
-                                            ? 'bg-slate-100 dark:bg-slate-700'
+                                            ? 'bg-gray-100'
                                             : ''
                                     } ${
                                         inactive
@@ -315,22 +315,22 @@ export default function EmployeeCombobox({
                                         <span
                                             className={`text-sm font-medium ${
                                                 inactive
-                                                    ? 'text-slate-400 dark:text-slate-500'
-                                                    : 'text-slate-900 dark:text-slate-100'
+                                                    ? 'text-gray-400'
+                                                    : 'text-gray-900'
                                             }`}
                                         >
                                             {employee.first_name}{' '}
                                             {employee.last_name}
                                         </span>
-                                        <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                                        <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
                                             {capitalizeFirst(employee.role)}
                                         </span>
                                     </div>
                                     <div
                                         className={`text-xs mt-0.5 ${
                                             inactive
-                                                ? 'text-slate-400 dark:text-slate-600'
-                                                : 'text-slate-500 dark:text-slate-400'
+                                                ? 'text-gray-400'
+                                                : 'text-gray-500'
                                         }`}
                                     >
                                         {employee.id_number}

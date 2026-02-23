@@ -3,7 +3,7 @@ import { LucideIcon } from 'lucide-react'
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger'
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'xs' | 'sm' | 'md' | 'lg'
   icon?: LucideIcon
   iconPosition?: 'left' | 'right'
   loading?: boolean
@@ -11,17 +11,18 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses = {
-  primary: 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm',
+  primary: 'bg-blue-600 hover:bg-blue-700 text-white',
   secondary: 'bg-gray-100 hover:bg-gray-200 text-gray-900',
-  outline: 'border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 text-gray-700',
-  ghost: 'hover:bg-gray-100 text-gray-700',
-  danger: 'bg-red-600 hover:bg-red-700 text-white shadow-sm',
+  outline: 'border border-gray-300 hover:border-gray-400 hover:bg-gray-50 text-gray-700',
+  ghost: 'hover:bg-gray-100 text-gray-600',
+  danger: 'bg-red-600 hover:bg-red-700 text-white',
 }
 
 const sizeClasses = {
+  xs: 'px-2.5 py-1 text-xs',
   sm: 'px-3 py-1.5 text-sm',
-  md: 'px-4 py-2 text-base',
-  lg: 'px-6 py-3 text-lg',
+  md: 'px-4 py-2 text-sm',
+  lg: 'px-6 py-3 text-base',
 }
 
 export default function Button({
@@ -36,7 +37,7 @@ export default function Button({
   className = '',
   ...props
 }: ButtonProps) {
-  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed'
+  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed'
 
   const classes = `
     ${baseClasses}

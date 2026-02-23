@@ -65,7 +65,7 @@ class Employee(Base):
     role = Column(SQLEnum(EmployeeRole), nullable=False)
 
     # Pay configuration
-    pay_type = Column(SQLEnum(PayType), default=PayType.HOURLY, nullable=False)
+    pay_type = Column(String(20), default="hourly", nullable=False)
     hourly_rate = Column(Float, nullable=True)       # Required when pay_type='hourly'
     monthly_salary = Column(Numeric(10, 2), nullable=True)  # Required when pay_type='monthly_fixed'
 

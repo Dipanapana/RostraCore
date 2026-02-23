@@ -57,10 +57,10 @@ function fmtDate(iso: string | null) {
 }
 
 const SEVERITY_CONFIG: Record<string, { label: string; bg: string; text: string; icon: any }> = {
-  expired: { label: 'Expired', bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-400', icon: XCircle },
-  critical: { label: 'Expiring ≤30d', bg: 'bg-orange-100 dark:bg-orange-900/30', text: 'text-orange-700 dark:text-orange-400', icon: AlertTriangle },
-  warning: { label: 'Expiring ≤90d', bg: 'bg-amber-100 dark:bg-amber-900/30', text: 'text-amber-700 dark:text-amber-400', icon: Clock },
-  ok: { label: 'Active', bg: 'bg-emerald-100 dark:bg-emerald-900/30', text: 'text-emerald-700 dark:text-emerald-400', icon: CheckCircle2 },
+  expired: { label: 'Expired', bg: 'bg-red-100', text: 'text-red-700', icon: XCircle },
+  critical: { label: 'Expiring ≤30d', bg: 'bg-orange-100', text: 'text-orange-700', icon: AlertTriangle },
+  warning: { label: 'Expiring ≤90d', bg: 'bg-amber-100', text: 'text-amber-700', icon: Clock },
+  ok: { label: 'Active', bg: 'bg-emerald-100', text: 'text-emerald-700', icon: CheckCircle2 },
 }
 
 // ---------------------------------------------------------------------------
@@ -94,7 +94,7 @@ export default function ContractRenewalsPage() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[60vh] text-slate-400">
+        <div className="flex items-center justify-center min-h-[60vh] text-gray-400">
           <Loader2 className="w-6 h-6 animate-spin mr-2" /> Loading contract data…
         </div>
       </DashboardLayout>
@@ -107,17 +107,17 @@ export default function ContractRenewalsPage() {
 
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
             <CalendarClock className="w-6 h-6 text-violet-500" />
             Contract Renewals
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-sm text-gray-500 mt-1">
             Track upcoming contract expirations to ensure timely renewals and avoid service gaps.
           </p>
         </div>
 
         {error && (
-          <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+          <p className="text-sm text-red-600 flex items-center gap-1">
             <AlertTriangle className="w-4 h-4" /> {error}
           </p>
         )}
@@ -127,33 +127,33 @@ export default function ContractRenewalsPage() {
             {/* KPI cards */}
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
               {[
-                { label: 'Total Clients', value: s.total, color: 'text-slate-600', bg: 'bg-slate-50 dark:bg-slate-900/30', icon: Building2 },
-                { label: 'Expired', value: s.expired, color: 'text-red-500', bg: 'bg-red-50 dark:bg-red-900/20', icon: XCircle },
-                { label: 'Within 30 Days', value: s.critical, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-900/20', icon: AlertTriangle },
-                { label: 'Within 90 Days', value: s.warning, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20', icon: Clock },
-                { label: 'No End Date', value: s.no_end_date, color: 'text-slate-400', bg: 'bg-slate-50 dark:bg-slate-900/30', icon: FileText },
+                { label: 'Total Clients', value: s.total, color: 'text-gray-600', bg: 'bg-gray-50', icon: Building2 },
+                { label: 'Expired', value: s.expired, color: 'text-red-500', bg: 'bg-red-50', icon: XCircle },
+                { label: 'Within 30 Days', value: s.critical, color: 'text-orange-500', bg: 'bg-orange-50', icon: AlertTriangle },
+                { label: 'Within 90 Days', value: s.warning, color: 'text-amber-500', bg: 'bg-amber-50', icon: Clock },
+                { label: 'No End Date', value: s.no_end_date, color: 'text-gray-400', bg: 'bg-gray-50', icon: FileText },
               ].map(({ label, value, color, bg, icon: Icon }) => (
-                <div key={label} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm">
+                <div key={label} className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
+                    <p className="text-xs font-medium text-gray-500">{label}</p>
                     <div className={`${bg} rounded-lg p-1.5`}>
                       <Icon className={`w-4 h-4 ${color}`} />
                     </div>
                   </div>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{value}</p>
+                  <p className="text-2xl font-bold text-gray-900">{value}</p>
                 </div>
               ))}
             </div>
 
             {/* Alert banner for expired contracts */}
             {s.expired > 0 && (
-              <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-xl p-4 flex items-start gap-3">
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
                 <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-red-800 dark:text-red-300">
+                  <p className="text-sm font-semibold text-red-700">
                     {s.expired} contract{s.expired !== 1 ? 's have' : ' has'} expired
                   </p>
-                  <p className="text-xs text-red-700 dark:text-red-400 mt-0.5">
+                  <p className="text-xs text-red-700 mt-0.5">
                     Contact these clients immediately to negotiate renewal terms and avoid service disruption.
                   </p>
                 </div>
@@ -175,7 +175,7 @@ export default function ContractRenewalsPage() {
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                     severityFilter === key
                       ? 'bg-violet-600 text-white'
-                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
+                      : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
                   }`}
                 >
                   {label}
@@ -185,55 +185,55 @@ export default function ContractRenewalsPage() {
 
             {/* Contract table */}
             {filtered.length > 0 ? (
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30">
+                      <tr className="border-b border-gray-100 bg-gray-50/50">
                         {['Client', 'Contract Start', 'Contract End', 'Days Left', 'Sites', 'Rate', 'Status'].map((h) => (
-                          <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">
+                          <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
                             {h}
                           </th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50 dark:divide-slate-700/30">
+                    <tbody className="divide-y divide-gray-50">
                       {filtered.map((alert) => {
                         const cfg = SEVERITY_CONFIG[alert.severity] ?? SEVERITY_CONFIG.ok
                         const SevIcon = cfg.icon
                         return (
-                          <tr key={alert.client_id} className="hover:bg-slate-50 dark:hover:bg-slate-700/20 transition-colors">
+                          <tr key={alert.client_id} className="hover:bg-gray-50 transition-colors">
                             <td className="px-4 py-3 whitespace-nowrap">
                               <Link
                                 href={`/clients/${alert.client_id}`}
-                                className="font-medium text-violet-600 dark:text-violet-400 hover:underline"
+                                className="font-medium text-violet-600 hover:underline"
                               >
                                 {alert.client_name}
                               </Link>
                             </td>
-                            <td className="px-4 py-3 text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                            <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
                               {fmtDate(alert.contract_start_date)}
                             </td>
-                            <td className="px-4 py-3 text-slate-700 dark:text-slate-300 whitespace-nowrap font-medium">
+                            <td className="px-4 py-3 text-gray-700 whitespace-nowrap font-medium">
                               {fmtDate(alert.contract_end_date)}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap">
                               {alert.days_remaining < 0 ? (
-                                <span className="text-red-600 dark:text-red-400 font-semibold">
+                                <span className="text-red-600 font-semibold">
                                   {Math.abs(alert.days_remaining)}d overdue
                                 </span>
                               ) : (
                                 <span className={`font-semibold ${
-                                  alert.days_remaining <= 30 ? 'text-orange-600 dark:text-orange-400' :
-                                  alert.days_remaining <= 90 ? 'text-amber-600 dark:text-amber-400' :
-                                  'text-slate-700 dark:text-slate-300'
+                                  alert.days_remaining <= 30 ? 'text-orange-600' :
+                                  alert.days_remaining <= 90 ? 'text-amber-600' :
+                                  'text-gray-700'
                                 }`}>
                                   {alert.days_remaining}d
                                 </span>
                               )}
                             </td>
-                            <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{alert.site_count}</td>
-                            <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                            <td className="px-4 py-3 text-gray-600">{alert.site_count}</td>
+                            <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
                               {alert.billing_rate ? `R${alert.billing_rate}/hr` : '—'}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap">
@@ -250,17 +250,17 @@ export default function ContractRenewalsPage() {
                 </div>
               </div>
             ) : (
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-8 text-center">
+              <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
                 {severityFilter === 'all' ? (
                   <>
                     <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
-                    <p className="text-slate-500 dark:text-slate-400">No clients with contract end dates found.</p>
-                    <p className="text-xs text-slate-400 mt-1">Set contract end dates on your clients to enable expiry tracking.</p>
+                    <p className="text-gray-500">No clients with contract end dates found.</p>
+                    <p className="text-xs text-gray-400 mt-1">Set contract end dates on your clients to enable expiry tracking.</p>
                   </>
                 ) : (
                   <>
                     <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
-                    <p className="text-slate-500 dark:text-slate-400">No contracts match this filter.</p>
+                    <p className="text-gray-500">No contracts match this filter.</p>
                   </>
                 )}
               </div>

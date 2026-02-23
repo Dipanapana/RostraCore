@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import PageHeader from "@/components/ui/PageHeader";
 import { invoiceApi } from "@/services/api";
 import { useToast } from "@/context/ToastContext";
 import {
-  ArrowLeft,
   Download,
   Send,
   CheckCircle,
@@ -64,35 +64,35 @@ interface InvoiceDetail {
 
 const STATUS_CONFIG: Record<
   string,
-  { color: string; darkColor: string; label: string; bgAccent: string }
+  { color: string; label: string; bgAccent: string }
 > = {
   draft: {
     color: "bg-gray-100 text-gray-800",
-    darkColor: "dark:bg-gray-700 dark:text-gray-300",
+
     label: "Draft",
     bgAccent: "border-gray-400",
   },
   sent: {
     color: "bg-blue-100 text-blue-800",
-    darkColor: "dark:bg-blue-900/30 dark:text-blue-400",
+
     label: "Sent",
     bgAccent: "border-blue-500",
   },
   paid: {
-    color: "bg-green-100 text-green-800",
-    darkColor: "dark:bg-green-900/30 dark:text-green-400",
+    color: "bg-emerald-50 text-emerald-700",
+
     label: "Paid",
     bgAccent: "border-green-500",
   },
   overdue: {
-    color: "bg-red-100 text-red-800",
-    darkColor: "dark:bg-red-900/30 dark:text-red-400",
+    color: "bg-red-50 text-red-700",
+
     label: "Overdue",
     bgAccent: "border-red-500",
   },
   cancelled: {
     color: "bg-gray-200 text-gray-600",
-    darkColor: "dark:bg-gray-600 dark:text-gray-400",
+
     label: "Cancelled",
     bgAccent: "border-gray-500",
   },
@@ -102,7 +102,7 @@ function getStatusConfig(status: string) {
   return (
     STATUS_CONFIG[status.toLowerCase()] ?? {
       color: "bg-gray-100 text-gray-800",
-      darkColor: "dark:bg-gray-700 dark:text-gray-300",
+  
       label: status,
       bgAccent: "border-gray-400",
     }
@@ -137,7 +137,6 @@ const WORKFLOW_STEPS = [
 
 export default function InvoiceDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const toast = useToast();
   const invoiceId = Number(params.id);
 
@@ -251,8 +250,8 @@ export default function InvoiceDetailPage() {
       <DashboardLayout>
         <div className="flex items-center justify-center py-24">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-            <p className="mt-4 text-slate-600 dark:text-slate-400">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">
               Loading invoice...
             </p>
           </div>
@@ -266,19 +265,14 @@ export default function InvoiceDetailPage() {
       <DashboardLayout>
         <div className="flex items-center justify-center py-24">
           <div className="text-center">
-            <FileText className="w-16 h-16 mx-auto mb-4 text-slate-300 dark:text-slate-600" />
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+            <FileText className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">
               Invoice Not Found
             </h2>
-            <p className="text-slate-500 dark:text-slate-400 mb-4">
+            <p className="text-gray-500 mb-4">
               {error || "The requested invoice could not be found."}
             </p>
-            <button
-              onClick={() => router.push("/billing/invoices")}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-            >
-              Back to Invoices
-            </button>
+            <PageHeader backHref="/billing/invoices" backLabel="Back to Invoices" />
           </div>
         </div>
       </DashboardLayout>
@@ -296,19 +290,13 @@ export default function InvoiceDetailPage() {
       <div className="space-y-6 max-w-5xl mx-auto">
         {/* Back button + Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <button
-            onClick={() => router.push("/billing/invoices")}
-            className="flex items-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 mr-1" />
-            Back to Invoices
-          </button>
+          <PageHeader backHref="/billing/invoices" backLabel="Back to Invoices" />
 
           <div className="flex gap-2 flex-wrap">
             <button
               onClick={handleDownloadPdf}
               disabled={actionLoading}
-              className="px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 disabled:opacity-50 flex items-center gap-2 text-sm transition-colors"
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 flex items-center gap-2 text-sm transition-colors"
             >
               <Download className="w-4 h-4" />
               Download PDF
@@ -329,7 +317,7 @@ export default function InvoiceDetailPage() {
               <button
                 onClick={() => setShowPayModal(true)}
                 disabled={actionLoading}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2 text-sm transition-colors"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 text-sm transition-colors"
               >
                 <CheckCircle className="w-4 h-4" />
                 Mark as Paid
@@ -340,7 +328,7 @@ export default function InvoiceDetailPage() {
               <button
                 onClick={handleCancelInvoice}
                 disabled={actionLoading}
-                className="px-4 py-2 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 flex items-center gap-2 text-sm transition-colors"
+                className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 disabled:opacity-50 flex items-center gap-2 text-sm transition-colors"
               >
                 <XCircle className="w-4 h-4" />
                 Void / Cancel
@@ -351,7 +339,7 @@ export default function InvoiceDetailPage() {
 
         {/* Status Workflow Indicator */}
         {!isCancelled && (
-          <div className="bg-white dark:bg-slate-800 shadow rounded-lg p-4">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
             <div className="flex items-center justify-between">
               {WORKFLOW_STEPS.map((step, index) => {
                 const isCompleted = currentStepIndex > index;
@@ -364,8 +352,8 @@ export default function InvoiceDetailPage() {
                           isCompleted
                             ? "bg-green-500 text-white"
                             : isCurrent
-                              ? "bg-purple-600 text-white"
-                              : "bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
+                              ? "bg-blue-600 text-white"
+                              : "bg-gray-200 text-gray-500"
                         }`}
                       >
                         {isCompleted ? (
@@ -377,10 +365,10 @@ export default function InvoiceDetailPage() {
                       <span
                         className={`text-sm font-medium ${
                           isCurrent
-                            ? "text-purple-600 dark:text-purple-400"
+                            ? "text-blue-600"
                             : isCompleted
-                              ? "text-green-600 dark:text-green-400"
-                              : "text-slate-500 dark:text-slate-400"
+                              ? "text-green-600"
+                              : "text-gray-500"
                         }`}
                       >
                         {step.label}
@@ -391,7 +379,7 @@ export default function InvoiceDetailPage() {
                         className={`flex-1 h-0.5 mx-4 ${
                           isCompleted
                             ? "bg-green-500"
-                            : "bg-slate-200 dark:bg-slate-700"
+                            : "bg-gray-200"
                         }`}
                       />
                     )}
@@ -404,39 +392,39 @@ export default function InvoiceDetailPage() {
 
         {/* Cancelled Banner */}
         {isCancelled && (
-          <div className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 px-4 py-3 rounded-lg flex items-center gap-2">
+          <div className="bg-gray-50 border border-gray-200 text-gray-600 px-4 py-3 rounded-lg flex items-center gap-2">
             <XCircle className="w-5 h-5" />
             <span className="font-medium">This invoice has been cancelled.</span>
           </div>
         )}
 
         {/* Invoice Preview Card */}
-        <div className={`bg-white dark:bg-slate-800 shadow rounded-2xl overflow-hidden border-t-4 ${cfg.bgAccent}`}>
+        <div className={`bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden border-t-4 ${cfg.bgAccent}`}>
           {/* Invoice Header */}
-          <div className="p-6 sm:p-8 border-b border-slate-200 dark:border-slate-700">
+          <div className="p-6 sm:p-8 border-b border-gray-200">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
               {/* Company Info */}
               <div>
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                <h2 className="text-2xl font-semibold text-gray-900">
                   {invoice.company_name || "Your Company"}
                 </h2>
                 {invoice.company_address && (
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 whitespace-pre-line">
+                  <p className="text-sm text-gray-500 mt-1 whitespace-pre-line">
                     {invoice.company_address}
                   </p>
                 )}
                 {invoice.company_phone && (
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                  <p className="text-sm text-gray-500">
                     {invoice.company_phone}
                   </p>
                 )}
                 {invoice.company_email && (
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                  <p className="text-sm text-gray-500">
                     {invoice.company_email}
                   </p>
                 )}
                 {invoice.company_vat_number && (
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                  <p className="text-sm text-gray-500">
                     VAT: {invoice.company_vat_number}
                   </p>
                 )}
@@ -445,19 +433,19 @@ export default function InvoiceDetailPage() {
               {/* Invoice Meta */}
               <div className="text-right">
                 <div className="flex items-center gap-3 justify-end mb-2">
-                  <h3 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
+                  <h3 className="text-2xl font-semibold text-gray-900">
                     INVOICE
                   </h3>
                   <span
-                    className={`px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${cfg.color} ${cfg.darkColor}`}
+                    className={`px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${cfg.color}`}
                   >
                     {cfg.label}
                   </span>
                 </div>
-                <p className="text-lg font-mono text-slate-700 dark:text-slate-300">
+                <p className="text-lg font-mono text-gray-700">
                   #{invoice.invoice_number}
                 </p>
-                <div className="mt-3 space-y-1 text-sm text-slate-500 dark:text-slate-400">
+                <div className="mt-3 space-y-1 text-sm text-gray-500">
                   <p>
                     <span className="font-medium">Date:</span>{" "}
                     {formatDate(invoice.invoice_date)}
@@ -483,25 +471,25 @@ export default function InvoiceDetailPage() {
           </div>
 
           {/* Bill To */}
-          <div className="p-6 sm:p-8 border-b border-slate-200 dark:border-slate-700">
-            <h4 className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+          <div className="p-6 sm:p-8 border-b border-gray-200">
+            <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
               Bill To
             </h4>
-            <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+            <p className="text-lg font-semibold text-gray-900">
               {invoice.client_name || `Client #${invoice.client_id}`}
             </p>
             {invoice.client_address && (
-              <p className="text-sm text-slate-500 dark:text-slate-400 whitespace-pre-line">
+              <p className="text-sm text-gray-500 whitespace-pre-line">
                 {invoice.client_address}
               </p>
             )}
             {invoice.client_email && (
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-sm text-gray-500">
                 {invoice.client_email}
               </p>
             )}
             {invoice.client_phone && (
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-sm text-gray-500">
                 {invoice.client_phone}
               </p>
             )}
@@ -511,50 +499,50 @@ export default function InvoiceDetailPage() {
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead>
-                <tr className="bg-slate-50 dark:bg-slate-900/50">
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider w-12">
+                <tr className="bg-gray-50">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
                     #
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Description
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Hours
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Shifts
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Rate
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Amount
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+              <tbody className="divide-y divide-gray-200">
                 {invoice.line_items && invoice.line_items.length > 0 ? (
                   invoice.line_items.map((item, index) => (
                     <tr
                       key={item.id || index}
-                      className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors"
+                      className="hover:bg-gray-50 transition-colors"
                     >
-                      <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
+                      <td className="px-6 py-4 text-sm text-gray-500">
                         {index + 1}
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-900 dark:text-slate-100">
+                      <td className="px-6 py-4 text-sm text-gray-900">
                         {item.description}
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-900 dark:text-slate-200 text-right">
+                      <td className="px-6 py-4 text-sm text-gray-900 text-right">
                         {item.hours.toFixed(1)}
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-900 dark:text-slate-200 text-right">
+                      <td className="px-6 py-4 text-sm text-gray-900 text-right">
                         {item.shifts}
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-900 dark:text-slate-200 text-right">
+                      <td className="px-6 py-4 text-sm text-gray-900 text-right">
                         {formatCurrency(item.rate)}
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium text-slate-900 dark:text-slate-100 text-right">
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900 text-right">
                         {formatCurrency(item.amount)}
                       </td>
                     </tr>
@@ -563,7 +551,7 @@ export default function InvoiceDetailPage() {
                   <tr>
                     <td
                       colSpan={6}
-                      className="px-6 py-8 text-center text-slate-500 dark:text-slate-400 text-sm"
+                      className="px-6 py-8 text-center text-gray-500 text-sm"
                     >
                       No line items
                     </td>
@@ -574,31 +562,31 @@ export default function InvoiceDetailPage() {
           </div>
 
           {/* Financial Summary */}
-          <div className="p-6 sm:p-8 border-t border-slate-200 dark:border-slate-700">
+          <div className="p-6 sm:p-8 border-t border-gray-200">
             <div className="flex justify-end">
               <div className="w-full sm:w-72 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-500 dark:text-slate-400">
+                  <span className="text-gray-500">
                     Subtotal
                   </span>
-                  <span className="text-slate-900 dark:text-slate-100 font-medium">
+                  <span className="text-gray-900 font-medium">
                     {formatCurrency(invoice.subtotal)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-500 dark:text-slate-400">
+                  <span className="text-gray-500">
                     VAT ({invoice.vat_rate ?? 15}%)
                   </span>
-                  <span className="text-slate-900 dark:text-slate-100 font-medium">
+                  <span className="text-gray-900 font-medium">
                     {formatCurrency(invoice.vat_amount)}
                   </span>
                 </div>
-                <div className="border-t border-slate-200 dark:border-slate-700 pt-2">
+                <div className="border-t border-gray-200 pt-2">
                   <div className="flex justify-between">
-                    <span className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                    <span className="text-lg font-bold text-gray-900">
                       Total
                     </span>
-                    <span className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                    <span className="text-lg font-bold text-gray-900">
                       {formatCurrency(invoice.total_amount)}
                     </span>
                   </div>
@@ -609,20 +597,20 @@ export default function InvoiceDetailPage() {
 
           {/* Payment Info (if paid) */}
           {invoice.status === "paid" && (
-            <div className="p-6 sm:p-8 border-t border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/10">
+            <div className="p-6 sm:p-8 border-t border-green-200 bg-green-50">
               <div className="flex items-center gap-2 mb-2">
-                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-                <h4 className="font-semibold text-green-800 dark:text-green-300">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                <h4 className="font-semibold text-green-800">
                   Payment Received
                 </h4>
               </div>
               {invoice.payment_date && (
-                <p className="text-sm text-green-700 dark:text-green-400">
+                <p className="text-sm text-green-700">
                   Paid on: {formatDate(invoice.payment_date)}
                 </p>
               )}
               {invoice.payment_reference && (
-                <p className="text-sm text-green-700 dark:text-green-400">
+                <p className="text-sm text-green-700">
                   Reference: {invoice.payment_reference}
                 </p>
               )}
@@ -631,23 +619,23 @@ export default function InvoiceDetailPage() {
 
           {/* Notes & Payment Terms */}
           {(invoice.notes || invoice.payment_terms) && (
-            <div className="p-6 sm:p-8 border-t border-slate-200 dark:border-slate-700">
+            <div className="p-6 sm:p-8 border-t border-gray-200">
               {invoice.payment_terms && (
                 <div className="mb-4">
-                  <h4 className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
                     Payment Terms
                   </h4>
-                  <p className="text-sm text-slate-700 dark:text-slate-300">
+                  <p className="text-sm text-gray-700">
                     {invoice.payment_terms}
                   </p>
                 </div>
               )}
               {invoice.notes && (
                 <div>
-                  <h4 className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
                     Notes
                   </h4>
-                  <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line">
+                  <p className="text-sm text-gray-700 whitespace-pre-line">
                     {invoice.notes}
                   </p>
                 </div>
@@ -660,17 +648,17 @@ export default function InvoiceDetailPage() {
       {/* Mark Paid Modal */}
       {showPayModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-slate-800 rounded-lg p-8 max-w-md w-full mx-4 shadow-xl">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+          <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4 shadow-xl">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">
               Record Payment
             </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+            <p className="text-sm text-gray-500 mb-6">
               Invoice {invoice.invoice_number} -{" "}
               {formatCurrency(invoice.total_amount)}
             </p>
 
             <div className="mb-6">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Payment Reference (optional)
               </label>
               <input
@@ -678,7 +666,7 @@ export default function InvoiceDetailPage() {
                 value={paymentRef}
                 onChange={(e) => setPaymentRef(e.target.value)}
                 placeholder="e.g., EFT-2026-001, CHQ-12345"
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
@@ -688,14 +676,14 @@ export default function InvoiceDetailPage() {
                   setShowPayModal(false);
                   setPaymentRef("");
                 }}
-                className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleMarkPaid}
                 disabled={actionLoading}
-                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
               >
                 <CheckCircle className="w-4 h-4" />
                 {actionLoading ? "Processing..." : "Confirm Payment"}

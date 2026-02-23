@@ -341,23 +341,27 @@ async def export_employees_excel(
 
 
 @router.get("/sites/csv")
-async def export_sites_csv(db: Session = Depends(get_db)):
-    """Export all sites to CSV."""
+async def export_sites_csv(
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db)
+):
+    """Export all sites to CSV (filtered by organization)."""
     try:
-        sites = db.query(Site).all()
+        sites = db.query(Site).filter(Site.org_id == org_id).all()
 
         data = []
         for site in sites:
             data.append({
                 'ID': site.site_id,
+                'Site Name': site.site_name or '',
                 'Client Name': site.client_name,
                 'Address': site.address,
-                'Contact Person': site.contact_person or '',
-                'Contact Phone': site.contact_phone or '',
+                'City': site.city or '',
+                'Province': site.province or '',
                 'Min Staff': site.min_staff,
                 'Required Skill': site.required_skill or '',
                 'Shift Pattern': site.shift_pattern or '',
-                'Active': site.is_active
+                'Billing Rate': site.billing_rate or 0,
             })
 
         df = pd.DataFrame(data)
@@ -375,23 +379,27 @@ async def export_sites_csv(db: Session = Depends(get_db)):
 
 
 @router.get("/sites/excel")
-async def export_sites_excel(db: Session = Depends(get_db)):
-    """Export all sites to Excel."""
+async def export_sites_excel(
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db)
+):
+    """Export all sites to Excel (filtered by organization)."""
     try:
-        sites = db.query(Site).all()
+        sites = db.query(Site).filter(Site.org_id == org_id).all()
 
         data = []
         for site in sites:
             data.append({
                 'ID': site.site_id,
+                'Site Name': site.site_name or '',
                 'Client Name': site.client_name,
                 'Address': site.address,
-                'Contact Person': site.contact_person or '',
-                'Contact Phone': site.contact_phone or '',
+                'City': site.city or '',
+                'Province': site.province or '',
                 'Min Staff': site.min_staff,
                 'Required Skill': site.required_skill or '',
                 'Shift Pattern': site.shift_pattern or '',
-                'Active': site.is_active
+                'Billing Rate': site.billing_rate or 0,
             })
 
         df = pd.DataFrame(data)
@@ -413,11 +421,12 @@ async def export_sites_excel(db: Session = Depends(get_db)):
 async def export_shifts_csv(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Export shifts to CSV."""
+    """Export shifts to CSV (filtered by organization)."""
     try:
-        query = db.query(Shift)
+        query = db.query(Shift).filter(Shift.org_id == org_id)
 
         if start_date:
             query = query.filter(Shift.start_time >= datetime.fromisoformat(start_date))
@@ -461,11 +470,12 @@ async def export_shifts_csv(
 async def export_shifts_excel(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
-    """Export shifts to Excel."""
+    """Export shifts to Excel (filtered by organization)."""
     try:
-        query = db.query(Shift)
+        query = db.query(Shift).filter(Shift.org_id == org_id)
 
         if start_date:
             query = query.filter(Shift.start_time >= datetime.fromisoformat(start_date))
@@ -507,10 +517,13 @@ async def export_shifts_excel(
 
 
 @router.get("/certifications/csv")
-async def export_certifications_csv(db: Session = Depends(get_db)):
-    """Export all certifications to CSV."""
+async def export_certifications_csv(
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db)
+):
+    """Export all certifications to CSV (filtered by organization)."""
     try:
-        certs = db.query(Certification).all()
+        certs = db.query(Certification).join(Employee).filter(Employee.org_id == org_id).all()
 
         data = []
         for cert in certs:
@@ -545,10 +558,13 @@ async def export_certifications_csv(db: Session = Depends(get_db)):
 
 
 @router.get("/certifications/excel")
-async def export_certifications_excel(db: Session = Depends(get_db)):
-    """Export all certifications to Excel."""
+async def export_certifications_excel(
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db)
+):
+    """Export all certifications to Excel (filtered by organization)."""
     try:
-        certs = db.query(Certification).all()
+        certs = db.query(Certification).join(Employee).filter(Employee.org_id == org_id).all()
 
         data = []
         for cert in certs:
@@ -731,7 +747,7 @@ async def export_roster_excel(
                             'Hourly Rate': employee.hourly_rate if employee else 0,
                             'Shift Cost (ZAR)': round(cost, 2),
                             'Assignment Status': assignment.status,
-                            'Shift Status': shift.status.value if shift.status else 'planned'
+                            'Shift Status': shift.status.value if shift.status else 'PLANNED'
                         })
                 else:
                     shift_data.append({
@@ -750,7 +766,7 @@ async def export_roster_excel(
                         'Hourly Rate': 0,
                         'Shift Cost (ZAR)': 0,
                         'Assignment Status': 'unassigned',
-                        'Shift Status': shift.status.value if shift.status else 'planned'
+                        'Shift Status': shift.status.value if shift.status else 'PLANNED'
                     })
 
             if shift_data:

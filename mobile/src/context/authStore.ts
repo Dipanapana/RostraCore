@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import * as SecureStore from 'expo-secure-store';
+import tokenStorage from '../utils/tokenStorage';
 import { authApi } from '../services/api';
 import { User } from '../types';
 
@@ -33,9 +33,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { access_token, refresh_token } = response.data;
 
       // Store tokens securely
-      await SecureStore.setItemAsync('access_token', access_token);
+      await tokenStorage.setItem('access_token', access_token);
       if (refresh_token) {
-        await SecureStore.setItemAsync('refresh_token', refresh_token);
+        await tokenStorage.setItem('refresh_token', refresh_token);
       }
 
       // Fetch user profile
@@ -53,15 +53,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
-    await SecureStore.deleteItemAsync('access_token');
-    await SecureStore.deleteItemAsync('refresh_token');
+    await tokenStorage.deleteItem('access_token');
+    await tokenStorage.deleteItem('refresh_token');
     set({ user: null, isAuthenticated: false, isLoading: false, error: null });
   },
 
   loadUser: async () => {
     set({ isLoading: true });
     try {
-      const token = await SecureStore.getItemAsync('access_token');
+      const token = await tokenStorage.getItem('access_token');
       if (!token) {
         set({ isLoading: false, isAuthenticated: false });
         return;
@@ -75,8 +75,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
     } catch {
       // Token expired or invalid
-      await SecureStore.deleteItemAsync('access_token');
-      await SecureStore.deleteItemAsync('refresh_token');
+      await tokenStorage.deleteItem('access_token');
+      await tokenStorage.deleteItem('refresh_token');
       set({ user: null, isAuthenticated: false, isLoading: false });
     }
   },

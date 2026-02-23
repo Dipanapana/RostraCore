@@ -67,6 +67,11 @@ class ShiftAssignment(Base):
     checked_out = Column(Boolean, nullable=False, default=False)
     check_out_time = Column(DateTime, nullable=True)
 
+    # Photo verification (biometric)
+    check_in_photo_verified = Column(Boolean, nullable=True)
+    check_in_photo_confidence = Column(Float, nullable=True)
+    check_out_photo_verified = Column(Boolean, nullable=True)
+
     # Relationships
     shift = relationship("Shift", back_populates="shift_assignments")
     employee = relationship("Employee")

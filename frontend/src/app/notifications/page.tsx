@@ -48,16 +48,16 @@ function getTypeIcon(type: string) {
 function getTypeColor(type: string): string {
   const t = type.toLowerCase()
   if (t.includes('shift') || t.includes('assignment') || t.includes('schedule'))
-    return 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+    return 'text-blue-500 bg-blue-50'
   if (t.includes('leave'))
-    return 'text-amber-500 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20'
+    return 'text-amber-500 bg-amber-50'
   if (t.includes('incident') || t.includes('alert'))
-    return 'text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20'
+    return 'text-red-500 bg-red-50'
   if (t.includes('payroll') || t.includes('pay') || t.includes('salary'))
-    return 'text-emerald-500 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20'
+    return 'text-emerald-500 bg-emerald-50'
   if (t.includes('psira') || t.includes('cert') || t.includes('compliance'))
-    return 'text-violet-500 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20'
-  return 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800'
+    return 'text-violet-500 bg-violet-50'
+  return 'text-gray-500 bg-gray-100'
 }
 
 function fmtAgo(iso: string): string {
@@ -93,8 +93,8 @@ function NotificationCard({
     <div
       className={`flex gap-4 p-4 rounded-xl border transition-all cursor-pointer group ${
         isUnread
-          ? 'bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md hover:border-blue-200 dark:hover:border-blue-700'
-          : 'bg-slate-50 dark:bg-slate-900/50 border-slate-100 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-800/50'
+          ? 'bg-white border-gray-200 shadow-sm hover:shadow-md hover:border-blue-200'
+          : 'bg-gray-50 border-gray-100 hover:bg-white'
       }`}
       onClick={() => isUnread && onMarkRead(notification.notification_id)}
     >
@@ -115,22 +115,22 @@ function NotificationCard({
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className={`text-sm font-semibold truncate ${isUnread ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
+            <p className={`text-sm font-semibold truncate ${isUnread ? 'text-gray-900' : 'text-gray-600'}`}>
               {notification.title}
             </p>
-            <p className={`text-xs mt-0.5 ${isUnread ? 'text-slate-500 dark:text-slate-400' : 'text-slate-400 dark:text-slate-500'}`}>
+            <p className={`text-xs mt-0.5 ${isUnread ? 'text-gray-500' : 'text-gray-400'}`}>
               {formatType(notification.notification_type)}
             </p>
           </div>
-          <span className="flex-shrink-0 text-xs text-slate-400 dark:text-slate-500 whitespace-nowrap">
+          <span className="flex-shrink-0 text-xs text-gray-400 whitespace-nowrap">
             {fmtAgo(notification.created_at)}
           </span>
         </div>
-        <p className={`text-sm mt-1.5 leading-relaxed ${isUnread ? 'text-slate-700 dark:text-slate-300' : 'text-slate-500 dark:text-slate-400'}`}>
+        <p className={`text-sm mt-1.5 leading-relaxed ${isUnread ? 'text-gray-700' : 'text-gray-500'}`}>
           {notification.message}
         </p>
         {isUnread && (
-          <p className="text-xs text-blue-500 dark:text-blue-400 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <p className="text-xs text-blue-500 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
             Click to mark as read
           </p>
         )}
@@ -200,8 +200,8 @@ export default function NotificationsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Notifications</h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-1">
+            <h1 className="text-2xl font-semibold text-gray-900">Notifications</h1>
+            <p className="text-gray-500 mt-1">
               {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}` : 'You\'re all caught up'}
             </p>
           </div>
@@ -209,7 +209,7 @@ export default function NotificationsPage() {
             <button
               onClick={handleMarkAllRead}
               disabled={markingAll}
-              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium rounded-xl shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95 disabled:hover:scale-100"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium rounded-lg transition-colors"
             >
               <CheckCheck className="w-4 h-4" />
               {markingAll ? 'Marking…' : 'Mark all as read'}
@@ -226,7 +226,7 @@ export default function NotificationsPage() {
               className={`px-4 py-2 rounded-xl text-sm font-medium transition-all border ${
                 filter === tab
                   ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
               }`}
             >
               {tab === 'all' ? 'All' : `Unread${unreadCount > 0 ? ` (${unreadCount})` : ''}`}
@@ -237,17 +237,17 @@ export default function NotificationsPage() {
         {/* Content */}
         {loading ? (
           <div className="flex items-center justify-center py-24">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600" />
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
-              <Inbox className="w-8 h-8 text-slate-400 dark:text-slate-500" />
+            <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
+              <Inbox className="w-8 h-8 text-gray-400" />
             </div>
-            <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            <h3 className="text-lg font-semibold text-gray-700 mb-1">
               {filter === 'unread' ? 'No unread notifications' : 'No notifications yet'}
             </h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
+            <p className="text-sm text-gray-500">
               {filter === 'unread'
                 ? "You've read everything — great job staying on top of things."
                 : 'Notifications about shifts, leave requests, and incidents will appear here.'}
@@ -255,7 +255,7 @@ export default function NotificationsPage() {
             {filter === 'unread' && (
               <button
                 onClick={() => setFilter('all')}
-                className="mt-4 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                className="mt-4 text-sm text-blue-600 hover:underline"
               >
                 View all notifications
               </button>

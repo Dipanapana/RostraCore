@@ -26,18 +26,18 @@ export default function Card({
   className = '',
   hoverable = false,
 }: CardProps) {
-  const hoverClass = hoverable ? 'hover:shadow-card-hover' : ''
+  const hoverClass = hoverable ? 'hover:shadow-md hover:border-gray-300' : ''
 
   return (
     <div
-      className={`bg-white rounded-card shadow-card transition-shadow ${hoverClass} ${className}`}
+      className={`bg-white rounded-xl border border-gray-200 shadow-sm transition-all ${hoverClass} ${className}`}
     >
       {(title || subtitle || action) && (
         <div className={`border-b border-gray-200 ${padding === 'none' ? 'p-6 pb-4' : paddingClasses[padding] + ' pb-4'}`}>
           <div className="flex items-center justify-between">
             <div>
               {title && (
-                <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+                <h3 className="text-base font-semibold text-gray-900">{title}</h3>
               )}
               {subtitle && (
                 <p className="text-sm text-gray-500 mt-1">{subtitle}</p>

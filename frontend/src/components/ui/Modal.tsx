@@ -27,7 +27,7 @@ export default function Modal({
             setShow(true)
             document.body.style.overflow = 'hidden'
         } else {
-            const timer = setTimeout(() => setShow(false), 300) // Wait for animation
+            const timer = setTimeout(() => setShow(false), 300)
             document.body.style.overflow = 'unset'
             return () => clearTimeout(timer)
         }
@@ -47,24 +47,22 @@ export default function Modal({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
             {/* Backdrop */}
             <div
-                className={`absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'
-                    }`}
+                className={`absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`}
                 onClick={onClose}
             />
 
             {/* Modal Panel */}
             <div
-                className={`relative w-full ${maxWidthClasses[maxWidth]} bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 transform transition-all duration-300 ${isOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
-                    }`}
+                className={`relative w-full ${maxWidthClasses[maxWidth]} bg-white rounded-2xl shadow-2xl border border-gray-200 transform transition-all duration-300 ${isOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}`}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-white/5">
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                    <h3 className="text-lg font-semibold text-gray-900">
                         {title}
                     </h3>
                     <button
                         onClick={onClose}
-                        className="p-2 rounded-lg text-slate-400 hover:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                        className="p-2 rounded-lg text-gray-400 hover:text-gray-500 hover:bg-gray-100 transition-colors"
                     >
                         <X className="w-5 h-5" />
                     </button>
@@ -77,7 +75,7 @@ export default function Modal({
 
                 {/* Footer */}
                 {footer && (
-                    <div className="px-6 py-4 bg-slate-50 dark:bg-white/5 border-t border-slate-100 dark:border-white/5 rounded-b-2xl flex justify-end gap-3">
+                    <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 rounded-b-2xl flex justify-end gap-3">
                         {footer}
                     </div>
                 )}

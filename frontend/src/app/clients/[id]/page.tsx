@@ -22,6 +22,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import DashboardLayout from '@/components/layout/DashboardLayout'
+import PageHeader from '@/components/ui/PageHeader'
 import { clientsApi, invoiceApi, api, guardRestrictionsApi } from '@/services/api'
 
 // ---------------------------------------------------------------------------
@@ -86,20 +87,20 @@ function fmtDate(iso: string | null | undefined): string {
 }
 
 function contractStatus(client: ClientDetail): { label: string; color: string } {
-  if (!client.contract_end_date) return { label: 'No End Date', color: 'text-slate-500 bg-slate-100 dark:bg-slate-800 dark:text-slate-400' }
+  if (!client.contract_end_date) return { label: 'No End Date', color: 'text-gray-500 bg-gray-100' }
   const daysLeft = differenceInDays(parseISO(client.contract_end_date), new Date())
-  if (daysLeft < 0) return { label: 'Expired', color: 'text-red-700 bg-red-50 dark:bg-red-900/20 dark:text-red-400 border border-red-200 dark:border-red-800' }
-  if (daysLeft <= 30) return { label: `Expiring in ${daysLeft}d`, color: 'text-amber-700 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-400 border border-amber-200 dark:border-amber-800' }
-  return { label: 'Active', color: 'text-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' }
+  if (daysLeft < 0) return { label: 'Expired', color: 'text-red-700 bg-red-50 border border-red-200' }
+  if (daysLeft <= 30) return { label: `Expiring in ${daysLeft}d`, color: 'text-amber-700 bg-amber-50 border border-amber-200' }
+  return { label: 'Active', color: 'text-emerald-700 bg-emerald-50 border border-emerald-200' }
 }
 
 const INVOICE_STATUS: Record<string, { label: string; classes: string }> = {
-  draft:     { label: 'Draft',     classes: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400' },
-  pending:   { label: 'Pending',   classes: 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400' },
-  sent:      { label: 'Sent',      classes: 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400' },
-  paid:      { label: 'Paid',      classes: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400' },
-  overdue:   { label: 'Overdue',   classes: 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400' },
-  cancelled: { label: 'Cancelled', classes: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-500' },
+  draft:     { label: 'Draft',     classes: 'bg-gray-100 text-gray-600' },
+  pending:   { label: 'Pending',   classes: 'bg-amber-50 text-amber-700' },
+  sent:      { label: 'Sent',      classes: 'bg-blue-50 text-blue-700' },
+  paid:      { label: 'Paid',      classes: 'bg-emerald-50 text-emerald-700' },
+  overdue:   { label: 'Overdue',   classes: 'bg-red-50 text-red-700' },
+  cancelled: { label: 'Cancelled', classes: 'bg-gray-100 text-gray-500' },
 }
 
 // ---------------------------------------------------------------------------
@@ -112,11 +113,11 @@ function InfoRow({ label, value, icon: Icon }: {
   icon?: React.ComponentType<{ className?: string }>
 }) {
   return (
-    <div className="flex items-start gap-3 py-2.5 border-b border-slate-100 dark:border-slate-700/50 last:border-0">
-      {Icon && <Icon className="w-4 h-4 text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0" />}
+    <div className="flex items-start gap-3 py-2.5 border-b border-gray-100 last:border-0">
+      {Icon && <Icon className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />}
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-0.5">{label}</p>
-        <div className="text-sm text-slate-800 dark:text-slate-200 font-medium">{value ?? '—'}</div>
+        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-0.5">{label}</p>
+        <div className="text-sm text-gray-800 font-medium">{value ?? '—'}</div>
       </div>
     </div>
   )
@@ -128,10 +129,10 @@ function Section({ title, icon: Icon, children }: {
   children: React.ReactNode
 }) {
   return (
-    <div className="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-      <div className="flex items-center gap-2 px-6 py-4 border-b border-slate-100 dark:border-slate-700">
-        <Icon className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-        <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">{title}</h2>
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-100">
+        <Icon className="w-4 h-4 text-gray-400" />
+        <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">{title}</h2>
       </div>
       <div className="p-6">{children}</div>
     </div>
@@ -139,7 +140,7 @@ function Section({ title, icon: Icon, children }: {
 }
 
 function EmptyNote({ message }: { message: string }) {
-  return <p className="py-6 text-center text-sm text-slate-400 dark:text-slate-500">{message}</p>
+  return <p className="py-6 text-center text-sm text-gray-400">{message}</p>
 }
 
 // ---------------------------------------------------------------------------
@@ -201,7 +202,7 @@ export default function ClientDetailPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600" />
         </div>
       </DashboardLayout>
     )
@@ -211,10 +212,10 @@ export default function ClientDetailPage() {
     return (
       <DashboardLayout>
         <div className="max-w-2xl mx-auto py-20 text-center">
-          <p className="text-slate-500 dark:text-slate-400">{error ?? 'Client not found.'}</p>
-          <Link href="/clients" className="mt-4 inline-block text-blue-600 dark:text-blue-400 hover:underline text-sm">
-            ← Back to Clients
-          </Link>
+          <p className="text-gray-500">{error ?? 'Client not found.'}</p>
+          <div className="mt-4">
+            <PageHeader backHref="/clients" backLabel="Back to Clients" />
+          </div>
         </div>
       </DashboardLayout>
     )
@@ -238,38 +239,40 @@ export default function ClientDetailPage() {
     <DashboardLayout>
       <div className="max-w-7xl mx-auto space-y-6">
 
+        <PageHeader backHref="/clients" backLabel="Back to Clients" />
+
         {/* Hero card */}
-        <div className="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex flex-col md:flex-row md:items-start gap-6">
             {/* Avatar */}
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-500/20">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0 shadow-sm">
               <Building2 className="w-8 h-8 text-white" />
             </div>
 
             {/* Core info */}
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-3 mb-1">
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{client.client_name}</h1>
+                <h1 className="text-2xl font-semibold text-gray-900">{client.client_name}</h1>
                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${contractBadge.color}`}>
                   {contractBadge.label}
                 </span>
                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
                   client.status === 'active'
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800'
-                    : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-gray-100 text-gray-600 border-gray-200'
                 }`}>
                   {client.status.toUpperCase()}
                 </span>
               </div>
               {client.contact_person && (
-                <p className="text-slate-500 dark:text-slate-400 text-sm">Contact: {client.contact_person}</p>
+                <p className="text-gray-500 text-sm">Contact: {client.contact_person}</p>
               )}
             </div>
 
             {/* Edit action */}
             <Link
               href="/clients"
-              className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-sm font-medium"
+              className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors text-sm font-medium"
             >
               <Pencil className="w-4 h-4" />
               Edit Client
@@ -277,28 +280,28 @@ export default function ClientDetailPage() {
           </div>
 
           {/* Financial stats */}
-          <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-700 grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="mt-6 pt-5 border-t border-gray-100 grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wide mb-1">Billing Rate</p>
-              <p className="text-lg font-bold text-slate-900 dark:text-white">
+              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">Billing Rate</p>
+              <p className="text-lg font-bold text-gray-900">
                 {client.billing_rate ? `R${client.billing_rate}/hr` : '—'}
               </p>
             </div>
             <div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wide mb-1">Sites</p>
-              <p className="text-lg font-bold text-slate-900 dark:text-white">
+              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">Sites</p>
+              <p className="text-lg font-bold text-gray-900">
                 {client.site_count ?? sites.length}
               </p>
             </div>
             <div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wide mb-1">Total Paid</p>
-              <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">Total Paid</p>
+              <p className="text-lg font-bold text-emerald-600">
                 R{totalInvoiced.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
               </p>
             </div>
             <div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wide mb-1">Outstanding</p>
-              <p className={`text-lg font-bold ${outstandingAmount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'}`}>
+              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">Outstanding</p>
+              <p className={`text-lg font-bold ${outstandingAmount > 0 ? 'text-amber-600' : 'text-gray-900'}`}>
                 R{outstandingAmount.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
               </p>
             </div>
@@ -315,7 +318,7 @@ export default function ClientDetailPage() {
                 <InfoRow
                   label="Email"
                   value={client.contact_email ? (
-                    <a href={`mailto:${client.contact_email}`} className="text-blue-600 dark:text-blue-400 hover:underline">
+                    <a href={`mailto:${client.contact_email}`} className="text-blue-600 hover:underline">
                       {client.contact_email}
                     </a>
                   ) : null}
@@ -345,23 +348,23 @@ export default function ClientDetailPage() {
                   <Link
                     key={site.site_id}
                     href={`/sites/${site.site_id}`}
-                    className="flex items-start gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group"
+                    className="flex items-start gap-3 p-3 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors group"
                   >
-                    <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 transition-colors">
+                    <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-100 transition-colors">
                       <MapPin className="w-4 h-4 text-blue-500" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      <p className="text-sm font-semibold text-gray-800 group-hover:text-blue-600 transition-colors">
                         {site.site_name}
                       </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">{site.address || 'No address'}</p>
+                      <p className="text-xs text-gray-500 truncate mt-0.5">{site.address || 'No address'}</p>
                       <div className="flex items-center gap-3 mt-1">
-                        <span className="text-xs text-slate-400 dark:text-slate-500">Min staff: {site.min_staff}</span>
+                        <span className="text-xs text-gray-400">Min staff: {site.min_staff}</span>
                         {site.billing_rate && (
-                          <span className="text-xs text-slate-400 dark:text-slate-500">R{site.billing_rate}/hr</span>
+                          <span className="text-xs text-gray-400">R{site.billing_rate}/hr</span>
                         )}
                         {site.required_skill && (
-                          <span className="text-xs px-1.5 py-0.5 rounded bg-violet-100 text-violet-700 dark:bg-violet-900/20 dark:text-violet-400 font-medium">
+                          <span className="text-xs px-1.5 py-0.5 rounded bg-violet-100 text-violet-700 font-medium">
                             {site.required_skill}
                           </span>
                         )}
@@ -385,29 +388,29 @@ export default function ClientDetailPage() {
                     <Link
                       key={inv.invoice_id}
                       href={`/billing/invoices/${inv.invoice_id}`}
-                      className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group"
+                      className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors group"
                     >
-                      <div className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center flex-shrink-0">
+                      <div className="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0">
                         {inv.status === 'paid' ? (
                           <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                         ) : inv.status === 'overdue' ? (
                           <AlertTriangle className="w-4 h-4 text-red-500" />
                         ) : inv.status === 'cancelled' ? (
-                          <XCircle className="w-4 h-4 text-slate-400" />
+                          <XCircle className="w-4 h-4 text-gray-400" />
                         ) : (
                           <Clock className="w-4 h-4 text-amber-500" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                        <p className="text-sm font-semibold text-gray-800">
                           {inv.invoice_number ?? `INV-${inv.invoice_id}`}
                         </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                        <p className="text-xs text-gray-500">
                           {fmtDate(inv.period_start)} – {fmtDate(inv.period_end)}
                         </p>
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                        <p className="text-sm font-bold text-gray-800">
                           R{inv.total_amount.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
                         </p>
                         <span className={`text-xs px-1.5 py-0.5 rounded font-semibold ${s.classes}`}>{s.label}</span>
@@ -417,7 +420,7 @@ export default function ClientDetailPage() {
                 })}
                 <Link
                   href={`/billing/invoices?client_id=${clientId}`}
-                  className="block text-center text-xs text-blue-600 dark:text-blue-400 hover:underline mt-2 pt-2 border-t border-slate-100 dark:border-slate-700"
+                  className="block text-center text-xs text-blue-600 hover:underline mt-2 pt-2 border-t border-gray-100"
                 >
                   View all invoices →
                 </Link>
@@ -434,27 +437,27 @@ export default function ClientDetailPage() {
               {restrictions.map((r) => (
                 <div
                   key={r.restriction_id}
-                  className="flex items-center justify-between px-4 py-3 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 rounded-xl"
+                  className="flex items-center justify-between px-4 py-3 bg-red-50 border border-red-100 rounded-xl"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
                       <Ban className="w-4 h-4 text-red-500" />
                     </div>
                     <div className="min-w-0">
                       <Link
                         href={`/employees/${r.employee_id}`}
-                        className="text-sm font-semibold text-slate-800 dark:text-slate-200 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                        className="text-sm font-semibold text-gray-800 hover:text-red-600 transition-colors"
                       >
                         {r.employee_name}
                       </Link>
                       {r.reason && (
-                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">{r.reason}</p>
+                        <p className="text-xs text-gray-500 truncate mt-0.5">{r.reason}</p>
                       )}
                     </div>
                   </div>
                   <button
                     onClick={() => handleRemoveRestriction(r.restriction_id)}
-                    className="ml-3 p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0"
+                    className="ml-3 p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-100 rounded-lg transition-colors flex-shrink-0"
                     title="Lift restriction"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -467,9 +470,9 @@ export default function ClientDetailPage() {
 
         {/* Notes */}
         {client.notes && (
-          <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 rounded-2xl p-5">
-            <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wide mb-2">Client Notes</p>
-            <p className="text-sm text-amber-800 dark:text-amber-300 leading-relaxed">{client.notes}</p>
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
+            <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-2">Client Notes</p>
+            <p className="text-sm text-amber-800 leading-relaxed">{client.notes}</p>
           </div>
         )}
 

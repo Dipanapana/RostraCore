@@ -4,10 +4,10 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import PageHeader from "@/components/ui/PageHeader";
 import { employeesApi, certificationsApi, api, clientsApi, guardRestrictionsApi, employeeEvaluationsApi, employeeDisciplinaryApi } from "@/services/api";
 import { Employee } from "@/types";
 import {
-  ArrowLeft,
   User,
   Phone,
   Mail,
@@ -145,10 +145,10 @@ function certExpiryStatus(expiryDate: string | null): "valid" | "expiring" | "ex
 
 function Section({ title, icon: Icon, children }: { title: string; icon: React.ComponentType<{ className?: string }>; children: React.ReactNode }) {
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
       <div className="flex items-center gap-2 mb-4">
-        <Icon className="w-4 h-4 text-purple-500" />
-        <h2 className="font-semibold text-slate-800 dark:text-slate-200">{title}</h2>
+        <Icon className="w-4 h-4 text-blue-500" />
+        <h2 className="font-semibold text-gray-800">{title}</h2>
       </div>
       {children}
     </div>
@@ -158,9 +158,9 @@ function Section({ title, icon: Icon, children }: { title: string; icon: React.C
 function InfoRow({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null;
   return (
-    <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-700/50 last:border-0">
-      <span className="text-sm text-slate-500 dark:text-slate-400">{label}</span>
-      <span className="text-sm font-medium text-slate-800 dark:text-slate-200 text-right max-w-[60%]">{value}</span>
+    <div className="flex justify-between py-2 border-b border-gray-100 last:border-0">
+      <span className="text-sm text-gray-500">{label}</span>
+      <span className="text-sm font-medium text-gray-800 text-right max-w-[60%]">{value}</span>
     </div>
   );
 }
@@ -283,7 +283,7 @@ export default function EmployeeDetailPage() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[60vh] text-slate-400">
+        <div className="flex items-center justify-center min-h-[60vh] text-gray-400">
           <Loader2 className="w-8 h-8 animate-spin mr-3" />
           Loading employee profile…
         </div>
@@ -294,10 +294,10 @@ export default function EmployeeDetailPage() {
   if (notFound || !employee) {
     return (
       <DashboardLayout>
-        <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-gray-400">
           <User className="w-12 h-12 mb-4 opacity-30" />
           <p className="text-lg font-medium">Employee not found</p>
-          <Link href="/employees" className="mt-4 text-purple-600 hover:underline text-sm">
+          <Link href="/employees" className="mt-4 text-blue-600 hover:underline text-sm">
             ← Back to Employees
           </Link>
         </div>
@@ -403,31 +403,25 @@ export default function EmployeeDetailPage() {
     <DashboardLayout>
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Back nav */}
-        <Link
-          href="/employees"
-          className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Employees
-        </Link>
+        <PageHeader backHref="/employees" backLabel="Back to Employees" />
 
         {/* Hero card */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-start gap-5">
             {/* Avatar */}
-            <div className="w-20 h-20 rounded-2xl bg-purple-600 flex items-center justify-center flex-shrink-0">
+            <div className="w-20 h-20 rounded-2xl bg-blue-600 flex items-center justify-center flex-shrink-0">
               <span className="text-white text-2xl font-bold">{initials}</span>
             </div>
 
             {/* Name & badges */}
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2 mb-1">
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{fullName}</h1>
+                <h1 className="text-2xl font-semibold text-gray-900">{fullName}</h1>
                 <span
                   className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                     employee.status === "active"
-                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                      : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-gray-100 text-gray-500"
                   }`}
                 >
                   {employee.status.toUpperCase()}
@@ -435,20 +429,20 @@ export default function EmployeeDetailPage() {
                 <span
                   className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                     employee.role === "armed"
-                      ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                      : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                      ? "bg-red-100 text-red-700"
+                      : "bg-blue-100 text-blue-700"
                   }`}
                 >
                   {employee.role.toUpperCase()}
                 </span>
                 {employee.is_supervisor && (
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
                     SUPERVISOR
                   </span>
                 )}
               </div>
 
-              <div className="flex flex-wrap gap-4 text-sm text-slate-500 dark:text-slate-400 mt-2">
+              <div className="flex flex-wrap gap-4 text-sm text-gray-500 mt-2">
                 {employee.email && (
                   <span className="flex items-center gap-1">
                     <Mail className="w-3.5 h-3.5" /> {employee.email}
@@ -467,30 +461,30 @@ export default function EmployeeDetailPage() {
               </div>
 
               {/* Key stats row */}
-              <div className="flex flex-wrap gap-6 mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+              <div className="flex flex-wrap gap-6 mt-4 pt-4 border-t border-gray-100">
                 <div>
-                  <p className="text-xs text-slate-400 uppercase tracking-wide">Hourly Rate</p>
-                  <p className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                  <p className="text-xs text-gray-400 uppercase tracking-wide">Hourly Rate</p>
+                  <p className="text-lg font-bold text-gray-900">
                     R{(employee.hourly_rate ?? 0).toFixed(2)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-400 uppercase tracking-wide">Max Hrs/Week</p>
-                  <p className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                  <p className="text-xs text-gray-400 uppercase tracking-wide">Max Hrs/Week</p>
+                  <p className="text-lg font-bold text-gray-900">
                     {employee.max_hours_week}h
                   </p>
                 </div>
                 {employee.employee_number && (
                   <div>
-                    <p className="text-xs text-slate-400 uppercase tracking-wide">Employee #</p>
-                    <p className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                    <p className="text-xs text-gray-400 uppercase tracking-wide">Employee #</p>
+                    <p className="text-lg font-bold text-gray-900">
                       {employee.employee_number}
                     </p>
                   </div>
                 )}
                 <div>
-                  <p className="text-xs text-slate-400 uppercase tracking-wide">Pay Type</p>
-                  <p className="text-lg font-bold text-slate-900 dark:text-slate-100 capitalize">
+                  <p className="text-xs text-gray-400 uppercase tracking-wide">Pay Type</p>
+                  <p className="text-lg font-bold text-gray-900 capitalize">
                     {employee.pay_type.replace("_", " ")}
                   </p>
                 </div>
@@ -500,7 +494,7 @@ export default function EmployeeDetailPage() {
             {/* Edit button */}
             <Link
               href="/employees"
-              className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-purple-100 dark:hover:bg-purple-900/30 text-slate-600 dark:text-slate-300 hover:text-purple-700 dark:hover:text-purple-400 rounded-lg text-sm font-medium transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-blue-100 text-gray-600 hover:text-blue-700 rounded-lg text-sm font-medium transition-colors"
             >
               <Pencil className="w-4 h-4" />
               Edit
@@ -522,7 +516,7 @@ export default function EmployeeDetailPage() {
             {employee.hire_date && <InfoRow label="Hire Date" value={fmtDate(employee.hire_date)} />}
             {employee.termination_date && <InfoRow label="Termination Date" value={fmtDate(employee.termination_date)} />}
             {!employee.address && !employee.gender && !employee.tax_number && (
-              <p className="text-sm text-slate-400 py-2">No additional personal details recorded.</p>
+              <p className="text-sm text-gray-400 py-2">No additional personal details recorded.</p>
             )}
           </Section>
 
@@ -536,7 +530,7 @@ export default function EmployeeDetailPage() {
             <InfoRow label="Branch Code" value={employee.branch_code} />
             <InfoRow label="Account Type" value={employee.account_type} />
             {!employee.psira_number && !employee.bank_name && (
-              <p className="text-sm text-slate-400 py-2">No PSIRA or banking details recorded.</p>
+              <p className="text-sm text-gray-400 py-2">No PSIRA or banking details recorded.</p>
             )}
           </Section>
         </div>
@@ -544,7 +538,7 @@ export default function EmployeeDetailPage() {
         {/* Certifications */}
         <Section title="Certifications" icon={Award}>
           {certifications.length === 0 ? (
-            <p className="text-sm text-slate-400 py-2">No certifications recorded.</p>
+            <p className="text-sm text-gray-400 py-2">No certifications recorded.</p>
           ) : (
             <div className="space-y-2">
               {certifications.map((cert) => {
@@ -552,28 +546,28 @@ export default function EmployeeDetailPage() {
                 return (
                   <div
                     key={cert.certification_id}
-                    className="flex items-center justify-between px-3 py-2.5 bg-slate-50 dark:bg-slate-900/50 rounded-lg"
+                    className="flex items-center justify-between px-3 py-2.5 bg-gray-50 rounded-lg"
                   >
                     <div>
-                      <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{cert.cert_type}</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">{cert.cert_number}</p>
+                      <p className="text-sm font-medium text-gray-800">{cert.cert_type}</p>
+                      <p className="text-xs text-gray-500">{cert.cert_number}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                      <p className="text-xs text-gray-500">
                         Expires {fmtDate(cert.expiry_date)}
                       </p>
                       {expStatus === "expired" && (
-                        <span className="inline-flex items-center gap-1 text-xs text-red-600 dark:text-red-400 font-medium">
+                        <span className="inline-flex items-center gap-1 text-xs text-red-600 font-medium">
                           <AlertTriangle className="w-3 h-3" /> Expired
                         </span>
                       )}
                       {expStatus === "expiring" && (
-                        <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 font-medium">
+                        <span className="inline-flex items-center gap-1 text-xs text-amber-600 font-medium">
                           <AlertTriangle className="w-3 h-3" /> Expiring Soon
                         </span>
                       )}
                       {expStatus === "valid" && cert.expiry_date && (
-                        <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 font-medium">
+                        <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium">
                           <CheckCircle2 className="w-3 h-3" /> Valid
                         </span>
                       )}
@@ -592,13 +586,13 @@ export default function EmployeeDetailPage() {
               {leaveBalances.map((bal) => (
                 <div
                   key={bal.leave_type}
-                  className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 text-center"
+                  className="bg-gray-50 rounded-lg p-3 text-center"
                 >
-                  <p className="text-xs text-slate-500 dark:text-slate-400 capitalize mb-1">
+                  <p className="text-xs text-gray-500 capitalize mb-1">
                     {bal.leave_type.replace("_", " ")} Leave
                   </p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{bal.remaining}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-2xl font-bold text-gray-900">{bal.remaining}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">
                     {bal.used} used / {bal.entitled} entitled
                   </p>
                 </div>
@@ -610,11 +604,11 @@ export default function EmployeeDetailPage() {
         {/* Site & Client Restrictions */}
         <Section title="Client Restrictions" icon={Ban}>
           {/* Add restriction form */}
-          <div className="flex flex-col sm:flex-row gap-2 mb-4 pb-4 border-b border-slate-100 dark:border-slate-700">
+          <div className="flex flex-col sm:flex-row gap-2 mb-4 pb-4 border-b border-gray-100">
             <select
               value={restrictClientId}
               onChange={(e) => setRestrictClientId(e.target.value)}
-              className="flex-1 text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-red-400"
+              className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-400"
             >
               <option value="">Select client to restrict…</option>
               {clientOptions.map((c) => (
@@ -626,7 +620,7 @@ export default function EmployeeDetailPage() {
               placeholder="Reason (optional)"
               value={restrictReason}
               onChange={(e) => setRestrictReason(e.target.value)}
-              className="flex-1 text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-red-400"
+              className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-400"
             />
             <button
               onClick={handleAddRestriction}
@@ -639,28 +633,28 @@ export default function EmployeeDetailPage() {
           </div>
 
           {restrictions.length === 0 ? (
-            <p className="text-sm text-slate-400 py-2">No client restrictions — guard can be assigned anywhere.</p>
+            <p className="text-sm text-gray-400 py-2">No client restrictions — guard can be assigned anywhere.</p>
           ) : (
             <div className="space-y-2">
               {restrictions.map((r) => (
                 <div
                   key={r.restriction_id}
-                  className="flex items-center justify-between px-3 py-2.5 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 rounded-lg"
+                  className="flex items-center justify-between px-3 py-2.5 bg-red-50 border border-red-100 rounded-lg"
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <Ban className="w-4 h-4 text-red-500 flex-shrink-0" />
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
+                      <p className="text-sm font-medium text-gray-800 truncate">
                         {r.client_name ?? r.site_name ?? `ID ${r.client_id ?? r.site_id}`}
                       </p>
                       {r.reason && (
-                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{r.reason}</p>
+                        <p className="text-xs text-gray-500 truncate">{r.reason}</p>
                       )}
                     </div>
                   </div>
                   <button
                     onClick={() => handleRemoveRestriction(r.restriction_id)}
-                    className="ml-3 p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0"
+                    className="ml-3 p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
                     title="Remove restriction"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -677,7 +671,7 @@ export default function EmployeeDetailPage() {
           <div className="mb-4">
             <button
               onClick={() => setShowEvalForm((v) => !v)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
               {showEvalForm ? "Cancel" : "Add Evaluation"}
@@ -685,23 +679,23 @@ export default function EmployeeDetailPage() {
           </div>
 
           {showEvalForm && (
-            <div className="mb-5 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+            <div className="mb-5 p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Date *</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Date *</label>
                   <input
                     type="date"
                     value={evalDate}
                     onChange={(e) => setEvalDate(e.target.value)}
-                    className="w-full text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                    className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Overall Score (1–5) *</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Overall Score (1–5) *</label>
                   <select
                     value={evalOverall}
                     onChange={(e) => setEvalOverall(e.target.value)}
-                    className="w-full text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                    className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400"
                   >
                     {[1,2,3,4,5].map(n => <option key={n} value={n}>{n} — {["","Poor","Below Average","Average","Good","Excellent"][n]}</option>)}
                   </select>
@@ -716,11 +710,11 @@ export default function EmployeeDetailPage() {
                   ["Communication", evalCommunication, setEvalCommunication],
                 ].map(([label, val, setter]: any) => (
                   <div key={label as string}>
-                    <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{label as string}</label>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">{label as string}</label>
                     <select
                       value={val as string}
                       onChange={(e) => setter(e.target.value)}
-                      className="w-full text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                      className="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400"
                     >
                       <option value="">—</option>
                       {[1,2,3,4,5].map(n => <option key={n} value={n}>{n}</option>)}
@@ -729,19 +723,19 @@ export default function EmployeeDetailPage() {
                 ))}
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Notes</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Notes</label>
                 <textarea
                   value={evalNotes}
                   onChange={(e) => setEvalNotes(e.target.value)}
                   rows={2}
                   placeholder="Optional notes…"
-                  className="w-full text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-400 resize-none"
+                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
                 />
               </div>
               <button
                 onClick={handleAddEvaluation}
                 disabled={!evalDate || evalSaving}
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
               >
                 {evalSaving ? "Saving…" : "Save Evaluation"}
               </button>
@@ -749,23 +743,23 @@ export default function EmployeeDetailPage() {
           )}
 
           {evaluations.length === 0 ? (
-            <p className="text-sm text-slate-400 py-2">No evaluations recorded yet.</p>
+            <p className="text-sm text-gray-400 py-2">No evaluations recorded yet.</p>
           ) : (
             <div className="space-y-3">
               {evaluations.map((ev) => (
-                <div key={ev.evaluation_id} className="flex items-start justify-between px-4 py-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-700">
+                <div key={ev.evaluation_id} className="flex items-start justify-between px-4 py-3 bg-gray-50 rounded-xl border border-gray-100">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 flex-wrap">
-                      <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">{fmtDate(ev.evaluation_date)}</span>
+                      <span className="text-sm font-semibold text-gray-800">{fmtDate(ev.evaluation_date)}</span>
                       {/* Star score */}
                       <span className="flex items-center gap-0.5">
                         {[1,2,3,4,5].map(n => (
-                          <Star key={n} className={`w-3.5 h-3.5 ${n <= ev.overall_score ? "text-amber-400 fill-amber-400" : "text-slate-300 dark:text-slate-600"}`} />
+                          <Star key={n} className={`w-3.5 h-3.5 ${n <= ev.overall_score ? "text-amber-400 fill-amber-400" : "text-gray-300"}`} />
                         ))}
-                        <span className="ml-1 text-xs text-slate-500 dark:text-slate-400">{ev.overall_score}/5</span>
+                        <span className="ml-1 text-xs text-gray-500">{ev.overall_score}/5</span>
                       </span>
                       {ev.evaluator_name && (
-                        <span className="text-xs text-slate-400">by {ev.evaluator_name}</span>
+                        <span className="text-xs text-gray-400">by {ev.evaluator_name}</span>
                       )}
                     </div>
                     {/* Category scores */}
@@ -777,18 +771,18 @@ export default function EmployeeDetailPage() {
                         ["Appear.", ev.appearance_score],
                         ["Comm.", ev.communication_score],
                       ].filter(([, v]) => v != null).map(([lbl, v]) => (
-                        <span key={lbl as string} className="text-xs text-slate-500 dark:text-slate-400">
-                          {lbl}: <span className="font-medium text-slate-700 dark:text-slate-300">{String(v)}</span>
+                        <span key={lbl as string} className="text-xs text-gray-500">
+                          {lbl}: <span className="font-medium text-gray-700">{String(v)}</span>
                         </span>
                       ))}
                     </div>
                     {ev.notes && (
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 italic">{ev.notes}</p>
+                      <p className="text-xs text-gray-500 mt-1 italic">{ev.notes}</p>
                     )}
                   </div>
                   <button
                     onClick={() => handleDeleteEvaluation(ev.evaluation_id)}
-                    className="ml-3 p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0"
+                    className="ml-3 p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
                     title="Delete evaluation"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -813,23 +807,23 @@ export default function EmployeeDetailPage() {
           </div>
 
           {showDiscForm && (
-            <div className="mb-5 p-4 bg-red-50/50 dark:bg-red-900/10 rounded-xl border border-red-100 dark:border-red-900/20 space-y-3">
+            <div className="mb-5 p-4 bg-red-50/50 rounded-xl border border-red-100 space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Incident Date *</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Incident Date *</label>
                   <input
                     type="date"
                     value={discDate}
                     onChange={(e) => setDiscDate(e.target.value)}
-                    className="w-full text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-red-400"
+                    className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-400"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Case Type *</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Case Type *</label>
                   <select
                     value={discType}
                     onChange={(e) => setDiscType(e.target.value)}
-                    className="w-full text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-red-400"
+                    className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-400"
                   >
                     <option value="verbal_warning">Verbal Warning</option>
                     <option value="written_warning">Written Warning</option>
@@ -840,23 +834,23 @@ export default function EmployeeDetailPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Reason *</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Reason *</label>
                 <textarea
                   value={discReason}
                   onChange={(e) => setDiscReason(e.target.value)}
                   rows={2}
                   placeholder="Describe the reason for this disciplinary action…"
-                  className="w-full text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-red-400 resize-none"
+                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-400 resize-none"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Outcome</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Outcome</label>
                 <input
                   type="text"
                   value={discOutcome}
                   onChange={(e) => setDiscOutcome(e.target.value)}
                   placeholder="e.g. 3-day suspension, final warning issued (optional)"
-                  className="w-full text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-red-400"
+                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-400"
                 />
               </div>
               <button
@@ -870,37 +864,37 @@ export default function EmployeeDetailPage() {
           )}
 
           {disciplinaryCases.length === 0 ? (
-            <p className="text-sm text-slate-400 py-2">No disciplinary cases on record.</p>
+            <p className="text-sm text-gray-400 py-2">No disciplinary cases on record.</p>
           ) : (
             <div className="space-y-3">
               {disciplinaryCases.map((dc) => {
                 const badgeColor: Record<string, string> = {
-                  verbal_warning: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
-                  written_warning: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
-                  final_warning: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-                  suspension: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-                  dismissal: "bg-red-200 text-red-800 dark:bg-red-900/50 dark:text-red-300",
+                  verbal_warning: "bg-amber-50 text-amber-700",
+                  written_warning: "bg-orange-100 text-orange-700",
+                  final_warning: "bg-red-100 text-red-700",
+                  suspension: "bg-purple-100 text-purple-700",
+                  dismissal: "bg-red-100 text-red-700",
                 };
                 return (
-                  <div key={dc.case_id} className="flex items-start justify-between px-4 py-3 bg-red-50/40 dark:bg-red-900/10 rounded-xl border border-red-100 dark:border-red-900/20">
+                  <div key={dc.case_id} className="flex items-start justify-between px-4 py-3 bg-red-50/40 rounded-xl border border-red-100">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 flex-wrap mb-1">
-                        <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">{fmtDate(dc.incident_date)}</span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${badgeColor[dc.case_type] ?? "bg-slate-100 text-slate-600"}`}>
+                        <span className="text-sm font-semibold text-gray-800">{fmtDate(dc.incident_date)}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${badgeColor[dc.case_type] ?? "bg-gray-100 text-gray-600"}`}>
                           {dc.case_type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                         </span>
                         {dc.issued_by_name && (
-                          <span className="text-xs text-slate-400">by {dc.issued_by_name}</span>
+                          <span className="text-xs text-gray-400">by {dc.issued_by_name}</span>
                         )}
                       </div>
-                      <p className="text-sm text-slate-700 dark:text-slate-300">{dc.reason}</p>
+                      <p className="text-sm text-gray-700">{dc.reason}</p>
                       {dc.outcome && (
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Outcome: {dc.outcome}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Outcome: {dc.outcome}</p>
                       )}
                     </div>
                     <button
                       onClick={() => handleDeleteDisciplinary(dc.case_id)}
-                      className="ml-3 p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0"
+                      className="ml-3 p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
                       title="Delete case"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -915,42 +909,42 @@ export default function EmployeeDetailPage() {
         {/* Recent Shifts */}
         <Section title="Recent Shifts" icon={Clock}>
           {recentShifts.length === 0 ? (
-            <p className="text-sm text-slate-400 py-2">No shifts recorded yet.</p>
+            <p className="text-sm text-gray-400 py-2">No shifts recorded yet.</p>
           ) : (
             <div className="overflow-x-auto -mx-1">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-100 dark:border-slate-700">
-                    <th className="px-2 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400">Date</th>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400">Site</th>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400">Time</th>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400">Hrs</th>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400">Status</th>
+                  <tr className="border-b border-gray-100">
+                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500">Date</th>
+                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500">Site</th>
+                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500">Time</th>
+                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500">Hrs</th>
+                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50 dark:divide-slate-700/30">
+                <tbody className="divide-y divide-gray-50">
                   {recentShifts.map((s: any) => (
-                    <tr key={s.assignment_id ?? s.shift_id} className="hover:bg-slate-50 dark:hover:bg-slate-700/20">
-                      <td className="px-2 py-2.5 text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                    <tr key={s.assignment_id ?? s.shift_id} className="hover:bg-gray-50">
+                      <td className="px-2 py-2.5 text-gray-700 whitespace-nowrap">
                         {fmtDate(s.start_time)}
                       </td>
-                      <td className="px-2 py-2.5 text-slate-600 dark:text-slate-400">
+                      <td className="px-2 py-2.5 text-gray-600">
                         {s.site_name ?? "—"}
                       </td>
-                      <td className="px-2 py-2.5 font-mono text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                      <td className="px-2 py-2.5 font-mono text-xs text-gray-500 whitespace-nowrap">
                         {fmtTime(s.start_time)} – {fmtTime(s.end_time)}
                       </td>
-                      <td className="px-2 py-2.5 text-slate-600 dark:text-slate-400">
+                      <td className="px-2 py-2.5 text-gray-600">
                         {s.total_hours ? `${s.total_hours.toFixed(1)}h` : "—"}
                       </td>
                       <td className="px-2 py-2.5">
                         <span
                           className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                             s.checked_in && s.checked_out
-                              ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                              ? "bg-emerald-50 text-emerald-700"
                               : s.checked_in
-                              ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                              : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-gray-100 text-gray-500"
                           }`}
                         >
                           {s.checked_in && s.checked_out

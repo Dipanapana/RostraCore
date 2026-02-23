@@ -7,17 +7,12 @@ interface ComplianceChartProps {
     score: number;
 }
 
-import { useTheme } from '@/context/ThemeContext';
-
 export default function ComplianceChart({ data, score }: ComplianceChartProps) {
-    const { theme } = useTheme();
-    const isDark = theme === 'dark';
-
     return (
-        <div className="glass-panel p-6 rounded-2xl border border-white/5 h-full flex flex-col">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 h-full flex flex-col">
             <div className="mb-4">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Compliance Health</h3>
-                <p className="text-slate-600 dark:text-slate-400 text-sm">Certification & PSIRA Status</p>
+                <h3 className="text-lg font-semibold text-gray-900">Compliance Health</h3>
+                <p className="text-gray-500 text-sm">Certification & PSIRA Status</p>
             </div>
 
             <div className="flex-1 relative min-h-[200px]">
@@ -39,21 +34,21 @@ export default function ComplianceChart({ data, score }: ComplianceChartProps) {
                         </Pie>
                         <Tooltip
                             contentStyle={{
-                                backgroundColor: isDark ? "rgba(15, 23, 42, 0.9)" : "rgba(255, 255, 255, 0.9)",
-                                border: isDark ? "1px solid rgba(255, 255, 255, 0.1)" : "1px solid rgba(0, 0, 0, 0.1)",
+                                backgroundColor: "rgba(255, 255, 255, 0.95)",
+                                border: "1px solid #e2e8f0",
                                 borderRadius: "12px",
-                                color: isDark ? "#fff" : "#0f172a",
+                                color: "#0f172a",
                                 boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
                             }}
-                            itemStyle={{ color: isDark ? "#fff" : "#0f172a" }}
+                            itemStyle={{ color: "#0f172a" }}
                         />
                     </PieChart>
                 </ResponsiveContainer>
 
                 {/* Center Score */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <span className="text-3xl font-bold text-slate-900 dark:text-white">{score}%</span>
-                    <span className="text-xs text-slate-600 dark:text-slate-400 uppercase tracking-wider">Score</span>
+                    <span className="text-3xl font-bold text-gray-900">{score}%</span>
+                    <span className="text-xs text-gray-500 uppercase tracking-wider">Score</span>
                 </div>
             </div>
 
@@ -62,9 +57,9 @@ export default function ComplianceChart({ data, score }: ComplianceChartProps) {
                     <div key={index} className="flex items-center justify-between text-sm">
                         <div className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
-                            <span className="text-slate-600 dark:text-slate-400">{item.name}</span>
+                            <span className="text-gray-600">{item.name}</span>
                         </div>
-                        <span className="font-medium text-slate-900 dark:text-white">{item.value}%</span>
+                        <span className="font-medium text-gray-900">{item.value}%</span>
                     </div>
                 ))}
             </div>

@@ -116,7 +116,7 @@ export default function AvailabilityPage() {
         </div>
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Availability Management</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">Availability Management</h1>
           <button
             onClick={() => setShowForm(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
@@ -126,7 +126,7 @@ export default function AvailabilityPage() {
         </div>
 
         {/* Filter */}
-        <div className="bg-white p-4 rounded-lg shadow-md mb-6">
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -135,7 +135,7 @@ export default function AvailabilityPage() {
               <select
                 value={filterEmployee}
                 onChange={(e) => setFilterEmployee(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
               >
                 <option value="">All Employees</option>
                 {employees.map(emp => (
@@ -149,7 +149,7 @@ export default function AvailabilityPage() {
             <div className="flex items-end">
               <button
                 onClick={() => setFilterEmployee('')}
-                className="w-full px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md"
+                className="w-full px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg"
               >
                 Clear Filter
               </button>
@@ -159,17 +159,17 @@ export default function AvailabilityPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white p-4 rounded-lg shadow-md">
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
             <div className="text-2xl font-bold text-blue-600">{availabilities.length}</div>
             <div className="text-sm text-gray-600">Total Records</div>
           </div>
-          <div className="bg-white p-4 rounded-lg shadow-md">
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
             <div className="text-2xl font-bold text-green-600">
               {availabilities.filter(a => a.available).length}
             </div>
             <div className="text-sm text-gray-600">Available</div>
           </div>
-          <div className="bg-white p-4 rounded-lg shadow-md">
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
             <div className="text-2xl font-bold text-red-600">
               {availabilities.filter(a => !a.available).length}
             </div>
@@ -184,7 +184,7 @@ export default function AvailabilityPage() {
         )}
 
         {/* Availability Table */}
-        <div className="bg-white shadow-md rounded-lg overflow-hidden">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead className="bg-gray-50">
@@ -236,8 +236,8 @@ export default function AvailabilityPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                           availability.available
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
+                            ? 'bg-emerald-50 text-emerald-700'
+                            : 'bg-red-50 text-red-700'
                         }`}>
                           {availability.available ? 'Available' : 'Unavailable'}
                         </span>

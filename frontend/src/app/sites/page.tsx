@@ -68,15 +68,15 @@ export default function SitesPage() {
       header: 'Site Name',
       cell: (site) => (
         <div>
-          <div className="font-medium text-slate-900 dark:text-white">{site.site_name}</div>
-          <div className="text-xs text-slate-500 dark:text-slate-400">{site.client_name}</div>
+          <div className="font-medium text-gray-900">{site.site_name}</div>
+          <div className="text-xs text-gray-500">{site.client_name}</div>
         </div>
       ),
     },
     {
       header: 'Location',
       cell: (site) => (
-        <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+        <div className="flex items-center gap-2 text-gray-600">
           <MapPin className="w-4 h-4" />
           <span className="truncate max-w-[200px]" title={site.address}>
             {site.address || 'No address'}
@@ -90,11 +90,11 @@ export default function SitesPage() {
       cell: (site) => (
         <div className="space-y-1">
           {site.required_skill && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
               {site.required_skill}
             </span>
           )}
-          <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-1 text-xs text-gray-500">
             <Users className="w-3 h-3" />
             <span>Min Staff: {site.min_staff}</span>
           </div>
@@ -105,7 +105,7 @@ export default function SitesPage() {
       header: 'Shift Pattern',
       className: 'hidden lg:table-cell',
       cell: (site) => (
-        <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+        <div className="flex items-center gap-2 text-gray-600">
           <Clock className="w-4 h-4" />
           <span>{site.shift_pattern || 'Standard'}</span>
         </div>
@@ -115,7 +115,7 @@ export default function SitesPage() {
       header: 'Rate',
       className: 'hidden sm:table-cell',
       cell: (site) => (
-        <span className="font-medium text-slate-700 dark:text-slate-300">
+        <span className="font-medium text-gray-700">
           {site.billing_rate ? `R${site.billing_rate}/hr` : '-'}
         </span>
       ),
@@ -126,7 +126,7 @@ export default function SitesPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600"></div>
         </div>
       </DashboardLayout>
     )
@@ -138,8 +138,8 @@ export default function SitesPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Sites</h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-1">
+            <h1 className="text-2xl font-semibold text-gray-900">Sites</h1>
+            <p className="text-gray-500 mt-1">
               Manage client locations and facilities
             </p>
           </div>
@@ -147,7 +147,7 @@ export default function SitesPage() {
             <ExportButtons type="sites" />
             <button
               onClick={() => setShowForm(true)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
             >
               <Plus className="w-5 h-5" />
               Add Site
@@ -156,7 +156,7 @@ export default function SitesPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl animate-in fade-in slide-in-from-top-2">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl animate-in fade-in slide-in-from-top-2">
             {error}
           </div>
         )}
@@ -173,7 +173,7 @@ export default function SitesPage() {
                   e.stopPropagation()
                   setStaffingProfilesSite(site)
                 }}
-                className="p-2 text-slate-400 dark:text-slate-300 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                className="p-2 text-gray-400 hover:text-green-500 hover:bg-green-50 rounded-lg transition-colors"
                 title="Staffing Profiles"
               >
                 <Settings2 className="w-4 h-4" />
@@ -181,7 +181,7 @@ export default function SitesPage() {
               <Link
                 href={`/sites/${site.site_id}`}
                 onClick={(e) => e.stopPropagation()}
-                className="p-2 text-slate-400 dark:text-slate-300 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded-lg transition-colors inline-flex"
+                className="p-2 text-gray-400 hover:text-violet-500 hover:bg-violet-50 rounded-lg transition-colors inline-flex"
                 title="View Site"
               >
                 <Eye className="w-4 h-4" />
@@ -191,7 +191,7 @@ export default function SitesPage() {
                   e.stopPropagation()
                   handleEdit(site)
                 }}
-                className="p-2 text-slate-400 dark:text-slate-300 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
                 title="Edit"
               >
                 <Pencil className="w-4 h-4" />
@@ -201,7 +201,7 @@ export default function SitesPage() {
                   e.stopPropagation()
                   handleDelete(site.site_id)
                 }}
-                className="p-2 text-slate-400 dark:text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                 title="Delete"
               >
                 <Trash2 className="w-4 h-4" />

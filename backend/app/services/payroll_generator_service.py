@@ -6,6 +6,7 @@ Integrates SA deductions (PAYE, UIF, SDL) and premium calculations.
 Based on client format: ATHOPASI SECURITY SERVICES payroll template.
 """
 
+from collections import defaultdict
 from decimal import Decimal, ROUND_HALF_UP
 from typing import List, Dict, Optional, Tuple
 from datetime import date, datetime, timedelta
@@ -18,6 +19,7 @@ from app.models.shift_assignment import ShiftAssignment
 from app.models.client import Client
 from app.models.site import Site
 from app.services.sa_payroll_service import SAPayrollService
+from app.utils.holidays import SouthAfricanHolidays
 
 
 class PayrollPeriod:
@@ -108,22 +110,6 @@ class PayrollEmployeeRecord:
 class PayrollGeneratorService:
     """Service for generating comprehensive payroll from shift assignments."""
 
-    # SA Public Holidays 2025
-    SA_HOLIDAYS_2025 = [
-        date(2025, 1, 1),   # New Year's Day
-        date(2025, 3, 21),  # Human Rights Day
-        date(2025, 4, 18),  # Good Friday
-        date(2025, 4, 21),  # Family Day
-        date(2025, 4, 27),  # Freedom Day
-        date(2025, 5, 1),   # Workers' Day
-        date(2025, 6, 16),  # Youth Day
-        date(2025, 8, 9),   # National Women's Day
-        date(2025, 9, 24),  # Heritage Day
-        date(2025, 12, 16), # Day of Reconciliation
-        date(2025, 12, 25), # Christmas Day
-        date(2025, 12, 26), # Day of Goodwill
-    ]
-
     # Premium rates
     NIGHT_SHIFT_PREMIUM = Decimal("0.10")  # 10% extra
     SUNDAY_PREMIUM = Decimal("0.50")  # 1.5x (50% extra)
@@ -181,6 +167,12 @@ class PayrollGeneratorService:
             sites = db.query(Site.site_id).filter(Site.client_id.in_(client_ids)).all()
             site_ids = [s.site_id for s in sites]
 
+        # Load org-specific payroll config for deductions
+        from app.models.organization_payroll_config import OrganizationPayrollConfig
+        org_config = db.query(OrganizationPayrollConfig).filter(
+            OrganizationPayrollConfig.org_id == org_id
+        ).first()
+
         # Process each employee
         payroll_records: List[PayrollEmployeeRecord] = []
         employees_with_no_shifts: List[str] = []
@@ -192,7 +184,8 @@ class PayrollGeneratorService:
                 start_date=start_date,
                 end_date=end_date,
                 site_ids=site_ids,
-                include_deductions=include_deductions
+                include_deductions=include_deductions,
+                org_config=org_config
             )
 
             # Salaried employees always included; hourly employees need at least one shift
@@ -241,7 +234,8 @@ class PayrollGeneratorService:
         start_date: date,
         end_date: date,
         site_ids: Optional[List[int]] = None,
-        include_deductions: bool = True
+        include_deductions: bool = True,
+        org_config=None
     ) -> PayrollEmployeeRecord:
         """Process payroll for a single employee."""
 
@@ -276,7 +270,7 @@ class PayrollGeneratorService:
 
             # Determine shift type and calculate hours
             shift_date = shift_start.date()
-            is_holiday = shift_date in cls.SA_HOLIDAYS_2025
+            is_holiday = SouthAfricanHolidays.is_public_holiday(shift_date)
             is_sunday = shift_date.weekday() == 6
             is_night = cls._is_night_shift(shift_start, shift_end)
 
@@ -308,10 +302,14 @@ class PayrollGeneratorService:
         record.total_days_worked = len(days_worked)
         record.total_hours_worked = record.normal_hours + record.sunday_hours + record.holiday_hours
 
-        # Check for overtime (over 45 hours for the period)
-        max_regular_hours = Decimal("45") if (end_date - start_date).days <= 7 else Decimal("180")
-        if record.total_hours_worked > max_regular_hours:
-            record.extra_hours = record.total_hours_worked - max_regular_hours
+        # BCEA-compliant weekly overtime: >45 hours per week is overtime
+        weekly_hours = defaultdict(Decimal)
+        for shift_detail in record.shifts_worked:
+            week_key = date.fromisoformat(shift_detail["date"]).isocalendar()[:2]  # (year, week)
+            weekly_hours[week_key] += Decimal(str(shift_detail["hours"]))
+        record.extra_hours = sum(
+            max(hours - Decimal("45"), Decimal("0")) for hours in weekly_hours.values()
+        )
 
         # Calculate earnings
         record.total_hours_wage = record.normal_hours * record.rate_per_hour
@@ -329,7 +327,8 @@ class PayrollGeneratorService:
 
         # Supervisor allowance if applicable
         if employee.is_supervisor:
-            record.supervisor_allowance = Decimal("500")  # Fixed supervisor allowance
+            allowance = Decimal(str(org_config.supervisor_allowance)) if org_config else Decimal("500")
+            record.supervisor_allowance = allowance
 
         # Gross salary — branch on pay type
         if record.pay_type == "monthly_fixed":
@@ -353,7 +352,7 @@ class PayrollGeneratorService:
 
         # Calculate deductions if requested
         if include_deductions:
-            cls._calculate_deductions(record)
+            cls._calculate_deductions(record, org_config)
 
         # Net salary
         record.net_salary = (record.gross_salary - record.total_deductions).quantize(Decimal("0.01"))
@@ -361,7 +360,7 @@ class PayrollGeneratorService:
         return record
 
     @classmethod
-    def _calculate_deductions(cls, record: PayrollEmployeeRecord):
+    def _calculate_deductions(cls, record: PayrollEmployeeRecord, org_config=None):
         """Calculate all SA deductions for an employee."""
 
         gross = record.gross_salary
@@ -375,31 +374,38 @@ class PayrollGeneratorService:
         age = 35  # Fallback if ID number is invalid or missing
         if record.id_number and len(record.id_number) >= 6:
             try:
-                year_str = record.id_number[:2]
-                year = int(year_str)
+                year_2digit = int(record.id_number[:2])
                 current_year_2digit = date.today().year % 100
-                birth_year = 1900 + year if year > current_year_2digit else 2000 + year
+                # If 2-digit year <= current, assume 2000s; else 1900s
+                birth_year = 2000 + year_2digit if year_2digit <= current_year_2digit else 1900 + year_2digit
                 month = int(record.id_number[2:4])
                 day = int(record.id_number[4:6])
                 birth_date = date(birth_year, month, day)
                 today = date.today()
-                age = today.year - birth_date.year - (
+                computed_age = today.year - birth_date.year - (
                     (today.month, today.day) < (birth_date.month, birth_date.day)
                 )
+                # Validate reasonable working age (16-100), fallback otherwise
+                if 16 <= computed_age <= 100:
+                    age = computed_age
             except (ValueError, IndexError):
                 pass  # Keep fallback age=35
 
         paye_result = SAPayrollService.calculate_paye(gross, age)
         record.paye = paye_result["paye"]
 
-        # PSIRA deduction (example fixed amount)
-        record.psira_deduction = Decimal("50")  # Adjust based on actual rates
-
-        # Bargaining Council (example)
-        record.bargaining_council = Decimal("25")
-
-        # Provident Fund (example 5% of gross)
-        record.provident_fund = (gross * Decimal("0.05")).quantize(Decimal("0.01"))
+        # Use org-specific config if available, otherwise defaults
+        if org_config:
+            record.psira_deduction = Decimal(str(org_config.psira_deduction))
+            record.bargaining_council = Decimal(str(org_config.bargaining_council))
+            pf_pct = Decimal(str(org_config.provident_fund_pct))
+            record.provident_fund = (gross * pf_pct).quantize(Decimal("0.01"))
+            record.nucaaw = Decimal(str(org_config.nucaaw))
+            record.hospital_cover = Decimal(str(org_config.hospital_cover))
+        else:
+            record.psira_deduction = Decimal("50")
+            record.bargaining_council = Decimal("25")
+            record.provident_fund = (gross * Decimal("0.05")).quantize(Decimal("0.01"))
 
         # Total deductions
         record.total_deductions = (
