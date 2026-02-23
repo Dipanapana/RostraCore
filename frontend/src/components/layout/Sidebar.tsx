@@ -78,6 +78,7 @@ import {
   Map,
   MessageSquare,
   Zap,
+  Briefcase,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -195,6 +196,15 @@ const NAV_ENTRIES: NavEntry[] = [
     label: "Messaging",
     icon: MessageSquare,
     href: "/messaging",
+    roles: ALL_ROLES,
+    section: "main",
+  },
+  {
+    kind: "standalone",
+    key: "portal",
+    label: "Client Portal",
+    icon: Briefcase,
+    href: "/portal",
     roles: ALL_ROLES,
     section: "main",
   },

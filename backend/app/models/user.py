@@ -16,6 +16,7 @@ class UserRole(str, enum.Enum):
     GUARD = "guard"
     FINANCE = "finance"
     SUPERADMIN = "superadmin"
+    CLIENT_VIEWER = "client_viewer"
 
 
 class User(Base):
@@ -33,6 +34,9 @@ class User(Base):
 
     # Organization link
     org_id = Column(Integer, ForeignKey("organizations.org_id"), nullable=True)
+
+    # Client portal link
+    client_id = Column(Integer, ForeignKey("clients.client_id"), nullable=True)
 
     # Owner and client access control
     is_owner = Column(Boolean, default=False, nullable=False)  # Can manage users and see all clients

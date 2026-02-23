@@ -495,6 +495,16 @@ export const messagingApi = {
     api.get(`/api/v1/messages/channels/${channelId}/members`),
 };
 
+export const clientPortalApi = {
+  getDashboard: () => api.get('/api/v1/portal/dashboard'),
+  getIncidents: (params?: { site_id?: number; skip?: number; limit?: number }) =>
+    api.get('/api/v1/portal/incidents', { params }),
+  getSchedule: (params?: { site_id?: number; days?: number }) =>
+    api.get('/api/v1/portal/schedule', { params }),
+  getInvoices: (params?: { skip?: number; limit?: number }) =>
+    api.get('/api/v1/portal/invoices', { params }),
+};
+
 export const authApi = {
   changePassword: (currentPassword: string, newPassword: string) =>
     api.post('/api/v1/auth/change-password', {
