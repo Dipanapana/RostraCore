@@ -983,4 +983,25 @@ export const opsSummaryApi = {
   snapshot: () => api.get('/api/v1/ops-summary/snapshot'),
 }
 
+export const reportScheduleApi = {
+  list: () => api.get('/api/v1/report-schedules/'),
+  get: (id: number) => api.get(`/api/v1/report-schedules/${id}`),
+  create: (data: any) => api.post('/api/v1/report-schedules/', data),
+  update: (id: number, data: any) => api.put(`/api/v1/report-schedules/${id}`, data),
+  delete: (id: number) => api.delete(`/api/v1/report-schedules/${id}`),
+  toggle: (id: number) => api.post(`/api/v1/report-schedules/${id}/toggle`),
+};
+
+export const postOrdersApi = {
+  list: (params?: { site_id?: number; status_filter?: string; skip?: number; limit?: number }) =>
+    api.get('/api/v1/post-orders/', { params }),
+  get: (id: number) => api.get(`/api/v1/post-orders/${id}`),
+  create: (data: any) => api.post('/api/v1/post-orders/', data),
+  update: (id: number, data: any) => api.put(`/api/v1/post-orders/${id}`, data),
+  delete: (id: number) => api.delete(`/api/v1/post-orders/${id}`),
+  getActiveForSite: (siteId: number) => api.get(`/api/v1/post-orders/site/${siteId}/active`),
+  acknowledge: (id: number) => api.post(`/api/v1/post-orders/${id}/acknowledge`),
+  getAcknowledgments: (id: number) => api.get(`/api/v1/post-orders/${id}/acknowledgments`),
+};
+
 export default api
