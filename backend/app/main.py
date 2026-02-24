@@ -42,16 +42,6 @@ app = FastAPI(
 )
 
 
-# Temporary debug handler — exposes actual tracebacks for Railway debugging
-import traceback as _tb
-from starlette.requests import Request as _Req
-from starlette.responses import JSONResponse as _JR
-
-@app.exception_handler(Exception)
-async def _debug_exception_handler(request: _Req, exc: Exception):
-    return _JR(status_code=500, content={"detail": str(exc)})
-
-
 # ---------------------------------------------------------------------------
 # Trailing-slash middleware — silently add trailing slash for API routes.
 #
