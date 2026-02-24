@@ -40,38 +40,36 @@ def init_database():
         # Add missing columns if they don't exist (for schema updates without full migration)
         print("[init_db] Checking for missing columns...")
         from sqlalchemy import text
+
+        def add_column(conn, table, col_name, col_def):
+            try:
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {col_name} {col_def}"))
+                conn.commit()
+            except Exception as e:
+                print(f"[init_db] {table}.{col_name}: {e}")
+
         with engine.connect() as conn:
-            # Add is_owner column to users if missing
-            try:
-                conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_owner BOOLEAN DEFAULT FALSE NOT NULL"))
-                conn.commit()
-                print("[init_db] Added is_owner column to users")
-            except Exception as e:
-                print(f"[init_db] is_owner column: {e}")
+            # --- users table: ensure all model columns exist ---
+            add_column(conn, "users", "client_id", "INTEGER REFERENCES clients(client_id)")
+            add_column(conn, "users", "is_owner", "BOOLEAN DEFAULT FALSE NOT NULL")
+            add_column(conn, "users", "managed_client_ids", "INTEGER[]")
+            add_column(conn, "users", "is_email_verified", "BOOLEAN DEFAULT FALSE")
+            add_column(conn, "users", "is_phone_verified", "BOOLEAN DEFAULT FALSE")
+            add_column(conn, "users", "email_verification_token", "VARCHAR(255)")
+            add_column(conn, "users", "email_verification_sent_at", "TIMESTAMPTZ")
+            add_column(conn, "users", "phone_verification_code", "VARCHAR(10)")
+            add_column(conn, "users", "phone_verification_sent_at", "TIMESTAMPTZ")
+            add_column(conn, "users", "password_reset_token", "VARCHAR(255)")
+            add_column(conn, "users", "password_reset_sent_at", "TIMESTAMPTZ")
+            add_column(conn, "users", "failed_login_attempts", "INTEGER DEFAULT 0 NOT NULL")
+            add_column(conn, "users", "account_locked_until", "TIMESTAMPTZ")
+            add_column(conn, "users", "last_failed_login", "TIMESTAMPTZ")
+            print("[init_db] Checked users columns")
 
-            # Add managed_client_ids column to users if missing
-            try:
-                conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS managed_client_ids INTEGER[]"))
-                conn.commit()
-                print("[init_db] Added managed_client_ids column to users")
-            except Exception as e:
-                print(f"[init_db] managed_client_ids column: {e}")
-
-            # Add client_management_mode column to organizations if missing
-            try:
-                conn.execute(text("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS client_management_mode VARCHAR(20) DEFAULT 'all' NOT NULL"))
-                conn.commit()
-                print("[init_db] Added client_management_mode column to organizations")
-            except Exception as e:
-                print(f"[init_db] client_management_mode column: {e}")
-
-            # Add managed_client_ids column to organizations if missing
-            try:
-                conn.execute(text("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS managed_client_ids INTEGER[]"))
-                conn.commit()
-                print("[init_db] Added managed_client_ids column to organizations")
-            except Exception as e:
-                print(f"[init_db] organizations.managed_client_ids column: {e}")
+            # --- organizations table ---
+            add_column(conn, "organizations", "client_management_mode", "VARCHAR(20) DEFAULT 'all' NOT NULL")
+            add_column(conn, "organizations", "managed_client_ids", "INTEGER[]")
+            print("[init_db] Checked organizations columns")
 
             # CRITICAL: Set is_owner = TRUE for admin users so they keep full access
             # Without this, existing admins would have no access to any data
