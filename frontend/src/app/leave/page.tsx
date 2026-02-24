@@ -263,8 +263,8 @@ export default function LeavePage() {
         api.get('/api/v1/employees'),
         api.get('/api/v1/leave/non-productive-summary'),
       ])
-      if (requestsRes.status === 'fulfilled') setLeaveRequests(requestsRes.value.data)
-      if (employeesRes.status === 'fulfilled') setEmployees(employeesRes.value.data)
+      if (requestsRes.status === 'fulfilled') setLeaveRequests(Array.isArray(requestsRes.value.data) ? requestsRes.value.data : [])
+      if (employeesRes.status === 'fulfilled') setEmployees(Array.isArray(employeesRes.value.data) ? employeesRes.value.data : [])
       if (npRes.status === 'fulfilled') setNpSummary(npRes.value.data)
       setError(null)
     } catch (err: any) {
@@ -318,7 +318,7 @@ export default function LeavePage() {
     // Search by employee name
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim()
-      result = result.filter((r) => r.employee_name?.toLowerCase().includes(q))
+      result = result.filter((r) => (r.employee_name ?? '').toLowerCase().includes(q))
     }
 
     return result

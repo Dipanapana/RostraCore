@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api, incidentsApi, patrolsApi, shiftsApi, rosterApi, reportsApi } from "@/services/api";
+import { ensureArray } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import {
@@ -109,7 +110,7 @@ export default function DashboardPage() {
           certifications: { total: 0, expiring_soon: 0, expired: 0 },
         };
         setMetrics(metricsData);
-        setUpcomingShifts(shiftsRes.data ?? []);
+        setUpcomingShifts(ensureArray(shiftsRes.data));
         setCostTrends(trendsRes.data?.trend || []);
 
         // Calculate real certification compliance data
@@ -225,14 +226,14 @@ export default function DashboardPage() {
         setActivities(newActivities);
 
         // Security ops counters
-        const allIncidents: any[] = incidentsRes.data ?? [];
+        const allIncidents: any[] = ensureArray(incidentsRes.data);
         const openInc = allIncidents.filter((i: any) => ['reported', 'investigating'].includes(i.status)).length;
         const criticalInc = allIncidents.filter((i: any) => i.severity === 'critical' && ['reported', 'investigating'].includes(i.status)).length;
         setIncidentStats({ open: openInc, critical: criticalInc });
-        setActivePatrols((patrolRunsRes.data ?? []).length);
-        setUnderstaffedShifts(coverageGapsRes.data ?? []);
+        setActivePatrols(ensureArray(patrolRunsRes.data).length);
+        setUnderstaffedShifts(ensureArray(coverageGapsRes.data));
         setSparePool(sparePoolRes.data);
-        setClientProfitability((profitabilityRes.data?.clients ?? []).slice(0, 5));
+        setClientProfitability(ensureArray(profitabilityRes.data?.clients).slice(0, 5));
 
       } catch (error) {
         console.error("Error fetching dashboard data:", error);

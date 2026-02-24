@@ -94,9 +94,10 @@ export default function GuardGradesPage() {
     }
   }
 
-  const totalWithGrade = stats ? stats.grades.reduce((s, g) => s + g.count, 0) : 0
-  const totalExpired = stats ? stats.grades.reduce((s, g) => s + g.expired_psira, 0) : 0
-  const totalExpiringSoon = stats ? stats.grades.reduce((s, g) => s + g.expiring_soon, 0) : 0
+  const grades = stats?.grades ?? []
+  const totalWithGrade = grades.reduce((s, g) => s + g.count, 0)
+  const totalExpired = grades.reduce((s, g) => s + g.expired_psira, 0)
+  const totalExpiringSoon = grades.reduce((s, g) => s + g.expiring_soon, 0)
 
   if (loading) {
     return (
@@ -232,8 +233,8 @@ export default function GuardGradesPage() {
       {/* Grade Breakdown Cards */}
       {stats && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          {stats.grades.map((g) => {
-            const colors = GRADE_COLORS[g.grade]
+          {(stats.grades ?? []).map((g) => {
+            const colors = GRADE_COLORS[g.grade] ?? GRADE_COLORS.E
             const pct = stats.total_active > 0 ? Math.round((g.count / stats.total_active) * 100) : 0
             const hasCompliance = g.expired_psira > 0 || g.expiring_soon > 0
 
@@ -345,14 +346,14 @@ export default function GuardGradesPage() {
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <h3 className="font-semibold text-gray-900 mb-3">Grade Distribution</h3>
           <div className="flex h-8 rounded-lg overflow-hidden gap-px">
-            {stats.grades
+            {(stats.grades ?? [])
               .filter((g) => g.count > 0)
               .map((g) => {
                 const pct = (g.count / stats.total_active) * 100
                 return (
                   <div
                     key={g.grade}
-                    className={`${GRADE_COLORS[g.grade].badge} flex items-center justify-center text-white text-xs font-bold transition-all`}
+                    className={`${(GRADE_COLORS[g.grade] ?? GRADE_COLORS.E).badge} flex items-center justify-center text-white text-xs font-bold transition-all`}
                     style={{ width: `${pct}%` }}
                     title={`Grade ${g.grade}: ${g.count} (${pct.toFixed(1)}%)`}
                   >
@@ -372,9 +373,9 @@ export default function GuardGradesPage() {
           </div>
           {/* Legend */}
           <div className="flex flex-wrap gap-3 mt-3">
-            {stats.grades.filter((g) => g.count > 0).map((g) => (
+            {(stats.grades ?? []).filter((g) => g.count > 0).map((g) => (
               <div key={g.grade} className="flex items-center gap-1.5 text-xs text-gray-600">
-                <span className={`w-3 h-3 rounded-sm ${GRADE_COLORS[g.grade].badge}`} />
+                <span className={`w-3 h-3 rounded-sm ${(GRADE_COLORS[g.grade] ?? GRADE_COLORS.E).badge}`} />
                 Grade {g.grade} ({g.count})
               </div>
             ))}

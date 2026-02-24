@@ -110,7 +110,7 @@ export default function ClientsPage() {
       if (response.ok) {
         const data = await response.json();
         console.log("[CLIENTS] Fetched", data.length, "clients");
-        setClients(data);
+        setClients(Array.isArray(data) ? data : []);
         setError("");
       } else {
         const errorText = await response.text();

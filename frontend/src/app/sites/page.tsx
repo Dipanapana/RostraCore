@@ -28,7 +28,7 @@ export default function SitesPage() {
     try {
       setLoading(true)
       const response = await sitesApi.getAll()
-      setSites(response.data)
+      setSites(Array.isArray(response.data) ? response.data : [])
       setError(null)
     } catch (err: any) {
       setError(err.message || 'Failed to fetch sites')

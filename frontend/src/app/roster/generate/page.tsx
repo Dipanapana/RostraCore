@@ -152,8 +152,8 @@ export default function RosterGenerateWizard() {
           clientsApi.getAll(),
           sitesApi.getAll(),
         ])
-        setClients(clientsRes.data)
-        setSites(sitesRes.data)
+        setClients(Array.isArray(clientsRes.data) ? clientsRes.data : [])
+        setSites(Array.isArray(sitesRes.data) ? sitesRes.data : [])
       } catch (err) {
         console.error('Failed to fetch data:', err)
       }

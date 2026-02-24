@@ -132,7 +132,7 @@ export default function IncidentsPage() {
         status_filter: statusFilter || undefined,
         limit: 200,
       });
-      setIncidents(res.data);
+      setIncidents(Array.isArray(res.data) ? res.data : []);
     } catch (e) {
       console.error("Failed to load incidents", e);
     } finally {

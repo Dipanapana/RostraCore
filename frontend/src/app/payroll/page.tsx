@@ -237,7 +237,7 @@ export default function PayrollPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setPayrolls(data);
+        setPayrolls(Array.isArray(data) ? data : data?.payroll_records ?? []);
       } else {
         setError("Failed to fetch payroll records");
       }
@@ -258,7 +258,7 @@ export default function PayrollPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setEmployees(data);
+        setEmployees(Array.isArray(data) ? data : []);
       }
     } catch (err: any) {
       console.error("Failed to fetch employees:", err);

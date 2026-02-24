@@ -285,7 +285,7 @@ async def generate_invoice(
                 Shift.site_id == site.site_id,
                 Shift.start_time >= datetime.combine(invoice_data.period_start, datetime.min.time()),
                 Shift.end_time <= datetime.combine(invoice_data.period_end, datetime.max.time()),
-                ShiftAssignment.status == "confirmed"  # Only bill confirmed shifts
+                ShiftAssignment.status.in_(["confirmed", "completed"])  # Bill confirmed and completed shifts
             )
         ).all()
 

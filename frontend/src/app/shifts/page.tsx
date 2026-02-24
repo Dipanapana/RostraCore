@@ -67,9 +67,9 @@ export default function ShiftsPage() {
         sitesApi.getAll(),
         employeesApi.getAll()
       ])
-      setShifts(shiftsRes.data)
-      setSites(sitesRes.data)
-      setEmployees(employeesRes.data)
+      setShifts(Array.isArray(shiftsRes.data) ? shiftsRes.data : [])
+      setSites(Array.isArray(sitesRes.data) ? sitesRes.data : [])
+      setEmployees(Array.isArray(employeesRes.data) ? employeesRes.data : [])
       setError(null)
     } catch (err: any) {
       setError(err.message || 'Failed to fetch data')

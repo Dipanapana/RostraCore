@@ -284,7 +284,7 @@ export default function PostingAlertsPage() {
     if (!availableSearch.trim()) return true
     const q = availableSearch.toLowerCase()
     const fullName = `${e.first_name} ${e.last_name}`.toLowerCase()
-    return fullName.includes(q) || e.role?.toLowerCase().includes(q) || e.id_number?.toLowerCase().includes(q) || e.psira_grade?.toLowerCase().includes(q)
+    return fullName.includes(q) || (e.role ?? '').toLowerCase().includes(q) || (e.id_number ?? '').toLowerCase().includes(q) || (e.psira_grade ?? '').toLowerCase().includes(q)
   })
 
   // Check if an alert is for an understaffed shift (critical or warning)
@@ -463,7 +463,7 @@ export default function PostingAlertsPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filteredAlerts.map((alert) => {
-                  const cfg = SEVERITY_CONFIG[alert.severity]
+                  const cfg = SEVERITY_CONFIG[alert.severity] ?? SEVERITY_CONFIG.critical
                   const Icon = cfg.icon
                   const hoursUntil = alert.hours_until_start
                   const timeLabel =

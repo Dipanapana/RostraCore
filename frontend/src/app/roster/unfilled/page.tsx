@@ -61,7 +61,7 @@ export default function UnfilledShiftsPage() {
     const fetchSites = async () => {
       try {
         const response = await sitesApi.getAll()
-        setSites(response.data)
+        setSites(Array.isArray(response.data) ? response.data : [])
       } catch (err) {
         console.error('Failed to fetch sites:', err)
       }
@@ -74,7 +74,7 @@ export default function UnfilledShiftsPage() {
     const fetchEmployees = async () => {
       try {
         const response = await employeesApi.getAll({ status: 'active' })
-        setEmployees(response.data)
+        setEmployees(Array.isArray(response.data) ? response.data : [])
       } catch (err) {
         console.error('Failed to fetch employees:', err)
       }
@@ -99,7 +99,7 @@ export default function UnfilledShiftsPage() {
       }
 
       const response = await rosterApi.getUnfilledShifts(params)
-      setUnfilledShifts(response.data)
+      setUnfilledShifts(Array.isArray(response.data) ? response.data : [])
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to fetch unfilled shifts')
       setUnfilledShifts([])

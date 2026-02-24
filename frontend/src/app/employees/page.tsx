@@ -32,7 +32,7 @@ export default function EmployeesPage() {
     try {
       setLoading(true)
       const response = await employeesApi.getAll()
-      setEmployees(response.data)
+      setEmployees(Array.isArray(response.data) ? response.data : [])
       setError(null)
     } catch (err: any) {
       setError(err.message || 'Failed to fetch employees')

@@ -170,7 +170,7 @@ export default function CalendarPage() {
     const fetchEmployees = async () => {
         try {
             const response = await employeesApi.getAll();
-            setEmployees(response.data);
+            setEmployees(Array.isArray(response.data) ? response.data : []);
         } catch (err) {
             console.error("Failed to load employees:", err);
         }
@@ -193,7 +193,7 @@ export default function CalendarPage() {
     const fetchSites = async () => {
         try {
             const response = await sitesApi.getAll();
-            setSites(response.data);
+            setSites(Array.isArray(response.data) ? response.data : []);
         } catch (err) {
             console.error("Failed to load sites:", err);
         }
@@ -203,7 +203,7 @@ export default function CalendarPage() {
         try {
             setLoading(true);
             const response = await shiftsApi.getAll();
-            setShifts(response.data);
+            setShifts(Array.isArray(response.data) ? response.data : []);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to load shifts");
         } finally {
