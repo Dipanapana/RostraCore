@@ -43,6 +43,7 @@ class EmployeeCreate(EmployeeBase):
     org_id: Optional[int] = None  # Set automatically from current user if not provided
     assigned_client_id: Optional[int] = None  # Optional client assignment (legacy)
     assigned_client_ids: Optional[List[int]] = None  # Multiple client assignment
+    preferred_site_ids: Optional[List[int]] = None  # Preferred site assignment
 
     # Banking details
     bank_name: Optional[str] = None  # e.g., FNB, ABSA, Standard Bank, Nedbank
@@ -74,6 +75,7 @@ class EmployeeUpdate(BaseModel):
     termination_date: Optional[date] = None
     assigned_client_id: Optional[int] = None  # Allow updating client assignment (legacy)
     assigned_client_ids: Optional[List[int]] = None  # Allow updating multiple client assignment
+    preferred_site_ids: Optional[List[int]] = None  # Preferred site assignment
 
     # Banking details
     bank_name: Optional[str] = None
@@ -90,6 +92,7 @@ class EmployeeResponse(EmployeeBase):
     org_id: int  # Include organization in response
     assigned_client_id: Optional[int] = None  # Include client assignment in response (legacy)
     assigned_client_ids: Optional[List[int]] = None  # Include multiple client assignment in response
+    preferred_site_ids: Optional[List[int]] = None  # Preferred site assignment
     max_hours_week: Optional[int] = 48  # Override to allow NULL from database
 
     # Pay fields (override base to make optional in response)

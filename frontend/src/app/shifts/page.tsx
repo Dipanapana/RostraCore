@@ -37,6 +37,14 @@ export default function ShiftsPage() {
   const [selectedSites, setSelectedSites] = useState<number[]>([])
   const [bulkStartDate, setBulkStartDate] = useState('')
   const [bulkEndDate, setBulkEndDate] = useState('')
+
+  // Auto-Generate from Profiles State
+  const [showAutoGenerate, setShowAutoGenerate] = useState(false)
+  const [autoGenLoading, setAutoGenLoading] = useState(false)
+  const [autoGenResult, setAutoGenResult] = useState<any>(null)
+  const [autoGenSites, setAutoGenSites] = useState<number[]>([])
+  const [autoGenStart, setAutoGenStart] = useState('')
+  const [autoGenEnd, setAutoGenEnd] = useState('')
   const [shiftTemplates, setShiftTemplates] = useState<ShiftTemplate[]>([
     { day_of_week: 0, start_time: '06:00', end_time: '18:00', required_staff: 1 },
     { day_of_week: 0, start_time: '18:00', end_time: '06:00', required_staff: 1 },
@@ -171,6 +179,82 @@ export default function ShiftsPage() {
     setSelectedSites([])
   }
 
+  // Auto-Generate from Profiles Functions
+  const handleAutoGenerate = async () => {
+    if (autoGenSites.length === 0) {
+      alert('Please select at least one site')
+      return
+    }
+    if (!autoGenStart || !autoGenEnd) {
+      alert('Please select start and end dates')
+      return
+    }
+
+    setAutoGenLoading(true)
+    setAutoGenResult(null)
+
+    try {
+      const response = await shiftsApi.generateFromProfiles({
+        site_ids: autoGenSites,
+        start_date: autoGenStart,
+        end_date: autoGenEnd,
+      })
+      setAutoGenResult(response.data)
+      if (response.data.shifts_created > 0) {
+        fetchData()
+      }
+    } catch (err: any) {
+      setAutoGenResult({
+        shifts_created: 0,
+        error: err.response?.data?.detail || err.message || 'Failed to generate shifts',
+      })
+    } finally {
+      setAutoGenLoading(false)
+    }
+  }
+
+  const toggleAutoGenSite = (siteId: number) => {
+    setAutoGenSites(prev =>
+      prev.includes(siteId) ? prev.filter(id => id !== siteId) : [...prev, siteId]
+    )
+  }
+
+  const setAutoGenThisWeek = () => {
+    const now = new Date()
+    const day = now.getDay()
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1)
+    const monday = new Date(now)
+    monday.setDate(diff)
+    const sunday = new Date(monday)
+    sunday.setDate(monday.getDate() + 6)
+    setAutoGenStart(monday.toISOString().split('T')[0])
+    setAutoGenEnd(sunday.toISOString().split('T')[0])
+  }
+
+  const setAutoGenNextWeek = () => {
+    const now = new Date()
+    const day = now.getDay()
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1) + 7
+    const monday = new Date(now)
+    monday.setDate(diff)
+    const sunday = new Date(monday)
+    sunday.setDate(monday.getDate() + 6)
+    setAutoGenStart(monday.toISOString().split('T')[0])
+    setAutoGenEnd(sunday.toISOString().split('T')[0])
+  }
+
+  const setAutoGenNext2Weeks = () => {
+    const now = new Date()
+    const day = now.getDay()
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1) + 7
+    const monday = new Date(now)
+    monday.setDate(diff)
+    const sunday = new Date(monday)
+    sunday.setDate(monday.getDate() + 13)
+    setAutoGenStart(monday.toISOString().split('T')[0])
+    setAutoGenEnd(sunday.toISOString().split('T')[0])
+  }
+
   const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
   // Get site name by ID
@@ -288,6 +372,13 @@ export default function ShiftsPage() {
           </div>
           <div className="flex items-center gap-3">
             <ExportButtons type="shifts" />
+            <button
+              onClick={() => { setShowAutoGenerate(true); setAutoGenSites(sites.map(s => s.site_id)); setAutoGenResult(null) }}
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              <Wand2 className="w-5 h-5" />
+              Auto-Generate
+            </button>
             <button
               onClick={() => setShowBulkGenerate(true)}
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
@@ -714,6 +805,113 @@ export default function ShiftsPage() {
                     <Wand2 className="w-4 h-4" />
                     Generate Shifts
                   </>
+                )}
+              </button>
+            </div>
+          </div>
+        </Modal>
+        {/* Auto-Generate from Profiles Modal */}
+        <Modal
+          isOpen={showAutoGenerate}
+          onClose={() => { setShowAutoGenerate(false); setAutoGenResult(null) }}
+          size="lg"
+          title="Auto-Generate Shifts from Site Profiles"
+        >
+          <div className="space-y-5">
+            <p className="text-sm text-gray-600">
+              Automatically creates day and night shifts based on each site&apos;s staffing profiles
+              (required staff, PSIRA grade, skills). If a site has no profiles, defaults to
+              day (06:00-18:00) and night (18:00-06:00) shifts.
+            </p>
+
+            {/* Result Banner */}
+            {autoGenResult && (
+              <div className={`p-3 rounded-lg ${autoGenResult.error ? 'bg-red-50 border border-red-200' : autoGenResult.shifts_created > 0 ? 'bg-emerald-50 border border-emerald-200' : 'bg-yellow-50 border border-yellow-200'}`}>
+                {autoGenResult.error ? (
+                  <p className="text-sm text-red-700">{autoGenResult.error}</p>
+                ) : autoGenResult.shifts_created > 0 ? (
+                  <div>
+                    <p className="text-sm font-medium text-emerald-700">
+                      Created {autoGenResult.shifts_created} shifts across {autoGenResult.sites_processed} sites
+                    </p>
+                    <div className="mt-1 text-xs text-emerald-600">
+                      {Object.entries(autoGenResult.by_site || {}).map(([name, count]: [string, any]) => (
+                        <p key={name}>• {name}: {count} shifts</p>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-yellow-700">No new shifts created (shifts may already exist for this period)</p>
+                )}
+              </div>
+            )}
+
+            {/* Quick Period Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Quick Select Period</label>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={setAutoGenThisWeek} className="px-3 py-1.5 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-full font-medium transition-colors">This Week</button>
+                <button type="button" onClick={setAutoGenNextWeek} className="px-3 py-1.5 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-full font-medium transition-colors">Next Week</button>
+                <button type="button" onClick={setAutoGenNext2Weeks} className="px-3 py-1.5 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-full font-medium transition-colors">Next 2 Weeks</button>
+                <button type="button" onClick={() => {
+                  const now = new Date()
+                  setAutoGenStart(new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0])
+                  setAutoGenEnd(new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0])
+                }} className="px-3 py-1.5 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-full font-medium transition-colors">This Month</button>
+              </div>
+            </div>
+
+            {/* Date Range */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                <input type="date" value={autoGenStart} onChange={(e) => setAutoGenStart(e.target.value)} className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                <input type="date" value={autoGenEnd} onChange={(e) => setAutoGenEnd(e.target.value)} className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50" />
+              </div>
+            </div>
+
+            {/* Site Selection */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Sites ({autoGenSites.length} selected)
+                </label>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setAutoGenSites(sites.map(s => s.site_id))} className="text-xs text-blue-600 hover:underline">Select All</button>
+                  <button type="button" onClick={() => setAutoGenSites([])} className="text-xs text-gray-500 hover:underline">Deselect All</button>
+                </div>
+              </div>
+              <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-1">
+                {sites.length === 0 ? (
+                  <p className="text-sm text-gray-500 text-center py-2">No sites available</p>
+                ) : (
+                  sites.map(site => (
+                    <label key={site.site_id} className={`flex items-center gap-2 p-2 rounded cursor-pointer transition-colors ${autoGenSites.includes(site.site_id) ? 'bg-emerald-50' : 'hover:bg-gray-50'}`}>
+                      <input type="checkbox" checked={autoGenSites.includes(site.site_id)} onChange={() => toggleAutoGenSite(site.site_id)} className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500" />
+                      <span className="text-sm text-gray-700">{site.site_name || site.client_name}</span>
+                      {site.min_staff && <span className="text-xs text-gray-400 ml-auto">min {site.min_staff} staff</span>}
+                    </label>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Generate Button */}
+            <div className="flex justify-end gap-3 pt-4 border-t">
+              <button type="button" onClick={() => { setShowAutoGenerate(false); setAutoGenResult(null) }} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Cancel</button>
+              <button
+                type="button"
+                onClick={handleAutoGenerate}
+                disabled={autoGenLoading || autoGenSites.length === 0 || !autoGenStart || !autoGenEnd}
+                className="flex items-center gap-2 px-6 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors disabled:cursor-not-allowed"
+              >
+                {autoGenLoading ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
+                ) : (
+                  <><Wand2 className="w-4 h-4" /> Auto-Generate Shifts</>
                 )}
               </button>
             </div>

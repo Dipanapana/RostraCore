@@ -118,9 +118,11 @@ function isSameDay(d1: Date, d2: Date): boolean {
 function DraggableEmployeeCard({
   employee,
   isAssignedToday,
+  affinityTag,
 }: {
   employee: Employee
   isAssignedToday: boolean
+  affinityTag?: 'preferred' | 'client' | null
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `employee_${employee.employee_id}`,
@@ -173,13 +175,21 @@ function DraggableEmployeeCard({
         </p>
       </div>
 
-      {/* Status dot */}
-      <div className={`
-        w-2.5 h-2.5 rounded-full flex-shrink-0
-        ${isAssignedToday ? 'bg-gray-400' : 'bg-emerald-500'}
-      `}
-        title={isAssignedToday ? 'Assigned today' : 'Available'}
-      />
+      {/* Affinity badge + Status dot */}
+      <div className="flex items-center gap-1 flex-shrink-0">
+        {affinityTag === 'preferred' && (
+          <span className="text-[9px] font-bold text-amber-600 bg-amber-50 px-1 rounded" title="Preferred for this site">★</span>
+        )}
+        {affinityTag === 'client' && (
+          <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1 rounded" title="Assigned to client">C</span>
+        )}
+        <div className={`
+          w-2.5 h-2.5 rounded-full
+          ${isAssignedToday ? 'bg-gray-400' : 'bg-emerald-500'}
+        `}
+          title={isAssignedToday ? 'Assigned today' : 'Available'}
+        />
+      </div>
     </div>
   )
 }
@@ -210,10 +220,12 @@ function EmployeeOverlayCard({ employee }: { employee: Employee }) {
 function DroppableShiftSlot({
   shift,
   employee,
+  allAssignedEmployees,
   onUnassign,
 }: {
   shift: ShiftWithAssignment
   employee?: Employee | null
+  allAssignedEmployees?: Employee[]
   onUnassign: (shiftId: number, employeeId: number) => void
 }) {
   const { isOver, setNodeRef } = useDroppable({
@@ -221,7 +233,11 @@ function DroppableShiftSlot({
     data: { shift },
   })
 
-  const isAssigned = !!shift.assigned_employee_id && !!employee
+  const assignedList = allAssignedEmployees || (employee ? [employee] : [])
+  const requiredStaff = shift.required_staff || 1
+  const filledCount = assignedList.length
+  const isFullyStaffed = filledCount >= requiredStaff
+  const hasAnyAssigned = filledCount > 0
   const timeRange = `${formatTime(shift.start_time)} - ${formatTime(shift.end_time)}`
 
   return (
@@ -229,40 +245,61 @@ function DroppableShiftSlot({
       ref={setNodeRef}
       className={`
         relative rounded-lg border-2 p-2 min-h-[60px] transition-all duration-150
-        ${isAssigned
+        ${isFullyStaffed
           ? 'border-emerald-400 bg-emerald-50'
-          : isOver
-            ? 'border-blue-400 bg-blue-50 scale-[1.02]'
-            : 'border-dashed border-gray-300 bg-gray-50 hover:border-gray-400'
+          : hasAnyAssigned
+            ? 'border-amber-400 bg-amber-50'
+            : isOver
+              ? 'border-blue-400 bg-blue-50 scale-[1.02]'
+              : 'border-dashed border-gray-300 bg-gray-50 hover:border-gray-400'
         }
       `}
     >
-      {isAssigned && employee ? (
-        <>
-          <div className="flex items-center gap-1.5">
-            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white bg-gradient-to-br from-emerald-500 to-teal-600 flex-shrink-0">
-              {getInitials(employee.first_name, employee.last_name)}
-            </div>
-            <span className="text-xs font-medium text-gray-900 truncate">
-              {employee.first_name} {employee.last_name?.charAt(0)}.
-            </span>
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                onUnassign(shift.shift_id, employee.employee_id)
-              }}
-              className="ml-auto p-0.5 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-              title="Remove assignment"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
+      {/* Multi-guard progress badge */}
+      {requiredStaff > 1 && (
+        <div className={`absolute -top-1.5 -right-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full ${isFullyStaffed ? 'bg-emerald-500 text-white' : hasAnyAssigned ? 'bg-amber-500 text-white' : 'bg-gray-300 text-gray-700'}`}>
+          {filledCount}/{requiredStaff}
+        </div>
+      )}
+
+      {hasAnyAssigned ? (
+        <div>
+          {/* Assigned employees as chips */}
+          <div className="space-y-1">
+            {assignedList.map((emp) => (
+              <div key={emp.employee_id} className="flex items-center gap-1.5">
+                <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white bg-gradient-to-br from-emerald-500 to-teal-600 flex-shrink-0">
+                  {getInitials(emp.first_name, emp.last_name)}
+                </div>
+                <span className="text-[10px] font-medium text-gray-900 truncate">
+                  {emp.first_name} {emp.last_name?.charAt(0)}.
+                </span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onUnassign(shift.shift_id, emp.employee_id)
+                  }}
+                  className="ml-auto p-0.5 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                  title="Remove assignment"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
           </div>
           <p className="text-[10px] text-gray-500 mt-0.5">{timeRange}</p>
-        </>
+          {/* Show drop zone if not fully staffed */}
+          {!isFullyStaffed && isOver && (
+            <p className="text-[10px] text-blue-500 font-medium mt-0.5 text-center">+ Drop to add</p>
+          )}
+        </div>
       ) : (
         <div className="flex flex-col items-center justify-center h-full text-center">
           <Users className="w-4 h-4 text-gray-400 mb-0.5" />
           <p className="text-[10px] text-gray-400">{timeRange}</p>
+          {requiredStaff > 1 && (
+            <p className="text-[9px] text-gray-400">Need {requiredStaff} guards</p>
+          )}
           {isOver && (
             <p className="text-[10px] text-blue-500 font-medium mt-0.5">Drop here</p>
           )}
@@ -400,18 +437,39 @@ export default function SchedulePage() {
     return byDay
   }, [shifts, weekDates])
 
-  // Filter employees by search
+  // Filter and sort employees by search + site affinity
   const filteredEmployees = useMemo(() => {
     const q = employeeSearch.toLowerCase().trim()
-    const active = employees.filter((e) => e.status === 'active')
-    if (!q) return active
-    return active.filter(
-      (e) =>
-        e.first_name.toLowerCase().includes(q) ||
-        e.last_name.toLowerCase().includes(q) ||
-        (e.role && e.role.toLowerCase().includes(q))
-    )
-  }, [employees, employeeSearch])
+    let active = employees.filter((e) => e.status === 'active')
+    if (q) {
+      active = active.filter(
+        (e) =>
+          e.first_name.toLowerCase().includes(q) ||
+          e.last_name.toLowerCase().includes(q) ||
+          (e.role && e.role.toLowerCase().includes(q))
+      )
+    }
+
+    // Sort by site affinity if a site is selected
+    if (selectedSiteId !== null) {
+      const selectedSite = sites.find(s => s.site_id === selectedSiteId)
+      const selectedClientId = selectedSite?.client_id
+
+      active.sort((a, b) => {
+        const aPreferred = (a as any).preferred_site_ids?.includes(selectedSiteId) ? 1 : 0
+        const bPreferred = (b as any).preferred_site_ids?.includes(selectedSiteId) ? 1 : 0
+        if (aPreferred !== bPreferred) return bPreferred - aPreferred
+
+        const aClient = selectedClientId && (a as any).assigned_client_ids?.includes(selectedClientId) ? 1 : 0
+        const bClient = selectedClientId && (b as any).assigned_client_ids?.includes(selectedClientId) ? 1 : 0
+        if (aClient !== bClient) return bClient - aClient
+
+        return 0
+      })
+    }
+
+    return active
+  }, [employees, employeeSearch, selectedSiteId, sites])
 
   // Coverage stats
   const coverageStats = useMemo(() => {
@@ -883,18 +941,30 @@ export default function SchedulePage() {
                                 `}
                               >
                                 {dayShifts.length > 0 ? (
-                                  dayShifts.map((shift) => (
-                                    <DroppableShiftSlot
-                                      key={shift.shift_id}
-                                      shift={shift}
-                                      employee={
-                                        shift.assigned_employee_id
-                                          ? employeeMap[shift.assigned_employee_id]
-                                          : null
+                                  dayShifts.map((shift) => {
+                                    // Build assigned employees list from shift_assignments or legacy field
+                                    const assignedEmps: Employee[] = []
+                                    if ((shift as any).shift_assignments?.length > 0) {
+                                      for (const sa of (shift as any).shift_assignments) {
+                                        const empId = sa.employee_id
+                                        if (empId && employeeMap[empId]) {
+                                          assignedEmps.push(employeeMap[empId])
+                                        }
                                       }
-                                      onUnassign={handleUnassign}
-                                    />
-                                  ))
+                                    } else if (shift.assigned_employee_id && employeeMap[shift.assigned_employee_id]) {
+                                      assignedEmps.push(employeeMap[shift.assigned_employee_id])
+                                    }
+
+                                    return (
+                                      <DroppableShiftSlot
+                                        key={shift.shift_id}
+                                        shift={shift}
+                                        employee={assignedEmps[0] || null}
+                                        allAssignedEmployees={assignedEmps}
+                                        onUnassign={handleUnassign}
+                                      />
+                                    )
+                                  })
                                 ) : (
                                   <div className="flex items-center justify-center h-full min-h-[100px]">
                                     <p className="text-xs text-gray-400">
@@ -952,11 +1022,25 @@ export default function SchedulePage() {
                           const todayStr = formatDate(new Date())
                           const isAssignedToday = assignedByDay[todayStr]?.has(emp.employee_id) || false
 
+                          // Determine site affinity tag
+                          let affinityTag: 'preferred' | 'client' | null = null
+                          if (selectedSiteId !== null) {
+                            if ((emp as any).preferred_site_ids?.includes(selectedSiteId)) {
+                              affinityTag = 'preferred'
+                            } else {
+                              const selectedSite = sites.find(s => s.site_id === selectedSiteId)
+                              if (selectedSite?.client_id && (emp as any).assigned_client_ids?.includes(selectedSite.client_id)) {
+                                affinityTag = 'client'
+                              }
+                            }
+                          }
+
                           return (
                             <DraggableEmployeeCard
                               key={emp.employee_id}
                               employee={emp}
                               isAssignedToday={isAssignedToday}
+                              affinityTag={affinityTag}
                             />
                           )
                         })}

@@ -746,3 +746,71 @@ async def bulk_generate_shifts(
         details=details,
         errors=errors
     )
+
+
+# ---------------------------------------------------------------------------
+# Auto-generate shifts from site staffing profiles
+# ---------------------------------------------------------------------------
+
+from pydantic import BaseModel as PydanticBaseModel
+
+class GenerateFromProfilesRequest(PydanticBaseModel):
+    site_ids: Optional[List[int]] = None  # None = all org sites
+    start_date: date
+    end_date: date
+
+
+@router.post("/generate-from-profiles")
+async def generate_shifts_from_profiles(
+    request: GenerateFromProfilesRequest,
+    current_user: User = Depends(get_current_user),
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db),
+):
+    """
+    Auto-generate shifts from site staffing profiles.
+
+    Reads SiteStaffingProfile records for each site and creates Shift records
+    covering the requested date range. Skips shifts that already exist
+    (idempotent).
+
+    If a site has no staffing profiles, falls back to creating default
+    day (06:00-18:00) and night (18:00-06:00) shifts using site.min_staff.
+    """
+    from app.services.shift_auto_generator import ShiftAutoGenerator
+
+    # Validate date range
+    if request.start_date > request.end_date:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="start_date must be before or equal to end_date",
+        )
+
+    date_diff = (request.end_date - request.start_date).days
+    if date_diff > 90:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Date range cannot exceed 90 days",
+        )
+
+    # Validate site access
+    if request.site_ids:
+        sites = db.query(Site).filter(
+            Site.site_id.in_(request.site_ids),
+            Site.org_id == org_id,
+        ).all()
+        if not sites:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No valid sites found for the provided IDs",
+            )
+
+    result = ShiftAutoGenerator.generate_shifts_for_org(
+        db=db,
+        org_id=org_id,
+        site_ids=request.site_ids,
+        start_date=request.start_date,
+        end_date=request.end_date,
+    )
+
+    return result

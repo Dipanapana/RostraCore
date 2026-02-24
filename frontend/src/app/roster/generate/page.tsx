@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import DatePicker from '@/components/DatePicker'
-import { clientsApi, sitesApi } from '@/services/api'
+import { clientsApi, sitesApi, shiftsApi } from '@/services/api'
 import { getApiUrl } from '@/lib/config'
 import { useToast } from '@/context/ToastContext'
 import {
@@ -113,6 +113,7 @@ export default function RosterGenerateWizard() {
   const [selectedClients, setSelectedClients] = useState<number[]>([])
   const [selectedSites, setSelectedSites] = useState<number[]>([])
   const [selectAllSites, setSelectAllSites] = useState(true)
+  const [autoGenerateShifts, setAutoGenerateShifts] = useState(true)
 
   // Step 2: Constraints
   const [constraints, setConstraints] = useState<RosterConstraints>({
@@ -230,6 +231,21 @@ export default function RosterGenerateWizard() {
     setResult(null)
 
     try {
+      // Auto-generate shifts from site profiles if enabled
+      if (autoGenerateShifts) {
+        try {
+          const siteIdsToGenerate = selectAllSites ? undefined : selectedSites
+          await shiftsApi.generateFromProfiles({
+            site_ids: siteIdsToGenerate,
+            start_date: formatDate(startDate),
+            end_date: formatDate(endDate),
+          })
+        } catch (err: any) {
+          console.warn('Auto-generate shifts warning:', err.message)
+          // Continue with roster generation even if shift auto-gen has issues
+        }
+      }
+
       const token = localStorage.getItem('access_token')
       const response = await fetch(
         `${getApiUrl()}/api/v1/roster/generate?algorithm=${algorithm}`,
@@ -474,6 +490,25 @@ export default function RosterGenerateWizard() {
                     2 Weeks (max)
                   </button>
                 </div>
+              </div>
+
+              {/* Auto-Generate Shifts Toggle */}
+              <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={autoGenerateShifts}
+                    onChange={(e) => setAutoGenerateShifts(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500"
+                  />
+                  <div>
+                    <span className="text-sm font-medium text-emerald-800">Auto-generate shifts for this period</span>
+                    <p className="text-xs text-emerald-600 mt-0.5">
+                      Creates day and night shifts from site staffing profiles before running the optimizer.
+                      This ensures shifts exist for the selected dates. Existing shifts are not duplicated.
+                    </p>
+                  </div>
+                </label>
               </div>
 
               {/* Client Filter */}

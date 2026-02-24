@@ -58,6 +58,8 @@ class Employee(Base):
     assigned_client_id = Column(Integer, ForeignKey("clients.client_id", ondelete="SET NULL"), nullable=True, index=True)
     # New multi-client field: array of client IDs
     assigned_client_ids = Column(ARRAY(Integer), nullable=True)
+    # Preferred sites: sites where employee is preferentially deployed
+    preferred_site_ids = Column(ARRAY(Integer), nullable=True)
 
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)

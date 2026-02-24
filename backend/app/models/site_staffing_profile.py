@@ -60,17 +60,17 @@ class SiteStaffingProfile(Base):
     profile_name = Column(String(100), nullable=False)  # "Weekday Day", "Weekend Night"
 
     # Time period
-    period_type = Column(SQLEnum(PeriodType), nullable=False, default=PeriodType.ALL_DAY)
+    period_type = Column(SQLEnum(PeriodType, values_callable=lambda e: [x.value for x in e]), nullable=False, default=PeriodType.ALL_DAY)
     custom_start_time = Column(Time, nullable=True)  # For custom periods
     custom_end_time = Column(Time, nullable=True)    # For custom periods
 
     # Day type
-    day_type = Column(SQLEnum(DayType), nullable=False, default=DayType.ALL)
+    day_type = Column(SQLEnum(DayType, values_callable=lambda e: [x.value for x in e]), nullable=False, default=DayType.ALL)
 
     # Staffing requirements
     required_staff = Column(Integer, nullable=False, default=1)
     required_skill = Column(String(100), nullable=True)
-    required_psira_grade = Column(SQLEnum(PSIRAGradeRequirement), nullable=True, default=PSIRAGradeRequirement.ANY)
+    required_psira_grade = Column(SQLEnum(PSIRAGradeRequirement, values_callable=lambda e: [x.value for x in e]), nullable=True, default=PSIRAGradeRequirement.ANY)
     requires_firearm = Column(Boolean, default=False)
 
     # Priority (higher = takes precedence when multiple profiles match)
