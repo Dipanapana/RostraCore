@@ -191,7 +191,7 @@ export default function RosterPage() {
       })
       if (res.ok) {
         const data = await res.json()
-        setAuditLog(data.entries || data || [])
+        setAuditLog(Array.isArray(data.entries) ? data.entries : Array.isArray(data) ? data : [])
       }
     } catch (err) {
       console.error('Failed to fetch audit log:', err)

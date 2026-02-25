@@ -211,7 +211,7 @@ def calculate_haversine_distance(
 def calculate_overtime_cost(
     total_hours: float,
     hourly_rate: float,
-    max_regular_hours: int = 40,
+    max_regular_hours: int = 45,
     ot_multiplier: float = 1.5
 ) -> Dict[str, float]:
     """

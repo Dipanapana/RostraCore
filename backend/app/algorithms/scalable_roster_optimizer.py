@@ -167,7 +167,9 @@ class PartitionedRosterOptimizer:
             # If they are objects, we might need to serialize them or keep them as is
             merged["unfilled_shifts"].extend(unfilled)
             
-            merged["total_cost"] += res.get("total_cost", 0.0)
+            # total_cost lives under "summary" in the production optimizer result
+            summary = res.get("summary", {})
+            merged["total_cost"] += summary.get("total_cost", 0.0) or res.get("total_cost", 0.0)
             
             # Diagnostics
             if "diagnostics" in res:

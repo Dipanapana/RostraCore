@@ -69,8 +69,8 @@ class RosterPreferences(Base):
     max_hours_week = Column(Integer, default=48)
     max_hours_week_level = Column(SQLEnum(ConstraintLevel), default=ConstraintLevel.HARD)
 
-    # Minimum rest period between shifts (BCEA: 8 hours)
-    min_rest_hours = Column(Integer, default=8)
+    # Minimum rest period between shifts (BCEA Section 15(1): 12 hours)
+    min_rest_hours = Column(Integer, default=12)
     min_rest_hours_level = Column(SQLEnum(ConstraintLevel), default=ConstraintLevel.HARD)
 
     # Maximum consecutive working days (BCEA: 6)

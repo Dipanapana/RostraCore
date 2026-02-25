@@ -107,11 +107,13 @@ const STATUS_CONFIG: Record<
   },
 };
 
-function getStatusConfig(status: string) {
+function getStatusConfig(status: string | undefined | null) {
+  if (!status) {
+    return { color: "bg-gray-100 text-gray-800", label: "Unknown" };
+  }
   return (
     STATUS_CONFIG[status.toLowerCase()] ?? {
       color: "bg-gray-100 text-gray-800",
-  
       label: status,
     }
   );

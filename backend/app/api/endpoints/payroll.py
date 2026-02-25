@@ -551,7 +551,7 @@ async def generate_payroll_excel(
         # Create Excel workbook
         wb = Workbook()
         ws = wb.active
-        ws.title = f"Payroll {request.start_date.strftime('%Y-%m')}"
+        ws.title = f"Payroll {start.strftime('%Y-%m')}"
 
         # Styles
         header_font = Font(bold=True, color="FFFFFF")
@@ -648,7 +648,7 @@ async def generate_payroll_excel(
         wb.save(output)
         output.seek(0)
 
-        filename = f"Payroll_{request.start_date.strftime('%Y-%m-%d')}_to_{request.end_date.strftime('%Y-%m-%d')}.xlsx"
+        filename = f"Payroll_{start.strftime('%Y-%m-%d')}_to_{end.strftime('%Y-%m-%d')}.xlsx"
 
         return StreamingResponse(
             output,

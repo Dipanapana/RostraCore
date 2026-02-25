@@ -322,33 +322,42 @@ async def get_employee_hours(
     db: Session = Depends(get_db)
 ):
     """Get hours breakdown per employee (filtered by organization)."""
+    from app.models.shift_assignment import ShiftAssignment, AssignmentStatus
+    from app.models.employee import Employee
+
     if not start_date:
         start_date = datetime.now()
     if not end_date:
         end_date = start_date + timedelta(days=7)
 
-    shifts = ShiftService.get_all(
-        db,
-        employee_id=employee_id,
-        start_date=start_date,
-        end_date=end_date,
-        org_id=org_id,
-        limit=1000
+    # Use ShiftAssignment join for multi-guard support (replaces deprecated assigned_employee_id)
+    query = (
+        db.query(ShiftAssignment, Shift)
+        .join(Shift, ShiftAssignment.shift_id == Shift.shift_id)
+        .filter(
+            Shift.org_id == org_id,
+            Shift.start_time >= start_date,
+            Shift.start_time < end_date,
+            ShiftAssignment.status.in_([AssignmentStatus.CONFIRMED, AssignmentStatus.COMPLETED]),
+        )
     )
+    if employee_id:
+        query = query.filter(ShiftAssignment.employee_id == employee_id)
 
-    # Calculate hours per employee
+    results = query.all()
+
     employee_hours = {}
-    for shift in shifts:
-        if shift.assigned_employee_id:
-            duration = (shift.end_time - shift.start_time).total_seconds() / 3600
-            if shift.assigned_employee_id not in employee_hours:
-                employee_hours[shift.assigned_employee_id] = {
-                    "employee_id": shift.assigned_employee_id,
-                    "total_hours": 0,
-                    "shift_count": 0
-                }
-            employee_hours[shift.assigned_employee_id]["total_hours"] += duration
-            employee_hours[shift.assigned_employee_id]["shift_count"] += 1
+    for assignment, shift in results:
+        eid = assignment.employee_id
+        duration = (shift.end_time - shift.start_time).total_seconds() / 3600
+        if eid not in employee_hours:
+            employee_hours[eid] = {
+                "employee_id": eid,
+                "total_hours": 0,
+                "shift_count": 0
+            }
+        employee_hours[eid]["total_hours"] += duration
+        employee_hours[eid]["shift_count"] += 1
 
     return {"employee_hours": list(employee_hours.values())}
 
@@ -362,38 +371,55 @@ async def get_budget_summary(
     db: Session = Depends(get_db)
 ):
     """Get budget summary for a roster period (filtered by organization)."""
+    from app.models.shift_assignment import ShiftAssignment, AssignmentStatus
+    from app.models.employee import Employee
+
     if not start_date:
         start_date = datetime.now()
     if not end_date:
         end_date = start_date + timedelta(days=7)
 
-    shifts = ShiftService.get_all(
-        db,
-        site_id=site_id,
-        start_date=start_date,
-        end_date=end_date,
-        org_id=org_id,
-        limit=1000
+    # Use ShiftAssignment join for multi-guard support (replaces deprecated assigned_employee_id)
+    shift_query = db.query(Shift).filter(
+        Shift.org_id == org_id,
+        Shift.start_time >= start_date,
+        Shift.start_time < end_date,
     )
+    if site_id:
+        shift_query = shift_query.filter(Shift.site_id == site_id)
+    all_shifts = shift_query.all()
+    shift_ids = [s.shift_id for s in all_shifts]
 
     total_cost = 0
     total_hours = 0
     filled_shifts = 0
 
-    for shift in shifts:
-        if shift.assigned_employee_id and shift.employee:
+    if shift_ids:
+        assignments = (
+            db.query(ShiftAssignment, Shift, Employee)
+            .join(Shift, ShiftAssignment.shift_id == Shift.shift_id)
+            .join(Employee, ShiftAssignment.employee_id == Employee.employee_id)
+            .filter(
+                ShiftAssignment.shift_id.in_(shift_ids),
+                ShiftAssignment.status.in_([AssignmentStatus.CONFIRMED, AssignmentStatus.COMPLETED]),
+            )
+            .all()
+        )
+        seen_shifts = set()
+        for assignment, shift, emp in assignments:
             duration = (shift.end_time - shift.start_time).total_seconds() / 3600
-            cost = duration * shift.employee.hourly_rate
+            cost = duration * (emp.hourly_rate or 0)
             total_cost += cost
             total_hours += duration
-            filled_shifts += 1
+            seen_shifts.add(shift.shift_id)
+        filled_shifts = len(seen_shifts)
 
     return {
         "total_cost": round(total_cost, 2),
         "total_hours": round(total_hours, 2),
         "filled_shifts": filled_shifts,
-        "total_shifts": len(shifts),
-        "fill_rate": round(filled_shifts / len(shifts) * 100, 2) if shifts else 0
+        "total_shifts": len(all_shifts),
+        "fill_rate": round(filled_shifts / len(all_shifts) * 100, 2) if all_shifts else 0
     }
 
 
@@ -870,7 +896,7 @@ async def save_roster(
                 roster_id=roster.roster_id,
                 status='pending',  # Will be confirmed when roster is published
                 regular_hours=assignment.get('duration_hours', 0),
-                cost_regular=assignment.get('cost', 0)
+                regular_pay=assignment.get('cost', 0)
             )
             db.add(shift_assignment)
 
@@ -1946,9 +1972,12 @@ def get_overtime_compliance(
 # ============== ROSTER SNAPSHOT HELPER ==============
 
 def _create_roster_snapshot(db, roster, user_id, label=None):
-    """Create a snapshot of the current roster state."""
+    """Create a snapshot of the current roster state with enriched metadata."""
     from app.models.roster_snapshot import RosterSnapshot
     from app.models.shift_assignment import ShiftAssignment
+    from app.models.employee import Employee
+    from app.models.shift import Shift
+    from app.models.site import Site
     from sqlalchemy import func
 
     # Get current version count
@@ -1956,24 +1985,64 @@ def _create_roster_snapshot(db, roster, user_id, label=None):
         RosterSnapshot.roster_id == roster.roster_id
     ).scalar() or 0
 
-    # Serialize current assignments
+    # Serialize current assignments with enriched data
     assignments = db.query(ShiftAssignment).filter(
         ShiftAssignment.roster_id == roster.roster_id
     ).all()
 
+    # Build lookup maps for employee names, shift details, site names
+    emp_ids = list(set(a.employee_id for a in assignments if a.employee_id))
+    shift_ids = list(set(a.shift_id for a in assignments if a.shift_id))
+
+    emp_map = {}
+    if emp_ids:
+        emps = db.query(Employee.employee_id, Employee.first_name, Employee.last_name).filter(
+            Employee.employee_id.in_(emp_ids)
+        ).all()
+        emp_map = {e.employee_id: f"{e.first_name} {e.last_name}" for e in emps}
+
+    shift_map = {}
+    site_ids = set()
+    if shift_ids:
+        shifts = db.query(Shift.shift_id, Shift.site_id, Shift.start_time, Shift.end_time).filter(
+            Shift.shift_id.in_(shift_ids)
+        ).all()
+        shift_map = {s.shift_id: {"site_id": s.site_id, "start_time": s.start_time, "end_time": s.end_time} for s in shifts}
+        site_ids = set(s.site_id for s in shifts if s.site_id)
+
+    site_map = {}
+    if site_ids:
+        sites = db.query(Site.site_id, Site.site_name).filter(
+            Site.site_id.in_(list(site_ids))
+        ).all()
+        site_map = {s.site_id: s.site_name for s in sites}
+
+    total_cost = 0.0
+    enriched_assignments = []
+    for a in assignments:
+        shift_info = shift_map.get(a.shift_id, {})
+        site_id = shift_info.get("site_id")
+        cost = float(a.cost_regular or 0) + float(a.cost_overtime or 0)
+        total_cost += cost
+
+        enriched_assignments.append({
+            "assignment_id": a.assignment_id,
+            "shift_id": a.shift_id,
+            "employee_id": a.employee_id,
+            "status": a.status,
+            "regular_hours": float(a.regular_hours or 0),
+            "employee_name": emp_map.get(a.employee_id, f"Employee #{a.employee_id}"),
+            "site_name": site_map.get(site_id, f"Site #{site_id}") if site_id else None,
+            "shift_start": shift_info.get("start_time").isoformat() if shift_info.get("start_time") else None,
+            "shift_end": shift_info.get("end_time").isoformat() if shift_info.get("end_time") else None,
+            "cost": cost,
+        })
+
     snapshot_data = {
-        "assignments": [
-            {
-                "assignment_id": a.assignment_id,
-                "shift_id": a.shift_id,
-                "employee_id": a.employee_id,
-                "status": a.status,
-                "regular_hours": float(a.regular_hours or 0),
-            }
-            for a in assignments
-        ],
+        "assignments": enriched_assignments,
         "total_shifts": roster.total_shifts,
         "assigned_shifts": roster.assigned_shifts,
+        "total_cost": round(total_cost, 2),
     }
 
     snapshot = RosterSnapshot(
@@ -2103,6 +2172,7 @@ async def get_roster_versions(
                     "assignment_count": len(s.snapshot_data.get("assignments", [])) if s.snapshot_data else 0,
                     "total_shifts": s.snapshot_data.get("total_shifts", 0) if s.snapshot_data else 0,
                     "assigned_shifts": s.snapshot_data.get("assigned_shifts", 0) if s.snapshot_data else 0,
+                    "total_cost": s.snapshot_data.get("total_cost") if s.snapshot_data else None,
                 }
                 for s in snapshots
             ],
@@ -2175,6 +2245,58 @@ async def compare_roster_versions(
         assignments_v1 = snap1.snapshot_data.get("assignments", [])
         assignments_v2 = snap2.snapshot_data.get("assignments", [])
 
+        # Collect all employee/shift IDs for hydration of older snapshots
+        all_emp_ids = set()
+        all_shift_ids = set()
+        for a in assignments_v1 + assignments_v2:
+            if a.get("employee_id"):
+                all_emp_ids.add(a["employee_id"])
+            if a.get("shift_id"):
+                all_shift_ids.add(a["shift_id"])
+
+        # Build hydration maps (employee name, shift info, site name)
+        from app.models.employee import Employee
+        from app.models.shift import Shift
+        from app.models.site import Site
+
+        emp_map = {}
+        if all_emp_ids:
+            emps = db.query(Employee.employee_id, Employee.first_name, Employee.last_name).filter(
+                Employee.employee_id.in_(list(all_emp_ids))
+            ).all()
+            emp_map = {e.employee_id: f"{e.first_name} {e.last_name}" for e in emps}
+
+        shift_map = {}
+        site_ids = set()
+        if all_shift_ids:
+            shifts = db.query(Shift.shift_id, Shift.site_id, Shift.start_time, Shift.end_time).filter(
+                Shift.shift_id.in_(list(all_shift_ids))
+            ).all()
+            shift_map = {s.shift_id: {"site_id": s.site_id, "start_time": s.start_time, "end_time": s.end_time} for s in shifts}
+            site_ids = set(s.site_id for s in shifts if s.site_id)
+
+        site_map = {}
+        if site_ids:
+            sites = db.query(Site.site_id, Site.site_name).filter(
+                Site.site_id.in_(list(site_ids))
+            ).all()
+            site_map = {s.site_id: s.site_name for s in sites}
+
+        def _hydrate(assignment):
+            """Add human-readable fields to assignment if missing."""
+            a = dict(assignment)
+            if "employee_name" not in a:
+                a["employee_name"] = emp_map.get(a.get("employee_id"), f"Employee #{a.get('employee_id')}")
+            shift_info = shift_map.get(a.get("shift_id"), {})
+            if "site_name" not in a:
+                sid = shift_info.get("site_id")
+                a["site_name"] = site_map.get(sid, f"Site #{sid}") if sid else None
+            if "shift_start" not in a and shift_info.get("start_time"):
+                a["shift_start"] = shift_info["start_time"].isoformat()
+            if "shift_end" not in a and shift_info.get("end_time"):
+                a["shift_end"] = shift_info["end_time"].isoformat()
+            return a
+
         map_v1 = {}
         for a in assignments_v1:
             key = (a.get("shift_id"), a.get("employee_id"))
@@ -2189,21 +2311,25 @@ async def compare_roster_versions(
         keys_v2 = set(map_v2.keys())
 
         # Assignments only in v2 (added going from v1 to v2)
-        added = [map_v2[k] for k in (keys_v2 - keys_v1)]
+        added = [_hydrate(map_v2[k]) for k in (keys_v2 - keys_v1)]
         # Assignments only in v1 (removed going from v1 to v2)
-        removed = [map_v1[k] for k in (keys_v1 - keys_v2)]
+        removed = [_hydrate(map_v1[k]) for k in (keys_v1 - keys_v2)]
         # Assignments in both but with different fields
         changed = []
         for k in (keys_v1 & keys_v2):
             a1 = map_v1[k]
             a2 = map_v2[k]
             if a1 != a2:
-                changed.append({"v1": a1, "v2": a2})
+                changed.append({"v1": _hydrate(a1), "v2": _hydrate(a2)})
 
         return {
             "roster_id": roster_id,
             "v1": v1,
             "v2": v2,
+            "v1_label": snap1.label,
+            "v2_label": snap2.label,
+            "v1_created_at": snap1.created_at.isoformat() if snap1.created_at else None,
+            "v2_created_at": snap2.created_at.isoformat() if snap2.created_at else None,
             "added": added,
             "removed": removed,
             "changed": changed,
@@ -2211,6 +2337,8 @@ async def compare_roster_versions(
                 "added_count": len(added),
                 "removed_count": len(removed),
                 "changed_count": len(changed),
+                "v1_total_cost": snap1.snapshot_data.get("total_cost"),
+                "v2_total_cost": snap2.snapshot_data.get("total_cost"),
             }
         }
 
@@ -2555,6 +2683,144 @@ async def generate_from_templates(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error generating from templates: {str(e)}"
         )
+
+
+@router.post("/validate-assignment")
+async def validate_assignment(
+    data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Lightweight feasibility check for a single (shift_id, employee_id) pair.
+    Used by the drag-and-drop roster board to validate before persisting.
+
+    Args:
+        data: {"shift_id": int, "employee_id": int}
+
+    Returns:
+        {feasible: bool, reasons: [], warnings: [], estimated_cost: float}
+    """
+    from app.models.employee import Employee
+    from app.models.certification import Certification
+    from app.models.availability import Availability
+    from app.utils.holidays import PremiumRateCalculator
+
+    try:
+        org_id = current_user.org_id
+        shift_id = data.get("shift_id")
+        employee_id = data.get("employee_id")
+
+        if not shift_id or not employee_id:
+            raise HTTPException(status_code=400, detail="shift_id and employee_id are required")
+
+        # Load shift and employee
+        shift = db.query(Shift).filter(Shift.shift_id == shift_id, Shift.org_id == org_id).first()
+        if not shift:
+            raise HTTPException(status_code=404, detail="Shift not found")
+
+        employee = db.query(Employee).filter(Employee.employee_id == employee_id, Employee.org_id == org_id).first()
+        if not employee:
+            raise HTTPException(status_code=404, detail="Employee not found")
+
+        reasons = []
+        warnings = []
+
+        # 1. Skill match check
+        if shift.required_skill:
+            emp_role = employee.role.value.lower() if employee.role else ""
+            required = shift.required_skill.lower()
+            skill_ok = (emp_role == required or
+                       (emp_role == "armed" and required == "unarmed") or
+                       emp_role == "supervisor")
+            if not skill_ok:
+                reasons.append(f"Skill mismatch: employee is {emp_role}, shift requires {required}")
+
+        # 2. Client assignment check
+        if employee.assigned_client_id is not None:
+            site = db.query(Site).filter(Site.site_id == shift.site_id).first()
+            if site and site.client_id != employee.assigned_client_id:
+                reasons.append(f"Employee assigned to client {employee.assigned_client_id}, shift belongs to client {site.client_id}")
+
+        # 3. Certification check (warnings only)
+        certs = db.query(Certification).filter(Certification.employee_id == employee_id).all()
+        shift_date = shift.start_time.date()
+        valid_certs = [c for c in certs if c.verified and c.expiry_date and c.expiry_date >= shift_date]
+        if not valid_certs:
+            if certs:
+                warnings.append("All certifications expired or unverified")
+            else:
+                warnings.append("No certifications on file")
+
+        # 4. Availability check
+        avail = db.query(Availability).filter(
+            Availability.employee_id == employee_id,
+            Availability.date == shift_date
+        ).first()
+        if avail and not avail.available:
+            reasons.append("Employee marked as unavailable on this date")
+
+        # 5. Overlap check (existing assignments)
+        from app.models.shift_assignment import ShiftAssignment, AssignmentStatus
+        existing = (
+            db.query(ShiftAssignment)
+            .join(Shift, ShiftAssignment.shift_id == Shift.shift_id)
+            .filter(
+                ShiftAssignment.employee_id == employee_id,
+                ShiftAssignment.status.in_([AssignmentStatus.CONFIRMED, AssignmentStatus.COMPLETED]),
+                Shift.start_time < shift.end_time,
+                Shift.end_time > shift.start_time,
+            )
+            .first()
+        )
+        if existing:
+            reasons.append("Employee already assigned to an overlapping shift")
+
+        # 6. Weekly hours check
+        from sqlalchemy import func, and_
+        week_start = shift.start_time - timedelta(days=shift.start_time.weekday())
+        week_end = week_start + timedelta(days=7)
+        weekly_hours_result = (
+            db.query(func.sum(Shift.end_time - Shift.start_time))
+            .join(ShiftAssignment, ShiftAssignment.shift_id == Shift.shift_id)
+            .filter(
+                ShiftAssignment.employee_id == employee_id,
+                ShiftAssignment.status.in_([AssignmentStatus.CONFIRMED, AssignmentStatus.COMPLETED]),
+                Shift.start_time >= week_start,
+                Shift.start_time < week_end,
+            )
+            .scalar()
+        )
+        current_weekly_hours = weekly_hours_result.total_seconds() / 3600 if weekly_hours_result else 0
+        shift_hours = (shift.end_time - shift.start_time).total_seconds() / 3600
+        if current_weekly_hours + shift_hours > 48:
+            warnings.append(f"Adding this shift would total {current_weekly_hours + shift_hours:.1f}h this week (BCEA max: 48h)")
+
+        # Calculate estimated cost
+        estimated_cost = 0.0
+        if not reasons and employee.hourly_rate:
+            paid_hours = shift.paid_hours if hasattr(shift, 'paid_hours') else shift_hours
+            total_cost, premium_amount, premium_type = PremiumRateCalculator.calculate_shift_cost(
+                base_hourly_rate=float(employee.hourly_rate),
+                hours=paid_hours,
+                shift_date=shift_date,
+            )
+            estimated_cost = total_cost
+
+        return {
+            "feasible": len(reasons) == 0,
+            "reasons": reasons,
+            "warnings": warnings,
+            "estimated_cost": round(estimated_cost, 2),
+            "employee_name": f"{employee.first_name} {employee.last_name}",
+            "shift_time": f"{shift.start_time.strftime('%H:%M')} - {shift.end_time.strftime('%H:%M')}",
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error validating assignment: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/saved/{roster_id}/assign")

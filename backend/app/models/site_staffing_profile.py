@@ -135,8 +135,8 @@ class SiteStaffingProfile(Base):
         elif self.day_type == DayType.SUNDAY:
             day_matches = weekday == 6
         elif self.day_type == DayType.PUBLIC_HOLIDAY:
-            # TODO: Implement public holiday checking (requires holiday calendar)
-            day_matches = False
+            from app.utils.holidays import SouthAfricanHolidays
+            day_matches = SouthAfricanHolidays.is_public_holiday(check_date)
         else:
             day_matches = False
 

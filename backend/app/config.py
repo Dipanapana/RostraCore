@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     # Rostering Constraints (BCEA Compliance - Basic Conditions of Employment Act)
     # BCEA allows: 45 ordinary hours/week, up to 48 with overtime agreement
     MAX_HOURS_WEEK: int = 48  # BCEA compliant (45 ordinary + 3 overtime allowed)
-    MIN_REST_HOURS: int = 8   # BCEA requires 12h daily rest; 8h is minimum safe period
+    MIN_REST_HOURS: int = 12  # BCEA Section 15(1): 12h consecutive daily rest; override via constraint hierarchy for exceptions
     MAX_CONSECUTIVE_DAYS: int = 6  # Maximum consecutive working days (BCEA: at least 1 rest day per week)
     MAX_CONSECUTIVE_NIGHTS: int = 4  # Maximum consecutive night shifts (safety & fatigue management)
     OT_MULTIPLIER: float = 1.5  # BCEA overtime rate

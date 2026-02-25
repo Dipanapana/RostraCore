@@ -334,6 +334,30 @@ const NAV_ENTRIES: NavEntry[] = [
         permissionKey: "roster.view",
       },
       {
+        key: "shifts",
+        label: "Shifts",
+        href: "/shifts",
+        icon: Clock,
+        roles: MANAGEMENT_ROLES,
+        permissionKey: "roster.view",
+      },
+      {
+        key: "generate-roster",
+        label: "Generate Roster",
+        href: "/roster/generate",
+        icon: Wrench,
+        roles: MANAGEMENT_ROLES,
+        permissionKey: "roster.view",
+      },
+      {
+        key: "roster-board",
+        label: "Roster Board",
+        href: "/roster/board",
+        icon: Grid3X3,
+        roles: MANAGEMENT_ROLES,
+        permissionKey: "roster.view",
+      },
+      {
         key: "posting-alerts",
         label: "Posting Alerts",
         href: "/roster/alerts",
@@ -951,7 +975,10 @@ const ROUTE_GROUPS: Record<string, string[]> = {
   "/employees/compliance": ["/employees/compliance"],
   "/attendance/analytics": ["/attendance/analytics"],
   "/sites": ["/sites"],
-  "/roster": ["/roster", "/shifts", "/calendar", "/schedule"],
+  "/roster": ["/roster"],
+  "/shifts": ["/shifts"],
+  "/roster/generate": ["/roster/generate"],
+  "/roster/board": ["/roster/board"],
   "/roster/alerts": ["/roster/alerts"],
   "/roster/exceptions": ["/roster/exceptions"],
   "/roster/spare-pool": ["/roster/spare-pool"],
@@ -1430,7 +1457,7 @@ export default function Sidebar() {
         <div
           className={`
             overflow-hidden transition-all duration-200 ease-out
-            ${expanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"}
+            ${expanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"}
           `}
         >
           <div className="ml-4 pl-3 border-l border-gray-200 mt-0.5 mb-1 space-y-0.5">

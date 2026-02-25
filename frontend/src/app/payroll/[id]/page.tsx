@@ -9,11 +9,6 @@ import {
   Loader2,
   AlertTriangle,
   Download,
-  User,
-  Calendar,
-  Clock,
-  DollarSign,
-  Calculator,
   Printer
 } from 'lucide-react'
 import api from '@/services/api'
@@ -26,14 +21,41 @@ interface PayrollDetail {
     employee_id: number
     name: string
     hourly_rate: number
+    employee_number?: string
+    id_number?: string
+    psira_number?: string
+    psira_grade?: string
+    position?: string
+    department?: string
+    tax_number?: string
+    bank_name?: string
+    account_number?: string
+    branch_code?: string
+    account_type?: string
   }
   period_start: string
   period_end: string
+  payment_date?: string
   total_hours: number
   overtime_hours: number
   gross_pay: number
   expenses_total: number
   net_pay: number
+  basic_salary?: number
+  overtime_pay?: number
+  night_shift_allowance?: number
+  sunday_premium?: number
+  holiday_premium?: number
+  sunday_hours?: number
+  holiday_hours?: number
+  paye?: number
+  uif?: number
+  psira_levy?: number
+  bargaining_council?: number
+  provident_fund?: number
+  hospital_cover?: number
+  other_deductions_amount?: number
+  org_name?: string
 }
 
 interface SADeductions {
@@ -67,16 +89,14 @@ export default function PayslipDetailPage() {
   const fetchPayrollData = async () => {
     try {
       setLoading(true)
-      // Fetch payroll details
       const payrollRes = await api.get(`/api/v1/payroll/${payrollId}`)
       setPayroll(payrollRes.data)
 
-      // Calculate SA deductions based on gross pay
       if (payrollRes.data.gross_pay > 0) {
         const deductionsRes = await api.get('/api/v1/payroll-deductions/net-pay', {
           params: {
             gross_monthly: payrollRes.data.gross_pay,
-            age: 35, // Default age
+            age: 35,
             other_deductions: 0
           }
         })
@@ -97,10 +117,20 @@ export default function PayslipDetailPage() {
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('en-ZA', {
-      day: 'numeric',
+      day: '2-digit',
       month: 'long',
       year: 'numeric'
     })
+  }
+
+  const maskIdNumber = (id: string) => {
+    if (!id || id.length < 10) return id || '-'
+    return id.slice(0, 6) + '****' + id.slice(-3)
+  }
+
+  const maskAccountNumber = (acc: string) => {
+    if (!acc || acc.length < 4) return acc || '-'
+    return '****' + acc.slice(-4)
   }
 
   const handleDownloadPDF = async () => {
@@ -167,24 +197,82 @@ export default function PayslipDetailPage() {
     )
   }
 
+  // Compute values for the template
+  const emp = payroll.employee || {} as any
+  const regularHours = payroll.total_hours - payroll.overtime_hours
+  const hourlyRate = emp.hourly_rate || 0
+  const basicSalary = payroll.basic_salary || (regularHours * hourlyRate)
+  const overtimePay = payroll.overtime_pay || (payroll.overtime_hours * hourlyRate * 1.5)
+  const nightAllowance = payroll.night_shift_allowance || 0
+  const sundayPremium = payroll.sunday_premium || 0
+  const holidayPremium = payroll.holiday_premium || 0
+  const grossPay = payroll.gross_pay
+  const refNumber = `PS-${payroll.employee?.employee_id || '0'}-${payroll.payroll_id}-${payroll.period_start?.slice(0, 7)?.replace('-', '')}`
+
+  // Deduction values
+  const paye = payroll.paye || deductions?.paye || 0
+  const uif = payroll.uif || deductions?.uif_employee || 0
+  const psiraLevy = payroll.psira_levy || 0
+  const bargainingCouncil = payroll.bargaining_council || 0
+  const providentFund = payroll.provident_fund || 0
+  const hospitalCover = payroll.hospital_cover || 0
+  const otherDed = payroll.other_deductions_amount || deductions?.other_deductions || 0
+  const totalDeductions = deductions?.total_deductions || (paye + uif + psiraLevy + bargainingCouncil + providentFund + hospitalCover + otherDed)
+  const netPay = deductions?.net_pay || payroll.net_pay
+
+  // Build earnings rows (only show non-zero)
+  const earningsRows: { label: string; hours: string; rate: string; amount: number }[] = []
+  if (basicSalary > 0) {
+    earningsRows.push({ label: 'Basic Salary', hours: regularHours > 0 ? regularHours.toFixed(1) : '-', rate: hourlyRate > 0 ? formatCurrency(hourlyRate) : '-', amount: basicSalary })
+  }
+  if (overtimePay > 0) {
+    earningsRows.push({ label: 'Overtime @ 1.5x', hours: payroll.overtime_hours.toFixed(1), rate: formatCurrency(hourlyRate * 1.5), amount: overtimePay })
+  }
+  if (nightAllowance > 0) {
+    earningsRows.push({ label: 'Night Shift Allowance', hours: '-', rate: '-', amount: nightAllowance })
+  }
+  if (sundayPremium > 0) {
+    earningsRows.push({ label: 'Sunday Premium @ 1.5x', hours: (payroll.sunday_hours || 0).toFixed(1), rate: '-', amount: sundayPremium })
+  }
+  if (holidayPremium > 0) {
+    earningsRows.push({ label: 'Public Holiday @ 2x', hours: (payroll.holiday_hours || 0).toFixed(1), rate: '-', amount: holidayPremium })
+  }
+  if (payroll.expenses_total > 0) {
+    earningsRows.push({ label: 'Travel Allowance', hours: '-', rate: '-', amount: payroll.expenses_total })
+  }
+
+  // Build deduction rows (only show non-zero)
+  const deductionRows: { label: string; amount: number }[] = []
+  if (paye > 0) deductionRows.push({ label: 'PAYE (Income Tax)', amount: paye })
+  if (uif > 0) deductionRows.push({ label: 'UIF Contribution', amount: uif })
+  if (psiraLevy > 0) deductionRows.push({ label: 'PSIRA Levy', amount: psiraLevy })
+  if (bargainingCouncil > 0) deductionRows.push({ label: 'Bargaining Council', amount: bargainingCouncil })
+  if (providentFund > 0) deductionRows.push({ label: 'Provident Fund', amount: providentFund })
+  if (hospitalCover > 0) deductionRows.push({ label: 'Medical Aid', amount: hospitalCover })
+  if (otherDed > 0) deductionRows.push({ label: 'Other Deductions', amount: otherDed })
+
+  // Employee info grid rows
+  const employeeName = emp.name || 'Unknown'
+  const employeeNumber = emp.employee_number || `EMP${String(emp.employee_id || 0).padStart(4, '0')}`
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
       <main className="flex-1 p-8 ml-64">
-        {/* Header */}
-        <div className="mb-8">
+        {/* Page Header with actions */}
+        <div className="mb-6 print:hidden">
           <PageHeader
             backHref="/payroll"
             backLabel="Back to Payroll"
             title="Payslip Details"
             subtitle={`Payroll ID: #${payroll.payroll_id}`}
-            icon={<FileText className="w-6 h-6 text-blue-600" />}
+            icon={<FileText className="w-6 h-6 text-[#2D3748]" />}
             actions={
               <>
                 <button
                   onClick={handleDownloadPDF}
                   disabled={downloading}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-4 py-2 bg-[#1A202C] text-white rounded-lg hover:bg-[#2D3748] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {downloading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -205,175 +293,194 @@ export default function PayslipDetailPage() {
           />
         </div>
 
-        {/* Payslip Card */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden print:shadow-none">
-          {/* Company Header */}
-          <div className="bg-blue-600 text-white p-6">
-            <h2 className="text-xl font-bold">PAYSLIP</h2>
-            <p className="text-blue-200">South African Security Services</p>
+        {/* Payslip Document - matches PDF template */}
+        <div className="bg-white max-w-[850px] mx-auto shadow-lg print:shadow-none print:max-w-none" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
+
+          {/* === HEADER BAR (Dark charcoal) === */}
+          <div className="flex justify-between items-center px-6 py-4" style={{ backgroundColor: '#1A202C' }}>
+            <h1 className="text-white text-lg font-bold tracking-wide">PAYSLIP</h1>
+            <span className="text-white text-sm opacity-80">Reference: {refNumber}</span>
           </div>
 
-          {/* Employee & Period Info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 border-b">
-            <div className="space-y-3">
-              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                <User className="w-4 h-4 text-blue-600" />
-                Employee Details
-              </h3>
-              <div className="text-sm space-y-1">
-                <p className="text-gray-900 font-medium">{payroll.employee?.name || 'Unknown'}</p>
-                <p className="text-gray-600">Employee ID: {payroll.employee?.employee_id}</p>
-                <p className="text-gray-600">Hourly Rate: {formatCurrency(payroll.employee?.hourly_rate || 0)}</p>
-              </div>
+          {/* === COMPANY & PERIOD INFO === */}
+          <div className="flex justify-between items-start px-6 py-4">
+            <div>
+              <h2 className="text-base font-bold" style={{ color: '#2D3748' }}>
+                {(payroll.org_name || 'SECURITY COMPANY').toUpperCase()}
+              </h2>
+              <p className="text-xs mt-0.5" style={{ color: '#718096' }}>Security Services Provider</p>
             </div>
-            <div className="space-y-3">
-              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-blue-600" />
-                Pay Period
-              </h3>
-              <div className="text-sm space-y-1">
-                <p className="text-gray-900">{formatDate(payroll.period_start)} - {formatDate(payroll.period_end)}</p>
+            <div className="text-right text-sm">
+              <div className="flex items-center gap-3 justify-end">
+                <span className="text-xs" style={{ color: '#718096' }}>Pay Period:</span>
+                <span className="font-semibold text-sm" style={{ color: '#2D3748' }}>
+                  {formatDate(payroll.period_start)} - {formatDate(payroll.period_end)}
+                </span>
               </div>
-            </div>
-          </div>
-
-          {/* Hours Worked */}
-          <div className="p-6 border-b">
-            <h3 className="font-semibold text-gray-900 flex items-center gap-2 mb-4">
-              <Clock className="w-4 h-4 text-blue-600" />
-              Hours Worked
-            </h3>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600">Regular Hours</p>
-                <p className="text-xl font-bold text-gray-900">
-                  {(payroll.total_hours - payroll.overtime_hours).toFixed(2)}
-                </p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600">Overtime Hours</p>
-                <p className="text-xl font-bold text-orange-600">{payroll.overtime_hours.toFixed(2)}</p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600">Total Hours</p>
-                <p className="text-xl font-bold text-blue-600">{payroll.total_hours.toFixed(2)}</p>
-              </div>
+              {payroll.payment_date && (
+                <div className="flex items-center gap-3 justify-end mt-1">
+                  <span className="text-xs" style={{ color: '#718096' }}>Payment Date:</span>
+                  <span className="font-semibold text-sm" style={{ color: '#2D3748' }}>
+                    {formatDate(payroll.payment_date)}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Earnings */}
-          <div className="p-6 border-b">
-            <h3 className="font-semibold text-gray-900 flex items-center gap-2 mb-4">
-              <DollarSign className="w-4 h-4 text-green-600" />
-              Earnings
-            </h3>
-            <table className="w-full">
-              <tbody className="text-sm">
-                <tr className="border-b">
-                  <td className="py-2 text-gray-600">Gross Pay</td>
-                  <td className="py-2 text-right font-medium text-gray-900">
-                    {formatCurrency(payroll.gross_pay)}
-                  </td>
-                </tr>
-                {payroll.expenses_total > 0 && (
-                  <tr className="border-b">
-                    <td className="py-2 text-gray-600">Travel Reimbursement</td>
-                    <td className="py-2 text-right font-medium text-gray-900">
-                      {formatCurrency(payroll.expenses_total)}
-                    </td>
-                  </tr>
-                )}
-                <tr className="bg-green-50">
-                  <td className="py-2 px-2 font-semibold text-green-700">Total Earnings</td>
-                  <td className="py-2 px-2 text-right font-bold text-green-700">
-                    {formatCurrency(payroll.gross_pay)}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          {/* Divider */}
+          <div className="mx-6 border-t" style={{ borderColor: '#CBD5E0' }} />
+
+          {/* === EMPLOYEE INFORMATION GRID === */}
+          <div className="px-6 pt-4 pb-3">
+            <h3 className="text-xs font-bold mb-2 tracking-wide" style={{ color: '#2D3748' }}>EMPLOYEE INFORMATION</h3>
+            <div className="border" style={{ borderColor: '#CBD5E0' }}>
+              {/* Row 1 */}
+              <div className="grid grid-cols-4" style={{ backgroundColor: '#F7FAFC' }}>
+                <div className="px-3 py-2 border-r" style={{ borderColor: '#CBD5E0' }}>
+                  <p className="text-[10px]" style={{ color: '#718096' }}>Employee Name</p>
+                  <p className="text-sm font-bold" style={{ color: '#2D3748' }}>{employeeName}</p>
+                </div>
+                <div className="px-3 py-2 border-r" style={{ borderColor: '#CBD5E0' }}>
+                  <p className="text-[10px]" style={{ color: '#718096' }}>Employee Number</p>
+                  <p className="text-sm font-bold" style={{ color: '#2D3748' }}>{employeeNumber}</p>
+                </div>
+                <div className="px-3 py-2 border-r" style={{ borderColor: '#CBD5E0' }}>
+                  <p className="text-[10px]" style={{ color: '#718096' }}>ID Number</p>
+                  <p className="text-sm font-bold" style={{ color: '#2D3748' }}>{maskIdNumber(emp.id_number || '')}</p>
+                </div>
+                <div className="px-3 py-2">
+                  <p className="text-[10px]" style={{ color: '#718096' }}>Tax Reference</p>
+                  <p className="text-sm font-bold" style={{ color: '#2D3748' }}>{emp.tax_number || '-'}</p>
+                </div>
+              </div>
+              {/* Row 2 */}
+              <div className="grid grid-cols-4 border-t" style={{ borderColor: '#CBD5E0' }}>
+                <div className="px-3 py-2 border-r" style={{ borderColor: '#CBD5E0' }}>
+                  <p className="text-[10px]" style={{ color: '#718096' }}>Position</p>
+                  <p className="text-sm font-bold" style={{ color: '#2D3748' }}>{emp.position || 'Security Officer'}</p>
+                </div>
+                <div className="px-3 py-2 border-r" style={{ borderColor: '#CBD5E0' }}>
+                  <p className="text-[10px]" style={{ color: '#718096' }}>Department</p>
+                  <p className="text-sm font-bold" style={{ color: '#2D3748' }}>{emp.department || 'Security Operations'}</p>
+                </div>
+                <div className="px-3 py-2 border-r" style={{ borderColor: '#CBD5E0' }}>
+                  <p className="text-[10px]" style={{ color: '#718096' }}>PSIRA Number</p>
+                  <p className="text-sm font-bold" style={{ color: '#2D3748' }}>{emp.psira_number || '-'}</p>
+                </div>
+                <div className="px-3 py-2">
+                  <p className="text-[10px]" style={{ color: '#718096' }}>PSIRA Grade</p>
+                  <p className="text-sm font-bold" style={{ color: '#2D3748' }}>{emp.psira_grade || '-'}</p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* SA Statutory Deductions */}
-          {deductions && (
-            <div className="p-6 border-b">
-              <h3 className="font-semibold text-gray-900 flex items-center gap-2 mb-4">
-                <Calculator className="w-4 h-4 text-red-600" />
-                Statutory Deductions (South Africa)
-              </h3>
-              <table className="w-full">
-                <tbody className="text-sm">
-                  <tr className="border-b">
-                    <td className="py-2 text-gray-600">
-                      PAYE (Pay As You Earn)
-                      <span className="text-xs text-gray-400 ml-2">Income Tax</span>
-                    </td>
-                    <td className="py-2 text-right font-medium text-red-600">
-                      -{formatCurrency(deductions.paye)}
-                    </td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-2 text-gray-600">
-                      UIF (Employee)
-                      <span className="text-xs text-gray-400 ml-2">1% of earnings, max R177.12</span>
-                    </td>
-                    <td className="py-2 text-right font-medium text-red-600">
-                      -{formatCurrency(deductions.uif_employee)}
-                    </td>
-                  </tr>
-                  {deductions.other_deductions > 0 && (
-                    <tr className="border-b">
-                      <td className="py-2 text-gray-600">Other Deductions</td>
-                      <td className="py-2 text-right font-medium text-red-600">
-                        -{formatCurrency(deductions.other_deductions)}
-                      </td>
+          {/* === EARNINGS & DEDUCTIONS (Side by side) === */}
+          <div className="px-6 py-3">
+            <div className="flex gap-4">
+              {/* EARNINGS TABLE */}
+              <div className="flex-1">
+                <h3 className="text-xs font-bold mb-2 tracking-wide" style={{ color: '#2D3748' }}>EARNINGS</h3>
+                <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#EDF2F7' }}>
+                      <th className="text-left px-2 py-1.5 text-xs font-bold" style={{ color: '#2D3748', borderBottom: '1px solid #CBD5E0' }}>Description</th>
+                      <th className="text-right px-2 py-1.5 text-xs font-bold" style={{ color: '#2D3748', borderBottom: '1px solid #CBD5E0' }}>Hours</th>
+                      <th className="text-right px-2 py-1.5 text-xs font-bold" style={{ color: '#2D3748', borderBottom: '1px solid #CBD5E0' }}>Rate</th>
+                      <th className="text-right px-2 py-1.5 text-xs font-bold" style={{ color: '#2D3748', borderBottom: '1px solid #CBD5E0' }}>Amount</th>
                     </tr>
-                  )}
-                  <tr className="bg-red-50">
-                    <td className="py-2 px-2 font-semibold text-red-700">Total Deductions</td>
-                    <td className="py-2 px-2 text-right font-bold text-red-700">
-                      -{formatCurrency(deductions.total_deductions)}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {earningsRows.map((row, idx) => (
+                      <tr key={idx} style={{ borderBottom: idx < earningsRows.length - 1 ? '0.5px solid #CBD5E0' : 'none' }}>
+                        <td className="px-2 py-1.5 text-xs" style={{ color: '#2D3748' }}>{row.label}</td>
+                        <td className="px-2 py-1.5 text-xs text-right" style={{ color: '#2D3748' }}>{row.hours}</td>
+                        <td className="px-2 py-1.5 text-xs text-right" style={{ color: '#2D3748' }}>{row.rate}</td>
+                        <td className="px-2 py-1.5 text-xs text-right" style={{ color: '#2D3748' }}>{formatCurrency(row.amount)}</td>
+                      </tr>
+                    ))}
+                    {/* GROSS PAY total row */}
+                    <tr style={{ backgroundColor: '#EDF2F7', borderTop: '1px solid #2D3748' }}>
+                      <td colSpan={3} className="px-2 py-2 text-xs font-bold" style={{ color: '#2D3748' }}>GROSS PAY</td>
+                      <td className="px-2 py-2 text-xs font-bold text-right" style={{ color: '#2D3748' }}>{formatCurrency(grossPay)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
 
-              {/* Employer Contributions Info */}
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                <p className="text-xs text-blue-700">
-                  <strong>Employer Contributions:</strong> UIF (1%): {formatCurrency(deductions.employer_uif)}
-                </p>
-                <p className="text-xs text-blue-600 mt-1">
-                  Note: SDL (Skills Development Levy) of 1% applies to employers with annual payroll exceeding R500,000
-                </p>
+              {/* DEDUCTIONS TABLE */}
+              <div className="w-[280px] flex-shrink-0">
+                <h3 className="text-xs font-bold mb-2 tracking-wide" style={{ color: '#742A2A' }}>DEDUCTIONS</h3>
+                <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#EDF2F7' }}>
+                      <th className="text-left px-2 py-1.5 text-xs font-bold" style={{ color: '#742A2A', borderBottom: '1px solid #CBD5E0' }}>Description</th>
+                      <th className="text-right px-2 py-1.5 text-xs font-bold" style={{ color: '#742A2A', borderBottom: '1px solid #CBD5E0' }}>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {deductionRows.length > 0 ? deductionRows.map((row, idx) => (
+                      <tr key={idx} style={{ borderBottom: idx < deductionRows.length - 1 ? '0.5px solid #CBD5E0' : 'none' }}>
+                        <td className="px-2 py-1.5 text-xs" style={{ color: '#2D3748' }}>{row.label}</td>
+                        <td className="px-2 py-1.5 text-xs text-right" style={{ color: '#2D3748' }}>{formatCurrency(row.amount)}</td>
+                      </tr>
+                    )) : (
+                      <tr>
+                        <td colSpan={2} className="px-2 py-1.5 text-xs text-center" style={{ color: '#718096' }}>No deductions</td>
+                      </tr>
+                    )}
+                    {/* TOTAL DEDUCTIONS row */}
+                    <tr style={{ backgroundColor: '#EDF2F7', borderTop: '1px solid #742A2A' }}>
+                      <td className="px-2 py-2 text-xs font-bold" style={{ color: '#742A2A' }}>TOTAL DEDUCTIONS</td>
+                      <td className="px-2 py-2 text-xs font-bold text-right" style={{ color: '#742A2A' }}>{formatCurrency(totalDeductions)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* === NET PAY BAR (Green) === */}
+          <div className="mx-6 my-3 flex justify-between items-center px-6 py-4 rounded-sm" style={{ backgroundColor: '#276749' }}>
+            <span className="text-white text-base font-bold">NET PAY</span>
+            <span className="text-white text-2xl font-bold">{formatCurrency(netPay)}</span>
+          </div>
+
+          {/* === PAYMENT METHOD === */}
+          {(emp.bank_name || emp.account_number) && (
+            <div className="px-6 py-3">
+              <h3 className="text-xs font-bold mb-2 tracking-wide" style={{ color: '#2D3748' }}>PAYMENT METHOD</h3>
+              <div className="border" style={{ borderColor: '#CBD5E0', backgroundColor: '#F7FAFC' }}>
+                <div className="grid grid-cols-4">
+                  <div className="px-3 py-2 border-r" style={{ borderColor: '#CBD5E0' }}>
+                    <p className="text-[10px]" style={{ color: '#718096' }}>Bank</p>
+                    <p className="text-xs font-bold" style={{ color: '#2D3748' }}>{emp.bank_name || '-'}</p>
+                  </div>
+                  <div className="px-3 py-2 border-r" style={{ borderColor: '#CBD5E0' }}>
+                    <p className="text-[10px]" style={{ color: '#718096' }}>Account Number</p>
+                    <p className="text-xs font-bold" style={{ color: '#2D3748' }}>{maskAccountNumber(emp.account_number || '')}</p>
+                  </div>
+                  <div className="px-3 py-2 border-r" style={{ borderColor: '#CBD5E0' }}>
+                    <p className="text-[10px]" style={{ color: '#718096' }}>Branch Code</p>
+                    <p className="text-xs font-bold" style={{ color: '#2D3748' }}>{emp.branch_code || '-'}</p>
+                  </div>
+                  <div className="px-3 py-2">
+                    <p className="text-[10px]" style={{ color: '#718096' }}>Account Type</p>
+                    <p className="text-xs font-bold" style={{ color: '#2D3748' }}>{emp.account_type || '-'}</p>
+                  </div>
+                </div>
               </div>
             </div>
           )}
 
-          {/* Net Pay */}
-          <div className="p-6 bg-blue-50">
-            <div className="flex justify-between items-center">
-              <div>
-                <h3 className="text-lg font-bold text-blue-900">NET PAY</h3>
-                <p className="text-sm text-blue-600">Amount payable to employee</p>
-              </div>
-              <div className="text-right">
-                <p className="text-3xl font-bold text-blue-700">
-                  {formatCurrency(deductions ? deductions.net_pay : payroll.net_pay)}
-                </p>
-                {deductions && (
-                  <p className="text-sm text-blue-600">
-                    Effective tax rate: {deductions.effective_tax_rate.toFixed(1)}%
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="p-4 bg-gray-50 text-center">
-            <p className="text-xs text-gray-500">
-              This payslip is generated based on SA tax rates for 2024/2025 tax year.
-              Calculations include PAYE, UIF, and applicable rebates.
+          {/* === FOOTER === */}
+          <div className="mx-6 mt-4 mb-2 border-t pt-3 pb-4 text-center" style={{ borderColor: '#CBD5E0' }}>
+            <p className="text-[10px]" style={{ color: '#718096' }}>
+              This is a computer-generated payslip. | Generated: {new Date().toLocaleDateString('en-ZA', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} | All amounts in South African Rand (ZAR)
+            </p>
+            <p className="text-[9px] mt-1" style={{ color: '#9CA3AF' }}>
+              Please review your payslip carefully. Any queries should be raised within 7 days. For questions, contact your payroll administrator.
             </p>
           </div>
         </div>

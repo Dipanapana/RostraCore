@@ -793,9 +793,32 @@ class ProductionRosterOptimizer:
         if not avail.available:
             return False
 
-        # Check time overlap
-        if avail.start_time <= shift_start_time and shift_end_time <= avail.end_time:
-            return True
+        # Check time overlap — handle overnight shifts (e.g., 18:00–06:00)
+        if shift_end_time < shift_start_time:
+            # Overnight shift crosses midnight.
+            # Accept if the employee is available from shift_start on this date.
+            from datetime import time as dt_time
+            if avail.start_time <= shift_start_time:
+                # Availability covers start time — check it extends to midnight
+                if avail.end_time >= dt_time(23, 0):
+                    return True
+                # Broad availability (e.g., 00:00–23:59)
+                if avail.start_time == dt_time(0, 0) and avail.end_time >= dt_time(23, 0):
+                    return True
+            # Check next-day availability for the tail end
+            next_date = shift_date + timedelta(days=1)
+            next_key = (emp.employee_id, next_date)
+            next_avail = self.employee_availabilities.get(next_key)
+            if next_avail and next_avail.available:
+                if next_avail.start_time <= shift_end_time and avail.start_time <= shift_start_time:
+                    return True
+            # Fallback: manual-availability employees available on start date → allow overnight
+            if emp.shift_pattern_id is None and avail.start_time <= shift_start_time:
+                return True
+        else:
+            # Normal (non-overnight) shift
+            if avail.start_time <= shift_start_time and shift_end_time <= avail.end_time:
+                return True
 
         return False
 
@@ -947,8 +970,17 @@ class ProductionRosterOptimizer:
         logger.info("All variables created")
 
     def _add_shift_coverage_constraints(self):
-        """Ensure each shift has the required number of employees assigned"""
+        """
+        Add shift coverage constraints.
+
+        Uses soft constraints (<=) with a coverage bonus in the objective so that
+        the solver maximises fill-rate without becoming infeasible when there are
+        more staff-slots than employees can cover under BCEA limits.
+        """
         logger.info("Adding shift coverage constraints...")
+
+        # Track coverage variables for the objective function
+        self.coverage_vars = []
 
         for shift in self.shifts:
             # Get required staff count (default to 1 if not set)
@@ -962,16 +994,10 @@ class ProductionRosterOptimizer:
                     feasible_vars.append(self.assignment_vars[key])
 
             if feasible_vars:
-                if len(feasible_vars) >= required_staff:
-                    # Exactly required_staff employees per shift (MUST be filled)
-                    self.model.Add(sum(feasible_vars) == required_staff)
-                else:
-                    # Not enough feasible employees - assign as many as possible
-                    logger.warning(
-                        f"Shift {shift.shift_id} needs {required_staff} guards but only "
-                        f"{len(feasible_vars)} feasible employees available. Assigning all available."
-                    )
-                    self.model.Add(sum(feasible_vars) == len(feasible_vars))
+                # Upper bound: do not exceed required_staff
+                self.model.Add(sum(feasible_vars) <= required_staff)
+                # Track these vars so the objective can reward coverage
+                self.coverage_vars.extend(feasible_vars)
             else:
                 logger.warning(f"Shift {shift.shift_id} has no feasible employees!")
 
@@ -1227,18 +1253,33 @@ class ProductionRosterOptimizer:
             if emp_constraints.max_consecutive_days_level != ConstraintLevel.HARD:
                 continue
 
+            # Build full calendar date range (not just dates with shifts)
+            # This prevents the constraint from missing gaps in the shift schedule
+            if not self.shifts_by_date:
+                continue
+            min_date = min(self.shifts_by_date.keys())
+            max_date = max(self.shifts_by_date.keys())
+            all_calendar_dates = []
+            current = min_date
+            while current <= max_date:
+                all_calendar_dates.append(current)
+                # Ensure works_on_date_var exists for gap dates (no shifts)
+                key = (emp.employee_id, current)
+                if key not in self.works_on_date_vars:
+                    var_name = f"works_e{emp.employee_id}_d{current}_gap"
+                    self.works_on_date_vars[key] = self.model.NewBoolVar(var_name)
+                    # No shifts on this date → force to 0
+                    self.model.Add(self.works_on_date_vars[key] == 0)
+                current += timedelta(days=1)
+
             # Consecutive-chain constraint: in any (max+1) consecutive calendar days,
-            # at most max_consecutive_days can be worked. This correctly tracks actual
-            # consecutive streaks rather than total days in a sliding window.
-            sorted_dates = sorted(self.shifts_by_date.keys())
-            for i in range(len(sorted_dates) - max_consecutive_days):
-                window = sorted_dates[i:i + max_consecutive_days + 1]
+            # at most max_consecutive_days can be worked.
+            for i in range(len(all_calendar_dates) - max_consecutive_days):
+                window = all_calendar_dates[i:i + max_consecutive_days + 1]
                 window_vars = [self.works_on_date_vars[(emp.employee_id, d)]
-                               for d in window
-                               if (emp.employee_id, d) in self.works_on_date_vars]
-                if len(window_vars) == max_consecutive_days + 1:
-                    # Can't work ALL days in a (max+1)-day consecutive window
-                    self.model.Add(sum(window_vars) <= max_consecutive_days)
+                               for d in window]
+                # Can't work ALL days in a (max+1)-day consecutive window
+                self.model.Add(sum(window_vars) <= max_consecutive_days)
 
     def _add_consecutive_nights_constraints(self):
         """
@@ -1572,12 +1613,28 @@ class ProductionRosterOptimizer:
                 self.model.Add(holiday_spread == max_holidays_obj - min_holidays_obj)
                 fairness_terms.append(holiday_spread * 500)
 
-        # Combine objectives
+        # Coverage bonus: heavily reward each assignment so the solver maximises
+        # the number of filled shifts.  The bonus per assignment must exceed the
+        # highest possible cost so the solver always prefers filling a shift.
+        coverage_bonus_terms = []
+        if hasattr(self, 'coverage_vars') and self.coverage_vars:
+            # Use a large per-assignment bonus (scaled to integer cents like cost)
+            COVERAGE_BONUS = 200_000  # R2000 equivalent in cents — well above any shift cost
+            for var in self.coverage_vars:
+                coverage_bonus_terms.append(var * COVERAGE_BONUS)
+            logger.info(f"Coverage bonus: {len(self.coverage_vars)} vars × {COVERAGE_BONUS}")
+
+        # Combine objectives: minimise(cost + fairness - coverage_bonus)
+        # Subtracting the coverage bonus means the solver earns reward for each assignment.
         total_objective = cost_terms + fairness_terms
+        if coverage_bonus_terms:
+            total_objective = [t for t in total_objective]  # copy
+            for bonus in coverage_bonus_terms:
+                total_objective.append(-bonus)  # negative = reward
 
         if total_objective:
             self.model.Minimize(sum(total_objective))
-            logger.info(f"Objective defined with {len(cost_terms)} cost terms and {len(fairness_terms)} fairness terms")
+            logger.info(f"Objective defined with {len(cost_terms)} cost terms, {len(fairness_terms)} fairness terms, {len(coverage_bonus_terms)} coverage bonus terms")
         else:
             logger.warning("No objective terms created!")
 
@@ -1637,7 +1694,9 @@ class ProductionRosterOptimizer:
                     "end_time": shift.end_time
                 })
 
-        self.total_cost = self.solver.ObjectiveValue() / 100
+        # Compute actual total cost from assignments (not from solver objective,
+        # which includes coverage bonus and fairness terms).
+        self.total_cost = total_cost_cents / 100
 
         logger.info(f"Extracted {len(self.assignments)} assignments")
         logger.info(f"Total cost: R{self.total_cost:,.2f}")
@@ -1645,8 +1704,13 @@ class ProductionRosterOptimizer:
     def _build_result(self) -> Dict:
         """Build result dictionary with constraint violation warnings"""
 
-        assigned_shift_ids = set(a["shift_id"] for a in self.assignments)
-        unfilled_shifts = [s for s in self.shifts if s.shift_id not in assigned_shift_ids]
+        # Count assignments per shift to find unfilled/partially-filled shifts
+        from collections import Counter as _Counter
+        assignments_per_shift = _Counter(a["shift_id"] for a in self.assignments)
+        unfilled_shifts = [
+            s for s in self.shifts
+            if assignments_per_shift.get(s.shift_id, 0) < (getattr(s, 'required_staff', 1) or 1)
+        ]
 
         # Calculate fairness score and employee hours
         hours_per_emp = defaultdict(float)
@@ -1678,7 +1742,8 @@ class ProductionRosterOptimizer:
                 "total_shifts_filled": len(self.assignments),
                 "employee_hours": dict(hours_per_emp),
                 "average_cost_per_shift": avg_cost,
-                "fill_rate": (len(self.assignments) / len(self.shifts) * 100) if self.shifts else 0,
+                "total_slots_needed": sum((getattr(s, 'required_staff', 1) or 1) for s in self.shifts),
+                "fill_rate": (len(self.assignments) / max(sum((getattr(s, 'required_staff', 1) or 1) for s in self.shifts), 1) * 100) if self.shifts else 0,
                 "employees_utilized": len(set(a["employee_id"] for a in self.assignments)),
                 "total_warnings": len(warnings)
             },

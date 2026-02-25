@@ -123,7 +123,7 @@ export default function RosterGenerateWizard() {
     availability: 'HARD',
     client_assignment: 'SOFT',
     max_hours_per_week: 48,
-    min_rest_hours: 8,
+    min_rest_hours: 12,
     max_consecutive_days: 6,
     max_consecutive_nights: 3,
   })
@@ -192,6 +192,21 @@ export default function RosterGenerateWizard() {
     setEndDate(twoWeeksLater)
   }
 
+  const setThisMonth = () => {
+    const today = new Date()
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+    setStartDate(firstDay)
+    setEndDate(lastDay)
+  }
+
+  const setNextMonth = () => {
+    const today = new Date()
+    const firstDay = new Date(today.getFullYear(), today.getMonth() + 1, 1)
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + 2, 0)
+    setStartDate(firstDay)
+    setEndDate(lastDay)
+  }
 
   // Filter sites by selected clients
   const filteredSites = selectedClients.length > 0
@@ -296,30 +311,50 @@ export default function RosterGenerateWizard() {
     }
   }
 
-  // Confirm roster
+  // Save & confirm roster (creates a Roster entry + assignments for the board)
   const handleConfirm = async () => {
     if (!result || !result.assignments) return
 
     setLoading(true)
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch(`${getApiUrl()}/api/v1/roster/confirm`, {
+
+      // Build roster name from dates
+      const startStr = startDate ? startDate.toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' }) : ''
+      const endStr = endDate ? endDate.toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' }) : ''
+      const rosterName = `Roster ${startStr} - ${endStr}`
+
+      // Save via /roster/save which creates a Roster record + ShiftAssignments
+      const response = await fetch(`${getApiUrl()}/api/v1/roster/save`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(result.assignments),
+        body: JSON.stringify({
+          name: rosterName,
+          start_date: startDate?.toISOString(),
+          end_date: endDate?.toISOString(),
+          assignments: result.assignments,
+          summary: result.summary || {},
+          solver_status: result.status || 'optimal',
+          algorithm_used: algorithm,
+          optimization_duration_seconds: result.timing?.total || 0,
+        }),
       })
 
       if (!response.ok) {
-        throw new Error('Failed to confirm roster')
+        const errData = await response.json().catch(() => ({}))
+        throw new Error(errData.detail || 'Failed to save roster')
       }
 
-      success('Roster Confirmed', 'Shift assignments have been saved')
-      router.push('/roster/assignments')
+      const savedRoster = await response.json()
+      success('Roster Saved', `${rosterName} saved with ${result.assignments.length} assignments`)
+
+      // Navigate to the roster board with the new roster selected
+      router.push(`/roster/board?id=${savedRoster.roster_id}`)
     } catch (err: any) {
-      showError('Confirmation Failed', err.message)
+      showError('Save Failed', err.message)
     } finally {
       setLoading(false)
     }
@@ -333,8 +368,8 @@ export default function RosterGenerateWizard() {
   }
 
   const dayCount = getDaysBetween(startDate, endDate)
-  const isDateRangeWarning = dayCount > 7 && dayCount <= 14
-  const isDateRangeBlocked = dayCount > 14
+  const isDateRangeWarning = dayCount > 14 && dayCount <= 31
+  const isDateRangeBlocked = dayCount > 31
 
   // Navigation
   const canProceed = () => {
@@ -383,7 +418,11 @@ export default function RosterGenerateWizard() {
                 {step === 3 ? 'Confirming Roster...' : 'Generating Roster...'}
               </h3>
               <p className="text-sm text-gray-600">
-                This may take a few minutes for large date ranges
+                {dayCount <= 7
+                  ? 'Optimizing weekly roster...'
+                  : dayCount <= 14
+                  ? 'Optimizing bi-weekly roster — this may take 15-30 seconds...'
+                  : 'Optimizing monthly roster — this may take up to 60 seconds...'}
               </p>
             </div>
           </div>
@@ -426,7 +465,7 @@ export default function RosterGenerateWizard() {
                             Date range too long ({dayCount} days)
                           </p>
                           <p className="text-xs text-red-700 mt-1">
-                            Maximum 14 days per roster. Please generate week by week for best results.
+                            Maximum 31 days per roster. Use monthly presets or select a shorter range.
                           </p>
                         </div>
                       </div>
@@ -442,7 +481,7 @@ export default function RosterGenerateWizard() {
                             {dayCount} days selected
                           </p>
                           <p className="text-xs text-yellow-700 mt-1">
-                            Longer ranges may take more time to optimize. Consider generating week by week for faster results.
+                            Longer ranges may take more time to optimize. Monthly rosters typically solve within 60 seconds.
                           </p>
                         </div>
                       </div>
@@ -487,7 +526,21 @@ export default function RosterGenerateWizard() {
                     onClick={setTwoWeeks}
                     className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 rounded-md"
                   >
-                    2 Weeks (max)
+                    2 Weeks
+                  </button>
+                  <button
+                    type="button"
+                    onClick={setThisMonth}
+                    className="px-3 py-1.5 text-sm bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-md font-medium"
+                  >
+                    This Month
+                  </button>
+                  <button
+                    type="button"
+                    onClick={setNextMonth}
+                    className="px-3 py-1.5 text-sm bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-md font-medium"
+                  >
+                    Next Month
                   </button>
                 </div>
               </div>
@@ -1006,13 +1059,13 @@ export default function RosterGenerateWizard() {
                       disabled={loading || result.assignments.length === 0}
                       className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-medium transition-colors"
                     >
-                      Confirm Roster
+                      {loading ? 'Saving...' : 'Save & Open Board'}
                     </button>
                     <button
-                      onClick={() => router.push('/roster/assignments')}
+                      onClick={() => router.push('/roster')}
                       className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-medium transition-colors"
                     >
-                      View Assignments
+                      View Rosters
                     </button>
                     <button
                       onClick={() => {

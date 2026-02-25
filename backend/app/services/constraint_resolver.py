@@ -32,7 +32,7 @@ class ResolvedConstraints:
     max_hours_week: int = 48
     max_hours_week_level: ConstraintLevel = ConstraintLevel.HARD
 
-    min_rest_hours: int = 8
+    min_rest_hours: int = 12
     min_rest_hours_level: ConstraintLevel = ConstraintLevel.HARD
 
     max_consecutive_days: int = 6
