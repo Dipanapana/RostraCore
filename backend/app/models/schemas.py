@@ -109,6 +109,18 @@ class EmployeeResponse(EmployeeBase):
     # Tax details
     tax_number: Optional[str] = None
 
+    # PSIRA details
+    psira_number: Optional[str] = None
+    psira_grade: Optional[str] = None
+    psira_expiry_date: Optional[date] = None
+
+    # Personal details
+    address: Optional[str] = None
+    emergency_contact_name: Optional[str] = None
+    emergency_contact_phone: Optional[str] = None
+    province: Optional[str] = None
+    is_supervisor: Optional[bool] = None
+
     # Shift pattern assignment fields
     shift_pattern_id: Optional[int] = None
     rotation_group: Optional[str] = None  # A, B, C, D
