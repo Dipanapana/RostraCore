@@ -1056,8 +1056,8 @@ async def get_saved_roster(
                     "status": a.status,
                     "regular_hours": a.regular_hours,
                     "overtime_hours": a.overtime_hours,
-                    "cost_regular": a.cost_regular,
-                    "cost_overtime": a.cost_overtime
+                    "cost_regular": a.regular_pay,
+                    "cost_overtime": a.overtime_pay
                 }
                 for a in assignments
             ]
@@ -2022,7 +2022,7 @@ def _create_roster_snapshot(db, roster, user_id, label=None):
     for a in assignments:
         shift_info = shift_map.get(a.shift_id, {})
         site_id = shift_info.get("site_id")
-        cost = float(a.cost_regular or 0) + float(a.cost_overtime or 0)
+        cost = float(a.regular_pay or 0) + float(a.overtime_pay or 0)
         total_cost += cost
 
         enriched_assignments.append({
