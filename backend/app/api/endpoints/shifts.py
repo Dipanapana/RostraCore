@@ -805,15 +805,12 @@ async def generate_shifts_from_profiles(
                 detail="No valid sites found for the provided IDs",
             )
 
-    import traceback as tb
-    try:
-        result = ShiftAutoGenerator.generate_shifts_for_org(
-            db=db,
-            org_id=org_id,
-            site_ids=request.site_ids,
-            start_date=request.start_date,
-            end_date=request.end_date,
-        )
-        return result
-    except Exception as e:
-        return {"error": str(e), "traceback": tb.format_exc()}
+    result = ShiftAutoGenerator.generate_shifts_for_org(
+        db=db,
+        org_id=org_id,
+        site_ids=request.site_ids,
+        start_date=request.start_date,
+        end_date=request.end_date,
+    )
+
+    return result
