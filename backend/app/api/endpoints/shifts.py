@@ -104,7 +104,7 @@ def get_my_shifts(
     return result
 
 
-@router.get("/")
+@router.get("/", response_model=List[ShiftResponse])
 async def get_shifts(
     skip: int = 0,
     limit: int = 100,
@@ -124,43 +124,22 @@ async def get_shifts(
     - Organization: Only shifts in user's organization
     - Client Access: If user has managed_client_ids, only shifts at their clients' sites
     """
-    import traceback as tb
-    try:
-        # Get accessible clients for client-level filtering
-        accessible_clients = ClientFilterService.get_accessible_clients_for_user(db, current_user)
+    # Get accessible clients for client-level filtering
+    accessible_clients = ClientFilterService.get_accessible_clients_for_user(db, current_user)
 
-        shifts = ShiftService.get_all(
-            db,
-            skip=skip,
-            limit=limit,
-            site_id=site_id,
-            employee_id=employee_id,
-            status=status_filter,
-            start_date=start_date,
-            end_date=end_date,
-            org_id=org_id,
-            accessible_client_ids=accessible_clients
-        )
-
-        # Manual serialization to avoid response_model validation issues
-        result = []
-        for s in shifts:
-            result.append({
-                "shift_id": s.shift_id,
-                "site_id": s.site_id,
-                "start_time": s.start_time.isoformat() if s.start_time else None,
-                "end_time": s.end_time.isoformat() if s.end_time else None,
-                "required_skill": s.required_skill,
-                "required_staff": s.required_staff or 1,
-                "status": s.status.value if hasattr(s.status, 'value') else str(s.status),
-                "created_by": s.created_by,
-                "is_overtime": s.is_overtime or False,
-                "notes": s.notes,
-                "assigned_employee_id": s.assigned_employee_id,
-            })
-        return result
-    except Exception as e:
-        return {"error": str(e), "traceback": tb.format_exc()}
+    shifts = ShiftService.get_all(
+        db,
+        skip=skip,
+        limit=limit,
+        site_id=site_id,
+        employee_id=employee_id,
+        status=status_filter,
+        start_date=start_date,
+        end_date=end_date,
+        org_id=org_id,
+        accessible_client_ids=accessible_clients
+    )
+    return shifts
 
 
 def _check_shift_client_access(db: Session, shift, org_id: int, current_user: User):
@@ -826,15 +805,12 @@ async def generate_shifts_from_profiles(
                 detail="No valid sites found for the provided IDs",
             )
 
-    import traceback as tb
-    try:
-        result = ShiftAutoGenerator.generate_shifts_for_org(
-            db=db,
-            org_id=org_id,
-            site_ids=request.site_ids,
-            start_date=request.start_date,
-            end_date=request.end_date,
-        )
-        return result
-    except Exception as e:
-        return {"error": str(e), "traceback": tb.format_exc()}
+    result = ShiftAutoGenerator.generate_shifts_for_org(
+        db=db,
+        org_id=org_id,
+        site_ids=request.site_ids,
+        start_date=request.start_date,
+        end_date=request.end_date,
+    )
+
+    return result

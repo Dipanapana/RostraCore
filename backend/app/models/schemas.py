@@ -233,6 +233,9 @@ class ShiftUpdate(BaseModel):
 
 class ShiftResponse(ShiftBase):
     shift_id: int
+    # Override non-optional fields that may be NULL in legacy DB rows
+    is_overtime: Optional[bool] = False
+    status: Optional[ShiftStatus] = ShiftStatus.PLANNED
 
     class Config:
         from_attributes = True
