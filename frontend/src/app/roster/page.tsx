@@ -284,7 +284,7 @@ export default function RosterPage() {
     setSnapshots([])
     try {
       const token = localStorage.getItem('access_token')
-      const res = await fetch(`${getApiUrl()}/api/v1/roster/saved/${rosterId}/snapshots`, {
+      const res = await fetch(`${getApiUrl()}/api/v1/roster/saved/${rosterId}/versions`, {
         headers: { 'Authorization': `Bearer ${token}` },
       })
       if (res.ok) {

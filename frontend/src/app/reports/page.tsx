@@ -262,18 +262,22 @@ export default function ReportsPage() {
 
       if (profitRes.status === "fulfilled")
         setProfitability(profitRes.value.data);
-      if (siteRes.status === "fulfilled")
-        setSitePerformance(siteRes.value.data?.sites || siteRes.value.data || []);
-      if (revRes.status === "fulfilled")
-        setRevenueVsCost(revRes.value.data?.data || revRes.value.data || []);
-      if (invoiceRes.status === "fulfilled")
-        setOutstandingInvoices(
-          invoiceRes.value.data?.invoices || invoiceRes.value.data || []
-        );
-      if (payrollRes.status === "fulfilled")
-        setEmployeePayroll(
-          payrollRes.value.data?.employees || payrollRes.value.data || []
-        );
+      if (siteRes.status === "fulfilled") {
+        const sd = siteRes.value.data?.sites ?? siteRes.value.data;
+        setSitePerformance(Array.isArray(sd) ? sd : []);
+      }
+      if (revRes.status === "fulfilled") {
+        const rd = revRes.value.data?.data ?? revRes.value.data;
+        setRevenueVsCost(Array.isArray(rd) ? rd : []);
+      }
+      if (invoiceRes.status === "fulfilled") {
+        const id = invoiceRes.value.data?.invoices ?? invoiceRes.value.data;
+        setOutstandingInvoices(Array.isArray(id) ? id : []);
+      }
+      if (payrollRes.status === "fulfilled") {
+        const pd = payrollRes.value.data?.employees ?? payrollRes.value.data;
+        setEmployeePayroll(Array.isArray(pd) ? pd : []);
+      }
     } catch {
       showToast("Failed to load some reports", "error");
     } finally {
