@@ -1057,6 +1057,7 @@ const COLLAPSED_WIDTH = 64;
 const EXPANDED_WIDTH = 260;
 const SIDEBAR_COLLAPSED_KEY = "sidebar-collapsed";
 const SIDEBAR_GROUPS_KEY = "sidebar-groups";
+const SIDEBAR_SCROLL_KEY = "sidebar-scroll-pos";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -1262,6 +1263,19 @@ export default function Sidebar() {
   const [isMobile, setIsMobile] = useState(false);
   const mounted = useRef(false);
 
+  // Sidebar scroll position persistence
+  const navRef = useRef<HTMLDivElement>(null);
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleNavScroll = useCallback(() => {
+    if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+    scrollTimeoutRef.current = setTimeout(() => {
+      if (navRef.current) {
+        sessionStorage.setItem(SIDEBAR_SCROLL_KEY, String(navRef.current.scrollTop));
+      }
+    }, 100);
+  }, []);
+
   // Derive nav items from role
   const role = (user?.role ?? "guard") as UserRole;
   const isSuperadmin =
@@ -1313,6 +1327,21 @@ export default function Sidebar() {
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
+
+  // Restore sidebar scroll position on mount
+  useEffect(() => {
+    const savedScroll = sessionStorage.getItem(SIDEBAR_SCROLL_KEY);
+    if (savedScroll && navRef.current) {
+      requestAnimationFrame(() => {
+        if (navRef.current) {
+          navRef.current.scrollTop = parseInt(savedScroll, 10);
+        }
+      });
+    }
+    return () => {
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+    };
+  }, []);
 
   // ── Handlers ───────────────────────────────────────────
 
@@ -1548,6 +1577,8 @@ export default function Sidebar() {
 
         {/* Navigation */}
         <nav
+          ref={navRef}
+          onScroll={handleNavScroll}
           className="flex-1 overflow-y-auto overflow-x-hidden py-2 px-2"
           aria-label="Main navigation"
         >

@@ -22,7 +22,73 @@ interface Client {
   notes: string | null;
   created_at: string;
   site_count?: number;
+  // Company registration & compliance
+  registration_number: string | null;
+  company_type: string | null;
+  income_tax_number: string | null;
+  bbee_level: number | null;
+  bbee_certificate_expiry: string | null;
+  industry_sector: string | null;
+  // Payment terms
+  payment_terms_days: number | null;
+  requires_purchase_order: boolean | null;
+  // Invoice/billing
+  vat_number: string | null;
+  billing_address: string | null;
+  billing_email: string | null;
+  billing_contact_name: string | null;
+  // Operations contact
+  operations_contact_name: string | null;
+  operations_contact_email: string | null;
+  operations_contact_phone: string | null;
+  // Emergency contact
+  emergency_contact_name: string | null;
+  emergency_contact_phone: string | null;
+  // Location
+  province: string | null;
+  city: string | null;
 }
+
+const COMPANY_TYPES = [
+  { value: '', label: 'Select...' },
+  { value: 'pty_ltd', label: '(Pty) Ltd' },
+  { value: 'cc', label: 'Close Corporation (CC)' },
+  { value: 'municipality', label: 'Municipality' },
+  { value: 'soe', label: 'State-Owned Enterprise' },
+  { value: 'npc', label: 'Non-Profit Company (NPC)' },
+  { value: 'trust', label: 'Trust' },
+  { value: 'sole_proprietor', label: 'Sole Proprietor' },
+  { value: 'other', label: 'Other' },
+];
+
+const INDUSTRY_SECTORS = [
+  { value: '', label: 'Select...' },
+  { value: 'government', label: 'Government' },
+  { value: 'retail', label: 'Retail' },
+  { value: 'mining', label: 'Mining' },
+  { value: 'residential', label: 'Residential' },
+  { value: 'commercial', label: 'Commercial' },
+  { value: 'industrial', label: 'Industrial' },
+  { value: 'healthcare', label: 'Healthcare' },
+  { value: 'education', label: 'Education' },
+  { value: 'hospitality', label: 'Hospitality' },
+  { value: 'logistics', label: 'Logistics' },
+  { value: 'financial', label: 'Financial Services' },
+  { value: 'other', label: 'Other' },
+];
+
+const SA_PROVINCES = [
+  '', 'Gauteng', 'Western Cape', 'KwaZulu-Natal', 'Eastern Cape',
+  'Free State', 'Mpumalanga', 'Limpopo', 'North West', 'Northern Cape',
+];
+
+const PAYMENT_TERMS = [
+  { value: '7', label: 'Net 7 days' },
+  { value: '14', label: 'Net 14 days' },
+  { value: '30', label: 'Net 30 days' },
+  { value: '60', label: 'Net 60 days' },
+  { value: '90', label: 'Net 90 days' },
+];
 
 export default function ClientsPage() {
   const { token, user } = useAuth();
@@ -43,6 +109,25 @@ export default function ClientsPage() {
     target_margin_pct: "",
     status: "active",
     notes: "",
+    registration_number: "",
+    company_type: "",
+    income_tax_number: "",
+    bbee_level: "",
+    bbee_certificate_expiry: "",
+    industry_sector: "",
+    payment_terms_days: "30",
+    requires_purchase_order: false as boolean,
+    vat_number: "",
+    billing_address: "",
+    billing_email: "",
+    billing_contact_name: "",
+    operations_contact_name: "",
+    operations_contact_email: "",
+    operations_contact_phone: "",
+    emergency_contact_name: "",
+    emergency_contact_phone: "",
+    province: "",
+    city: "",
   });
 
   // Date range filter state
@@ -147,6 +232,24 @@ export default function ClientsPage() {
           org_id: user?.org_id ?? 1,
           billing_rate: formData.billing_rate ? Number(formData.billing_rate) : null,
           target_margin_pct: formData.target_margin_pct ? Number(formData.target_margin_pct) : null,
+          bbee_level: formData.bbee_level ? Number(formData.bbee_level) : null,
+          bbee_certificate_expiry: formData.bbee_certificate_expiry || null,
+          payment_terms_days: formData.payment_terms_days ? Number(formData.payment_terms_days) : null,
+          registration_number: formData.registration_number || null,
+          company_type: formData.company_type || null,
+          income_tax_number: formData.income_tax_number || null,
+          industry_sector: formData.industry_sector || null,
+          vat_number: formData.vat_number || null,
+          billing_address: formData.billing_address || null,
+          billing_email: formData.billing_email || null,
+          billing_contact_name: formData.billing_contact_name || null,
+          operations_contact_name: formData.operations_contact_name || null,
+          operations_contact_email: formData.operations_contact_email || null,
+          operations_contact_phone: formData.operations_contact_phone || null,
+          emergency_contact_name: formData.emergency_contact_name || null,
+          emergency_contact_phone: formData.emergency_contact_phone || null,
+          province: formData.province || null,
+          city: formData.city || null,
         }),
       });
 
@@ -178,6 +281,25 @@ export default function ClientsPage() {
       target_margin_pct: client.target_margin_pct?.toString() || "",
       status: client.status,
       notes: client.notes || "",
+      registration_number: client.registration_number || "",
+      company_type: client.company_type || "",
+      income_tax_number: client.income_tax_number || "",
+      bbee_level: client.bbee_level?.toString() || "",
+      bbee_certificate_expiry: client.bbee_certificate_expiry?.split('T')[0] || "",
+      industry_sector: client.industry_sector || "",
+      payment_terms_days: client.payment_terms_days?.toString() || "30",
+      requires_purchase_order: client.requires_purchase_order || false,
+      vat_number: client.vat_number || "",
+      billing_address: client.billing_address || "",
+      billing_email: client.billing_email || "",
+      billing_contact_name: client.billing_contact_name || "",
+      operations_contact_name: client.operations_contact_name || "",
+      operations_contact_email: client.operations_contact_email || "",
+      operations_contact_phone: client.operations_contact_phone || "",
+      emergency_contact_name: client.emergency_contact_name || "",
+      emergency_contact_phone: client.emergency_contact_phone || "",
+      province: client.province || "",
+      city: client.city || "",
     });
     setShowModal(true);
   };
@@ -220,6 +342,25 @@ export default function ClientsPage() {
       target_margin_pct: "",
       status: "active",
       notes: "",
+      registration_number: "",
+      company_type: "",
+      income_tax_number: "",
+      bbee_level: "",
+      bbee_certificate_expiry: "",
+      industry_sector: "",
+      payment_terms_days: "30",
+      requires_purchase_order: false,
+      vat_number: "",
+      billing_address: "",
+      billing_email: "",
+      billing_contact_name: "",
+      operations_contact_name: "",
+      operations_contact_email: "",
+      operations_contact_phone: "",
+      emergency_contact_name: "",
+      emergency_contact_phone: "",
+      province: "",
+      city: "",
     });
   };
 
@@ -437,166 +578,198 @@ export default function ClientsPage() {
                 {editingClient ? "Edit Client" : "Add New Client"}
               </h2>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Client Name *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.client_name}
-                      onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Status
-                    </label>
-                    <select
-                      value={formData.status}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                      <option value="suspended">Suspended</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Contact Person
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.contact_person}
-                      onChange={(e) => setFormData({ ...formData, contact_person: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Contact Email
-                    </label>
-                    <input
-                      type="email"
-                      value={formData.contact_email}
-                      onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Contact Phone
-                    </label>
-                    <input
-                      type="tel"
-                      value={formData.contact_phone}
-                      onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Billing Rate (R/hr)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={formData.billing_rate}
-                      onChange={(e) => setFormData({ ...formData, billing_rate: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Target Margin % <span className="text-gray-400 font-normal">(wage-to-revenue)</span>
-                    </label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      max="100"
-                      value={formData.target_margin_pct}
-                      onChange={(e) => setFormData({ ...formData, target_margin_pct: e.target.value })}
-                      placeholder="e.g. 30"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Contract Start Date
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.contract_start_date}
-                      onChange={(e) => setFormData({ ...formData, contract_start_date: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Contract End Date
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.contract_end_date}
-                      onChange={(e) => setFormData({ ...formData, contract_end_date: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Section: Basic Info */}
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Basic Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Client Name *</label>
+                      <input type="text" value={formData.client_name} onChange={(e) => setFormData({ ...formData, client_name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                      <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="suspended">Suspended</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Industry Sector</label>
+                      <select value={formData.industry_sector} onChange={(e) => setFormData({ ...formData, industry_sector: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        {INDUSTRY_SECTORS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Company Type</label>
+                      <select value={formData.company_type} onChange={(e) => setFormData({ ...formData, company_type: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        {COMPANY_TYPES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                      </select>
+                    </div>
                   </div>
                 </div>
 
+                {/* Section: Registration & Compliance */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Address
-                  </label>
-                  <textarea
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    rows={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Registration & Compliance</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">CIPC Registration No.</label>
+                      <input type="text" value={formData.registration_number} onChange={(e) => setFormData({ ...formData, registration_number: e.target.value })} placeholder="e.g. 2020/123456/07" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">VAT Number</label>
+                      <input type="text" value={formData.vat_number} onChange={(e) => setFormData({ ...formData, vat_number: e.target.value })} placeholder="e.g. 4123456789" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Income Tax Number</label>
+                      <input type="text" value={formData.income_tax_number} onChange={(e) => setFormData({ ...formData, income_tax_number: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">B-BBEE Level</label>
+                      <select value={formData.bbee_level} onChange={(e) => setFormData({ ...formData, bbee_level: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">Not specified</option>
+                        {[1,2,3,4,5,6,7,8].map(n => <option key={n} value={n}>Level {n}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">B-BBEE Certificate Expiry</label>
+                      <input type="date" value={formData.bbee_certificate_expiry} onChange={(e) => setFormData({ ...formData, bbee_certificate_expiry: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    </div>
+                  </div>
                 </div>
 
+                {/* Section: Primary Contact */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Notes
-                  </label>
-                  <textarea
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Primary Contact</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Contact Person</label>
+                      <input type="text" value={formData.contact_person} onChange={(e) => setFormData({ ...formData, contact_person: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <input type="email" value={formData.contact_email} onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                      <input type="tel" value={formData.contact_phone} onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section: Operations Contact */}
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Operations Contact</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                      <input type="text" value={formData.operations_contact_name} onChange={(e) => setFormData({ ...formData, operations_contact_name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <input type="email" value={formData.operations_contact_email} onChange={(e) => setFormData({ ...formData, operations_contact_email: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                      <input type="tel" value={formData.operations_contact_phone} onChange={(e) => setFormData({ ...formData, operations_contact_phone: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section: Emergency Contact */}
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Emergency Contact</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                      <input type="text" value={formData.emergency_contact_name} onChange={(e) => setFormData({ ...formData, emergency_contact_name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                      <input type="tel" value={formData.emergency_contact_phone} onChange={(e) => setFormData({ ...formData, emergency_contact_phone: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section: Billing & Contract */}
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Billing & Contract</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Billing Rate (R/hr)</label>
+                      <input type="number" step="0.01" value={formData.billing_rate} onChange={(e) => setFormData({ ...formData, billing_rate: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Target Margin %</label>
+                      <input type="number" step="0.1" min="0" max="100" value={formData.target_margin_pct} onChange={(e) => setFormData({ ...formData, target_margin_pct: e.target.value })} placeholder="e.g. 30" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Contract Start</label>
+                      <input type="date" value={formData.contract_start_date} onChange={(e) => setFormData({ ...formData, contract_start_date: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Contract End</label>
+                      <input type="date" value={formData.contract_end_date} onChange={(e) => setFormData({ ...formData, contract_end_date: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Payment Terms</label>
+                      <select value={formData.payment_terms_days} onChange={(e) => setFormData({ ...formData, payment_terms_days: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        {PAYMENT_TERMS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex items-center pt-6">
+                      <input type="checkbox" id="requires_po" checked={formData.requires_purchase_order} onChange={(e) => setFormData({ ...formData, requires_purchase_order: e.target.checked })} className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                      <label htmlFor="requires_po" className="ml-2 text-sm font-medium text-gray-700">Requires Purchase Order</label>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Billing Contact</label>
+                      <input type="text" value={formData.billing_contact_name} onChange={(e) => setFormData({ ...formData, billing_contact_name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Billing Email</label>
+                      <input type="email" value={formData.billing_email} onChange={(e) => setFormData({ ...formData, billing_email: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Billing Address</label>
+                    <textarea value={formData.billing_address} onChange={(e) => setFormData({ ...formData, billing_address: e.target.value })} rows={2} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                  </div>
+                </div>
+
+                {/* Section: Location */}
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Location</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Province</label>
+                      <select value={formData.province} onChange={(e) => setFormData({ ...formData, province: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        {SA_PROVINCES.map(p => <option key={p} value={p}>{p || 'Select...'}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                      <input type="text" value={formData.city} onChange={(e) => setFormData({ ...formData, city: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Physical Address</label>
+                    <textarea value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} rows={2} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                  </div>
+                </div>
+
+                {/* Section: Notes */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                  <textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                 </div>
 
                 <div className="mt-6 flex gap-4">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowModal(false);
-                      setEditingClient(null);
-                      resetForm();
-                    }}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                  >
+                  <button type="button" onClick={() => { setShowModal(false); setEditingClient(null); resetForm(); }} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
                     Cancel
                   </button>
-                  <button
-                    type="submit"
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  >
+                  <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                     {editingClient ? "Update" : "Create"}
                   </button>
                 </div>

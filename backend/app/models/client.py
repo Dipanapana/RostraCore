@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Date, Numeric, Float, DateTime, ForeignKey, func
+from sqlalchemy import Column, Integer, String, Text, Date, Numeric, Float, DateTime, Boolean, ForeignKey, func
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -30,6 +30,31 @@ class Client(Base):
     billing_address = Column(Text, nullable=True)  # Separate billing address (may differ from operational address)
     billing_email = Column(String(255), nullable=True)  # Email for invoice delivery
     billing_contact_name = Column(String(200), nullable=True)  # Who to address invoices to
+
+    # Company registration & compliance
+    registration_number = Column(String(50), nullable=True)  # CIPC/CK registration number
+    company_type = Column(String(30), nullable=True)  # pty_ltd, cc, municipality, soe, npc, trust, sole_proprietor, other
+    income_tax_number = Column(String(30), nullable=True)  # SARS income tax reference
+    bbee_level = Column(Integer, nullable=True)  # B-BBEE contributor level (1-8)
+    bbee_certificate_expiry = Column(Date, nullable=True)
+    industry_sector = Column(String(30), nullable=True)  # government, retail, mining, residential, commercial, etc.
+
+    # Payment terms
+    payment_terms_days = Column(Integer, nullable=True, default=30)  # Net 30/60/90
+    requires_purchase_order = Column(Boolean, nullable=True, default=False)
+
+    # Operations contact (separate from billing/primary contact)
+    operations_contact_name = Column(String(200), nullable=True)
+    operations_contact_email = Column(String(255), nullable=True)
+    operations_contact_phone = Column(String(20), nullable=True)
+
+    # Emergency contact
+    emergency_contact_name = Column(String(200), nullable=True)
+    emergency_contact_phone = Column(String(20), nullable=True)
+
+    # Location
+    province = Column(String(50), nullable=True)
+    city = Column(String(100), nullable=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)

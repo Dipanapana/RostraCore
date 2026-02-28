@@ -28,6 +28,31 @@ class ClientBase(BaseModel):
     target_margin_pct: Optional[float] = None
     status: str = "active"
     notes: Optional[str] = None
+    # Company registration & compliance
+    registration_number: Optional[str] = None
+    company_type: Optional[str] = None
+    income_tax_number: Optional[str] = None
+    bbee_level: Optional[int] = None
+    bbee_certificate_expiry: Optional[date] = None
+    industry_sector: Optional[str] = None
+    # Payment terms
+    payment_terms_days: Optional[int] = None
+    requires_purchase_order: Optional[bool] = None
+    # Invoice/billing fields
+    vat_number: Optional[str] = None
+    billing_address: Optional[str] = None
+    billing_email: Optional[str] = None
+    billing_contact_name: Optional[str] = None
+    # Operations contact
+    operations_contact_name: Optional[str] = None
+    operations_contact_email: Optional[str] = None
+    operations_contact_phone: Optional[str] = None
+    # Emergency contact
+    emergency_contact_name: Optional[str] = None
+    emergency_contact_phone: Optional[str] = None
+    # Location
+    province: Optional[str] = None
+    city: Optional[str] = None
 
 
 class ClientCreate(ClientBase):
@@ -88,24 +113,9 @@ async def list_clients(
     result = []
     for client in clients:
         site_count = db.query(Site).filter(Site.client_id == client.client_id).count()
-        client_dict = {
-            "client_id": client.client_id,
-            "org_id": client.org_id,
-            "client_name": client.client_name,
-            "contact_person": client.contact_person,
-            "contact_email": client.contact_email,
-            "contact_phone": client.contact_phone,
-            "address": client.address,
-            "contract_start_date": client.contract_start_date,
-            "contract_end_date": client.contract_end_date,
-            "billing_rate": client.billing_rate,
-            "target_margin_pct": client.target_margin_pct,
-            "status": client.status,
-            "notes": client.notes,
-            "created_at": client.created_at,
-            "updated_at": client.updated_at,
-            "site_count": site_count
-        }
+        # Build dict from all model columns dynamically
+        client_dict = {c.name: getattr(client, c.name) for c in client.__table__.columns}
+        client_dict["site_count"] = site_count
         result.append(client_dict)
 
     return result
@@ -120,17 +130,7 @@ async def create_client(
     """Create a new client (automatically assigned to user's organization)."""
     client = Client(
         org_id=org_id,
-        client_name=client_data.client_name,
-        contact_person=client_data.contact_person,
-        contact_email=client_data.contact_email,
-        contact_phone=client_data.contact_phone,
-        address=client_data.address,
-        contract_start_date=client_data.contract_start_date,
-        contract_end_date=client_data.contract_end_date,
-        billing_rate=client_data.billing_rate,
-        target_margin_pct=client_data.target_margin_pct,
-        status=client_data.status,
-        notes=client_data.notes
+        **client_data.model_dump()
     )
 
     db.add(client)

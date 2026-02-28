@@ -171,12 +171,24 @@ export default function EmployeesPage() {
       },
     },
     {
-      header: 'Hourly Rate',
-      cell: (emp) => (
-        <span className="font-medium text-gray-700">
-          R{emp.hourly_rate.toFixed(2)}
-        </span>
-      ),
+      header: 'Salary / Rate',
+      cell: (emp) => {
+        if (emp.pay_type === 'monthly_fixed' && emp.monthly_salary != null) {
+          return (
+            <span className="font-medium text-gray-700">
+              R{Number(emp.monthly_salary).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<span className="text-xs text-gray-400">/mo</span>
+            </span>
+          );
+        }
+        if (emp.hourly_rate != null) {
+          return (
+            <span className="font-medium text-gray-700">
+              R{emp.hourly_rate.toFixed(2)}<span className="text-xs text-gray-400">/hr</span>
+            </span>
+          );
+        }
+        return <span className="text-xs text-gray-400">--</span>;
+      },
     },
     {
       header: 'Status',

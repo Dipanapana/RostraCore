@@ -39,9 +39,35 @@ interface ClientDetail {
   contract_start_date: string | null
   contract_end_date: string | null
   billing_rate: number | null
+  target_margin_pct: number | null
   status: string
   notes: string | null
   site_count?: number
+  // Company registration & compliance
+  registration_number: string | null
+  company_type: string | null
+  income_tax_number: string | null
+  bbee_level: number | null
+  bbee_certificate_expiry: string | null
+  industry_sector: string | null
+  // Payment terms
+  payment_terms_days: number | null
+  requires_purchase_order: boolean | null
+  // Billing
+  vat_number: string | null
+  billing_address: string | null
+  billing_email: string | null
+  billing_contact_name: string | null
+  // Operations contact
+  operations_contact_name: string | null
+  operations_contact_email: string | null
+  operations_contact_phone: string | null
+  // Emergency contact
+  emergency_contact_name: string | null
+  emergency_contact_phone: string | null
+  // Location
+  province: string | null
+  city: string | null
 }
 
 interface SiteRow {
@@ -312,7 +338,7 @@ export default function ClientDetailPage() {
 
           {/* Contact & Contract details */}
           <div className="space-y-4">
-            <Section title="Contact Details" icon={Mail}>
+            <Section title="Primary Contact" icon={Mail}>
               <div className="space-y-0">
                 <InfoRow label="Contact Person" value={client.contact_person} icon={Building2} />
                 <InfoRow
@@ -326,16 +352,57 @@ export default function ClientDetailPage() {
                 />
                 <InfoRow label="Phone" value={client.contact_phone} icon={Phone} />
                 <InfoRow label="Address" value={client.address} icon={MapPin} />
+                {client.province && <InfoRow label="Province" value={client.province} icon={MapPin} />}
+                {client.city && <InfoRow label="City" value={client.city} icon={MapPin} />}
               </div>
             </Section>
 
-            <Section title="Contract" icon={CalendarClock}>
+            {(client.operations_contact_name || client.emergency_contact_name) && (
+              <Section title="Other Contacts" icon={Phone}>
+                <div className="space-y-0">
+                  {client.operations_contact_name && (
+                    <>
+                      <InfoRow label="Operations Contact" value={client.operations_contact_name} icon={Building2} />
+                      {client.operations_contact_email && <InfoRow label="Ops Email" value={<a href={`mailto:${client.operations_contact_email}`} className="text-blue-600 hover:underline">{client.operations_contact_email}</a>} icon={Mail} />}
+                      {client.operations_contact_phone && <InfoRow label="Ops Phone" value={client.operations_contact_phone} icon={Phone} />}
+                    </>
+                  )}
+                  {client.emergency_contact_name && (
+                    <>
+                      <InfoRow label="Emergency Contact" value={client.emergency_contact_name} icon={Phone} />
+                      {client.emergency_contact_phone && <InfoRow label="Emergency Phone" value={client.emergency_contact_phone} icon={Phone} />}
+                    </>
+                  )}
+                </div>
+              </Section>
+            )}
+
+            <Section title="Contract & Billing" icon={CalendarClock}>
               <div className="space-y-0">
                 <InfoRow label="Start Date" value={fmtDate(client.contract_start_date)} icon={CalendarClock} />
                 <InfoRow label="End Date" value={fmtDate(client.contract_end_date)} icon={CalendarClock} />
                 <InfoRow label="Billing Rate" value={client.billing_rate ? `R${client.billing_rate}/hr` : null} icon={Banknote} />
+                {client.target_margin_pct != null && <InfoRow label="Target Margin" value={`${client.target_margin_pct}%`} icon={Banknote} />}
+                {client.payment_terms_days && <InfoRow label="Payment Terms" value={`Net ${client.payment_terms_days} days`} icon={CalendarClock} />}
+                {client.requires_purchase_order && <InfoRow label="Requires PO" value="Yes" icon={FileText} />}
+                {client.vat_number && <InfoRow label="VAT Number" value={client.vat_number} icon={FileText} />}
+                {client.billing_contact_name && <InfoRow label="Billing Contact" value={client.billing_contact_name} icon={Building2} />}
+                {client.billing_email && <InfoRow label="Billing Email" value={<a href={`mailto:${client.billing_email}`} className="text-blue-600 hover:underline">{client.billing_email}</a>} icon={Mail} />}
               </div>
             </Section>
+
+            {(client.registration_number || client.company_type || client.bbee_level) && (
+              <Section title="Registration & Compliance" icon={FileText}>
+                <div className="space-y-0">
+                  {client.company_type && <InfoRow label="Company Type" value={client.company_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} icon={Building2} />}
+                  {client.registration_number && <InfoRow label="CIPC Reg. No." value={client.registration_number} icon={FileText} />}
+                  {client.income_tax_number && <InfoRow label="Income Tax No." value={client.income_tax_number} icon={FileText} />}
+                  {client.industry_sector && <InfoRow label="Industry" value={client.industry_sector.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} icon={Building2} />}
+                  {client.bbee_level && <InfoRow label="B-BBEE Level" value={`Level ${client.bbee_level}`} icon={CheckCircle2} />}
+                  {client.bbee_certificate_expiry && <InfoRow label="B-BBEE Expiry" value={fmtDate(client.bbee_certificate_expiry)} icon={CalendarClock} />}
+                </div>
+              </Section>
+            )}
           </div>
 
           {/* Sites */}
