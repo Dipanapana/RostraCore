@@ -64,9 +64,9 @@ class PayFastService:
         payment_data = {
             'merchant_id': self.merchant_id,
             'merchant_key': self.merchant_key,
-            'return_url': f"{settings.FRONTEND_URL}/subscription/success",
-            'cancel_url': f"{settings.FRONTEND_URL}/subscription/cancel",
-            'notify_url': f"{settings.BACKEND_URL}/api/v1/payments/payfast-webhook",
+            'return_url': f"{settings.FRONTEND_URL}/billing/success",
+            'cancel_url': f"{settings.FRONTEND_URL}/billing/cancel",
+            'notify_url': f"{settings.BACKEND_URL}/api/v1/payments/webhook/payfast",
 
             # Subscription details
             'subscription_type': '1' if subscription_type == "monthly" else '2',  # 1=monthly, 2=annual

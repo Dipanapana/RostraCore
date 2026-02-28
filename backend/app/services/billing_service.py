@@ -48,11 +48,10 @@ class BillingService:
                     "message": "Organization not found"
                 }
 
-            # Count active guards (employees with role 'guard' and is_active=True)
+            # Count active employees (all roles, not just guards)
             active_guards_count = db.query(Employee).filter(
-                Employee.organization_id == org_id,
-                Employee.role_name == "guard",
-                Employee.is_active == True
+                Employee.org_id == org_id,
+                Employee.status == 'ACTIVE'
             ).count()
 
             # Calculate cost
@@ -107,17 +106,16 @@ class BillingService:
             if not org:
                 return None
 
-            # Get guard details
+            # Get active employee details
             guards = db.query(Employee).filter(
-                Employee.organization_id == org_id,
-                Employee.role_name == "guard",
-                Employee.is_active == True
+                Employee.org_id == org_id,
+                Employee.status == 'ACTIVE'
             ).all()
 
             guard_list = [
                 {
                     "employee_id": g.employee_id,
-                    "full_name": g.full_name,
+                    "full_name": f"{g.first_name} {g.last_name}",
                     "psira_number": g.psira_number
                 }
                 for g in guards
