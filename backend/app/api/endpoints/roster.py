@@ -1044,15 +1044,27 @@ async def get_saved_roster(
         result = roster.to_dict()
 
         if include_assignments:
+            from app.models.employee import Employee
+
             assignments = db.query(ShiftAssignment).filter(
                 ShiftAssignment.roster_id == roster_id
             ).all()
+
+            # Build employee name lookup
+            emp_ids = list({a.employee_id for a in assignments if a.employee_id})
+            emp_map = {}
+            if emp_ids:
+                employees = db.query(Employee.employee_id, Employee.first_name, Employee.last_name).filter(
+                    Employee.employee_id.in_(emp_ids)
+                ).all()
+                emp_map = {e.employee_id: f"{e.first_name} {e.last_name}" for e in employees}
 
             result["assignments"] = [
                 {
                     "assignment_id": a.assignment_id,
                     "shift_id": a.shift_id,
                     "employee_id": a.employee_id,
+                    "employee_name": emp_map.get(a.employee_id, f"Employee #{a.employee_id}"),
                     "status": a.status,
                     "regular_hours": a.regular_hours,
                     "overtime_hours": a.overtime_hours,
