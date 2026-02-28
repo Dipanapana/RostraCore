@@ -346,4 +346,5 @@ export interface RosterGenerateResponse {
   status: RosterStatus
   algorithm_used: string
   generation_time_ms?: number
+  shifts_auto_created?: number
 }

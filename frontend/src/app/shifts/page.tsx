@@ -10,7 +10,7 @@ import ExportButtons from '@/components/ExportButtons'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import DataTable, { Column } from '@/components/ui/DataTable'
 import Modal from '@/components/ui/Modal'
-import { Plus, Pencil, Trash2, Calendar, Clock, MapPin, User, Filter, X, Wand2, CheckSquare, Loader2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, Calendar, Clock, MapPin, User, Filter, X, Wand2, CheckSquare, Loader2, UserPlus } from 'lucide-react'
 
 // Shift template type for bulk generation
 interface ShiftTemplate {
@@ -49,6 +49,11 @@ export default function ShiftsPage() {
     { day_of_week: 0, start_time: '06:00', end_time: '18:00', required_staff: 1 },
     { day_of_week: 0, start_time: '18:00', end_time: '06:00', required_staff: 1 },
   ])
+
+  // Quick Assign state
+  const [assignModalShift, setAssignModalShift] = useState<Shift | null>(null)
+  const [assignLoading, setAssignLoading] = useState(false)
+  const [assignSearch, setAssignSearch] = useState('')
 
   // Filters
   const [filterSite, setFilterSite] = useState('')
@@ -102,6 +107,30 @@ export default function ShiftsPage() {
   const handleFormSuccess = () => {
     fetchData()
     handleCloseForm()
+  }
+
+  const handleQuickAssign = async (employee: Employee) => {
+    if (!assignModalShift) return
+    setAssignLoading(true)
+    try {
+      const token = localStorage.getItem('access_token')
+      const res = await fetch(
+        `${getApiUrl()}/api/v1/shifts/${assignModalShift.shift_id}/assign/${employee.employee_id}`,
+        { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
+      )
+      if (!res.ok) {
+        const err = await res.json()
+        alert(err.detail || 'Failed to assign guard')
+        return
+      }
+      setAssignModalShift(null)
+      setAssignSearch('')
+      fetchData()
+    } catch (err: any) {
+      alert(err.message || 'Failed to assign guard')
+    } finally {
+      setAssignLoading(false)
+    }
   }
 
   // Bulk Generation Functions
@@ -494,6 +523,19 @@ export default function ShiftsPage() {
           searchKeys={['status']} // Basic search, real filtering is done above
           actions={(shift) => (
             <>
+              {!shift.assigned_employee_id && shift.status !== 'cancelled' && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setAssignModalShift(shift)
+                    setAssignSearch('')
+                  }}
+                  className="p-2 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                  title="Assign Guard"
+                >
+                  <UserPlus className="w-4 h-4" />
+                </button>
+              )}
               <button
                 onClick={(e) => {
                   e.stopPropagation()
@@ -916,6 +958,81 @@ export default function ShiftsPage() {
               </button>
             </div>
           </div>
+        </Modal>
+
+        {/* Quick Assign Guard Modal */}
+        <Modal
+          isOpen={!!assignModalShift}
+          onClose={() => { setAssignModalShift(null); setAssignSearch('') }}
+          title="Assign Guard to Shift"
+          maxWidth="lg"
+        >
+          {assignModalShift && (
+            <div className="space-y-4">
+              {/* Shift summary */}
+              <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-700">
+                <div className="font-medium">{getSiteName(assignModalShift.site_id)}</div>
+                <div className="text-gray-500 mt-0.5">
+                  {new Date(assignModalShift.start_time).toLocaleDateString()} &bull;{' '}
+                  {new Date(assignModalShift.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} –{' '}
+                  {new Date(assignModalShift.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {assignModalShift.required_skill && (
+                    <span className="ml-2 px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">
+                      {assignModalShift.required_skill}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Search */}
+              <input
+                type="text"
+                placeholder="Search by name or role..."
+                value={assignSearch}
+                onChange={(e) => setAssignSearch(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+
+              {/* Employee list */}
+              <div className="max-h-72 overflow-y-auto divide-y divide-gray-100">
+                {employees
+                  .filter((e) => e.status === 'ACTIVE' || (e as any).status === 'active')
+                  .filter((e) => {
+                    if (!assignSearch) return true
+                    const q = assignSearch.toLowerCase()
+                    return (
+                      `${e.first_name} ${e.last_name}`.toLowerCase().includes(q) ||
+                      (e.role || '').toLowerCase().includes(q)
+                    )
+                  })
+                  .map((emp) => (
+                    <button
+                      key={emp.employee_id}
+                      disabled={assignLoading}
+                      onClick={() => handleQuickAssign(emp)}
+                      className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-blue-50 transition-colors text-left"
+                    >
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {emp.first_name} {emp.last_name}
+                        </div>
+                        <div className="text-xs text-gray-500 capitalize">{emp.role}</div>
+                      </div>
+                      <span className="text-xs text-blue-600 font-medium">Assign →</span>
+                    </button>
+                  ))}
+                {employees.filter((e) => e.status === 'ACTIVE' || (e as any).status === 'active').length === 0 && (
+                  <p className="text-sm text-gray-500 py-4 text-center">No active employees found</p>
+                )}
+              </div>
+
+              {assignLoading && (
+                <div className="flex items-center justify-center py-2">
+                  <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                </div>
+              )}
+            </div>
+          )}
         </Modal>
       </div>
     </DashboardLayout>

@@ -21,6 +21,7 @@ export default function RosterPage() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [result, setResult] = useState<RosterGenerateResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [autoCreatedCount, setAutoCreatedCount] = useState<number | null>(null)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
 
   // Algorithm configuration state
@@ -121,6 +122,7 @@ export default function RosterPage() {
       setLoading(true)
       setError(null)
       setResult(null)
+      setAutoCreatedCount(null)
 
       // Call roster generation API directly (synchronous for now)
       const token = localStorage.getItem('access_token')
@@ -159,10 +161,15 @@ export default function RosterPage() {
 
       const data = await response.json()
 
-      // Check if the result indicates no shifts found
-      if (data.status === 'empty' || (data.assignments && data.assignments.length === 0)) {
-        const reason = data.reason || 'No shifts found for the selected date range'
-        setError(reason + '. Please create shifts first before generating a roster.')
+      // Handle result
+      if (data.shifts_auto_created) {
+        setAutoCreatedCount(data.shifts_auto_created)
+      }
+      if (data.status === 'empty' && !data.shifts_auto_created) {
+        setError('No shifts found and no site profiles configured. Set up staffing profiles on the Sites page, or create shifts manually.')
+        setResult(null)
+      } else if (!data.assignments || data.assignments.length === 0) {
+        setError('Shifts exist but no guards could be assigned. Check that employees are active with matching roles and are not already fully scheduled.')
         setResult(null)
       } else {
         setResult(data)
@@ -664,6 +671,13 @@ export default function RosterPage() {
               </div>
             </div>
           </div>
+
+          {/* Auto-created shifts info banner */}
+          {autoCreatedCount && (
+            <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded mb-4 text-sm">
+              <strong>Auto-setup:</strong> Created {autoCreatedCount} shifts from site staffing profiles before generating the roster.
+            </div>
+          )}
 
           {/* Error Display */}
           {error && (

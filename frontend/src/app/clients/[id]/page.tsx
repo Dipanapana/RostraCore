@@ -20,6 +20,10 @@ import {
   XCircle,
   Ban,
   Trash2,
+  Users,
+  UserPlus,
+  Shield,
+  X,
 } from 'lucide-react'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import PageHeader from '@/components/ui/PageHeader'
@@ -103,6 +107,16 @@ interface GuardRestriction {
   created_at: string
 }
 
+interface GuardRow {
+  employee_id: number
+  first_name: string
+  last_name: string
+  role: string
+  status: string
+  assigned_client_id: number | null
+  assigned_client_ids: number[] | null
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -181,6 +195,10 @@ export default function ClientDetailPage() {
   const [sites, setSites] = useState<SiteRow[]>([])
   const [invoices, setInvoices] = useState<InvoiceRow[]>([])
   const [restrictions, setRestrictions] = useState<GuardRestriction[]>([])
+  const [allGuards, setAllGuards] = useState<GuardRow[]>([])
+  const [showAssignGuardModal, setShowAssignGuardModal] = useState(false)
+  const [guardSearch, setGuardSearch] = useState('')
+  const [guardAssigning, setGuardAssigning] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -189,11 +207,12 @@ export default function ClientDetailPage() {
 
     async function load() {
       setLoading(true)
-      const [clientRes, sitesRes, invoicesRes, restrictRes] = await Promise.allSettled([
+      const [clientRes, sitesRes, invoicesRes, restrictRes, guardsRes] = await Promise.allSettled([
         clientsApi.getById(clientId),
         api.get(`/api/v1/clients/${clientId}/sites`),
         invoiceApi.list({ client_id: clientId, limit: 8 }),
         guardRestrictionsApi.list({ client_id: clientId }),
+        api.get('/api/v1/employees?limit=500'),
       ])
 
       if (clientRes.status === 'fulfilled') {
@@ -216,6 +235,11 @@ export default function ClientDetailPage() {
 
       if (restrictRes.status === 'fulfilled') {
         setRestrictions(restrictRes.value.data ?? [])
+      }
+
+      if (guardsRes.status === 'fulfilled') {
+        const data = guardsRes.value.data
+        setAllGuards(Array.isArray(data) ? data : [])
       }
 
       setLoading(false)
@@ -245,6 +269,58 @@ export default function ClientDetailPage() {
         </div>
       </DashboardLayout>
     )
+  }
+
+  const isGuardAssignedHere = (g: GuardRow) =>
+    g.assigned_client_id === clientId ||
+    (Array.isArray(g.assigned_client_ids) && g.assigned_client_ids.includes(clientId))
+
+  const assignedGuards = allGuards.filter(isGuardAssignedHere)
+  const availableGuards = allGuards.filter(
+    (g) => !isGuardAssignedHere(g) && (g.status === 'ACTIVE' || g.status === 'active')
+  )
+
+  const handleAssignGuard = async (guard: GuardRow) => {
+    setGuardAssigning(guard.employee_id)
+    const currentIds = Array.isArray(guard.assigned_client_ids) ? guard.assigned_client_ids : []
+    const newIds = currentIds.includes(clientId) ? currentIds : [...currentIds, clientId]
+    try {
+      await api.put(`/api/v1/employees/${guard.employee_id}`, { assigned_client_ids: newIds })
+      setAllGuards((prev) =>
+        prev.map((g) => g.employee_id === guard.employee_id ? { ...g, assigned_client_ids: newIds } : g)
+      )
+      setShowAssignGuardModal(false)
+      setGuardSearch('')
+    } catch {
+      alert('Failed to assign guard. Please try again.')
+    } finally {
+      setGuardAssigning(null)
+    }
+  }
+
+  const handleUnassignGuard = async (guard: GuardRow) => {
+    if (!confirm(`Remove ${guard.first_name} ${guard.last_name} from this client?`)) return
+    setGuardAssigning(guard.employee_id)
+    const currentIds = Array.isArray(guard.assigned_client_ids) ? guard.assigned_client_ids : []
+    const newIds = currentIds.filter((id) => id !== clientId)
+    const newSingleId = guard.assigned_client_id === clientId ? null : guard.assigned_client_id
+    try {
+      await api.put(`/api/v1/employees/${guard.employee_id}`, {
+        assigned_client_ids: newIds,
+        assigned_client_id: newSingleId,
+      })
+      setAllGuards((prev) =>
+        prev.map((g) =>
+          g.employee_id === guard.employee_id
+            ? { ...g, assigned_client_ids: newIds, assigned_client_id: newSingleId }
+            : g
+        )
+      )
+    } catch {
+      alert('Failed to remove guard. Please try again.')
+    } finally {
+      setGuardAssigning(null)
+    }
   }
 
   const handleRemoveRestriction = async (restrictionId: number) => {
@@ -496,6 +572,104 @@ export default function ClientDetailPage() {
           </Section>
 
         </div>
+
+        {/* Assigned Guards */}
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-gray-400" />
+              <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Assigned Guards{assignedGuards.length > 0 && ` (${assignedGuards.length})`}
+              </h2>
+            </div>
+            <button
+              onClick={() => { setShowAssignGuardModal(true); setGuardSearch('') }}
+              className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+            >
+              <UserPlus className="w-4 h-4" />
+              Assign Guard
+            </button>
+          </div>
+          <div className="p-6">
+            {assignedGuards.length === 0 ? (
+              <p className="py-4 text-center text-sm text-gray-400">
+                No guards assigned. Assigned guards will be prioritised for this client&apos;s shifts during roster generation.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {assignedGuards.map((g) => (
+                  <div key={g.employee_id} className="flex items-center justify-between px-4 py-3 bg-emerald-50 border border-emerald-100 rounded-xl">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                        <Shield className="w-4 h-4 text-emerald-600" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-800">{g.first_name} {g.last_name}</p>
+                        <p className="text-xs text-gray-500 capitalize">{g.role}</p>
+                      </div>
+                    </div>
+                    <button
+                      disabled={guardAssigning === g.employee_id}
+                      onClick={() => handleUnassignGuard(g)}
+                      className="ml-3 p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-100 rounded-lg transition-colors flex-shrink-0"
+                      title="Remove from client"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Assign Guard Modal */}
+        {showAssignGuardModal && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                <h3 className="text-base font-semibold text-gray-900">Assign Guard to Client</h3>
+                <button onClick={() => setShowAssignGuardModal(false)} className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="p-4 space-y-3">
+                <input
+                  type="text"
+                  placeholder="Search by name or role..."
+                  value={guardSearch}
+                  onChange={(e) => setGuardSearch(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <div className="max-h-72 overflow-y-auto divide-y divide-gray-100">
+                  {availableGuards
+                    .filter((g) => {
+                      if (!guardSearch) return true
+                      const q = guardSearch.toLowerCase()
+                      return `${g.first_name} ${g.last_name}`.toLowerCase().includes(q) || g.role.toLowerCase().includes(q)
+                    })
+                    .map((g) => (
+                      <button
+                        key={g.employee_id}
+                        disabled={guardAssigning === g.employee_id}
+                        onClick={() => handleAssignGuard(g)}
+                        className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-blue-50 transition-colors text-left"
+                      >
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{g.first_name} {g.last_name}</div>
+                          <div className="text-xs text-gray-500 capitalize">{g.role}</div>
+                        </div>
+                        <span className="text-xs text-blue-600 font-medium">Assign →</span>
+                      </button>
+                    ))}
+                  {availableGuards.length === 0 && (
+                    <p className="text-sm text-gray-500 py-4 text-center">All active guards are already assigned to this client.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Restricted Guards */}
         {restrictions.length > 0 && (
