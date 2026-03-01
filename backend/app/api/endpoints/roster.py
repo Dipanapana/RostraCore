@@ -190,8 +190,16 @@ async def generate_roster(
         # Auto-create shifts if none found, then retry optimization once.
         # ShiftAutoGenerator is idempotent — skips existing shifts.
         # Falls back to default 06:00-18:00 / 18:00-06:00 if no profiles.
+        #
+        # Condition: no assignments AND no unfilled_shifts means no shifts
+        # existed at all. PartitionedOptimizer converts "empty" → "feasible"
+        # so we cannot rely on status alone.
         # -------------------------------------------------------------------
-        if result.get("status") == "empty":
+        no_shifts_at_all = (
+            result.get("status") == "empty"
+            or (not result.get("assignments") and not result.get("unfilled_shifts"))
+        )
+        if no_shifts_at_all:
             logger.info("No shifts found — auto-generating from site profiles and retrying")
             from app.services.shift_auto_generator import ShiftAutoGenerator
             auto_result = ShiftAutoGenerator.generate_shifts_for_org(
