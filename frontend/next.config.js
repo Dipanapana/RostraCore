@@ -36,6 +36,7 @@ const nextConfig = {
   // Allow useSearchParams in client components without Suspense boundary
   experimental: {
     missingSuspenseWithCSRBailout: false,
+    proxyTimeout: 120000,  // 120s — roster generation can take 30-60s for large orgs
   },
 
   env: {

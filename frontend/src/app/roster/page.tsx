@@ -24,8 +24,7 @@ export default function RosterPage() {
   const [autoCreatedCount, setAutoCreatedCount] = useState<number | null>(null)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Algorithm configuration state
-  const [algorithm, setAlgorithm] = useState('auto')
+  // Configuration state
   const [fairnessWeight, setFairnessWeight] = useState(0.2)
   const [budgetLimit, setBudgetLimit] = useState<number | null>(null)
   const [nightStartHour, setNightStartHour] = useState(18)
@@ -135,7 +134,9 @@ export default function RosterPage() {
         return `${year}-${month}-${day}`
       }
 
-      const response = await fetch(`${getApiUrl()}/api/v1/roster/generate?algorithm=${algorithm}`, {
+      // In dev, call backend directly to avoid Next.js proxy 30s timeout
+      const baseUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:8001' : getApiUrl()
+      const response = await fetch(`${baseUrl}/api/v1/roster/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -146,7 +147,6 @@ export default function RosterPage() {
           end_date: formatDate(endDate),
           site_ids: [],
           client_ids: selectedClients.length > 0 ? selectedClients : undefined,
-          algorithm: algorithm,
           fairness_weight: fairnessWeight,
           budget_limit: budgetLimit,
           night_shift_start_hour: nightStartHour,
@@ -555,23 +555,14 @@ export default function RosterPage() {
               <div className="border border-gray-200 rounded-lg p-5 mb-4 bg-gray-50">
                 <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wide">Algorithm Configuration</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-                  {/* Algorithm Selection */}
+                  {/* Engine info */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Algorithm</label>
-                    <select
-                      value={algorithm}
-                      onChange={(e) => setAlgorithm(e.target.value)}
-                      disabled={loading}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-                    >
-                      <option value="auto">Auto (Recommended)</option>
-                      <option value="production">Production CP-SAT</option>
-                      <option value="milp">MILP (Legacy)</option>
-                    </select>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Engine</label>
+                    <div className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-sm text-gray-700">
+                      Google OR-Tools CP-SAT
+                    </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      {algorithm === 'auto' && 'Automatically selects the best solver for your data.'}
-                      {algorithm === 'production' && 'Google OR-Tools CP-SAT constraint solver.'}
-                      {algorithm === 'milp' && 'Mixed-Integer Linear Programming solver.'}
+                      Partitioned constraint solver — scales to 1000+ employees.
                     </p>
                   </div>
 
@@ -1116,7 +1107,7 @@ export default function RosterPage() {
                           <span>Fill Rate: <span className="font-medium text-gray-900">{Number(snapshot.fill_rate).toFixed(1)}%</span></span>
                         )}
                         {snapshot.algorithm && (
-                          <span>Algorithm: <span className="font-medium text-gray-900">{snapshot.algorithm}</span></span>
+                          <span>Engine: <span className="font-medium text-gray-900">OR-Tools CP-SAT</span></span>
                         )}
                       </div>
 

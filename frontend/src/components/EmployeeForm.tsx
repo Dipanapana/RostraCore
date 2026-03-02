@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Employee, Client, Gender, AccountType, PayType, EmployeeRole } from '@/types'
-import { employeesApi, clientsApi, organizationSettingsApi } from '@/services/api'
+import { Employee, Client, Site, Gender, AccountType, PayType, EmployeeRole } from '@/types'
+import { employeesApi, clientsApi, sitesApi, organizationSettingsApi } from '@/services/api'
 
 interface EmployeeFormProps {
   employee?: Employee | null
@@ -76,6 +76,7 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
     email: '',
     phone: '',
     assigned_client_ids: [] as number[],
+    preferred_site_ids: [] as number[],
     gender: '' as Gender | '',
     address: '',
     province: '',
@@ -93,6 +94,7 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
   })
 
   const [clients, setClients] = useState<Client[]>([])
+  const [sites, setSites] = useState<Site[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [rateHint, setRateHint] = useState<string | null>(null)
@@ -131,17 +133,21 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
     return null
   }
 
-  // Fetch clients on mount
+  // Fetch clients and sites on mount
   useEffect(() => {
-    const fetchClients = async () => {
+    const fetchData = async () => {
       try {
-        const response = await clientsApi.getAll()
-        setClients(response.data)
+        const [clientsRes, sitesRes] = await Promise.all([
+          clientsApi.getAll(),
+          sitesApi.getAll(),
+        ])
+        setClients(Array.isArray(clientsRes.data) ? clientsRes.data : [])
+        setSites(Array.isArray(sitesRes.data) ? sitesRes.data : [])
       } catch (err) {
-        console.error('Failed to fetch clients:', err)
+        console.error('Failed to fetch clients/sites:', err)
       }
     }
-    fetchClients()
+    fetchData()
   }, [])
 
   // Populate form when editing
@@ -164,6 +170,7 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
         assigned_client_ids:
           employee.assigned_client_ids ||
           (employee.assigned_client_id ? [employee.assigned_client_id] : []),
+        preferred_site_ids: (employee as any).preferred_site_ids || [],
         gender: employee.gender || '',
         address: employee.address || '',
         province: employee.province || '',
@@ -270,6 +277,8 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
         phone: formData.phone || undefined,
         assigned_client_ids:
           formData.assigned_client_ids.length > 0 ? formData.assigned_client_ids : undefined,
+        preferred_site_ids:
+          formData.preferred_site_ids.length > 0 ? formData.preferred_site_ids : undefined,
         gender: formData.gender || undefined,
         address: formData.address || undefined,
         province: formData.province || undefined,
@@ -831,6 +840,56 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
           </div>
           <p className="text-xs text-gray-500 mt-1">
             Select which clients this employee can work for. Leave empty to allow all clients.
+          </p>
+        </div>
+
+        {/* Preferred Sites */}
+        <div>
+          <label className={LABEL_CLASS}>Preferred Sites</label>
+          <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-2 space-y-1 bg-white">
+            {sites.length === 0 ? (
+              <p className="text-sm text-gray-500 p-2">
+                No sites available
+              </p>
+            ) : (
+              sites.map((site: any) => (
+                <label
+                  key={site.site_id}
+                  className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={formData.preferred_site_ids.includes(site.site_id)}
+                    onChange={(e) => {
+                      const siteId = site.site_id
+                      if (e.target.checked) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          preferred_site_ids: [...prev.preferred_site_ids, siteId],
+                        }))
+                      } else {
+                        setFormData((prev) => ({
+                          ...prev,
+                          preferred_site_ids: prev.preferred_site_ids.filter(
+                            (id) => id !== siteId
+                          ),
+                        }))
+                      }
+                    }}
+                    className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <span className="text-sm text-gray-700">
+                    {site.site_name}
+                    {site.client_name && (
+                      <span className="text-gray-400 ml-1">({site.client_name})</span>
+                    )}
+                  </span>
+                </label>
+              ))
+            )}
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Sites where this guard is preferentially deployed. The optimizer will try to assign them here first.
           </p>
         </div>
 

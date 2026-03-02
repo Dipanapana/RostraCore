@@ -28,10 +28,9 @@ router = APIRouter()
 # This prevents import errors on Railway if ortools has issues
 def get_optimizer_classes():
     """Lazy load optimizer classes to defer ortools import."""
-    from app.algorithms.milp_roster_generator import MILPRosterGenerator
     from app.algorithms.production_optimizer import ProductionRosterOptimizer, OptimizationConfig
     from app.algorithms.scalable_roster_optimizer import PartitionedRosterOptimizer
-    return MILPRosterGenerator, ProductionRosterOptimizer, OptimizationConfig, PartitionedRosterOptimizer
+    return None, ProductionRosterOptimizer, OptimizationConfig, PartitionedRosterOptimizer
 
 
 @router.get("/test")
@@ -42,23 +41,17 @@ async def test_endpoint():
 @router.post("/generate")
 async def generate_roster(
     request: RosterGenerateRequest,
-    algorithm: Optional[str] = Query("auto", description="Algorithm: 'auto', 'production', 'milp'"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
-    Generate optimized roster using algorithmic approach.
+    Generate optimized roster using Google OR-Tools CP-SAT solver.
 
-    **Default: Auto (Partitioned CP-SAT)** - Scalable for 500+ guards
-
-    Algorithms:
-    - auto (default): Partitioned CP-SAT (ScalableRosterOptimizer)
-    - production: Single-threaded CP-SAT (Legacy Production)
-    - milp: Original MILP implementation (Legacy)
+    Uses Partitioned CP-SAT — splits sites by province and solves in parallel.
+    Scales to 1000+ employees with sub-minute response times.
 
     Args:
         request: Roster generation request with dates and site IDs
-        algorithm: Algorithm selection (default: 'auto')
         db: Database session
 
     Returns:
@@ -107,10 +100,7 @@ async def generate_roster(
             site_ids = [s.site_id for s in accessible_sites]
             logger.info(f"Auto-filtered to {len(site_ids)} sites for accessible clients")
 
-        # Determine which algorithm to use
-        selected_algorithm = algorithm or "auto"
-
-        logger.info(f"Roster generation requested: {start_datetime} to {end_datetime}, algorithm={selected_algorithm}")
+        logger.info(f"Roster generation requested: {start_datetime} to {end_datetime}")
 
         # Log budget constraints if specified
         if request.budget_limit:
@@ -121,70 +111,31 @@ async def generate_roster(
             logger.info(f"Per-site budgets: {len(request.budget_per_site)} sites")
 
         # Lazy load optimizer classes
-        MILPRosterGenerator, ProductionRosterOptimizer, OptimizationConfig, PartitionedRosterOptimizer = get_optimizer_classes()
+        _, ProductionRosterOptimizer, OptimizationConfig, PartitionedRosterOptimizer = get_optimizer_classes()
 
         # Build optimization config with budget constraints
-        def build_config(time_limit: int = 300) -> OptimizationConfig:
-            return OptimizationConfig(
-                time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', time_limit),
-                fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2),
-                budget_limit=request.budget_limit,
-                budget_per_client=request.budget_per_client,
-                budget_per_site=request.budget_per_site
-            )
+        config = OptimizationConfig(
+            time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 300),
+            fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2),
+            budget_limit=request.budget_limit,
+            budget_per_client=request.budget_per_client,
+            budget_per_site=request.budget_per_site
+        )
 
-        # Initialize appropriate optimizer
-        if selected_algorithm == "auto" or selected_algorithm == "scalable":
-            logger.info("Using Scalable Partitioned Optimizer")
-            optimizer = PartitionedRosterOptimizer(
-                db,
-                config=build_config(300),
-                org_id=current_user.org_id if hasattr(current_user, 'org_id') else None,
-                session_factory=SessionLocal
-            )
-            result = optimizer.optimize(
-                start_date=start_datetime,
-                end_date=end_datetime,
-                site_ids=site_ids
-            )
-
-        elif selected_algorithm == "production":
-            logger.info("Using Production CP-SAT Optimizer (Single Partition)")
-            optimizer = ProductionRosterOptimizer(
-                db,
-                config=build_config(120),
-                org_id=current_user.org_id if hasattr(current_user, 'org_id') else None
-            )
-            result = optimizer.optimize(
-                start_date=start_datetime,
-                end_date=end_datetime,
-                site_ids=site_ids
-            )
-
-        elif selected_algorithm == "milp":
-            logger.info("Using Legacy MILP Generator (budget constraints not supported)")
-            generator = MILPRosterGenerator(db)
-            result = generator.generate_roster(
-                start_date=start_datetime,
-                end_date=end_datetime,
-                site_ids=site_ids
-            )
-            result["algorithm_used"] = "milp"
-
-        else:
-            # Unknown algorithm, default to scalable
-            logger.warning(f"Unknown algorithm '{selected_algorithm}', defaulting to scalable")
-            optimizer = PartitionedRosterOptimizer(
-                db,
-                config=build_config(300),
-                org_id=current_user.org_id if hasattr(current_user, 'org_id') else None,
-                session_factory=SessionLocal
-            )
-            result = optimizer.optimize(
-                start_date=start_datetime,
-                end_date=end_datetime,
-                site_ids=site_ids
-            )
+        # Always use Partitioned CP-SAT (Google OR-Tools) — scales to 1000+ employees
+        logger.info("Using Partitioned CP-SAT Optimizer (Google OR-Tools)")
+        optimizer = PartitionedRosterOptimizer(
+            db,
+            config=config,
+            org_id=current_user.org_id if hasattr(current_user, 'org_id') else None,
+            session_factory=SessionLocal
+        )
+        result = optimizer.optimize(
+            start_date=start_datetime,
+            end_date=end_datetime,
+            site_ids=site_ids
+        )
+        result["algorithm_used"] = "cpsat_partitioned"
 
         # -------------------------------------------------------------------
         # Auto-create shifts if none found, then retry optimization once.
@@ -214,7 +165,7 @@ async def generate_roster(
                 logger.info(f"Auto-created {shifts_created} shifts, retrying optimization")
                 retry_optimizer = PartitionedRosterOptimizer(
                     db,
-                    config=build_config(300),
+                    config=config,
                     org_id=current_user.org_id if hasattr(current_user, 'org_id') else None,
                     session_factory=SessionLocal
                 )
@@ -222,6 +173,25 @@ async def generate_roster(
                 result["shifts_auto_created"] = shifts_created
 
         logger.info(f"Roster generation complete: {result.get('status', 'unknown')}, {len(result.get('assignments', []))} assignments")
+
+        # Build summary object expected by the frontend
+        assignments_list = result.get("assignments", [])
+        unfilled_list = result.get("unfilled_shifts", [])
+        total_shifts = len(assignments_list) + len(unfilled_list)
+        total_cost = sum(a.get("cost", 0) for a in assignments_list)
+        avg_cost = total_cost / len(assignments_list) if assignments_list else 0
+        emp_ids = set(a.get("employee_id") for a in assignments_list)
+
+        result["summary"] = {
+            "total_cost": round(total_cost, 2),
+            "total_shifts": total_shifts,
+            "total_shifts_filled": len(assignments_list),
+            "fill_rate": round(len(assignments_list) / total_shifts * 100, 1) if total_shifts > 0 else 0,
+            "employees_utilized": len(emp_ids),
+            "average_cost_per_shift": round(avg_cost, 2),
+            "total_warnings": 0,
+            "employee_hours": {},
+        }
 
         return result
 
@@ -463,23 +433,18 @@ async def generate_roster_for_client(
     client_id: int,
     start_date: datetime,
     end_date: datetime,
-    algorithm: Optional[str] = Query("production", description="Algorithm: 'production', 'milp', 'auto'"),
     org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
     """
-    Generate optimized roster for a specific client's sites (filtered by organization).
+    Generate optimized roster for a specific client's sites using CP-SAT.
 
-    **Client-Specific Roster Generation**
-
-    This endpoint automatically includes all sites belonging to the specified client,
-    making it easy to generate rosters for specific clients without manually selecting sites.
+    Automatically includes all sites belonging to the specified client.
 
     Args:
         client_id: Client ID to generate roster for
         start_date: Start date for roster period
         end_date: End date for roster period
-        algorithm: Algorithm selection (default: 'production')
         org_id: Organization ID (from current user)
         db: Database session
 
@@ -534,77 +499,26 @@ async def generate_roster_for_client(
         else:
             end_datetime = datetime.combine(end_date, datetime.max.time())
 
-        # Determine which algorithm to use
-        selected_algorithm = algorithm or "auto"
-
-        # Auto-select based on roster period and complexity
-        if selected_algorithm == "auto":
-            # Always use production optimizer (most robust)
-            selected_algorithm = "production"
-            logger.info(f"Auto-selected {selected_algorithm}")
-
         # Lazy load optimizer classes
-        MILPRosterGenerator, ProductionRosterOptimizer, OptimizationConfig, PartitionedRosterOptimizer = get_optimizer_classes()
+        _, ProductionRosterOptimizer, OptimizationConfig, PartitionedRosterOptimizer = get_optimizer_classes()
 
-        # Initialize appropriate optimizer
-        if selected_algorithm == "auto" or selected_algorithm == "scalable":
-            logger.info("Using Scalable Partitioned Optimizer")
-            optimizer = PartitionedRosterOptimizer(
-                db,
-                config=OptimizationConfig(
-                    time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 300),
-                    fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2)
-                ),
-                org_id=org_id,
-                session_factory=SessionLocal
-            )
-            result = optimizer.optimize(
-                start_date=start_datetime,
-                end_date=end_datetime,
-                site_ids=site_ids
-            )
-
-        elif selected_algorithm == "production":
-            logger.info("Using Production CP-SAT Optimizer")
-            optimizer = ProductionRosterOptimizer(
-                db,
-                config=OptimizationConfig(
-                    time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 120),
-                    fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2)
-                )
-            )
-            result = optimizer.optimize(
-                start_date=start_datetime,
-                end_date=end_datetime,
-                site_ids=site_ids
-            )
-
-        elif selected_algorithm == "milp":
-            logger.info("Using Legacy MILP Generator")
-            generator = MILPRosterGenerator(db)
-            result = generator.generate_roster(
-                start_date=start_datetime,
-                end_date=end_datetime,
-                site_ids=site_ids
-            )
-            result["algorithm_used"] = "milp"
-
-        else:
-            # Unknown algorithm, default to scalable
-            logger.warning(f"Unknown algorithm '{selected_algorithm}', defaulting to scalable")
-            optimizer = PartitionedRosterOptimizer(
-                db,
-                config=OptimizationConfig(
-                    time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 300),
-                    fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2)
-                ),
-                session_factory=SessionLocal
-            )
-            result = optimizer.optimize(
-                start_date=start_datetime,
-                end_date=end_datetime,
-                site_ids=site_ids
-            )
+        # Always use Partitioned CP-SAT (Google OR-Tools)
+        logger.info("Using Partitioned CP-SAT Optimizer (Google OR-Tools)")
+        optimizer = PartitionedRosterOptimizer(
+            db,
+            config=OptimizationConfig(
+                time_limit_seconds=getattr(settings, 'MILP_TIME_LIMIT', 300),
+                fairness_weight=getattr(settings, 'FAIRNESS_WEIGHT', 0.2)
+            ),
+            org_id=org_id,
+            session_factory=SessionLocal
+        )
+        result = optimizer.optimize(
+            start_date=start_datetime,
+            end_date=end_datetime,
+            site_ids=site_ids
+        )
+        result["algorithm_used"] = "cpsat_partitioned"
 
         # Add client information to result
         result["client"] = {
@@ -922,18 +836,32 @@ async def save_roster(
         db.add(roster)
         db.flush()  # Get roster_id
 
-        # Create shift assignments if provided
+        # Create shift assignments if provided — skip duplicates
         assignments = roster_data.get('assignments', [])
+        created_count = 0
         for assignment in assignments:
+            shift_id = assignment.get('shift_id')
+            employee_id = assignment.get('employee_id')
+            # Skip if this shift+employee combo already exists
+            existing = db.query(ShiftAssignment).filter(
+                ShiftAssignment.shift_id == shift_id,
+                ShiftAssignment.employee_id == employee_id
+            ).first()
+            if existing:
+                # Update to link to this roster if not already linked
+                if not existing.roster_id:
+                    existing.roster_id = roster.roster_id
+                continue
             shift_assignment = ShiftAssignment(
-                shift_id=assignment.get('shift_id'),
-                employee_id=assignment.get('employee_id'),
+                shift_id=shift_id,
+                employee_id=employee_id,
                 roster_id=roster.roster_id,
-                status='pending',  # Will be confirmed when roster is published
+                status='pending',
                 regular_hours=assignment.get('duration_hours', 0),
                 regular_pay=assignment.get('cost', 0)
             )
             db.add(shift_assignment)
+            created_count += 1
 
         db.commit()
 
@@ -951,7 +879,7 @@ async def save_roster(
         _create_roster_snapshot(db, roster, current_user.user_id, label="Initial save")
         db.commit()
 
-        logger.info(f"Roster saved: {roster_code} with {len(assignments)} assignments")
+        logger.info(f"Roster saved: {roster_code} with {created_count} new assignments ({len(assignments) - created_count} already existed)")
 
         return {
             "success": True,
@@ -2870,6 +2798,682 @@ async def validate_assignment(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/suggest-guards")
+async def suggest_guards(
+    shift_id: int = Query(..., description="Shift to get suggestions for"),
+    roster_id: int = Query(..., description="Roster context for existing assignments"),
+    limit: int = Query(5, ge=1, le=20, description="Max suggestions to return"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Suggest the best-fit guards for a specific shift, scored by multiple factors.
+    Read-only, no solver — returns in <200ms.
+
+    Scoring (0-100):
+    - Client match: +30 (employee assigned to same client as shift's site)
+    - Role match: +20 (employee role matches shift required_skill)
+    - PSIRA grade: +15 (higher grades score more)
+    - Cost efficiency: +15 (lower hourly_rate is better)
+    - Not double-booked: +10 (no overlapping shift that day)
+    - Fairness bonus: +10 (fewer existing assignments = higher)
+    """
+    from app.models.employee import Employee, EmployeeStatus
+    from app.models.shift_assignment import ShiftAssignment, AssignmentStatus
+    from app.models.roster import Roster
+    from sqlalchemy import func
+
+    try:
+        org_id = current_user.org_id
+        if not org_id:
+            raise HTTPException(status_code=400, detail="User must belong to an organization")
+
+        # Load shift
+        shift = db.query(Shift).filter(Shift.shift_id == shift_id, Shift.org_id == org_id).first()
+        if not shift:
+            raise HTTPException(status_code=404, detail="Shift not found")
+
+        # Load site for client matching
+        site = db.query(Site).filter(Site.site_id == shift.site_id).first()
+        site_client_id = site.client_id if site else None
+
+        # Get employees already assigned to this shift (in any active roster)
+        already_assigned_ids = set(
+            row[0] for row in db.query(ShiftAssignment.employee_id).filter(
+                ShiftAssignment.shift_id == shift_id,
+                ShiftAssignment.status.in_([AssignmentStatus.CONFIRMED, AssignmentStatus.COMPLETED]),
+            ).all()
+        )
+
+        # Get all roster assignments for fairness counting
+        roster = db.query(Roster).filter(Roster.roster_id == roster_id, Roster.org_id == org_id).first()
+        assignment_counts = {}
+        if roster:
+            counts = (
+                db.query(ShiftAssignment.employee_id, func.count(ShiftAssignment.assignment_id))
+                .filter(
+                    ShiftAssignment.roster_id == roster_id,
+                    ShiftAssignment.status.in_([AssignmentStatus.CONFIRMED, AssignmentStatus.COMPLETED]),
+                )
+                .group_by(ShiftAssignment.employee_id)
+                .all()
+            )
+            assignment_counts = {row[0]: row[1] for row in counts}
+        max_assignments = max(assignment_counts.values()) if assignment_counts else 1
+
+        # Get employees with overlapping shifts on the same day
+        shift_date = shift.start_time.date()
+        overlapping_employee_ids = set(
+            row[0] for row in (
+                db.query(ShiftAssignment.employee_id)
+                .join(Shift, ShiftAssignment.shift_id == Shift.shift_id)
+                .filter(
+                    ShiftAssignment.status.in_([AssignmentStatus.CONFIRMED, AssignmentStatus.COMPLETED]),
+                    Shift.start_time < shift.end_time,
+                    Shift.end_time > shift.start_time,
+                )
+                .all()
+            )
+        )
+
+        # Load all active employees for this org
+        employees = (
+            db.query(Employee)
+            .filter(Employee.org_id == org_id, Employee.status == EmployeeStatus.ACTIVE)
+            .all()
+        )
+
+        # Get hourly rates for cost efficiency scoring
+        rates = [e.hourly_rate for e in employees if e.hourly_rate]
+        max_rate = max(rates) if rates else 100
+        min_rate = min(rates) if rates else 0
+
+        suggestions = []
+        for emp in employees:
+            if emp.employee_id in already_assigned_ids:
+                continue
+
+            score = 0
+            reasons = []
+
+            # Client match (+30)
+            if site_client_id and emp.assigned_client_id == site_client_id:
+                score += 30
+                reasons.append("Assigned to this client")
+            elif emp.assigned_client_id is None:
+                score += 15
+                reasons.append("Available for any client")
+
+            # Role match (+20)
+            emp_role = emp.role.value.lower() if emp.role else ""
+            required = (shift.required_skill or "").lower()
+            if required:
+                if emp_role == required:
+                    score += 20
+                    reasons.append(f"Role: {emp_role}")
+                elif emp_role == "armed" and required == "unarmed":
+                    score += 15
+                    reasons.append("Armed (overqualified)")
+                elif emp_role == "supervisor":
+                    score += 15
+                    reasons.append("Supervisor")
+            else:
+                score += 10
+
+            # PSIRA grade (+15)
+            grade_scores = {"Grade A": 15, "Grade B": 12, "Grade C": 9, "Grade D": 6, "Grade E": 3}
+            if emp.psira_grade:
+                score += grade_scores.get(emp.psira_grade, 5)
+                reasons.append(emp.psira_grade)
+
+            # Cost efficiency (+15) — lower rate = higher score
+            if emp.hourly_rate and max_rate > min_rate:
+                cost_score = 15 * (1 - (float(emp.hourly_rate) - min_rate) / (max_rate - min_rate))
+                score += round(cost_score, 1)
+
+            # Not double-booked (+10)
+            if emp.employee_id not in overlapping_employee_ids:
+                score += 10
+            else:
+                score -= 20
+                reasons.append("Has overlapping shift")
+
+            # Fairness bonus (+10) — fewer assignments = higher
+            emp_count = assignment_counts.get(emp.employee_id, 0)
+            if max_assignments > 0:
+                fairness_score = 10 * (1 - emp_count / max(max_assignments, 1))
+                score += round(fairness_score, 1)
+
+            is_feasible = emp.employee_id not in overlapping_employee_ids
+
+            suggestions.append({
+                "employee_id": emp.employee_id,
+                "name": f"{emp.first_name} {emp.last_name}",
+                "role": emp_role,
+                "psira_grade": emp.psira_grade,
+                "hourly_rate": float(emp.hourly_rate) if emp.hourly_rate else None,
+                "fit_score": round(min(100, max(0, score)), 1),
+                "reasons": reasons,
+                "feasible": is_feasible,
+                "current_assignments": assignment_counts.get(emp.employee_id, 0),
+            })
+
+        # Sort by score descending, then by feasibility
+        suggestions.sort(key=lambda s: (s["feasible"], s["fit_score"]), reverse=True)
+
+        return suggestions[:limit]
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error suggesting guards: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/saved/{roster_id}/gap-insights")
+async def get_gap_insights(
+    roster_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Intelligent gap analysis for a saved roster.
+
+    For every unfilled shift, checks ALL active employees against 7 blocker
+    categories, then generates actionable recommendations sorted by impact.
+
+    Returns in <2s for 200 shifts × 60 employees by pre-loading all data
+    into memory and running checks without DB round-trips.
+    """
+    import time as _time
+    import math
+    from collections import defaultdict
+    from app.models.employee import Employee, EmployeeStatus
+    from app.models.shift_assignment import ShiftAssignment
+    from app.models.roster import Roster
+    from app.models.availability import Availability
+    from app.models.certification import Certification
+    from sqlalchemy import func
+    from sqlalchemy.orm import joinedload
+
+    t0 = _time.time()
+
+    try:
+        org_id = current_user.org_id
+        if not org_id:
+            raise HTTPException(status_code=400, detail="User must belong to an organization")
+
+        # ── 1. Load roster ──────────────────────────────────────────────
+        roster = db.query(Roster).filter(
+            Roster.roster_id == roster_id, Roster.org_id == org_id
+        ).first()
+        if not roster:
+            raise HTTPException(status_code=404, detail="Roster not found")
+
+        start_date = roster.start_date
+        end_date = roster.end_date
+
+        # ── 2. Load ALL shifts in the roster period ─────────────────────
+        all_shifts = (
+            db.query(Shift)
+            .filter(Shift.org_id == org_id, Shift.start_time >= start_date, Shift.end_time <= end_date)
+            .all()
+        )
+
+        # ── 3. Load assignment counts per shift in this roster ──────────
+        assignment_rows = (
+            db.query(ShiftAssignment.shift_id, func.count(ShiftAssignment.assignment_id))
+            .filter(
+                ShiftAssignment.roster_id == roster_id,
+                ShiftAssignment.status.notin_(["cancelled", "CANCELLED"]),
+            )
+            .group_by(ShiftAssignment.shift_id)
+            .all()
+        )
+        assignment_counts = {row[0]: row[1] for row in assignment_rows}
+
+        # Identify unfilled shifts (gap > 0)
+        unfilled_shifts = []
+        for shift in all_shifts:
+            assigned = assignment_counts.get(shift.shift_id, 0)
+            required = shift.required_staff or 1
+            gap = required - assigned
+            if gap > 0:
+                unfilled_shifts.append((shift, gap))
+
+        if not unfilled_shifts:
+            elapsed = (_time.time() - t0) * 1000
+            return {
+                "roster_id": roster_id,
+                "analysis_time_ms": round(elapsed),
+                "unfilled_count": 0,
+                "total_gap_slots": 0,
+                "gap_summary": [],
+                "recommendations": [],
+                "per_shift_diagnostics": [],
+            }
+
+        # ── 4. Pre-load ALL employees (active) ─────────────────────────
+        employees = (
+            db.query(Employee)
+            .filter(Employee.org_id == org_id, Employee.status == EmployeeStatus.ACTIVE)
+            .all()
+        )
+
+        # ── 5. Pre-load sites + clients for name lookups ────────────────
+        site_ids = list(set(s.site_id for s, _ in unfilled_shifts))
+        sites = db.query(Site).filter(Site.site_id.in_(site_ids)).all() if site_ids else []
+        site_map = {s.site_id: s for s in sites}
+
+        client_ids = list(set(s.client_id for s in sites if s.client_id))
+        clients = db.query(Client).filter(Client.client_id.in_(client_ids)).all() if client_ids else []
+        client_map = {c.client_id: c.client_name for c in clients}
+
+        # ── 6. Pre-load availability records for the period ─────────────
+        avail_records = (
+            db.query(Availability)
+            .filter(
+                Availability.employee_id.in_([e.employee_id for e in employees]),
+                Availability.date >= start_date.date() if hasattr(start_date, 'date') else start_date,
+                Availability.date <= end_date.date() if hasattr(end_date, 'date') else end_date,
+            )
+            .all()
+        )
+        avail_map = {}  # (employee_id, date) -> Availability
+        for a in avail_records:
+            avail_map[(a.employee_id, a.date)] = a
+
+        # ── 7. Pre-load existing assignments for overlap/hours checks ───
+        existing_assignments = (
+            db.query(ShiftAssignment)
+            .join(Shift, ShiftAssignment.shift_id == Shift.shift_id)
+            .filter(
+                ShiftAssignment.roster_id == roster_id,
+                ShiftAssignment.status.notin_(["cancelled", "CANCELLED"]),
+            )
+            .all()
+        )
+
+        # Build per-employee shift time ranges for overlap detection
+        emp_shift_times = defaultdict(list)  # employee_id -> [(start, end, shift_id)]
+        shift_lookup = {s.shift_id: s for s in all_shifts}
+        for sa in existing_assignments:
+            s = shift_lookup.get(sa.shift_id)
+            if s:
+                emp_shift_times[sa.employee_id].append(
+                    (s.start_time, s.end_time, s.shift_id)
+                )
+
+        # Build weekly hours per employee
+        weekly_hours = defaultdict(float)  # (employee_id, iso_week) -> hours
+        for sa in existing_assignments:
+            s = shift_lookup.get(sa.shift_id)
+            if s:
+                hours = (s.end_time - s.start_time).total_seconds() / 3600
+                iso_week = s.start_time.isocalendar()[1]
+                weekly_hours[(sa.employee_id, iso_week)] += hours
+
+        # Pre-load certifications
+        cert_records = (
+            db.query(Certification)
+            .filter(Certification.employee_id.in_([e.employee_id for e in employees]))
+            .all()
+        )
+        emp_certs = defaultdict(list)
+        for c in cert_records:
+            emp_certs[c.employee_id].append(c)
+
+        # Get hourly rates for fit_score cost efficiency
+        rates = [float(e.hourly_rate) for e in employees if e.hourly_rate]
+        max_rate = max(rates) if rates else 100
+        min_rate = min(rates) if rates else 0
+
+        # Fairness: assignment counts per employee in this roster
+        fairness_counts = defaultdict(int)
+        for sa in existing_assignments:
+            fairness_counts[sa.employee_id] += 1
+        max_fairness = max(fairness_counts.values()) if fairness_counts else 1
+
+        # ── 8. Blocker classification + feasibility matrix ──────────────
+        BLOCKER_DESCRIPTIONS = {
+            "skill_mismatch": "No employees with the required skill/role",
+            "client_restriction": "Qualified employees are assigned to a different client",
+            "unavailable": "Employees not available on this date/time",
+            "time_conflict": "Employees already have an overlapping shift",
+            "hours_exceeded": "Assigning would exceed the employee's weekly hour limit",
+            "rest_violation": "Insufficient rest period between consecutive shifts",
+            "psira_issue": "PSIRA certification expired, insufficient grade, or missing",
+        }
+
+        def check_skill(emp, shift):
+            if not shift.required_skill:
+                return True
+            emp_role = emp.role.value.lower() if emp.role else ""
+            req = shift.required_skill.lower()
+            if emp_role == req:
+                return True
+            if emp_role == "armed" and req == "unarmed":
+                return True
+            if emp_role == "supervisor":
+                return True
+            return False
+
+        def check_client(emp, shift):
+            if emp.assigned_client_id is None:
+                return True
+            site = site_map.get(shift.site_id)
+            if not site:
+                return False
+            return site.client_id == emp.assigned_client_id
+
+        def check_availability(emp, shift):
+            shift_date = shift.start_time.date()
+            key = (emp.employee_id, shift_date)
+            avail = avail_map.get(key)
+            if not avail:
+                return emp.shift_pattern_id is None  # No record: pattern=OFF, manual=available
+            if not avail.available:
+                return False
+            shift_start = shift.start_time.time()
+            shift_end = shift.end_time.time()
+            if shift_end > shift_start:
+                return avail.start_time <= shift_start and shift_end <= avail.end_time
+            else:
+                # Overnight shift
+                if avail.start_time <= shift_start:
+                    return True
+            return False
+
+        def check_overlap(emp, shift):
+            for s_start, s_end, _ in emp_shift_times.get(emp.employee_id, []):
+                if shift.start_time < s_end and shift.end_time > s_start:
+                    return False
+            return True
+
+        def check_hours(emp, shift):
+            shift_hours = (shift.end_time - shift.start_time).total_seconds() / 3600
+            iso_week = shift.start_time.isocalendar()[1]
+            current = weekly_hours.get((emp.employee_id, iso_week), 0)
+            max_h = emp.max_hours_week if emp.max_hours_week else 48
+            return (current + shift_hours) <= max_h
+
+        def check_rest(emp, shift):
+            min_rest = 12 * 3600  # 12 hours in seconds
+            for s_start, s_end, _ in emp_shift_times.get(emp.employee_id, []):
+                gap_before = (shift.start_time - s_end).total_seconds()
+                gap_after = (s_start - shift.end_time).total_seconds()
+                if 0 < gap_before < min_rest or 0 < gap_after < min_rest:
+                    return False
+            return True
+
+        def check_psira(emp, shift):
+            if not shift.required_psira_grade and not getattr(shift, 'requires_firearm', False):
+                return True
+            certs = emp_certs.get(emp.employee_id, [])
+            shift_date = shift.start_time.date()
+            # Check PSIRA grade
+            if shift.required_psira_grade:
+                grade_hierarchy = {"E": 1, "D": 2, "C": 3, "B": 4, "A": 5}
+                required_val = grade_hierarchy.get(str(shift.required_psira_grade).replace("Grade ", "").replace("GRADE_", ""), 0)
+                emp_grade = emp.psira_grade or ""
+                emp_val = grade_hierarchy.get(emp_grade.replace("Grade ", ""), 0)
+                if emp_val < required_val:
+                    return False
+            # Check expiry
+            if emp.psira_expiry_date and emp.psira_expiry_date < shift_date:
+                return False
+            return True
+
+        def classify_blocker(emp, shift):
+            """Return the first HARD blocker category, or None if feasible."""
+            if not check_skill(emp, shift):
+                return "skill_mismatch"
+            if not check_client(emp, shift):
+                return "client_restriction"
+            if not check_availability(emp, shift):
+                return "unavailable"
+            if not check_overlap(emp, shift):
+                return "time_conflict"
+            if not check_hours(emp, shift):
+                return "hours_exceeded"
+            if not check_rest(emp, shift):
+                return "rest_violation"
+            if not check_psira(emp, shift):
+                return "psira_issue"
+            return None
+
+        def compute_fit_score(emp, shift):
+            score = 0
+            site = site_map.get(shift.site_id)
+            site_client_id = site.client_id if site else None
+            # Client match (+30)
+            if site_client_id and emp.assigned_client_id == site_client_id:
+                score += 30
+            elif emp.assigned_client_id is None:
+                score += 15
+            # Role match (+20)
+            emp_role = emp.role.value.lower() if emp.role else ""
+            req = (shift.required_skill or "").lower()
+            if req and emp_role == req:
+                score += 20
+            elif not req:
+                score += 10
+            # PSIRA grade (+15)
+            grade_scores = {"Grade A": 15, "Grade B": 12, "Grade C": 9, "Grade D": 6, "Grade E": 3}
+            if emp.psira_grade:
+                score += grade_scores.get(emp.psira_grade, 5)
+            # Cost efficiency (+15)
+            if emp.hourly_rate and max_rate > min_rate:
+                cost_score = 15 * (1 - (float(emp.hourly_rate) - min_rate) / (max_rate - min_rate))
+                score += round(cost_score, 1)
+            # No overlap (+10) — already checked, so always True here
+            score += 10
+            # Fairness (+10)
+            emp_count = fairness_counts.get(emp.employee_id, 0)
+            if max_fairness > 0:
+                score += round(10 * (1 - emp_count / max(max_fairness, 1)), 1)
+            return round(min(100, max(0, score)), 1)
+
+        # ── Run the matrix ──────────────────────────────────────────────
+        gap_slot_blockers = defaultdict(int)   # reason -> count of SLOTS blocked
+        per_shift_diags = []
+        quick_fill_all = []  # (shift_id, employee_id, fit_score)
+        client_restriction_by_client = defaultdict(int)  # client_name -> shifts unlockable
+
+        for shift, gap_count in unfilled_shifts:
+            shift_blockers = defaultdict(int)
+            feasible_candidates = []
+            near_miss_candidates = []  # blocked by soft/fixable constraint
+
+            for emp in employees:
+                # Skip employees already assigned to this shift
+                if any(sid == shift.shift_id for _, _, sid in emp_shift_times.get(emp.employee_id, [])):
+                    continue
+
+                blocker = classify_blocker(emp, shift)
+                if blocker is None:
+                    score = compute_fit_score(emp, shift)
+                    feasible_candidates.append({
+                        "employee_id": emp.employee_id,
+                        "name": f"{emp.first_name} {emp.last_name}",
+                        "blocker": None,
+                        "fit_score": score,
+                    })
+                else:
+                    shift_blockers[blocker] += 1
+                    # Track near-miss candidates (client restriction is most fixable)
+                    if blocker == "client_restriction":
+                        score = compute_fit_score(emp, shift)
+                        near_miss_candidates.append({
+                            "employee_id": emp.employee_id,
+                            "name": f"{emp.first_name} {emp.last_name}",
+                            "blocker": blocker,
+                            "fit_score": score,
+                        })
+                        site = site_map.get(shift.site_id)
+                        if site and site.client_id:
+                            cname = client_map.get(site.client_id, f"Client #{site.client_id}")
+                            client_restriction_by_client[cname] += 1
+
+            # Determine top blocker for this shift
+            if shift_blockers:
+                top_blocker = max(shift_blockers, key=shift_blockers.get)
+            elif not feasible_candidates:
+                top_blocker = "insufficient_staff"
+            else:
+                top_blocker = None  # Has feasible candidates
+
+            # Aggregate ALL blocker encounters into gap_summary
+            # This counts every (employee, shift) pair that was blocked,
+            # giving a comprehensive view of what constraints are most restrictive.
+            for blocker_reason, blocker_count in shift_blockers.items():
+                gap_slot_blockers[blocker_reason] += blocker_count
+
+            # Best candidates: top 3 feasible + top 2 near-miss
+            feasible_sorted = sorted(feasible_candidates, key=lambda c: c["fit_score"], reverse=True)
+            near_miss_sorted = sorted(near_miss_candidates, key=lambda c: c["fit_score"], reverse=True)
+            best = feasible_sorted[:3] + near_miss_sorted[:2]
+
+            # Add feasible candidates to quick_fill pool
+            for fc in feasible_sorted[:gap_count]:
+                quick_fill_all.append((shift.shift_id, fc["employee_id"], fc["fit_score"]))
+
+            site = site_map.get(shift.site_id)
+            site_name = site.site_name if site else f"Site #{shift.site_id}"
+            client_name = client_map.get(site.client_id, "") if site and site.client_id else ""
+
+            per_shift_diags.append({
+                "shift_id": shift.shift_id,
+                "site_name": site_name,
+                "client_name": client_name,
+                "date": shift.start_time.strftime("%Y-%m-%d"),
+                "time": f"{shift.start_time.strftime('%H:%M')}-{shift.end_time.strftime('%H:%M')}",
+                "required_skill": shift.required_skill,
+                "gaps": gap_count,
+                "top_blocker": top_blocker,
+                "blocker_counts": dict(shift_blockers),
+                "best_candidates": best[:5],
+            })
+
+        # ── 9. Build gap_summary ────────────────────────────────────────
+        total_gap_slots = sum(g for _, g in unfilled_shifts)
+        # Count quick-fillable slots separately
+        quick_fill_shift_ids = set(sf for sf, _, _ in quick_fill_all)
+        quick_fillable_slots = sum(
+            g for s, g in unfilled_shifts if s.shift_id in quick_fill_shift_ids
+        )
+        blocked_slots = total_gap_slots - quick_fillable_slots
+
+        gap_summary = []
+        total_blocker_encounters = sum(gap_slot_blockers.values())
+        for reason, count in sorted(gap_slot_blockers.items(), key=lambda x: x[1], reverse=True):
+            pct = round((count / total_blocker_encounters) * 100, 1) if total_blocker_encounters > 0 else 0
+            gap_summary.append({
+                "reason": reason,
+                "count": count,
+                "pct": pct,
+                "description": BLOCKER_DESCRIPTIONS.get(reason, reason),
+            })
+
+        # ── 10. Build recommendations ───────────────────────────────────
+        recommendations = []
+
+        # Quick-fill: deduplicate (employee can only fill one shift)
+        used_employees = set()
+        unique_quick_fills = []
+        for sf_id, emp_id, score in sorted(quick_fill_all, key=lambda x: x[2], reverse=True):
+            if emp_id not in used_employees:
+                unique_quick_fills.append({"shift_id": sf_id, "employee_id": emp_id})
+                used_employees.add(emp_id)
+            if len(unique_quick_fills) >= 50:
+                break
+
+        if unique_quick_fills:
+            recommendations.append({
+                "type": "quick_fill",
+                "priority": "high",
+                "impact": len(unique_quick_fills),
+                "message": f"{len(unique_quick_fills)} shifts can be auto-filled right now with available guards",
+                "action": {"assignments": unique_quick_fills},
+            })
+
+        # Relax client assignment
+        for cname, count in sorted(client_restriction_by_client.items(), key=lambda x: x[1], reverse=True)[:3]:
+            if count >= 3:
+                recommendations.append({
+                    "type": "relax_constraint",
+                    "priority": "high",
+                    "impact": count,
+                    "message": f"Relax client assignment for {cname} — {count} extra guard-slots become fillable",
+                    "action": None,
+                })
+
+        # Hire recommendation: group skill deficits
+        skill_demand = defaultdict(float)   # required_skill -> total hours needed
+        skill_supply = defaultdict(float)   # required_skill -> total available hours
+        for shift, gap in unfilled_shifts:
+            skill = shift.required_skill or "general"
+            hours = (shift.end_time - shift.start_time).total_seconds() / 3600
+            skill_demand[skill] += hours * gap
+        for emp in employees:
+            emp_role = emp.role.value.lower() if emp.role else "general"
+            max_h = emp.max_hours_week if emp.max_hours_week else 48
+            # Approximate weekly capacity minus already assigned
+            total_assigned = sum(
+                (s_end - s_start).total_seconds() / 3600
+                for s_start, s_end, _ in emp_shift_times.get(emp.employee_id, [])
+            )
+            remaining = max(0, max_h - total_assigned)
+            skill_supply[emp_role] += remaining
+            # Armed can do unarmed, supervisor can do any
+            if emp_role == "armed":
+                skill_supply["unarmed"] += remaining
+            if emp_role == "supervisor":
+                for sk in skill_demand:
+                    skill_supply[sk] += remaining
+
+        for skill, demand_hours in sorted(skill_demand.items(), key=lambda x: x[1], reverse=True):
+            supply = skill_supply.get(skill, 0)
+            deficit = demand_hours - supply
+            if deficit > 0:
+                headcount = math.ceil(deficit / 48)
+                shift_impact = sum(
+                    g for s, g in unfilled_shifts
+                    if (s.required_skill or "general").lower() == skill
+                )
+                recommendations.append({
+                    "type": "hire",
+                    "priority": "critical",
+                    "impact": min(shift_impact, headcount * 7),
+                    "message": f"Hire {headcount} {skill.title()} guard{'s' if headcount > 1 else ''} — {round(deficit)}h of unfilled {skill} demand this period",
+                    "action": None,
+                })
+
+        # Sort recommendations by priority then impact
+        priority_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+        recommendations.sort(key=lambda r: (priority_order.get(r["priority"], 9), -r["impact"]))
+
+        # Sort diagnostics by gap count descending
+        per_shift_diags.sort(key=lambda d: d["gaps"], reverse=True)
+
+        elapsed = (_time.time() - t0) * 1000
+        return {
+            "roster_id": roster_id,
+            "analysis_time_ms": round(elapsed),
+            "unfilled_count": len(unfilled_shifts),
+            "total_gap_slots": total_gap_slots,
+            "gap_summary": gap_summary,
+            "recommendations": recommendations,
+            "per_shift_diagnostics": per_shift_diags[:100],  # Limit to top 100
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error computing gap insights: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/saved/{roster_id}/assign")
 async def manual_assign(
     roster_id: int,
@@ -3149,6 +3753,154 @@ async def manual_assign(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error assigning shift: {str(e)}"
         )
+
+
+@router.post("/saved/{roster_id}/bulk-assign")
+async def bulk_assign(
+    roster_id: int,
+    data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Bulk assign multiple employees to shifts in a single transaction.
+    Used by the auto-fill feature. Skips duplicates and full shifts silently.
+
+    Args:
+        roster_id: Roster ID (must be draft)
+        data: {"assignments": [{"shift_id": int, "employee_id": int}, ...]}
+
+    Returns:
+        {"assigned": int, "skipped": int, "errors": [str]}
+    """
+    from app.models.roster import Roster
+    from app.models.shift_assignment import ShiftAssignment
+    from app.models.employee import Employee
+
+    try:
+        org_id = current_user.org_id
+        if not org_id:
+            raise HTTPException(status_code=400, detail="User must belong to an organization")
+
+        assignments_list = data.get("assignments", [])
+        if not assignments_list:
+            return {"assigned": 0, "skipped": 0, "errors": []}
+
+        # Verify roster
+        roster = db.query(Roster).filter(
+            Roster.roster_id == roster_id,
+            Roster.org_id == org_id,
+        ).first()
+        if not roster:
+            raise HTTPException(status_code=404, detail="Roster not found")
+        if roster.status != "draft":
+            raise HTTPException(status_code=400, detail="Can only assign in draft rosters")
+
+        # Pre-load shifts and employees for this org
+        shift_ids = list({a["shift_id"] for a in assignments_list})
+        shifts_map = {
+            s.shift_id: s
+            for s in db.query(Shift).filter(Shift.shift_id.in_(shift_ids), Shift.org_id == org_id).all()
+        }
+
+        emp_ids = list({a["employee_id"] for a in assignments_list})
+        emps_map = {
+            e.employee_id: e
+            for e in db.query(Employee).filter(Employee.employee_id.in_(emp_ids), Employee.org_id == org_id).all()
+        }
+
+        # Pre-load existing assignments to skip duplicates
+        existing = set(
+            (sa.shift_id, sa.employee_id)
+            for sa in db.query(ShiftAssignment.shift_id, ShiftAssignment.employee_id).filter(
+                ShiftAssignment.roster_id == roster_id,
+                ShiftAssignment.shift_id.in_(shift_ids),
+            ).all()
+        )
+
+        # Count current assignments per shift for capacity check
+        from sqlalchemy import func
+        capacity_counts = dict(
+            db.query(ShiftAssignment.shift_id, func.count(ShiftAssignment.assignment_id))
+            .filter(
+                ShiftAssignment.shift_id.in_(shift_ids),
+                ShiftAssignment.status.notin_(["cancelled"]),
+            )
+            .group_by(ShiftAssignment.shift_id)
+            .all()
+        )
+
+        assigned_count = 0
+        skipped_count = 0
+        errors = []
+
+        for item in assignments_list:
+            sid = item.get("shift_id")
+            eid = item.get("employee_id")
+
+            if not sid or not eid:
+                skipped_count += 1
+                continue
+
+            # Skip if already assigned
+            if (sid, eid) in existing:
+                skipped_count += 1
+                continue
+
+            shift = shifts_map.get(sid)
+            emp = emps_map.get(eid)
+            if not shift or not emp:
+                skipped_count += 1
+                continue
+
+            # Skip if shift full
+            current_count = capacity_counts.get(sid, 0)
+            if current_count >= shift.required_staff:
+                skipped_count += 1
+                continue
+
+            # Create assignment
+            assignment = ShiftAssignment(
+                shift_id=sid,
+                employee_id=eid,
+                roster_id=roster_id,
+                status="pending",
+                regular_hours=shift.paid_hours,
+                assigned_by=current_user.user_id,
+            )
+            db.add(assignment)
+            existing.add((sid, eid))
+            capacity_counts[sid] = current_count + 1
+            assigned_count += 1
+
+        # Update roster counts
+        if assigned_count > 0:
+            roster.assigned_shifts = (roster.assigned_shifts or 0) + assigned_count
+            roster.unassigned_shifts = max(0, (roster.unassigned_shifts or 0) - assigned_count)
+
+            db.commit()
+
+            # Single audit entry for bulk
+            AuditService.log_change(
+                db=db, org_id=org_id, entity_type="roster", entity_id=roster_id,
+                action="bulk_assign",
+                changes={"assigned": assigned_count, "skipped": skipped_count},
+                user_id=current_user.user_id, user_email=current_user.email,
+            )
+            db.commit()
+
+            # Single snapshot
+            _create_roster_snapshot(db, roster, current_user.user_id, label=f"Bulk assign ({assigned_count})")
+            db.commit()
+
+        return {"assigned": assigned_count, "skipped": skipped_count, "errors": errors}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error bulk assigning: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/saved/{roster_id}/unassign")

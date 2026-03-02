@@ -22,6 +22,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.models.employee import Employee, EmployeeStatus, EmployeeRole
 from app.models.shift import Shift, ShiftStatus
 from app.models.site import Site
+from app.models.client import Client
 from app.models.certification import Certification, PSIRAGrade, FirearmCompetencyType
 from app.models.availability import Availability
 from app.utils.holidays import PremiumRateCalculator, SouthAfricanHolidays
@@ -40,7 +41,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class OptimizationConfig:
     """Configuration for optimization run"""
-    time_limit_seconds: int = 120
+    time_limit_seconds: int = 300
     num_workers: int = 8
     fairness_weight: float = 0.2
     cost_weight: float = 1.0
@@ -419,6 +420,14 @@ class ProductionRosterOptimizer:
         site_id_set = set(s.site_id for s in self.shifts)
         sites_list = self.db.query(Site).filter(Site.site_id.in_(site_id_set)).all()
         self.sites = {s.site_id: s for s in sites_list}
+
+        # Load client names for site enrichment in results
+        client_id_set = set(s.client_id for s in sites_list if s.client_id)
+        if client_id_set:
+            clients_list = self.db.query(Client).filter(Client.client_id.in_(client_id_set)).all()
+            self.client_names = {c.client_id: c.client_name for c in clients_list}
+        else:
+            self.client_names = {}
 
         # Load existing confirmed/completed shift assignments within a lookback window
         # This prevents assigning guards to shifts that violate rest periods with existing shifts
@@ -1672,17 +1681,26 @@ class ProductionRosterOptimizer:
         self.assignments = []
         total_cost_cents = 0
 
+        # O(1) lookup maps for employees and shifts (avoids O(n) scans per assignment)
+        emp_map = {e.employee_id: e for e in self.employees}
+        shift_map = {s.shift_id: s for s in self.shifts}
+
         for key, var in self.assignment_vars.items():
             if self.solver.Value(var) == 1:
                 emp_id, shift_id = key
 
-                # Find employee and shift objects
-                emp = next(e for e in self.employees if e.employee_id == emp_id)
-                shift = next(s for s in self.shifts if s.shift_id == shift_id)
+                # Find employee and shift objects via O(1) dict lookup
+                emp = emp_map[emp_id]
+                shift = shift_map[shift_id]
 
                 # Get cost
                 cost = self.feasibility_matrix[key].cost
                 total_cost_cents += int(cost * 100)
+
+                site = self.sites.get(shift.site_id)
+                site_name = site.site_name if site else f"Site {shift.site_id}"
+                client_id = site.client_id if site else None
+                client_name = self.client_names.get(client_id, "") if client_id else ""
 
                 self.assignments.append({
                     "employee_id": emp_id,
@@ -1690,6 +1708,9 @@ class ProductionRosterOptimizer:
                     "cost": cost,
                     "employee_name": f"{emp.first_name} {emp.last_name}",
                     "site_id": shift.site_id,
+                    "site_name": site_name,
+                    "client_id": client_id,
+                    "client_name": client_name,
                     "start_time": shift.start_time,
                     "end_time": shift.end_time
                 })
@@ -1732,6 +1753,12 @@ class ProductionRosterOptimizer:
         # Collect constraint violation warnings
         warnings = self._collect_constraint_warnings()
 
+        # Determine compliance flags from warnings
+        bcea_warning_types = {"consecutive_days", "rest_period", "weekly_hours", "overtime"}
+        psira_warning_types = {"psira_expired", "psira_grade", "firearm_competency"}
+        has_bcea_violations = any(w.get("warning_type") in bcea_warning_types for w in warnings)
+        has_psira_violations = any(w.get("warning_type") in psira_warning_types for w in warnings)
+
         return {
             "status": "optimal" if self.solution_status == cp_model.OPTIMAL else "feasible",
             "assignments": self.assignments,
@@ -1745,7 +1772,12 @@ class ProductionRosterOptimizer:
                 "total_slots_needed": sum((getattr(s, 'required_staff', 1) or 1) for s in self.shifts),
                 "fill_rate": (len(self.assignments) / max(sum((getattr(s, 'required_staff', 1) or 1) for s in self.shifts), 1) * 100) if self.shifts else 0,
                 "employees_utilized": len(set(a["employee_id"] for a in self.assignments)),
-                "total_warnings": len(warnings)
+                "total_warnings": len(warnings),
+                "regular_pay_cost": self.total_cost,
+                "overtime_cost": 0,
+                "premium_cost": 0,
+                "bcea_compliant": not has_bcea_violations,
+                "psira_compliant": not has_psira_violations,
             },
             "solver_info": {
                 "solve_time": self.solve_time,
@@ -1838,9 +1870,16 @@ class ProductionRosterOptimizer:
 
     def _shift_to_dict(self, shift: Shift) -> Dict:
         """Convert shift to dictionary"""
+        site = self.sites.get(shift.site_id)
+        site_name = site.site_name if site else f"Site {shift.site_id}"
+        client_id = site.client_id if site else None
+        client_name = self.client_names.get(client_id, "") if client_id else ""
         return {
             "shift_id": shift.shift_id,
             "site_id": shift.site_id,
+            "site_name": site_name,
+            "client_id": client_id,
+            "client_name": client_name,
             "start_time": shift.start_time,
             "end_time": shift.end_time,
             "required_skill": shift.required_skill,

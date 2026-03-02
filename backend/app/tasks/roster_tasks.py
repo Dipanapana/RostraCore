@@ -7,9 +7,9 @@ from celery import Task
 from app.celery_app import celery_app
 from app.database import SessionLocal
 from app.algorithms.production_optimizer import ProductionRosterOptimizer, OptimizationConfig
-from app.algorithms.milp_roster_generator import MILPRosterGenerator
-from app.algorithms.roster_generator import RosterGenerator
+from app.algorithms.scalable_roster_optimizer import PartitionedRosterOptimizer
 from app.services.analytics_service import track
+from app.database import SessionLocal as SessionFactory
 from datetime import datetime
 import logging
 import time
@@ -41,20 +41,18 @@ def generate_roster_task(
     start_date: str,
     end_date: str,
     site_ids: list,
-    algorithm: str = 'production',
     budget_limit: float = None,
     user_id: int = None,
     org_id: int = None
 ):
     """
-    Background task for roster generation
+    Background task for roster generation using Partitioned CP-SAT (Google OR-Tools).
 
     Args:
         self: Celery task instance (bind=True)
         start_date: Start date (ISO format string)
         end_date: End date (ISO format string)
         site_ids: List of site IDs
-        algorithm: Algorithm to use ('production', 'milp', 'hungarian')
         budget_limit: Optional budget limit
         user_id: User who initiated the generation
         org_id: Organization ID
@@ -63,79 +61,49 @@ def generate_roster_task(
         Dict with roster results
     """
     try:
-        # Update state to STARTED
         self.update_state(
             state='STARTED',
             meta={'progress': 0, 'status': 'Initializing optimization...', 'stage': 'setup'}
         )
 
-        # Convert date strings to datetime objects
         start_dt = datetime.fromisoformat(start_date)
         end_dt = datetime.fromisoformat(end_date)
 
-        logger.info(f"Starting roster generation: {start_dt} to {end_dt}, algorithm={algorithm}")
+        logger.info(f"Starting roster generation: {start_dt} to {end_dt} (Partitioned CP-SAT)")
 
-        # Update progress
         self.update_state(
             state='PROGRESS',
             meta={'progress': 10, 'status': 'Loading shifts and employees...', 'stage': 'data_loading'}
         )
 
-        # Select and configure algorithm
-        if algorithm == 'production':
-            config = OptimizationConfig(
-                time_limit_seconds=180
-            )
-            optimizer = ProductionRosterOptimizer(self.db, config=config)
+        config = OptimizationConfig(
+            time_limit_seconds=300,
+            budget_limit=budget_limit,
+        )
 
-            self.update_state(
-                state='PROGRESS',
-                meta={'progress': 20, 'status': 'Analyzing constraints...', 'stage': 'constraint_analysis'}
-            )
+        optimizer = PartitionedRosterOptimizer(
+            self.db,
+            config=config,
+            org_id=org_id,
+            session_factory=SessionFactory
+        )
 
-            # Run optimization
-            result = optimizer.optimize(
-                start_date=start_dt,
-                end_date=end_dt,
-                site_ids=site_ids if site_ids else None
-            )
+        self.update_state(
+            state='PROGRESS',
+            meta={'progress': 20, 'status': 'Solving with CP-SAT...', 'stage': 'optimization'}
+        )
 
-        elif algorithm == 'milp':
-            self.update_state(
-                state='PROGRESS',
-                meta={'progress': 20, 'status': 'Building MILP model...', 'stage': 'model_building'}
-            )
+        result = optimizer.optimize(
+            start_date=start_dt,
+            end_date=end_dt,
+            site_ids=site_ids if site_ids else None
+        )
 
-            generator = MILPRosterGenerator(self.db)
-            result = generator.generate(
-                start_date=start_dt,
-                end_date=end_dt,
-                site_ids=site_ids
-            )
-
-        elif algorithm == 'hungarian':
-            self.update_state(
-                state='PROGRESS',
-                meta={'progress': 20, 'status': 'Running Hungarian algorithm...', 'stage': 'optimization'}
-            )
-
-            generator = RosterGenerator(self.db)
-            result = generator.generate(
-                start_date=start_dt,
-                end_date=end_dt,
-                site_ids=site_ids
-            )
-
-        else:
-            raise ValueError(f"Unknown algorithm: {algorithm}")
-
-        # Update progress to finalizing
         self.update_state(
             state='PROGRESS',
             meta={'progress': 90, 'status': 'Finalizing assignments...', 'stage': 'finalization'}
         )
 
-        # Track event in analytics
         if user_id and org_id:
             try:
                 track(
@@ -144,20 +112,19 @@ def generate_roster_task(
                     user_id=user_id,
                     org_id=org_id,
                     fill_rate=result.get('summary', {}).get('fill_rate', 0),
-                    algorithm=algorithm,
+                    algorithm='cpsat_partitioned',
                     shift_count=result.get('summary', {}).get('total_shifts', 0)
                 )
             except Exception as e:
                 logger.warning(f"Failed to track analytics event: {e}")
 
-        logger.info(f"Roster generation completed successfully: {len(result.get('assignments', []))} assignments")
+        logger.info(f"Roster generation completed: {len(result.get('assignments', []))} assignments")
 
-        # Return final result
         return {
             'status': 'completed',
             'progress': 100,
             'result': result,
-            'algorithm': algorithm,
+            'algorithm': 'cpsat_partitioned',
             'completed_at': datetime.utcnow().isoformat()
         }
 

@@ -58,6 +58,7 @@ interface ShiftData {
   required_staff: number
   required_skill?: string
   assignments: {
+    assignment_id?: number
     employee_id: number
     employee_name: string
     cost: number
@@ -195,6 +196,7 @@ export default function RosterBoardPage() {
               .map((a) => {
                 const emp = empMap.get(a.employee_id)
                 return {
+                  assignment_id: a.assignment_id,
                   employee_id: a.employee_id,
                   employee_name: emp ? `${emp.first_name} ${emp.last_name}` : `Employee #${a.employee_id}`,
                   cost: (a.cost_regular || 0) + (a.cost_overtime || 0),
@@ -399,6 +401,8 @@ export default function RosterBoardPage() {
             shifts={shifts}
             employees={employees}
             rosterId={selectedRosterId}
+            rosterStartDate={selectedRoster?.start_date}
+            rosterEndDate={selectedRoster?.end_date}
             onAssignmentChange={handleRefresh}
           />
         </div>

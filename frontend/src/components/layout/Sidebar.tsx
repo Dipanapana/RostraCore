@@ -246,6 +246,14 @@ const NAV_ENTRIES: NavEntry[] = [
         permissionKey: "employees.view",
       },
       {
+        key: "guard-setup",
+        label: "Guard Setup",
+        href: "/employees/setup",
+        icon: UserCog,
+        roles: MANAGEMENT_ROLES,
+        permissionKey: "employees.view",
+      },
+      {
         key: "certifications",
         label: "Certifications",
         href: "/certifications",
@@ -328,7 +336,7 @@ const NAV_ENTRIES: NavEntry[] = [
       {
         key: "generate-roster",
         label: "Generate Roster",
-        href: "/roster",
+        href: "/roster/generate",
         icon: Wrench,
         roles: MANAGEMENT_ROLES,
         permissionKey: "roster.view",
@@ -1444,6 +1452,7 @@ export default function Sidebar() {
         {/* Group header — clickable to toggle */}
         <button
           onClick={() => toggleGroup(entry.key)}
+          suppressHydrationWarning
           className={`
             w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
             transition-colors duration-150 ease-out text-left
@@ -1468,6 +1477,7 @@ export default function Sidebar() {
             {entry.label}
           </span>
           <ChevronDown
+            suppressHydrationWarning
             className={`w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200 ${
               expanded ? "rotate-0" : "-rotate-90"
             }`}
@@ -1476,6 +1486,7 @@ export default function Sidebar() {
 
         {/* Children — animated expand */}
         <div
+          suppressHydrationWarning
           className={`
             overflow-hidden transition-all duration-200 ease-out
             ${expanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"}

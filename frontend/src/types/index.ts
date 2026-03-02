@@ -20,6 +20,7 @@ export interface Employee {
   phone?: string
   assigned_client_id?: number  // Legacy single client
   assigned_client_ids?: number[]  // Multiple client assignment
+  preferred_site_ids?: number[]  // Sites where guard is preferentially deployed
 
   // Personal details
   gender?: Gender
@@ -313,6 +314,11 @@ export interface RosterGenerateSummary {
   employees_utilized: number
   total_warnings: number
   average_cost_per_shift?: number
+  regular_pay_cost?: number
+  overtime_cost?: number
+  premium_cost?: number
+  bcea_compliant?: boolean
+  psira_compliant?: boolean
 }
 
 export interface RosterWarning {
@@ -347,4 +353,5 @@ export interface RosterGenerateResponse {
   algorithm_used: string
   generation_time_ms?: number
   shifts_auto_created?: number
+  timing?: Record<string, number>
 }

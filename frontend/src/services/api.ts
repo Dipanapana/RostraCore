@@ -107,6 +107,12 @@ export const sitesApi = {
   delete: (id: number) => api.delete(`/api/v1/sites/${id}`),
 }
 
+export const shiftPatternsApi = {
+  getTemplates: (activeOnly?: boolean) => api.get('/api/v1/shift-patterns/templates', { params: { active_only: activeOnly ?? true } }),
+  assignToEmployee: (empId: number, data: { pattern_id: number; rotation_group: string; pattern_start_date: string; generate_until: string }) =>
+    api.patch(`/api/v1/employees/${empId}/assign-pattern`, data),
+}
+
 export const shiftsApi = {
   getAll: (params?: any) => api.get('/api/v1/shifts/', { params }),
   getById: (id: number) => api.get(`/api/v1/shifts/${id}`),

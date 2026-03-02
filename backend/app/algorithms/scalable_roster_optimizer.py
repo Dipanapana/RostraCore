@@ -1,9 +1,12 @@
 """
-Scalable Roster Optimizer with Partitioning
-Implements the "Partitioned CP-SAT" strategy from algo_plan.md.
+Scalable Roster Optimizer with Partitioning (Google OR-Tools CP-SAT)
+
+Splits the problem by province and solves partitions in parallel.
+Scales to 1000+ employees with automatic time-limit tuning.
 """
 
 import logging
+import math
 import time
 from typing import List, Dict, Optional, Any, Callable
 from datetime import datetime
@@ -11,6 +14,7 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func
 from app.models.site import Site
 from app.models.employee import Employee, EmployeeStatus
 from app.models.shift import Shift, ShiftStatus
@@ -57,20 +61,70 @@ class PartitionedRosterOptimizer:
             sites_query = sites_query.filter(Site.site_id.in_(site_ids))
         if self.org_id:
             sites_query = sites_query.filter(Site.org_id == self.org_id)
-        
+
         all_sites = sites_query.all()
-        
+
+        # Count total active employees for dynamic tuning
+        emp_count_query = self.db.query(func.count(Employee.employee_id)).filter(
+            Employee.status == EmployeeStatus.ACTIVE
+        )
+        if self.org_id:
+            emp_count_query = emp_count_query.filter(Employee.org_id == self.org_id)
+        total_employees = emp_count_query.scalar() or 0
+
+        # Count total shifts in range
+        shift_count_query = self.db.query(func.count(Shift.shift_id)).filter(
+            Shift.start_time >= start_date,
+            Shift.start_time < end_date,
+            Shift.status != ShiftStatus.CANCELLED,
+        )
+        if self.org_id:
+            shift_count_query = shift_count_query.filter(Shift.org_id == self.org_id)
+        if site_ids:
+            shift_count_query = shift_count_query.filter(Shift.site_id.in_(site_ids))
+        total_shifts = shift_count_query.scalar() or 0
+
+        logger.info(f"Scale: {total_employees} employees, {total_shifts} shifts, {len(all_sites)} sites")
+
         # Group sites by province (or 'default' if null)
         partitions = defaultdict(list)
         for site in all_sites:
             region = site.province or "Unknown"
             partitions[region].append(site.site_id)
-        
-        logger.info(f"Identified {len(partitions)} partitions: {list(partitions.keys())}")
 
-        # 2. Solve partitions in parallel
+        num_partitions = max(len(partitions), 1)
+        logger.info(f"Identified {num_partitions} partitions: {list(partitions.keys())}")
+
+        # Dynamic time limit: scale with problem size
+        # Base: 120s for <=200 employees, +60s per additional 200 employees, cap at 600s
+        base_time = self.config.time_limit_seconds
+        if total_employees > 200:
+            extra = math.ceil((total_employees - 200) / 200) * 60
+            per_partition_time = min(base_time + extra, 600)
+        else:
+            per_partition_time = base_time
+
+        # Each partition gets its own config with scaled time limit
+        self._partition_config = OptimizationConfig(
+            time_limit_seconds=per_partition_time,
+            num_workers=self.config.num_workers,
+            fairness_weight=self.config.fairness_weight,
+            cost_weight=self.config.cost_weight,
+            night_premium_per_hour=self.config.night_premium_per_hour,
+            weekend_premium_per_hour=self.config.weekend_premium_per_hour,
+            night_shift_start_hour=self.config.night_shift_start_hour,
+            night_shift_end_hour=self.config.night_shift_end_hour,
+            budget_limit=self.config.budget_limit,
+            budget_per_client=self.config.budget_per_client,
+            budget_per_site=self.config.budget_per_site,
+        )
+
+        logger.info(f"Per-partition time limit: {per_partition_time}s (employees={total_employees})")
+
+        # 2. Solve partitions in parallel (cap at 4 parallel partitions to avoid memory pressure)
+        max_parallel = min(num_partitions, 4)
         results = []
-        with ThreadPoolExecutor(max_workers=min(len(partitions), self.config.num_workers)) as executor:
+        with ThreadPoolExecutor(max_workers=max_parallel) as executor:
             future_to_region = {
                 executor.submit(
                     self._solve_partition, 
@@ -100,7 +154,14 @@ class PartitionedRosterOptimizer:
         # 3. Merge results
         final_result = self._merge_results(results)
         final_result["timing"]["total"] = time.time() - total_start
-        
+        final_result["scale"] = {
+            "total_employees": total_employees,
+            "total_shifts": total_shifts,
+            "partitions": num_partitions,
+            "per_partition_time_limit": per_partition_time,
+        }
+        final_result["algorithm_used"] = "cpsat_partitioned"
+
         return final_result
 
     def _solve_partition(
@@ -136,7 +197,8 @@ class PartitionedRosterOptimizer:
                         ]
                     logger.info(f"Partition '{region}': Filtered to {len(inner_self.employees)} employees")
 
-            optimizer = RegionScopedOptimizer(thread_db, self.config, self.org_id)
+            partition_cfg = getattr(self, '_partition_config', self.config)
+            optimizer = RegionScopedOptimizer(thread_db, partition_cfg, self.org_id)
             return optimizer.optimize(start_date, end_date, site_ids)
         finally:
             if owns_session:

@@ -1,9 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { api, incidentsApi, patrolsApi, shiftsApi, rosterApi, reportsApi } from "@/services/api";
 import { ensureArray } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
+import { getApiUrl } from "@/lib/config";
+import { downloadRosterExcel } from "@/lib/excelExport";
+import { RosterGenerateResponse } from "@/types";
 import Link from "next/link";
 import {
   Users,
@@ -65,13 +69,122 @@ function getGreeting(): string {
   return "Good evening";
 }
 
+// Quick Generate helpers
+function getNextWeekDates() {
+  const today = new Date();
+  const nextMonday = new Date(today);
+  nextMonday.setDate(today.getDate() - today.getDay() + 8);
+  const nextSunday = new Date(nextMonday);
+  nextSunday.setDate(nextMonday.getDate() + 6);
+  return { start: nextMonday, end: nextSunday };
+}
+
+function formatDateForApi(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
 export default function DashboardPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [upcomingShifts, setUpcomingShifts] = useState<UpcomingShift[]>([]);
   const [costTrends, setCostTrends] = useState<CostTrend[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Quick Generate state
+  const [quickGenOpen, setQuickGenOpen] = useState(false);
+  const [quickGenLoading, setQuickGenLoading] = useState(false);
+  const [quickGenResult, setQuickGenResult] = useState<RosterGenerateResponse | null>(null);
+  const [quickGenError, setQuickGenError] = useState<string | null>(null);
+  const quickDates = getNextWeekDates();
+
+  const handleQuickGenerate = async () => {
+    setQuickGenLoading(true);
+    setQuickGenError(null);
+    setQuickGenResult(null);
+
+    try {
+      // Auto-generate shifts from profiles
+      await shiftsApi.generateFromProfiles({
+        start_date: formatDateForApi(quickDates.start),
+        end_date: formatDateForApi(quickDates.end),
+      }).catch((err: any) => console.warn('Auto-gen shifts warning:', err.message));
+
+      const token = localStorage.getItem('access_token');
+      const baseUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:8001' : getApiUrl();
+      const response = await fetch(`${baseUrl}/api/v1/roster/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          start_date: formatDateForApi(quickDates.start),
+          end_date: formatDateForApi(quickDates.end),
+        }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.detail || 'Failed to generate roster');
+      }
+
+      const data: RosterGenerateResponse = await response.json();
+      if (data.status === 'error' || (data.assignments?.length === 0 && data.unfilled_shifts?.length === 0)) {
+        setQuickGenError('No shifts found. Please create site staffing profiles first.');
+      } else {
+        setQuickGenResult(data);
+      }
+    } catch (err: any) {
+      setQuickGenError(err.message || 'Failed to generate roster');
+    } finally {
+      setQuickGenLoading(false);
+    }
+  };
+
+  const handleQuickSave = async () => {
+    if (!quickGenResult?.assignments) return;
+    setQuickGenLoading(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      const startStr = quickDates.start.toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' });
+      const endStr = quickDates.end.toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' });
+      const rosterName = `Roster ${startStr} - ${endStr}`;
+
+      const response = await fetch(`${getApiUrl()}/api/v1/roster/save`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: rosterName,
+          start_date: quickDates.start.toISOString(),
+          end_date: quickDates.end.toISOString(),
+          assignments: quickGenResult.assignments,
+          summary: quickGenResult.summary || {},
+          solver_status: quickGenResult.status || 'optimal',
+          algorithm_used: quickGenResult.algorithm_used || 'cpsat_partitioned',
+          optimization_duration_seconds: quickGenResult.timing?.total || 0,
+        }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.detail || 'Failed to save roster');
+      }
+
+      const savedRoster = await response.json();
+      setQuickGenOpen(false);
+      setQuickGenResult(null);
+      router.push(`/roster/board?id=${savedRoster.roster_id}`);
+    } catch (err: any) {
+      setQuickGenError(err.message);
+    } finally {
+      setQuickGenLoading(false);
+    }
+  };
 
   // Derived Metrics
   const [orsScore, setOrsScore] = useState(0);
@@ -295,18 +408,18 @@ export default function DashboardPage() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <Link
-            href="/roster"
-            className="group bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl font-medium transition-colors flex items-center gap-3"
+          <button
+            onClick={() => { setQuickGenOpen(true); setQuickGenResult(null); setQuickGenError(null); }}
+            className="group bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-3 rounded-xl font-medium transition-all shadow-sm hover:shadow-md flex items-center gap-3 text-left"
           >
             <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
               <Calendar className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <span className="text-sm font-semibold block">Generate Roster</span>
-              <span className="text-[11px] text-blue-200 block">Auto-optimize shifts</span>
+              <span className="text-sm font-semibold block">Quick Generate</span>
+              <span className="text-[11px] text-blue-200 block">One-click roster</span>
             </div>
-          </Link>
+          </button>
           <Link
             href="/payroll"
             className="group bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md px-4 py-3 rounded-xl font-medium transition-all flex items-center gap-3"
@@ -424,7 +537,7 @@ export default function DashboardPage() {
           </Link>
 
           <Link
-            href="/roster"
+            href="/roster/generate"
             className="bg-white border border-gray-200 rounded-xl p-5 flex items-center gap-4 hover:border-orange-300 hover:shadow-md transition-all group"
           >
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${understaffedShifts.length > 0 ? 'bg-orange-50' : 'bg-emerald-50'}`}>
@@ -563,6 +676,142 @@ export default function DashboardPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+        {/* Quick Generate Modal */}
+        {quickGenOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-slideIn">
+              {/* Modal Header */}
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5 text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-bold">Quick Generate</h3>
+                    <p className="text-blue-100 text-sm mt-0.5">One-click roster optimization</p>
+                  </div>
+                  <button
+                    onClick={() => { setQuickGenOpen(false); setQuickGenResult(null); setQuickGenError(null); }}
+                    className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6">
+                {/* Initial State — confirm generation */}
+                {!quickGenLoading && !quickGenResult && !quickGenError && (
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <Calendar className="w-8 h-8 text-blue-600" />
+                    </div>
+                    <p className="text-gray-900 font-semibold mb-1">Generate next week&apos;s roster?</p>
+                    <p className="text-sm text-gray-500 mb-1">
+                      {quickDates.start.toLocaleDateString('en-ZA', { weekday: 'short', day: 'numeric', month: 'short' })} &mdash; {quickDates.end.toLocaleDateString('en-ZA', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                    <p className="text-xs text-gray-400 mb-6">All sites &middot; Auto-generate shifts from profiles</p>
+
+                    <button
+                      onClick={handleQuickGenerate}
+                      className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-xl font-semibold transition-all shadow-sm hover:shadow-md"
+                    >
+                      Generate Now
+                    </button>
+                    <Link
+                      href="/roster/generate"
+                      className="block text-sm text-gray-400 hover:text-gray-600 mt-3 transition-colors"
+                      onClick={() => setQuickGenOpen(false)}
+                    >
+                      Advanced options (wizard) &rarr;
+                    </Link>
+                  </div>
+                )}
+
+                {/* Loading State */}
+                {quickGenLoading && (
+                  <div className="text-center py-8">
+                    <div className="relative w-16 h-16 mx-auto mb-4">
+                      <div className="absolute inset-0 rounded-full border-4 border-blue-100"></div>
+                      <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-600 animate-spin"></div>
+                    </div>
+                    <p className="text-gray-900 font-semibold mb-1">
+                      {quickGenResult ? 'Saving roster...' : 'Optimizing roster...'}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Running OR-Tools CP-SAT solver &mdash; this may take 15-30 seconds
+                    </p>
+                  </div>
+                )}
+
+                {/* Error State */}
+                {quickGenError && !quickGenLoading && (
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <p className="text-gray-900 font-semibold mb-1">Generation Failed</p>
+                    <p className="text-sm text-red-600 mb-4">{quickGenError}</p>
+                    <button
+                      onClick={handleQuickGenerate}
+                      className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl font-medium transition-colors"
+                    >
+                      Try Again
+                    </button>
+                  </div>
+                )}
+
+                {/* Success State */}
+                {quickGenResult && !quickGenLoading && (
+                  <div>
+                    <div className="bg-gradient-to-r from-emerald-500 to-green-600 rounded-xl p-4 text-white text-center mb-5">
+                      <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <p className="font-bold text-lg">{quickGenResult.summary?.total_shifts_filled || 0} Shifts Assigned</p>
+                      <p className="text-emerald-100 text-sm">{quickGenResult.summary?.fill_rate?.toFixed(0) || 0}% fill rate &middot; {quickGenResult.summary?.employees_utilized || 0} guards</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 mb-5">
+                      <div className="bg-blue-50 rounded-lg p-3 text-center">
+                        <p className="text-lg font-bold text-blue-700">R{(quickGenResult.summary?.total_cost || 0).toLocaleString('en-ZA', { maximumFractionDigits: 0 })}</p>
+                        <p className="text-xs text-blue-500">Total Cost</p>
+                      </div>
+                      <div className="bg-purple-50 rounded-lg p-3 text-center">
+                        <p className="text-lg font-bold text-purple-700">{quickGenResult.summary?.total_shifts || 0}</p>
+                        <p className="text-xs text-purple-500">Total Shifts</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => downloadRosterExcel(quickGenResult, quickDates.start, quickDates.end)}
+                        className="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white py-2.5 rounded-xl font-medium transition-all flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Download Excel
+                      </button>
+                      <button
+                        onClick={handleQuickSave}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                        </svg>
+                        Save & Open Board
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

@@ -21,8 +21,8 @@ import {
 } from 'lucide-react'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import PageHeader from '@/components/ui/PageHeader'
-import { sitesApi, shiftsApi, incidentsApi, patrolsApi, attendanceApi } from '@/services/api'
-import { Site } from '@/types'
+import { sitesApi, shiftsApi, incidentsApi, patrolsApi, attendanceApi, employeesApi } from '@/services/api'
+import { Site, Employee } from '@/types'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -143,6 +143,9 @@ export default function SiteDetailPage() {
   const [incidents, setIncidents] = useState<IncidentRecord[]>([])
   const [tours, setTours] = useState<PatrolTour[]>([])
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([])
+  const [allEmployees, setAllEmployees] = useState<Employee[]>([])
+  const [showAssignModal, setShowAssignModal] = useState(false)
+  const [guardSearch, setGuardSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -151,12 +154,13 @@ export default function SiteDetailPage() {
 
     async function load() {
       setLoading(true)
-      const [siteRes, shiftsRes, incidentsRes, toursRes, attendanceRes] = await Promise.allSettled([
+      const [siteRes, shiftsRes, incidentsRes, toursRes, attendanceRes, employeesRes] = await Promise.allSettled([
         sitesApi.getById(siteId),
         shiftsApi.getAll({ site_id: siteId, limit: 10 }),
         incidentsApi.list({ site_id: siteId, limit: 5 }),
         patrolsApi.listTours({ site_id: siteId }),
         attendanceApi.getRecords({ site_id: siteId, limit: 8 }),
+        employeesApi.getAll({ status: 'active', limit: 500 }),
       ])
 
       if (siteRes.status === 'fulfilled') {
@@ -182,6 +186,10 @@ export default function SiteDetailPage() {
       if (attendanceRes.status === 'fulfilled') {
         const data = attendanceRes.value.data
         setAttendance(Array.isArray(data) ? data : data?.records ?? [])
+      }
+      if (employeesRes.status === 'fulfilled') {
+        const data = employeesRes.value.data
+        setAllEmployees(Array.isArray(data) ? data : data?.employees ?? [])
       }
 
       setLoading(false)
@@ -217,6 +225,55 @@ export default function SiteDetailPage() {
   const mapsUrl = site.gps_lat && site.gps_lng
     ? `https://www.google.com/maps?q=${site.gps_lat},${site.gps_lng}`
     : null
+
+  // Preferred guards for this site
+  const preferredGuards = allEmployees.filter(
+    (emp) => (emp as any).preferred_site_ids?.includes(siteId)
+  )
+  const availableGuards = allEmployees.filter(
+    (emp) => !(emp as any).preferred_site_ids?.includes(siteId)
+  )
+  const filteredAvailable = guardSearch
+    ? availableGuards.filter((emp) =>
+        `${emp.first_name} ${emp.last_name}`.toLowerCase().includes(guardSearch.toLowerCase())
+      )
+    : availableGuards
+
+  const handleAssignGuard = async (emp: Employee) => {
+    const currentSites: number[] = (emp as any).preferred_site_ids || []
+    try {
+      await employeesApi.update(emp.employee_id, {
+        preferred_site_ids: [...currentSites, siteId],
+      })
+      setAllEmployees((prev) =>
+        prev.map((e) =>
+          e.employee_id === emp.employee_id
+            ? { ...e, preferred_site_ids: [...currentSites, siteId] } as any
+            : e
+        )
+      )
+    } catch (err) {
+      console.error('Failed to assign guard:', err)
+    }
+  }
+
+  const handleRemoveGuard = async (emp: Employee) => {
+    const currentSites: number[] = (emp as any).preferred_site_ids || []
+    try {
+      await employeesApi.update(emp.employee_id, {
+        preferred_site_ids: currentSites.filter((id) => id !== siteId),
+      })
+      setAllEmployees((prev) =>
+        prev.map((e) =>
+          e.employee_id === emp.employee_id
+            ? { ...e, preferred_site_ids: currentSites.filter((id) => id !== siteId) } as any
+            : e
+        )
+      )
+    } catch (err) {
+      console.error('Failed to remove guard:', err)
+    }
+  }
 
   return (
     <DashboardLayout>
@@ -446,6 +503,94 @@ export default function SiteDetailPage() {
           </Section>
 
         </div>
+
+        {/* Preferred Guards */}
+        <Section title="Preferred Guards" icon={Shield}>
+          <div className="space-y-3">
+            {preferredGuards.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-4">No guards assigned to this site yet.</p>
+            ) : (
+              preferredGuards.map((guard) => (
+                <div key={guard.employee_id} className="flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-sm font-bold">
+                      {guard.first_name[0]}{guard.last_name[0]}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">{guard.first_name} {guard.last_name}</p>
+                      <p className="text-xs text-gray-500">{guard.role} {guard.psira_grade ? `- Grade ${guard.psira_grade}` : ''}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleRemoveGuard(guard)}
+                    className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded transition-colors"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+          <button
+            onClick={() => { setShowAssignModal(true); setGuardSearch(''); }}
+            className="mt-4 w-full py-2.5 rounded-xl border-2 border-dashed border-gray-200 text-sm font-medium text-gray-500 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50/50 transition-all"
+          >
+            + Assign Guard
+          </button>
+        </Section>
+
+        {/* Assign Guard Modal */}
+        {showAssignModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[80vh] flex flex-col overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <h3 className="font-semibold text-gray-900">Assign Guard to {site.site_name}</h3>
+                <button
+                  onClick={() => setShowAssignModal(false)}
+                  className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
+                >
+                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="px-6 py-3 border-b border-gray-100">
+                <input
+                  type="text"
+                  value={guardSearch}
+                  onChange={(e) => setGuardSearch(e.target.value)}
+                  placeholder="Search guards..."
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  autoFocus
+                />
+              </div>
+              <div className="flex-1 overflow-y-auto p-3">
+                {filteredAvailable.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-8">No available guards found</p>
+                ) : (
+                  <div className="space-y-1">
+                    {filteredAvailable.slice(0, 50).map((emp) => (
+                      <button
+                        key={emp.employee_id}
+                        onClick={() => handleAssignGuard(emp)}
+                        className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-blue-50 transition-colors text-left"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 text-xs font-bold">
+                          {emp.first_name[0]}{emp.last_name[0]}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-800">{emp.first_name} {emp.last_name}</p>
+                          <p className="text-xs text-gray-500">{emp.role}</p>
+                        </div>
+                        <span className="text-xs text-blue-600 font-medium">Assign</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Notes */}
         {site.notes && (
