@@ -7,6 +7,8 @@ import { AttendanceCheckin } from './compositions/AttendanceCheckin';
 import { PayrollProcessing } from './compositions/PayrollProcessing';
 import { ClientSiteManagement } from './compositions/ClientSiteManagement';
 import { IncidentReporting } from './compositions/IncidentReporting';
+import { PitchDeck } from './compositions/PitchDeck';
+import { PromoVideo } from './compositions/PromoVideo';
 import { VIDEO_WIDTH, VIDEO_HEIGHT, FPS, seconds } from './lib/constants';
 
 export const RemotionRoot: React.FC = () => {
@@ -64,6 +66,22 @@ export const RemotionRoot: React.FC = () => {
         id="IncidentReporting"
         component={IncidentReporting}
         durationInFrames={seconds(18.5)}
+        fps={FPS}
+        width={VIDEO_WIDTH}
+        height={VIDEO_HEIGHT}
+      />
+      <Composition
+        id="PitchDeck"
+        component={PitchDeck}
+        durationInFrames={seconds(90)}
+        fps={FPS}
+        width={VIDEO_WIDTH}
+        height={VIDEO_HEIGHT}
+      />
+      <Composition
+        id="PromoVideo"
+        component={PromoVideo}
+        durationInFrames={seconds(60)}
         fps={FPS}
         width={VIDEO_WIDTH}
         height={VIDEO_HEIGHT}

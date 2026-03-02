@@ -12,6 +12,8 @@ const compositions = [
   'PayrollProcessing',
   'ClientSiteManagement',
   'IncidentReporting',
+  'PitchDeck',
+  'PromoVideo',
 ];
 
 console.log(`Rendering ${compositions.length} videos...\n`);
