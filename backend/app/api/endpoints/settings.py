@@ -1,8 +1,10 @@
 """Settings management API endpoints."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from app.config import settings
+from app.auth.security import get_current_user, is_admin
+from app.models.user import User
 from typing import Optional
 
 router = APIRouter()
@@ -22,7 +24,7 @@ class ConstraintSettings(BaseModel):
 
 
 @router.get("/constraints", response_model=ConstraintSettings)
-async def get_constraints():
+async def get_constraints(current_user: User = Depends(get_current_user)):
     """Get current constraint settings"""
     return ConstraintSettings(
         max_hours_week=settings.MAX_HOURS_WEEK,
@@ -38,7 +40,10 @@ async def get_constraints():
 
 
 @router.put("/constraints")
-async def update_constraints(constraints: ConstraintSettings):
+async def update_constraints(
+    constraints: ConstraintSettings,
+    current_user: User = Depends(is_admin)
+):
     """
     Update constraint settings (runtime only - does not persist to file).
 
@@ -70,7 +75,7 @@ async def update_constraints(constraints: ConstraintSettings):
 
 
 @router.post("/constraints/reset")
-async def reset_constraints():
+async def reset_constraints(current_user: User = Depends(is_admin)):
     """Reset constraints to production-safe BCEA-compliant defaults"""
     settings.MAX_HOURS_WEEK = 48
     settings.MIN_REST_HOURS = 8
