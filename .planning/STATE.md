@@ -10,31 +10,30 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 ## Current Position
 
 Phase: 1 of 8 (Security Hardening)
-Plan: 1 of TBD in current phase
+Plan: 2 of TBD in current phase
 Status: In progress
-Last activity: 2026-03-03 — Plan 01 complete: protected 9 unprotected endpoints (3 constraint settings + 6 payroll tax calculations) with JWT auth.
+Last activity: 2026-03-03 — Plan 02 complete: four-class password policy (SEC-04), CORS explicit allowlists (SEC-05), secrets hygiene verified (SEC-06).
 
-Progress: [█░░░░░░░░░] 5%
+Progress: [██░░░░░░░░] 10%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 5 min
-- Total execution time: 5 min
+- Total plans completed: 2
+- Average duration: 6 min
+- Total execution time: 12 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-security-hardening | 1 | 5 min | 5 min |
+| 01-security-hardening | 2 | 12 min | 6 min |
 
 **Recent Trend:**
-- Last 5 plans: 5 min
-- Trend: —
+- Last 5 plans: 5 min, 7 min
+- Trend: stable
 
 *Updated after each plan completion*
-| Phase 01-security-hardening P02 | 7 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -50,6 +49,9 @@ Recent decisions affecting current work:
 - [01-01]: GET /constraints uses get_current_user (any authenticated user can read solver config)
 - [01-01]: PUT /constraints and POST /constraints/reset use is_admin (write access requires admin role)
 - [01-01]: Payroll calculation endpoints use get_current_user — tax math is read-only; /config uses stricter require_finance_access
+- [Phase 01-security-hardening]: PASSWORD_MIN_LENGTH not changed — existing value (12) is appropriate; four-class regex validation added on top
+- [Phase 01-security-hardening]: CORS restricted from wildcard ['*'] to explicit method and header allowlists to reduce attack surface
+- [Phase 01-security-hardening]: SEC-06: backend/.env confirmed gitignored; .env.example completed with REDIS_URL, YOCO, Twilio placeholder vars
 
 ### Pending Todos
 
@@ -64,5 +66,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 01-01-PLAN.md (protected settings.py + payroll_deductions.py endpoints with JWT auth)
+Stopped at: Completed 01-02-PLAN.md (password policy, CORS restriction, secrets hygiene — SEC-04/05/06)
 Resume file: None

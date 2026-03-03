@@ -12,9 +12,9 @@ Requirements for this milestone. Each maps to roadmap phases.
 - [ ] **SEC-01**: All API endpoints require authentication (no unauthenticated data access)
 - [ ] **SEC-02**: Organization creation restricted to super admin role only
 - [ ] **SEC-03**: JWT access token expiry set to 30 minutes with refresh token flow
-- [ ] **SEC-04**: Password policy enforces uppercase, lowercase, number, and special character requirements
-- [ ] **SEC-05**: CORS configuration restricts allowed origins, headers, and methods to production values
-- [ ] **SEC-06**: No secrets or API keys stored in version-controlled files
+- [x] **SEC-04**: Password policy enforces uppercase, lowercase, number, and special character requirements
+- [x] **SEC-05**: CORS configuration restricts allowed origins, headers, and methods to production values
+- [x] **SEC-06**: No secrets or API keys stored in version-controlled files
 
 ### Testing
 
@@ -118,9 +118,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SEC-01 | Phase 1 | Pending |
 | SEC-02 | Phase 1 | Pending |
 | SEC-03 | Phase 1 | Pending |
-| SEC-04 | Phase 1 | Pending |
-| SEC-05 | Phase 1 | Pending |
-| SEC-06 | Phase 1 | Pending |
+| SEC-04 | Phase 1 | Complete |
+| SEC-05 | Phase 1 | Complete |
+| SEC-06 | Phase 1 | Complete |
 | TEST-01 | Phase 3 | Pending |
 | TEST-02 | Phase 3 | Pending |
 | TEST-03 | Phase 3 | Pending |

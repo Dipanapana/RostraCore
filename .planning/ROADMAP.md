@@ -12,7 +12,7 @@ This milestone hardens RostraCore from a working prototype into a production-rea
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Security Hardening** - Audit and lock down all remaining security gaps
+- [x] **Phase 1: Security Hardening** - Audit and lock down all remaining security gaps (completed 2026-03-03)
 - [ ] **Phase 1.1: Roster & Downstream Integrity** - INSERTED — Fix broken dashboard/report/payroll queries that depend on roster data
 - [ ] **Phase 2: CI/CD Pipeline** - Automate test runs and deployments via GitHub Actions
 - [ ] **Phase 3: Test Coverage** - Write integration tests to reach >60% endpoint coverage
@@ -132,7 +132,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 �
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Security Hardening | 1/2 | In progress | - |
+| 1. Security Hardening | 2/2 | Complete   | 2026-03-03 |
 | 1.1. Roster & Downstream Integrity | 0/TBD | Not started | - |
 | 2. CI/CD Pipeline | 0/TBD | Not started | - |
 | 3. Test Coverage | 0/TBD | Not started | - |
