@@ -2,9 +2,11 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import List, Optional, TYPE_CHECKING
 from datetime import datetime, timedelta
 import logging
+import uuid
 
 logger = logging.getLogger(__name__)
 from app.database import get_db, SessionLocal
@@ -17,6 +19,8 @@ from app.models.site import Site
 from app.models.shift import Shift, ShiftStatus
 from app.models.client import Client
 from app.models.user import User
+from app.models.roster import Roster
+from app.models.shift_assignment import ShiftAssignment
 from app.api.deps import get_current_user
 from app.auth.security import get_current_org_id
 from app.services.audit_service import AuditService
@@ -215,6 +219,38 @@ async def confirm_roster(
         confirmed_count = 0
         shift_ids = []
 
+        # --- Step 1: Create a Roster record before confirming assignments ---
+        shift_ids_to_confirm = [a["shift_id"] for a in assignments]
+        shifts_for_range = db.query(Shift).filter(
+            Shift.shift_id.in_(shift_ids_to_confirm)
+        ).all()
+
+        if shifts_for_range:
+            roster_start = min(s.start_time for s in shifts_for_range)
+            roster_end = max(s.end_time for s in shifts_for_range)
+        else:
+            roster_start = datetime.utcnow()
+            roster_end = datetime.utcnow()
+
+        roster_code = f"R{roster_start.strftime('%Y-%m')}-{uuid.uuid4().hex[:6].upper()}"
+
+        roster = Roster(
+            org_id=current_user.org_id,
+            roster_code=roster_code,
+            name=f"Roster {roster_start.strftime('%d %b %Y')} – {roster_end.strftime('%d %b %Y')}",
+            start_date=roster_start,
+            end_date=roster_end,
+            status="draft",
+            total_shifts=len(set(shift_ids_to_confirm)),
+            assigned_shifts=0,
+            unassigned_shifts=0,
+            total_cost=0.0,
+            created_by=current_user.user_id,
+        )
+        db.add(roster)
+        db.flush()  # flush to get roster.roster_id before the loop
+
+        # --- Step 2: Confirm each assignment and link it to the Roster ---
         for assignment in assignments:
             shift = ShiftService.assign_employee(
                 db,
@@ -225,18 +261,42 @@ async def confirm_roster(
                 confirmed_count += 1
                 shift_ids.append(shift.shift_id)
 
+                # Link the ShiftAssignment to the Roster
+                sa = db.query(ShiftAssignment).filter(
+                    ShiftAssignment.shift_id == assignment["shift_id"],
+                    ShiftAssignment.employee_id == assignment["employee_id"]
+                ).first()
+                if sa:
+                    sa.roster_id = roster.roster_id
+                    sa.status = 'confirmed'
+                    sa.is_confirmed = True
+                    sa.confirmation_datetime = datetime.utcnow()
+
+        # --- Step 3: Update Roster stats after the loop ---
+        roster.assigned_shifts = confirmed_count
+        roster.unassigned_shifts = len(assignments) - confirmed_count
+        roster.total_cost = db.query(
+            func.sum(ShiftAssignment.total_cost)
+        ).filter(
+            ShiftAssignment.roster_id == roster.roster_id
+        ).scalar() or 0.0
+
+        db.commit()
+
         # Invalidate caches after roster confirmation (include org_id for proper multi-tenancy)
         org_id = current_user.org_id if hasattr(current_user, 'org_id') else None
         CacheInvalidator.invalidate_dashboard(org_id=org_id)
         CacheInvalidator.invalidate_roster(org_id=org_id)
         CacheInvalidator.invalidate_shifts(org_id=org_id)
 
-        logger.info(f"Roster confirmed: {confirmed_count} shifts assigned, caches invalidated")
+        logger.info(f"Roster confirmed: {confirmed_count} shifts assigned, roster_id={roster.roster_id}, caches invalidated")
 
         response = {
             "success": True,
             "confirmed_shifts": confirmed_count,
-            "total_assignments": len(assignments)
+            "total_assignments": len(assignments),
+            "roster_id": roster.roster_id,
+            "roster_code": roster.roster_code,
         }
 
         # Generate PDF URL if requested
