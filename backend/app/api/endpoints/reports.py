@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import and_, func, case
 from datetime import date, datetime, timedelta
 from typing import List, Optional
@@ -251,8 +251,16 @@ async def get_revenue_cost_comparison(
             detail="group_by must be 'month', 'week', or 'client'"
         )
 
-    # Get all shift assignments in period
-    assignments = db.query(ShiftAssignment).join(Shift).filter(
+    # Get all shift assignments in period — single joined bulk query (no N+1)
+    assignments = db.query(ShiftAssignment).join(
+        Shift, Shift.shift_id == ShiftAssignment.shift_id
+    ).join(
+        Site, Site.site_id == Shift.site_id
+    ).outerjoin(
+        Client, Client.client_id == Site.client_id
+    ).options(
+        joinedload(ShiftAssignment.shift).joinedload(Shift.site).joinedload(Site.client)
+    ).filter(
         and_(
             Shift.org_id == org_id,
             Shift.start_time >= datetime.combine(period_start, datetime.min.time()),
@@ -266,9 +274,9 @@ async def get_revenue_cost_comparison(
         clients_data = {}
 
         for assignment in assignments:
-            shift = db.query(Shift).filter(Shift.shift_id == assignment.shift_id).first()
-            site = db.query(Site).filter(Site.site_id == shift.site_id).first()
-            client = db.query(Client).filter(Client.client_id == site.client_id).first()
+            shift = assignment.shift           # already loaded via joinedload
+            site = shift.site if shift else None
+            client = site.client if site else None
 
             client_name = client.client_name if client else "Unknown"
 
@@ -279,7 +287,7 @@ async def get_revenue_cost_comparison(
             clients_data[client_name]["cost"] += assignment.total_cost
 
             # Add revenue
-            billing_rate = float(site.billing_rate) if site.billing_rate else float(client.billing_rate or 120.0)
+            billing_rate = float(site.billing_rate or 0) if site and site.billing_rate else float(client.billing_rate or 120.0) if client else 120.0
             hours = assignment.regular_hours + assignment.overtime_hours
             clients_data[client_name]["revenue"] += hours * billing_rate
 
@@ -312,9 +320,9 @@ async def get_revenue_cost_comparison(
         time_data = {}
 
         for assignment in assignments:
-            shift = db.query(Shift).filter(Shift.shift_id == assignment.shift_id).first()
-            site = db.query(Site).filter(Site.site_id == shift.site_id).first()
-            client = db.query(Client).filter(Client.client_id == site.client_id).first()
+            shift = assignment.shift           # already loaded via joinedload
+            site = shift.site if shift else None
+            client = site.client if site else None
 
             # Determine group key
             shift_date = shift.start_time.date()
@@ -331,7 +339,7 @@ async def get_revenue_cost_comparison(
             time_data[group_key]["cost"] += assignment.total_cost
 
             # Add revenue
-            billing_rate = float(site.billing_rate) if site.billing_rate else float(client.billing_rate or 120.0)
+            billing_rate = float(site.billing_rate or 0) if site and site.billing_rate else float(client.billing_rate or 120.0) if client else 120.0
             hours = assignment.regular_hours + assignment.overtime_hours
             time_data[group_key]["revenue"] += hours * billing_rate
 
