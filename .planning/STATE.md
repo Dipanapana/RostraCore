@@ -5,32 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-03-03)
 
 **Core value:** Security companies generate optimized guard rosters respecting PSIRA compliance, availability, and client constraints — reducing manual scheduling from hours to minutes
-**Current focus:** Phase 1 - Security Hardening
+**Current focus:** Phase 01.1 - Roster Downstream Integrity
 
 ## Current Position
 
-Phase: 1 of 8 (Security Hardening)
-Plan: 2 of TBD in current phase
+Phase: 01.1-roster-downstream-integrity
+Plan: 3 of TBD in current phase
 Status: In progress
-Last activity: 2026-03-03 — Plan 02 complete: four-class password policy (SEC-04), CORS explicit allowlists (SEC-05), secrets hygiene verified (SEC-06).
+Last activity: 2026-03-03 — Plan 02 complete: N+1 query fix in revenue-vs-cost report (ROST-03), Roster record creation in /confirm endpoint (ROST-04/05/06).
 
-Progress: [██░░░░░░░░] 10%
+Progress: [███░░░░░░░] 15%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 6 min
-- Total execution time: 12 min
+- Total plans completed: 4
+- Average duration: 5 min
+- Total execution time: 15 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-security-hardening | 2 | 12 min | 6 min |
+| 01.1-roster-downstream-integrity | 2 | 3 min | ~2 min |
 
 **Recent Trend:**
-- Last 5 plans: 5 min, 7 min
+- Last 5 plans: 5 min, 7 min, 3 min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -52,6 +53,13 @@ Recent decisions affecting current work:
 - [Phase 01-security-hardening]: PASSWORD_MIN_LENGTH not changed — existing value (12) is appropriate; four-class regex validation added on top
 - [Phase 01-security-hardening]: CORS restricted from wildcard ['*'] to explicit method and header allowlists to reduce attack surface
 - [Phase 01-security-hardening]: SEC-06: backend/.env confirmed gitignored; .env.example completed with REDIS_URL, YOCO, Twilio placeholder vars
+- [Phase 01.1-01]: Dashboard fill-rate and cost metrics now use ShiftAssignment join (status != cancelled) instead of non-existent Shift.assigned_employee_id and Shift.cost fields
+- [Phase 01.1-01]: No Attendance model exists — attendance tracking uses ShiftAssignment.checked_in/check_in_time throughout dashboards
+- [Phase 01.1-01]: PayrollSummary columns are period_start and gross_pay (not pay_period_start/total_pay/regular_pay/overtime_pay)
+- [01.1-02]: revenue-vs-cost uses joinedload(shift).joinedload(site).joinedload(client) — no per-assignment queries inside loop
+- [01.1-02]: confirm_roster creates Roster record, flushes for roster_id, links each ShiftAssignment; db.commit() once after loop for atomicity
+- [01.1-02]: Roster status set to "draft" on confirmation; lifecycle progresses via separate publish flow
+- [01.1-02]: roster_code format R{YYYY-MM}-{6-char-hex} for collision-free unique codes
 
 ### Pending Todos
 
@@ -66,5 +74,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 01-02-PLAN.md (password policy, CORS restriction, secrets hygiene — SEC-04/05/06)
+Stopped at: Completed 01.1-02-PLAN.md (reports N+1 fix, confirm Roster record creation — ROST-03/04/05/06)
 Resume file: None
