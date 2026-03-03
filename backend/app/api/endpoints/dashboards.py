@@ -5,7 +5,7 @@ Provides specialized dashboard views for different user personas
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func, and_, or_, case
+from sqlalchemy import func, and_, or_, case, distinct, extract
 from typing import Dict, List, Optional
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -59,31 +59,27 @@ async def get_executive_dashboard(
     last_month_start = (month_start - timedelta(days=1)).replace(day=1)
     last_month_end = month_start - timedelta(seconds=1)
 
-    # Base query filter
-    org_filter = [Organization.org_id == org_id] if org_id else []
-
     # 1. Total Guards
     total_guards = db.query(func.count(Employee.employee_id)).filter(
         Employee.status == 'active',
         *([Employee.org_id == org_id] if org_id else [])
     ).scalar() or 0
 
-    # 2. Active Sites
+    # 2. Active Sites — Site model has no is_active column; count all sites for the org
     active_sites = db.query(func.count(Site.site_id)).filter(
-        Site.is_active == True,
         *([Site.org_id == org_id] if org_id else [])
     ).scalar() or 0
 
-    # 3. Revenue This Month (from payroll)
-    revenue_this_month = db.query(func.sum(PayrollSummary.total_pay)).filter(
-        PayrollSummary.pay_period_start >= month_start,
+    # 3. Revenue This Month (from payroll — period_start and gross_pay are the correct fields)
+    revenue_this_month = db.query(func.sum(PayrollSummary.gross_pay)).filter(
+        PayrollSummary.period_start >= month_start.date(),
         *([PayrollSummary.org_id == org_id] if org_id else [])
     ).scalar() or Decimal('0.00')
 
     # 4. Revenue Last Month
-    revenue_last_month = db.query(func.sum(PayrollSummary.total_pay)).filter(
-        PayrollSummary.pay_period_start >= last_month_start,
-        PayrollSummary.pay_period_start < month_start,
+    revenue_last_month = db.query(func.sum(PayrollSummary.gross_pay)).filter(
+        PayrollSummary.period_start >= last_month_start.date(),
+        PayrollSummary.period_start < month_start.date(),
         *([PayrollSummary.org_id == org_id] if org_id else [])
     ).scalar() or Decimal('0.00')
 
@@ -93,22 +89,33 @@ async def get_executive_dashboard(
         revenue_growth = ((float(revenue_this_month) - float(revenue_last_month)) / float(revenue_last_month)) * 100
 
     # 5. Shifts This Month
-    shifts_query = db.query(Shift).filter(
+    total_shifts = db.query(func.count(Shift.shift_id)).filter(
         Shift.start_time >= month_start,
         *([Shift.org_id == org_id] if org_id else [])
-    )
+    ).scalar() or 0
 
-    total_shifts = shifts_query.count()
-    filled_shifts = shifts_query.filter(Shift.assigned_employee_id.isnot(None)).count()
+    # Filled shifts: count distinct shift_ids in ShiftAssignment that are not cancelled
+    filled_shift_ids_subq = db.query(ShiftAssignment.shift_id).filter(
+        ShiftAssignment.status != 'cancelled',
+        ShiftAssignment.shift_id.in_(
+            db.query(Shift.shift_id).filter(
+                Shift.start_time >= month_start,
+                *([Shift.org_id == org_id] if org_id else [])
+            )
+        )
+    ).distinct().subquery()
+    filled_shifts = db.query(func.count()).select_from(filled_shift_ids_subq).scalar() or 0
 
     fill_rate = (filled_shifts / total_shifts * 100) if total_shifts > 0 else 0.0
 
-    # 6. Average Cost Per Shift
-    avg_shift_cost = db.query(func.avg(Shift.cost)).filter(
+    # 6. Average Cost Per Shift — use ShiftAssignment.total_cost (Shift.cost does not exist)
+    avg_shift_cost = db.query(func.avg(ShiftAssignment.total_cost)).join(
+        Shift, Shift.shift_id == ShiftAssignment.shift_id
+    ).filter(
         Shift.start_time >= month_start,
-        Shift.assigned_employee_id.isnot(None),
+        ShiftAssignment.status != 'cancelled',
         *([Shift.org_id == org_id] if org_id else [])
-    ).scalar() or Decimal('0.00')
+    ).scalar() or 0.0
 
     # 7. Revenue Per Guard
     revenue_per_guard = float(revenue_this_month) / total_guards if total_guards > 0 else 0.0
@@ -124,17 +131,19 @@ async def get_executive_dashboard(
         Organization.is_active == True
     ).scalar() or 0
 
-    # 10. Shifts Trend (last 7 days)
+    # 10. Shifts Trend (last 7 days) — use ShiftAssignment join instead of Shift.assigned_employee_id
     shifts_trend = []
     for i in range(6, -1, -1):
         day = now - timedelta(days=i)
         day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
         day_end = day_start + timedelta(days=1)
 
-        day_shifts = db.query(func.count(Shift.shift_id)).filter(
+        day_shifts = db.query(func.count(distinct(ShiftAssignment.shift_id))).join(
+            Shift, Shift.shift_id == ShiftAssignment.shift_id
+        ).filter(
             Shift.start_time >= day_start,
             Shift.start_time < day_end,
-            Shift.assigned_employee_id.isnot(None),
+            ShiftAssignment.status != 'cancelled',
             *([Shift.org_id == org_id] if org_id else [])
         ).scalar() or 0
 
@@ -212,11 +221,15 @@ async def get_operations_dashboard(
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     week_end = today_start + timedelta(days=7)
 
-    # 1. Unfilled Shifts (Next 7 Days)
+    # 1. Unfilled Shifts (Next 7 Days) — shifts with no non-cancelled ShiftAssignment
+    assigned_shift_ids = db.query(ShiftAssignment.shift_id).filter(
+        ShiftAssignment.status != 'cancelled'
+    ).distinct()
+
     unfilled_shifts = db.query(Shift).filter(
         Shift.start_time >= now,
         Shift.start_time < week_end,
-        Shift.assigned_employee_id.is_(None),
+        Shift.shift_id.notin_(assigned_shift_ids),
         *([Shift.org_id == org_id] if org_id else [])
     ).order_by(Shift.start_time).limit(50).all()
 
@@ -224,7 +237,7 @@ async def get_operations_dashboard(
         {
             "shift_id": shift.shift_id,
             "site_id": shift.site_id,
-            "site_name": shift.site.name if shift.site else "Unknown",
+            "site_name": shift.site.site_name if shift.site else "Unknown",
             "start_time": shift.start_time.isoformat(),
             "end_time": shift.end_time.isoformat(),
             "hours_until": int((shift.start_time - now).total_seconds() / 3600),
@@ -258,20 +271,29 @@ async def get_operations_dashboard(
         for cert in expiring_certs
     ]
 
-    # 3. Attendance Issues (Last 7 Days)
+    # 3. Attendance Issues (Last 7 Days) — use ShiftAssignment (no Attendance model)
     seven_days_ago = today_start - timedelta(days=7)
 
-    no_shows = db.query(Attendance).filter(
-        Attendance.shift_start_time >= seven_days_ago,
-        Attendance.clock_in_time.is_(None),
-        *([Attendance.org_id == org_id] if org_id else [])
-    ).count()
+    # No-shows: assigned but never checked in, shift start was in the past
+    no_shows = db.query(func.count(ShiftAssignment.assignment_id)).join(
+        Shift, Shift.shift_id == ShiftAssignment.shift_id
+    ).filter(
+        Shift.start_time >= seven_days_ago,
+        Shift.start_time < now,
+        ShiftAssignment.checked_in == False,
+        ShiftAssignment.status.notin_(['cancelled']),
+        *([Shift.org_id == org_id] if org_id else [])
+    ).scalar() or 0
 
-    late_arrivals = db.query(Attendance).filter(
-        Attendance.shift_start_time >= seven_days_ago,
-        Attendance.clock_in_time > Attendance.shift_start_time + timedelta(minutes=15),
-        *([Attendance.org_id == org_id] if org_id else [])
-    ).count()
+    # Late arrivals: checked in more than 15 minutes after shift start
+    late_arrivals = db.query(func.count(ShiftAssignment.assignment_id)).join(
+        Shift, Shift.shift_id == ShiftAssignment.shift_id
+    ).filter(
+        Shift.start_time >= seven_days_ago,
+        ShiftAssignment.checked_in == True,
+        ShiftAssignment.check_in_time > Shift.start_time + timedelta(minutes=15),
+        *([Shift.org_id == org_id] if org_id else [])
+    ).scalar() or 0
 
     # 4. Guards Available Today
     available_today = db.query(Availability).join(Employee).filter(
@@ -281,20 +303,27 @@ async def get_operations_dashboard(
         *([Employee.org_id == org_id] if org_id else [])
     ).count()
 
-    # 5. Site Coverage (Today)
+    # 5. Site Coverage (Today) — Site has no is_active; count all sites for the org
     sites_needing_coverage = db.query(Site).filter(
-        Site.is_active == True,
         *([Site.org_id == org_id] if org_id else [])
     ).count()
 
-    shifts_today = db.query(Shift).filter(
+    total_today = db.query(func.count(Shift.shift_id)).filter(
         Shift.start_time >= today_start,
         Shift.start_time < today_start + timedelta(days=1),
         *([Shift.org_id == org_id] if org_id else [])
-    )
+    ).scalar() or 0
 
-    filled_today = shifts_today.filter(Shift.assigned_employee_id.isnot(None)).count()
-    total_today = shifts_today.count()
+    # filled_today: shifts where at least one active assignment exists today
+    filled_today = db.query(func.count(distinct(ShiftAssignment.shift_id))).join(
+        Shift, Shift.shift_id == ShiftAssignment.shift_id
+    ).filter(
+        Shift.start_time >= today_start,
+        Shift.start_time < today_start + timedelta(days=1),
+        ShiftAssignment.status != 'cancelled',
+        *([Shift.org_id == org_id] if org_id else [])
+    ).scalar() or 0
+
     coverage_rate_today = (filled_today / total_today * 100) if total_today > 0 else 100.0
 
     # 6. Quick Stats
@@ -303,10 +332,13 @@ async def get_operations_dashboard(
         *([Employee.org_id == org_id] if org_id else [])
     ).scalar() or 0
 
-    on_shift_now = db.query(func.count(Shift.shift_id)).filter(
+    # on_shift_now: shifts where at least one active assignment exists right now
+    on_shift_now = db.query(func.count(distinct(ShiftAssignment.shift_id))).join(
+        Shift, Shift.shift_id == ShiftAssignment.shift_id
+    ).filter(
         Shift.start_time <= now,
         Shift.end_time >= now,
-        Shift.assigned_employee_id.isnot(None),
+        ShiftAssignment.status != 'cancelled',
         *([Shift.org_id == org_id] if org_id else [])
     ).scalar() or 0
 
@@ -380,48 +412,58 @@ async def get_financial_dashboard(
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     last_month_start = (month_start - timedelta(days=1)).replace(day=1)
 
-    # 1. Monthly PayrollSummary Costs
-    payroll_this_month = db.query(
-        func.sum(PayrollSummary.regular_pay).label('regular'),
-        func.sum(PayrollSummary.overtime_pay).label('overtime'),
-        func.sum(PayrollSummary.total_pay).label('total')
+    # 1. Monthly PayrollSummary Costs — period_start and gross_pay are the correct fields
+    payroll_totals = db.query(
+        func.sum(PayrollSummary.gross_pay).label('total')
     ).filter(
-        PayrollSummary.pay_period_start >= month_start,
+        PayrollSummary.period_start >= month_start.date(),
         *([PayrollSummary.org_id == org_id] if org_id else [])
     ).first()
+    total_payroll = float(payroll_totals.total or 0)
 
-    regular_pay = float(payroll_this_month.regular or 0)
-    overtime_pay = float(payroll_this_month.overtime or 0)
-    total_payroll = float(payroll_this_month.total or 0)
+    # Derive regular/overtime from ShiftAssignment for breakdown
+    # (PayrollSummary has no regular_pay or overtime_pay columns)
+    payroll_breakdown = db.query(
+        func.sum(ShiftAssignment.regular_pay).label('regular'),
+        func.sum(ShiftAssignment.overtime_pay).label('overtime'),
+    ).join(Shift, Shift.shift_id == ShiftAssignment.shift_id).filter(
+        Shift.start_time >= month_start,
+        ShiftAssignment.status != 'cancelled',
+        *([Shift.org_id == org_id] if org_id else [])
+    ).first()
+    regular_pay = float(payroll_breakdown.regular or 0)
+    overtime_pay = float(payroll_breakdown.overtime or 0)
 
-    # 2. Last Month for Comparison
-    payroll_last_month = db.query(func.sum(PayrollSummary.total_pay)).filter(
-        PayrollSummary.pay_period_start >= last_month_start,
-        PayrollSummary.pay_period_start < month_start,
+    # 2. Last Month for Comparison — period_start and gross_pay
+    payroll_last_month = db.query(func.sum(PayrollSummary.gross_pay)).filter(
+        PayrollSummary.period_start >= last_month_start.date(),
+        PayrollSummary.period_start < month_start.date(),
         *([PayrollSummary.org_id == org_id] if org_id else [])
     ).scalar() or Decimal('0.00')
 
     payroll_change = ((total_payroll - float(payroll_last_month)) / float(payroll_last_month) * 100) if float(payroll_last_month) > 0 else 0.0
 
-    # 3. Cost Per Site (This Month)
+    # 3. Cost Per Site (This Month) — Site.site_name, ShiftAssignment.total_cost
     cost_per_site = db.query(
         Site.site_id,
-        Site.name,
-        func.sum(Shift.cost).label('total_cost'),
-        func.count(Shift.shift_id).label('shift_count')
-    ).join(Shift, Shift.site_id == Site.site_id).filter(
+        Site.site_name,
+        func.sum(ShiftAssignment.total_cost).label('total_cost'),
+        func.count(distinct(ShiftAssignment.assignment_id)).label('assignment_count')
+    ).join(Shift, Shift.site_id == Site.site_id).join(
+        ShiftAssignment, ShiftAssignment.shift_id == Shift.shift_id
+    ).filter(
         Shift.start_time >= month_start,
-        Shift.assigned_employee_id.isnot(None),
+        ShiftAssignment.status != 'cancelled',
         *([Site.org_id == org_id] if org_id else [])
-    ).group_by(Site.site_id, Site.name).order_by(func.sum(Shift.cost).desc()).limit(10).all()
+    ).group_by(Site.site_id, Site.site_name).order_by(func.sum(ShiftAssignment.total_cost).desc()).limit(10).all()
 
     cost_per_site_data = [
         {
             "site_id": row.site_id,
-            "site_name": row.name,
+            "site_name": row.site_name,
             "total_cost": float(row.total_cost or 0),
-            "shift_count": row.shift_count,
-            "avg_cost_per_shift": float(row.total_cost or 0) / row.shift_count if row.shift_count > 0 else 0
+            "shift_count": row.assignment_count,
+            "avg_cost_per_shift": float(row.total_cost or 0) / row.assignment_count if row.assignment_count > 0 else 0
         }
         for row in cost_per_site
     ]
@@ -434,15 +476,15 @@ async def get_financial_dashboard(
     days_in_month = 30  # Approximate
     projected_monthly_cost = (total_payroll / days_elapsed) * days_in_month if days_elapsed > 0 else 0
 
-    # 6. Cost Trend (Last 6 Months)
+    # 6. Cost Trend (Last 6 Months) — period_start and gross_pay
     cost_trend = []
     for i in range(5, -1, -1):
         month_date = (month_start - timedelta(days=i * 30)).replace(day=1)
         next_month = (month_date + timedelta(days=32)).replace(day=1)
 
-        month_cost = db.query(func.sum(PayrollSummary.total_pay)).filter(
-            PayrollSummary.pay_period_start >= month_date,
-            PayrollSummary.pay_period_start < next_month,
+        month_cost = db.query(func.sum(PayrollSummary.gross_pay)).filter(
+            PayrollSummary.period_start >= month_date.date(),
+            PayrollSummary.period_start < next_month.date(),
             *([PayrollSummary.org_id == org_id] if org_id else [])
         ).scalar() or Decimal('0.00')
 
@@ -457,27 +499,32 @@ async def get_financial_dashboard(
     budget_used_percentage = (total_payroll / monthly_budget * 100) if monthly_budget > 0 else 0.0
     budget_remaining = monthly_budget - total_payroll
 
-    # 8. Cost Breakdown by Employee Type
-    # Simplified: Count shifts by cost tiers
-    low_cost_shifts = db.query(func.count(Shift.shift_id)).filter(
+    # 8. Cost Breakdown by Assignment Cost Tiers — ShiftAssignment.total_cost
+    low_cost_shifts = db.query(func.count(ShiftAssignment.assignment_id)).join(
+        Shift, Shift.shift_id == ShiftAssignment.shift_id
+    ).filter(
         Shift.start_time >= month_start,
-        Shift.cost < 500,
-        Shift.assigned_employee_id.isnot(None),
+        ShiftAssignment.total_cost < 500,
+        ShiftAssignment.status != 'cancelled',
         *([Shift.org_id == org_id] if org_id else [])
     ).scalar() or 0
 
-    medium_cost_shifts = db.query(func.count(Shift.shift_id)).filter(
+    medium_cost_shifts = db.query(func.count(ShiftAssignment.assignment_id)).join(
+        Shift, Shift.shift_id == ShiftAssignment.shift_id
+    ).filter(
         Shift.start_time >= month_start,
-        Shift.cost >= 500,
-        Shift.cost < 1000,
-        Shift.assigned_employee_id.isnot(None),
+        ShiftAssignment.total_cost >= 500,
+        ShiftAssignment.total_cost < 1000,
+        ShiftAssignment.status != 'cancelled',
         *([Shift.org_id == org_id] if org_id else [])
     ).scalar() or 0
 
-    high_cost_shifts = db.query(func.count(Shift.shift_id)).filter(
+    high_cost_shifts = db.query(func.count(ShiftAssignment.assignment_id)).join(
+        Shift, Shift.shift_id == ShiftAssignment.shift_id
+    ).filter(
         Shift.start_time >= month_start,
-        Shift.cost >= 1000,
-        Shift.assigned_employee_id.isnot(None),
+        ShiftAssignment.total_cost >= 1000,
+        ShiftAssignment.status != 'cancelled',
         *([Shift.org_id == org_id] if org_id else [])
     ).scalar() or 0
 
@@ -549,17 +596,19 @@ async def get_people_analytics_dashboard(
     now = datetime.utcnow()
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
-    # 1. Hours Worked by Guard (This Month)
+    # 1. Hours Worked by Guard (This Month) — join through ShiftAssignment
     hours_by_guard = db.query(
         Employee.employee_id,
         Employee.first_name,
         Employee.last_name,
-        func.count(Shift.shift_id).label('shift_count'),
+        func.count(distinct(ShiftAssignment.assignment_id)).label('shift_count'),
         func.sum(
             func.extract('epoch', Shift.end_time - Shift.start_time) / 3600
         ).label('total_hours')
-    ).join(Shift, Shift.assigned_employee_id == Employee.employee_id).filter(
+    ).join(ShiftAssignment, ShiftAssignment.employee_id == Employee.employee_id
+    ).join(Shift, Shift.shift_id == ShiftAssignment.shift_id).filter(
         Shift.start_time >= month_start,
+        ShiftAssignment.status != 'cancelled',
         Employee.status == 'active',
         *([Employee.org_id == org_id] if org_id else [])
     ).group_by(Employee.employee_id, Employee.first_name, Employee.last_name).all()
@@ -608,20 +657,22 @@ async def get_people_analytics_dashboard(
         if float(row.total_hours or 0) < 80
     ]
 
-    # 4. Shift Distribution (Day vs Night)
-    from sqlalchemy import extract
-
-    day_shifts = db.query(func.count(Shift.shift_id)).filter(
+    # 4. Shift Distribution (Day vs Night) — use ShiftAssignment join
+    day_shifts = db.query(func.count(distinct(ShiftAssignment.shift_id))).join(
+        Shift, Shift.shift_id == ShiftAssignment.shift_id
+    ).filter(
         Shift.start_time >= month_start,
-        Shift.assigned_employee_id.isnot(None),
+        ShiftAssignment.status != 'cancelled',
         extract('hour', Shift.start_time) >= 6,
         extract('hour', Shift.start_time) < 18,
         *([Shift.org_id == org_id] if org_id else [])
     ).scalar() or 0
 
-    night_shifts = db.query(func.count(Shift.shift_id)).filter(
+    night_shifts = db.query(func.count(distinct(ShiftAssignment.shift_id))).join(
+        Shift, Shift.shift_id == ShiftAssignment.shift_id
+    ).filter(
         Shift.start_time >= month_start,
-        Shift.assigned_employee_id.isnot(None),
+        ShiftAssignment.status != 'cancelled',
         or_(
             extract('hour', Shift.start_time) < 6,
             extract('hour', Shift.start_time) >= 18
@@ -629,16 +680,22 @@ async def get_people_analytics_dashboard(
         *([Shift.org_id == org_id] if org_id else [])
     ).scalar() or 0
 
-    # 5. Attendance Performance
-    total_shifts_with_attendance = db.query(func.count(Attendance.attendance_id)).filter(
-        Attendance.shift_start_time >= month_start,
-        *([Attendance.org_id == org_id] if org_id else [])
-    ).scalar() or 1
+    # 5. Attendance Performance — use ShiftAssignment (no Attendance model exists)
+    total_shifts_with_attendance = db.query(func.count(ShiftAssignment.assignment_id)).join(
+        Shift, Shift.shift_id == ShiftAssignment.shift_id
+    ).filter(
+        Shift.start_time >= month_start,
+        ShiftAssignment.checked_in == True,
+        *([Shift.org_id == org_id] if org_id else [])
+    ).scalar() or 1  # default to 1 to avoid division by zero
 
-    on_time_arrivals = db.query(func.count(Attendance.attendance_id)).filter(
-        Attendance.shift_start_time >= month_start,
-        Attendance.clock_in_time <= Attendance.shift_start_time + timedelta(minutes=5),
-        *([Attendance.org_id == org_id] if org_id else [])
+    on_time_arrivals = db.query(func.count(ShiftAssignment.assignment_id)).join(
+        Shift, Shift.shift_id == ShiftAssignment.shift_id
+    ).filter(
+        Shift.start_time >= month_start,
+        ShiftAssignment.checked_in == True,
+        ShiftAssignment.check_in_time <= Shift.start_time + timedelta(minutes=5),
+        *([Shift.org_id == org_id] if org_id else [])
     ).scalar() or 0
 
     on_time_percentage = (on_time_arrivals / total_shifts_with_attendance * 100) if total_shifts_with_attendance > 0 else 0
