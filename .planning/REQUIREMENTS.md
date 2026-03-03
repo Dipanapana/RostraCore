@@ -106,43 +106,43 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SEC-01 | — | Pending |
-| SEC-02 | — | Pending |
-| SEC-03 | — | Pending |
-| SEC-04 | — | Pending |
-| SEC-05 | — | Pending |
-| SEC-06 | — | Pending |
-| TEST-01 | — | Pending |
-| TEST-02 | — | Pending |
-| TEST-03 | — | Pending |
-| TEST-04 | — | Pending |
-| TEST-05 | — | Pending |
-| CICD-01 | — | Pending |
-| CICD-02 | — | Pending |
-| CICD-03 | — | Pending |
-| CICD-04 | — | Pending |
-| PAY-01 | — | Pending |
-| PAY-02 | — | Pending |
-| FTS-01 | — | Pending |
-| FTS-02 | — | Pending |
-| FTS-03 | — | Pending |
-| NAV-01 | — | Pending |
-| NAV-02 | — | Pending |
-| NAV-03 | — | Pending |
-| A11Y-01 | — | Pending |
-| A11Y-02 | — | Pending |
-| A11Y-03 | — | Pending |
-| A11Y-04 | — | Pending |
-| A11Y-05 | — | Pending |
-| INFRA-01 | — | Pending |
-| INFRA-02 | — | Pending |
-| INFRA-03 | — | Pending |
+| SEC-01 | Phase 1 | Pending |
+| SEC-02 | Phase 1 | Pending |
+| SEC-03 | Phase 1 | Pending |
+| SEC-04 | Phase 1 | Pending |
+| SEC-05 | Phase 1 | Pending |
+| SEC-06 | Phase 1 | Pending |
+| TEST-01 | Phase 3 | Pending |
+| TEST-02 | Phase 3 | Pending |
+| TEST-03 | Phase 3 | Pending |
+| TEST-04 | Phase 3 | Pending |
+| TEST-05 | Phase 3 | Pending |
+| CICD-01 | Phase 2 | Pending |
+| CICD-02 | Phase 2 | Pending |
+| CICD-03 | Phase 2 | Pending |
+| CICD-04 | Phase 2 | Pending |
+| PAY-01 | Phase 5 | Pending |
+| PAY-02 | Phase 5 | Pending |
+| FTS-01 | Phase 6 | Pending |
+| FTS-02 | Phase 6 | Pending |
+| FTS-03 | Phase 6 | Pending |
+| NAV-01 | Phase 7 | Pending |
+| NAV-02 | Phase 7 | Pending |
+| NAV-03 | Phase 7 | Pending |
+| A11Y-01 | Phase 8 | Pending |
+| A11Y-02 | Phase 8 | Pending |
+| A11Y-03 | Phase 8 | Pending |
+| A11Y-04 | Phase 8 | Pending |
+| A11Y-05 | Phase 8 | Pending |
+| INFRA-01 | Phase 4 | Pending |
+| INFRA-02 | Phase 4 | Pending |
+| INFRA-03 | Phase 4 | Pending |
 
 **Coverage:**
 - v1 requirements: 31 total
-- Mapped to phases: 0
-- Unmapped: 31
+- Mapped to phases: 31
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-03*
-*Last updated: 2026-03-03 after gap audit*
+*Last updated: 2026-03-03 — traceability updated after roadmap creation*
