@@ -123,13 +123,19 @@ def _org_to_response(org: Organization) -> OrganizationResponse:
 @router.post("/", response_model=OrganizationResponse, status_code=status.HTTP_201_CREATED)
 async def create_organization(
     org_data: OrganizationCreate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     Create a new organization.
 
-    **Requires**: Super Admin role (TODO: implement role checking)
+    **Requires**: Super Admin role
     """
+    if current_user.role != UserRole.SUPER_ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only super admins can create organizations"
+        )
     # Check if org_code already exists
     existing_org = db.query(Organization).filter(
         Organization.org_code == org_data.org_code

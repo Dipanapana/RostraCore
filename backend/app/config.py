@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     # Security
     SECRET_KEY: str = "your-secret-key-change-in-production"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 480  # 8 hours - extended for better UX
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30  # 30 min - refresh tokens handle session continuity
 
     # CORS
     FRONTEND_URL: str = "http://localhost:3000"

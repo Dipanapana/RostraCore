@@ -27,7 +27,8 @@ router = APIRouter(prefix="/api/v1/dashboards")
 
 @router.get("/executive")
 async def get_executive_dashboard(
-    org_id: Optional[int] = None,
+    current_user: User = Depends(get_current_user),
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ) -> Dict:
     """
@@ -182,7 +183,8 @@ async def get_executive_dashboard(
 
 @router.get("/operations")
 async def get_operations_dashboard(
-    org_id: Optional[int] = None,
+    current_user: User = Depends(get_current_user),
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ) -> Dict:
     """
@@ -349,7 +351,8 @@ async def get_operations_dashboard(
 
 @router.get("/financial")
 async def get_financial_dashboard(
-    org_id: Optional[int] = None,
+    current_user: User = Depends(get_current_user),
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ) -> Dict:
     """
@@ -518,7 +521,8 @@ async def get_financial_dashboard(
 
 @router.get("/people-analytics")
 async def get_people_analytics_dashboard(
-    org_id: Optional[int] = None,
+    current_user: User = Depends(get_current_user),
+    org_id: int = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ) -> Dict:
     """

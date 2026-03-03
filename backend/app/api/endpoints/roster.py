@@ -33,11 +33,6 @@ def get_optimizer_classes():
     return None, ProductionRosterOptimizer, OptimizationConfig, PartitionedRosterOptimizer
 
 
-@router.get("/test")
-async def test_endpoint():
-    """Simple test endpoint"""
-    return {"status": "ok", "message": "Roster API is working"}
-
 @router.post("/generate")
 async def generate_roster(
     request: RosterGenerateRequest,
