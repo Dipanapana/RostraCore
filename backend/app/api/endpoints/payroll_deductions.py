@@ -7,7 +7,8 @@ from typing import Optional
 from pydantic import BaseModel
 
 from app.database import get_db
-from app.auth.security import require_finance_access
+from app.auth.security import get_current_user, require_finance_access
+from app.models.user import User
 from app.services.sa_payroll_service import SAPayrollService, get_tax_tables_reference
 
 
@@ -68,7 +69,8 @@ class CostToCompanyCalculation(BaseModel):
 @router.get("/paye", response_model=PayeCalculation)
 async def calculate_paye(
     gross_monthly: float = Query(..., description="Gross monthly salary in ZAR"),
-    age: int = Query(default=35, ge=18, le=100, description="Employee age for rebate calculation")
+    age: int = Query(default=35, ge=18, le=100, description="Employee age for rebate calculation"),
+    current_user: User = Depends(get_current_user)
 ):
     """
     Calculate PAYE (Pay As You Earn) tax.
@@ -102,7 +104,8 @@ async def calculate_paye(
 
 @router.get("/uif", response_model=UifCalculation)
 async def calculate_uif(
-    gross_monthly: float = Query(..., description="Gross monthly salary in ZAR")
+    gross_monthly: float = Query(..., description="Gross monthly salary in ZAR"),
+    current_user: User = Depends(get_current_user)
 ):
     """
     Calculate UIF (Unemployment Insurance Fund) contributions.
@@ -126,7 +129,8 @@ async def calculate_uif(
 @router.get("/sdl", response_model=SdlCalculation)
 async def calculate_sdl(
     total_monthly_payroll: float = Query(..., description="Total monthly payroll for organization in ZAR"),
-    is_exempt: bool = Query(default=False, description="Whether organization is exempt (e.g., PBO)")
+    is_exempt: bool = Query(default=False, description="Whether organization is exempt (e.g., PBO)"),
+    current_user: User = Depends(get_current_user)
 ):
     """
     Calculate SDL (Skills Development Levy).
@@ -150,7 +154,8 @@ async def calculate_sdl(
 async def calculate_net_pay(
     gross_monthly: float = Query(..., description="Gross monthly salary in ZAR"),
     age: int = Query(default=35, ge=18, le=100, description="Employee age"),
-    other_deductions: float = Query(default=0, description="Other deductions (pension, medical aid)")
+    other_deductions: float = Query(default=0, description="Other deductions (pension, medical aid)"),
+    current_user: User = Depends(get_current_user)
 ):
     """
     Calculate complete net pay with all statutory deductions.
@@ -182,7 +187,8 @@ async def calculate_net_pay(
 @router.get("/cost-to-company", response_model=CostToCompanyCalculation)
 async def calculate_cost_to_company(
     gross_monthly: float = Query(..., description="Employee gross monthly salary in ZAR"),
-    total_monthly_payroll: float = Query(default=0, description="Organization total monthly payroll")
+    total_monthly_payroll: float = Query(default=0, description="Organization total monthly payroll"),
+    current_user: User = Depends(get_current_user)
 ):
     """
     Calculate total cost to company for an employee.
@@ -205,7 +211,7 @@ async def calculate_cost_to_company(
 
 
 @router.get("/tax-tables")
-async def get_tax_tables():
+async def get_tax_tables(current_user: User = Depends(get_current_user)):
     """
     Get SA tax tables reference for 2024/2025.
 
