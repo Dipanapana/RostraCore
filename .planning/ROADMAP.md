@@ -49,7 +49,10 @@ Plans:
   4. Revenue-vs-cost report completes in <2s for 1000 assignments (no N+1 queries)
   5. The /roster/confirm endpoint creates a Roster record so confirmed assignments are trackable in the roster board
   6. Payroll generation produces correct totals when roster has published assignments
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 01.1-01-PLAN.md — Fix all broken model-field references in dashboards.py (executive, operations, financial, people-analytics) (ROST-01, ROST-02)
+- [ ] 01.1-02-PLAN.md — Fix N+1 queries in revenue-vs-cost report and create Roster record in /confirm endpoint (ROST-03, ROST-04, ROST-05, ROST-06)
 
 ### Phase 2: CI/CD Pipeline
 **Goal**: Every pull request is automatically tested and every merge to main is automatically deployed
@@ -133,7 +136,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 �
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Security Hardening | 2/2 | Complete   | 2026-03-03 |
-| 1.1. Roster & Downstream Integrity | 0/TBD | Not started | - |
+| 1.1. Roster & Downstream Integrity | 0/2 | Not started | - |
 | 2. CI/CD Pipeline | 0/TBD | Not started | - |
 | 3. Test Coverage | 0/TBD | Not started | - |
 | 4. Infrastructure Hardening | 0/TBD | Not started | - |
