@@ -58,8 +58,8 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Roster Integrity
 
-- [ ] **ROST-01**: Dashboard endpoints use correct model fields (no NameError or AttributeError crashes)
-- [ ] **ROST-02**: Dashboards use ShiftAssignment records (not deprecated Shift.assigned_employee_id) for fill rate and coverage metrics
+- [x] **ROST-01**: Dashboard endpoints use correct model fields (no NameError or AttributeError crashes)
+- [x] **ROST-02**: Dashboards use ShiftAssignment records (not deprecated Shift.assigned_employee_id) for fill rate and coverage metrics
 - [ ] **ROST-03**: Report endpoints use correct PayrollSummary field names (period_start, gross_pay) and Site.site_name
 - [ ] **ROST-04**: Report revenue-vs-cost endpoint uses joined queries (no N+1 per-assignment DB calls)
 - [ ] **ROST-05**: Roster /confirm endpoint creates a Roster record so assignments are trackable
@@ -143,8 +143,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | A11Y-03 | Phase 8 | Pending |
 | A11Y-04 | Phase 8 | Pending |
 | A11Y-05 | Phase 8 | Pending |
-| ROST-01 | Phase 1.1 | Pending |
-| ROST-02 | Phase 1.1 | Pending |
+| ROST-01 | Phase 1.1 | Complete |
+| ROST-02 | Phase 1.1 | Complete |
 | ROST-03 | Phase 1.1 | Pending |
 | ROST-04 | Phase 1.1 | Pending |
 | ROST-05 | Phase 1.1 | Pending |
