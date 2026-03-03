@@ -131,7 +131,7 @@ async def create_organization(
 
     **Requires**: Super Admin role
     """
-    if current_user.role != UserRole.SUPER_ADMIN:
+    if current_user.role != UserRole.SUPERADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only super admins can create organizations"
