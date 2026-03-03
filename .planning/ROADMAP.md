@@ -35,7 +35,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. A password that lacks uppercase, lowercase, number, or special character is rejected with a descriptive error message
   5. CORS headers in production only allow the Vercel frontend origin — other origins are blocked
 Plans:
-- [ ] 01-01-PLAN.md — Add auth to unprotected settings & payroll_deductions endpoints (SEC-01)
+- [x] 01-01-PLAN.md — Add auth to unprotected settings & payroll_deductions endpoints (SEC-01)
 - [ ] 01-02-PLAN.md — Strengthen password policy, restrict CORS, verify secrets hygiene (SEC-04, SEC-05, SEC-06)
 
 ### Phase 1.1: Roster & Downstream Integrity — INSERTED
@@ -132,7 +132,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 �
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Security Hardening | 0/2 | Planned | - |
+| 1. Security Hardening | 1/2 | In progress | - |
 | 1.1. Roster & Downstream Integrity | 0/TBD | Not started | - |
 | 2. CI/CD Pipeline | 0/TBD | Not started | - |
 | 3. Test Coverage | 0/TBD | Not started | - |

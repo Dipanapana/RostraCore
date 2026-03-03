@@ -10,30 +10,31 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 ## Current Position
 
 Phase: 1 of 8 (Security Hardening)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-03-03 — Roadmap created. Phase A security fixes already applied (dashboard auth on 4 endpoints, superadmin org creation check, JWT expiry 480→30 min, test endpoint removal).
+Plan: 1 of TBD in current phase
+Status: In progress
+Last activity: 2026-03-03 — Plan 01 complete: protected 9 unprotected endpoints (3 constraint settings + 6 payroll tax calculations) with JWT auth.
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█░░░░░░░░░] 5%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: —
-- Total execution time: —
+- Total plans completed: 1
+- Average duration: 5 min
+- Total execution time: 5 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01-security-hardening | 1 | 5 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: —
+- Last 5 plans: 5 min
 - Trend: —
 
 *Updated after each plan completion*
+| Phase 01-security-hardening P02 | 7 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -46,6 +47,9 @@ Recent decisions affecting current work:
 - [Phase A]: Superadmin check added to org creation (prevented privilege escalation)
 - [Phase A]: JWT expiry reduced from 480 to 30 minutes (hardened session security)
 - [Phase A]: Test endpoint removed (no debug endpoints in production)
+- [01-01]: GET /constraints uses get_current_user (any authenticated user can read solver config)
+- [01-01]: PUT /constraints and POST /constraints/reset use is_admin (write access requires admin role)
+- [01-01]: Payroll calculation endpoints use get_current_user — tax math is read-only; /config uses stricter require_finance_access
 
 ### Pending Todos
 
@@ -60,5 +64,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Roadmap created, STATE.md initialized. No plans written yet.
+Stopped at: Completed 01-01-PLAN.md (protected settings.py + payroll_deductions.py endpoints with JWT auth)
 Resume file: None
