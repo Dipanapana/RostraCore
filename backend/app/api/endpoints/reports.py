@@ -583,7 +583,9 @@ async def export_profitability_pdf(
 
         total_revenue = sum(inv.total_amount for inv in invoices)
 
-        assignments = db.query(ShiftAssignment).join(Shift).filter(
+        assignments = db.query(ShiftAssignment).join(Shift).join(Site, Shift.site_id == Site.site_id).outerjoin(Client, Site.client_id == Client.client_id).options(
+            joinedload(ShiftAssignment.shift).joinedload(Shift.site).joinedload(Site.client)
+        ).filter(
             and_(
                 Shift.org_id == org_id,
                 Shift.start_time >= datetime.combine(period_start, datetime.min.time()),
@@ -601,9 +603,9 @@ async def export_profitability_pdf(
         if group_by == "client":
             clients_data = {}
             for assignment in assignments:
-                shift = db.query(Shift).filter(Shift.shift_id == assignment.shift_id).first()
-                site = db.query(Site).filter(Site.site_id == shift.site_id).first()
-                client = db.query(Client).filter(Client.client_id == site.client_id).first()
+                shift = assignment.shift
+                site = shift.site if shift else None
+                client = site.client if site else None
                 client_name = client.client_name if client else "Unknown"
 
                 if client_name not in clients_data:
@@ -628,9 +630,9 @@ async def export_profitability_pdf(
         else:
             time_data = {}
             for assignment in assignments:
-                shift = db.query(Shift).filter(Shift.shift_id == assignment.shift_id).first()
-                site = db.query(Site).filter(Site.site_id == shift.site_id).first()
-                client = db.query(Client).filter(Client.client_id == site.client_id).first()
+                shift = assignment.shift
+                site = shift.site if shift else None
+                client = site.client if site else None
 
                 shift_date = shift.start_time.date()
                 if group_by == "month":
@@ -715,7 +717,9 @@ async def export_revenue_by_client_pdf(
         company = _load_org_company_details(db, org_id)
 
         # Get all assignments in the period
-        assignments = db.query(ShiftAssignment).join(Shift).filter(
+        assignments = db.query(ShiftAssignment).join(Shift).join(Site, Shift.site_id == Site.site_id).outerjoin(Client, Site.client_id == Client.client_id).options(
+            joinedload(ShiftAssignment.shift).joinedload(Shift.site).joinedload(Site.client)
+        ).filter(
             and_(
                 Shift.org_id == org_id,
                 Shift.start_time >= datetime.combine(period_start, datetime.min.time()),
@@ -727,9 +731,9 @@ async def export_revenue_by_client_pdf(
         # Group by client
         clients_data = {}
         for assignment in assignments:
-            shift = db.query(Shift).filter(Shift.shift_id == assignment.shift_id).first()
-            site = db.query(Site).filter(Site.site_id == shift.site_id).first()
-            client = db.query(Client).filter(Client.client_id == site.client_id).first()
+            shift = assignment.shift
+            site = shift.site if shift else None
+            client = site.client if site else None
             client_name = client.client_name if client else "Unknown"
 
             if client_name not in clients_data:
@@ -813,8 +817,11 @@ async def export_coverage_pdf(
     try:
         company = _load_org_company_details(db, org_id)
 
-        # Get all shifts in the period for this org
-        shifts = db.query(Shift).filter(
+        # Get all shifts in the period for this org with site eagerly loaded
+        shifts = db.query(Shift).join(Site, Shift.site_id == Site.site_id).options(
+            joinedload(Shift.site),
+            joinedload(Shift.shift_assignments)
+        ).filter(
             and_(
                 Shift.org_id == org_id,
                 Shift.start_time >= datetime.combine(period_start, datetime.min.time()),
@@ -829,7 +836,7 @@ async def export_coverage_pdf(
         filled_total = 0
 
         for shift in shifts:
-            site = db.query(Site).filter(Site.site_id == shift.site_id).first()
+            site = shift.site
             site_name = site.site_name if site else "Unknown"
 
             if site_name not in site_data:
@@ -837,13 +844,8 @@ async def export_coverage_pdf(
 
             site_data[site_name]["required"] += 1
 
-            # Check if shift has active assignments
-            active_assignments = db.query(ShiftAssignment).filter(
-                and_(
-                    ShiftAssignment.shift_id == shift.shift_id,
-                    ShiftAssignment.status.in_(["pending", "confirmed", "completed"])
-                )
-            ).all()
+            # Check if shift has active assignments (already loaded via joinedload)
+            active_assignments = [sa for sa in shift.shift_assignments if sa.status in ("pending", "confirmed", "completed")]
 
             if active_assignments:
                 site_data[site_name]["filled"] += 1
