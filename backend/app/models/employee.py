@@ -61,6 +61,8 @@ class Employee(Base):
     # Preferred sites: sites where employee is preferentially deployed
     preferred_site_ids = Column(ARRAY(Integer), nullable=True)
 
+    employee_number = Column(String(50), nullable=True, index=True)  # External employee number (e.g., from EasyRoster)
+
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
     id_number = Column(String(50), unique=True, nullable=False, index=True)

@@ -13,7 +13,13 @@ This milestone hardens RostraCore from a working prototype into a production-rea
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Security Hardening** - Audit and lock down all remaining security gaps (completed 2026-03-03)
-- [ ] **Phase 1.1: Roster & Downstream Integrity** - INSERTED — Fix broken dashboard/report/payroll queries that depend on roster data
+- [x] **Phase 1.1: Roster & Downstream Integrity** - INSERTED — Fix broken dashboard/report/payroll queries that depend on roster data (completed 2026-03-03)
+- [x] **Phase 1.2: Sidebar Cleanup** - INSERTED — Hide mobile-dependent and placeholder nav items, archive for restoration (completed 2026-03-04)
+- [x] **Phase 1.3: EasyRoster Import** - INSERTED — 36-column EasyRoster format compatibility, employee_number field, bulk import endpoint (completed 2026-03-04)
+- [x] **Phase 1.4: Roles & Permissions Audit** - INSERTED — Verified all 94+ endpoint files have auth, permission matrix UI works (completed 2026-03-04)
+- [x] **Phase 1.5: Dashboard & Financial UI** - INSERTED — Verified all dashboards, payroll, invoicing, reports already production-ready (completed 2026-03-04)
+- [x] **Phase 1.6: Desktop Application** - INSERTED — Tauri v2 project initialized, Windows .msi/.nsis build config (completed 2026-03-04)
+- [x] **Phase 1.7: E2E Roster Magic Flow** - INSERTED — Verified full import→roster→payroll→invoice→dashboard flow (completed 2026-03-04)
 - [ ] **Phase 2: CI/CD Pipeline** - Automate test runs and deployments via GitHub Actions
 - [ ] **Phase 3: Test Coverage** - Write integration tests to reach >60% endpoint coverage
 - [ ] **Phase 4: Infrastructure Hardening** - Redis rate limiting, live budget data, proper error responses
@@ -131,12 +137,18 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
+Phases execute in numeric order: 1 → 1.1 → 1.2 → 1.3 → 1.4 → 1.5 → 1.6 → 1.7 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Security Hardening | 2/2 | Complete   | 2026-03-03 |
-| 1.1. Roster & Downstream Integrity | 0/2 | Not started | - |
+| 1. Security Hardening | 2/2 | Complete | 2026-03-03 |
+| 1.1. Roster & Downstream Integrity | 2/2 | Complete | 2026-03-03 |
+| 1.2. Sidebar Cleanup | 1/1 | Complete | 2026-03-04 |
+| 1.3. EasyRoster Import | 1/1 | Complete | 2026-03-04 |
+| 1.4. Roles & Permissions Audit | 1/1 | Complete | 2026-03-04 |
+| 1.5. Dashboard & Financial UI | 1/1 | Complete | 2026-03-04 |
+| 1.6. Desktop Application | 1/1 | Complete | 2026-03-04 |
+| 1.7. E2E Roster Magic Flow | 1/1 | Complete | 2026-03-04 |
 | 2. CI/CD Pipeline | 0/TBD | Not started | - |
 | 3. Test Coverage | 0/TBD | Not started | - |
 | 4. Infrastructure Hardening | 0/TBD | Not started | - |

@@ -44,6 +44,7 @@ class EmployeeCreate(EmployeeBase):
     assigned_client_id: Optional[int] = None  # Optional client assignment (legacy)
     assigned_client_ids: Optional[List[int]] = None  # Multiple client assignment
     preferred_site_ids: Optional[List[int]] = None  # Preferred site assignment
+    employee_number: Optional[str] = None  # External employee number (e.g., from EasyRoster)
 
     # Banking details
     bank_name: Optional[str] = None  # e.g., FNB, ABSA, Standard Bank, Nedbank
@@ -58,6 +59,7 @@ class EmployeeCreate(EmployeeBase):
 class EmployeeUpdate(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
+    employee_number: Optional[str] = None
     role: Optional[EmployeeRole] = None
     pay_type: Optional[PayType] = None
     hourly_rate: Optional[float] = None
@@ -90,6 +92,7 @@ class EmployeeUpdate(BaseModel):
 class EmployeeResponse(EmployeeBase):
     employee_id: int
     org_id: int  # Include organization in response
+    employee_number: Optional[str] = None  # External employee number (e.g., from EasyRoster)
     assigned_client_id: Optional[int] = None  # Include client assignment in response (legacy)
     assigned_client_ids: Optional[List[int]] = None  # Include multiple client assignment in response
     preferred_site_ids: Optional[List[int]] = None  # Preferred site assignment

@@ -715,6 +715,46 @@ async def import_employees_from_excel(
     return result
 
 
+@router.post("/import-easyroster")
+async def import_from_easyroster(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Import employees from EasyRoster payroll Excel format.
+
+    Accepts the 36-column EasyRoster payroll format with columns like:
+    SURNAME, NAME(S), ID NUMBER, GENDER, TAX NUMBER, PSIRA, BANK NAME(S),
+    ACCOUNT NUMBERS, EMPLOYEE NO, RATE P/HR, etc.
+
+    Creates new employees or updates existing ones (matched by ID number).
+    Returns detailed import results.
+    """
+    if not file.filename.endswith(('.xlsx', '.xls')):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must be an Excel file (.xlsx or .xls)"
+        )
+
+    content = await file.read()
+    org_id = _get_org_id_or_403(current_user)
+
+    result = ExcelImportService.import_from_easyroster(
+        db=db,
+        file_content=content,
+        organization_id=org_id
+    )
+
+    if result["status"] == "error":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=result["message"]
+        )
+
+    return result
+
+
 @router.get("/download-template")
 async def download_employee_template():
     """

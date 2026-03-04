@@ -64,6 +64,7 @@ import {
   CalendarRange,
   Phone,
   Download,
+  Upload,
   HeartPulse,
   Receipt,
   FileCheck,
@@ -157,6 +158,39 @@ const FINANCE_ROLES: UserRole[] = [
 ];
 
 const ADMIN_ROLES: UserRole[] = ["admin", "company_admin", "superadmin"];
+
+// ---------------------------------------------------------------------------
+// Hidden nav items — see .planning/ARCHIVED_NAV_ITEMS.md for restoration guide
+// Remove keys from this set to restore items to the sidebar
+// ---------------------------------------------------------------------------
+const HIDDEN_NAV_KEYS = new Set([
+  // Mobile-dependent (require mobile app/hardware)
+  "lone-worker",
+  "geofencing",
+  "visitors",
+  "keys",
+  "shift-handovers",
+  "occurrence-book",
+  "assets",
+  // Placeholder analytics (no backend data yet)
+  "hr-analytics",
+  "turnover",
+  "performance-dashboard",
+  "workforce-compliance",
+  "availability-heatmap",
+  "contract-renewals",
+  "client-satisfaction",
+  "site-risk",
+  "incident-analytics",
+  "patrol-analytics",
+  "shift-costs",
+  // Placeholder standalone features (no backend integration yet)
+  "emergency",
+  "messaging",
+  "command-center",
+  "portal",
+  "ops-summary",
+]);
 
 const NAV_ENTRIES: NavEntry[] = [
   // ── MAIN ──────────────────────────────────────────────
@@ -354,6 +388,14 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Roster Board",
         href: "/roster/board",
         icon: Grid3X3,
+        roles: MANAGEMENT_ROLES,
+        permissionKey: "roster.view",
+      },
+      {
+        key: "roster-templates",
+        label: "Roster Templates",
+        href: "/roster/templates",
+        icon: Upload,
         roles: MANAGEMENT_ROLES,
         permissionKey: "roster.view",
       },
@@ -979,6 +1021,7 @@ const ROUTE_GROUPS: Record<string, string[]> = {
   "/shifts": ["/shifts"],
   "/roster/generate": ["/roster/generate"],
   "/roster/board": ["/roster/board"],
+  "/roster/templates": ["/roster/templates"],
   "/roster/alerts": ["/roster/alerts"],
   "/roster/exceptions": ["/roster/exceptions"],
   "/roster/spare-pool": ["/roster/spare-pool"],
@@ -1026,6 +1069,7 @@ function getVisibleChildren(
   hasPermission?: (key: string) => boolean
 ): NavChild[] {
   return children.filter((child) => {
+    if (HIDDEN_NAV_KEYS.has(child.key)) return false;
     if (child.permissionKey && hasPermission) {
       return hasPermission(child.permissionKey);
     }
@@ -1038,6 +1082,7 @@ function getVisibleEntries(
   hasPermission?: (key: string) => boolean
 ): NavEntry[] {
   return NAV_ENTRIES.filter((entry) => {
+    if (HIDDEN_NAV_KEYS.has(entry.key)) return false;
     if (entry.kind === "standalone") {
       if ((entry as NavStandalone & { permissionKey?: string }).permissionKey && hasPermission) {
         return hasPermission((entry as NavStandalone & { permissionKey?: string }).permissionKey!);

@@ -258,6 +258,7 @@ async def get_operations_dashboard(
         *([Employee.org_id == org_id] if org_id else [])
     ).order_by(Certification.expiry_date).limit(20).all()
 
+    today_date = now.date()
     expiring_certs_data = [
         {
             "cert_id": cert.cert_id,
@@ -265,8 +266,8 @@ async def get_operations_dashboard(
             "employee_name": f"{cert.employee.first_name} {cert.employee.last_name}" if cert.employee else "Unknown",
             "cert_type": cert.cert_type,
             "expiry_date": cert.expiry_date.isoformat() if cert.expiry_date else None,
-            "days_until_expiry": (cert.expiry_date - now).days if cert.expiry_date else None,
-            "urgency": "critical" if cert.expiry_date and (cert.expiry_date - now).days <= 7 else "high" if cert.expiry_date and (cert.expiry_date - now).days <= 14 else "medium"
+            "days_until_expiry": (cert.expiry_date - today_date).days if cert.expiry_date else None,
+            "urgency": "critical" if cert.expiry_date and (cert.expiry_date - today_date).days <= 7 else "high" if cert.expiry_date and (cert.expiry_date - today_date).days <= 14 else "medium"
         }
         for cert in expiring_certs
     ]
@@ -298,7 +299,7 @@ async def get_operations_dashboard(
     # 4. Guards Available Today
     available_today = db.query(Availability).join(Employee).filter(
         Availability.date == today_start.date(),
-        Availability.is_available == True,
+        Availability.available == True,
         Employee.status == 'active',
         *([Employee.org_id == org_id] if org_id else [])
     ).count()
