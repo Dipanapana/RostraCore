@@ -14,6 +14,7 @@ class Client(Base):
     client_id = Column(Integer, primary_key=True, index=True)
     org_id = Column(Integer, ForeignKey("organizations.org_id", ondelete="CASCADE"), nullable=False, index=True)
     client_name = Column(String(255), nullable=False, index=True)
+    client_code = Column(String(50), nullable=True, index=True)  # External client code (e.g., "GCIS" from Mafoko)
     contact_person = Column(String(200), nullable=True)
     contact_email = Column(String(255), nullable=True)
     contact_phone = Column(String(20), nullable=True)

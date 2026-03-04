@@ -68,6 +68,7 @@ from app.models.location_ping import LocationPing
 from app.models.popia import POPIAConsent, DataSubjectRequest, ConsentType, RequestType, RequestStatus
 from app.models.custom_form import FormTemplate, FormSubmission, FormStatus
 from app.models.role_permission import OrganizationRolePermission
+from app.models.roster_upload_log import RosterUploadLog
 
 __all__ = [
     "User",
@@ -199,4 +200,5 @@ __all__ = [
     "FormSubmission",
     "FormStatus",
     "OrganizationRolePermission",
+    "RosterUploadLog",
 ]

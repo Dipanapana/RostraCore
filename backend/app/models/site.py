@@ -18,6 +18,7 @@ class Site(Base):
     client_id = Column(Integer, ForeignKey("clients.client_id", ondelete="SET NULL"), nullable=True, index=True)
     client_name = Column(String(200), nullable=False)  # Kept for backward compatibility
     site_name = Column(String(200), nullable=True)  # Specific site name (e.g., "Main Gate", "Building A")
+    site_code = Column(String(50), nullable=True, index=True)  # External site code (e.g., "001" from Mafoko)
     address = Column(String(500), nullable=False)  # Full address (legacy field)
 
     # Detailed location fields

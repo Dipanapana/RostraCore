@@ -83,6 +83,7 @@ import {
   Crosshair,
   Lock,
   HelpCircle,
+  FileSpreadsheet,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { usePermissions } from "@/context/PermissionsContext";
@@ -396,6 +397,14 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Roster Templates",
         href: "/roster/templates",
         icon: Upload,
+        roles: MANAGEMENT_ROLES,
+        permissionKey: "roster.view",
+      },
+      {
+        key: "roster-upload",
+        label: "Site Roster Upload",
+        href: "/roster/upload",
+        icon: FileSpreadsheet,
         roles: MANAGEMENT_ROLES,
         permissionKey: "roster.view",
       },
@@ -1022,6 +1031,7 @@ const ROUTE_GROUPS: Record<string, string[]> = {
   "/roster/generate": ["/roster/generate"],
   "/roster/board": ["/roster/board"],
   "/roster/templates": ["/roster/templates"],
+  "/roster/upload": ["/roster/upload"],
   "/roster/alerts": ["/roster/alerts"],
   "/roster/exceptions": ["/roster/exceptions"],
   "/roster/spare-pool": ["/roster/spare-pool"],
