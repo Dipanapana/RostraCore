@@ -175,7 +175,7 @@ def make_optimizer(employees=None, shifts=None, sites=None, config=None, org_id=
 class TestOptimizationConfig:
     def test_default_config(self):
         config = OptimizationConfig()
-        assert config.time_limit_seconds == 120
+        assert config.time_limit_seconds == 300
         assert config.num_workers == 8
         assert config.fairness_weight == 0.2
         assert config.cost_weight == 1.0
@@ -558,6 +558,7 @@ class TestCPSATSolver:
         opt.employees = employees
         opt.shifts = shifts
         opt.sites = {1: make_site(site_id=1)}
+        opt.client_names = {}
 
         # Group shifts by date
         opt.shifts_by_date = defaultdict(list)

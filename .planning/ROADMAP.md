@@ -20,7 +20,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1.5: Dashboard & Financial UI** - INSERTED — Verified all dashboards, payroll, invoicing, reports already production-ready (completed 2026-03-04)
 - [x] **Phase 1.6: Desktop Application** - INSERTED — Tauri v2 project initialized, Windows .msi/.nsis build config (completed 2026-03-04)
 - [x] **Phase 1.7: E2E Roster Magic Flow** - INSERTED — Verified full import→roster→payroll→invoice→dashboard flow (completed 2026-03-04)
-- [ ] **Phase 2: CI/CD Pipeline** - Automate test runs and deployments via GitHub Actions
+- [x] **Phase 2: CI/CD Pipeline** - GitHub Actions CI (pytest + next build), Railway/Vercel auto-deploy (completed 2026-03-04)
 - [ ] **Phase 3: Test Coverage** - Write integration tests to reach >60% endpoint coverage
 - [ ] **Phase 4: Infrastructure Hardening** - Redis rate limiting, live budget data, proper error responses
 - [ ] **Phase 5: Payment Completion** - Fix 501 status endpoint and implement SMS verification
@@ -69,7 +69,9 @@ Plans:
   2. Opening a pull request triggers a `next build` check that blocks merge if the frontend fails to compile
   3. Merging to main triggers a Railway backend deployment without manual intervention
   4. Merging to main triggers a Vercel frontend deployment without manual intervention
-**Plans**: TBD
+**Plans:**
+Plans:
+- [x] 02-01-PLAN.md — GitHub Actions CI workflow (backend pytest + frontend next build) + fix 4 pre-existing test failures
 
 ### Phase 3: Test Coverage
 **Goal**: The backend has >60% endpoint coverage with integration tests that catch regressions
@@ -149,7 +151,7 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 1.3 → 1.4 → 1.5 → 1
 | 1.5. Dashboard & Financial UI | 1/1 | Complete | 2026-03-04 |
 | 1.6. Desktop Application | 1/1 | Complete | 2026-03-04 |
 | 1.7. E2E Roster Magic Flow | 1/1 | Complete | 2026-03-04 |
-| 2. CI/CD Pipeline | 0/TBD | Not started | - |
+| 2. CI/CD Pipeline | 1/1 | Complete | 2026-03-04 |
 | 3. Test Coverage | 0/TBD | Not started | - |
 | 4. Infrastructure Hardening | 0/TBD | Not started | - |
 | 5. Payment Completion | 0/TBD | Not started | - |

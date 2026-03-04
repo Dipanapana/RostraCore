@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 ## Current Position
 
-Phase: 2-cicd-pipeline
+Phase: 3-test-coverage
 Plan: 0 of TBD in current phase
-Status: Phases 1–1.7 ALL COMPLETE. Milestone 1 production-ready overhaul done.
-Last activity: 2026-03-04 — E2E flow verified: EasyRoster import→roster generation→payroll→invoicing→dashboards all working.
+Status: Phases 1–2 ALL COMPLETE. CI/CD pipeline live.
+Last activity: 2026-03-04 — GitHub Actions CI workflow created, 4 test failures fixed (164/164 passing).
 
 Progress: [██████████] 100% (Milestone 1 phases)
 
@@ -73,6 +73,8 @@ Recent decisions affecting current work:
 - [01.6]: Tauri v2 desktop app initialized. Builds .msi + .nsis for Windows. Points to Vercel frontend (prod) or localhost:3000 (dev). Needs Windows SDK for final build.
 - [01.7]: E2E verified: EasyRoster import (60 employees, all fields correct), roster generation (optimal, 240 assignments), all 5 dashboards return 200, payroll (R604K gross for 60 employees), invoicing (Shoprite R172K), PDF report exports working.
 - [01.7]: Fixed operations dashboard: Availability.available (not is_available), cert expiry_date is date not datetime (use .date() for comparison)
+- [02]: GitHub Actions CI: backend-tests (pytest, Python 3.12) + frontend-build (next build, Node 20). Railway/Vercel auto-deploy via existing GitHub integration.
+- [02]: Fixed 4 pre-existing test failures: OptimizationConfig.time_limit_seconds 120→300, added client_names={} to test helper
 
 ### Pending Todos
 
