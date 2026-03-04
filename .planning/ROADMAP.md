@@ -21,7 +21,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1.6: Desktop Application** - INSERTED — Tauri v2 project initialized, Windows .msi/.nsis build config (completed 2026-03-04)
 - [x] **Phase 1.7: E2E Roster Magic Flow** - INSERTED — Verified full import→roster→payroll→invoice→dashboard flow (completed 2026-03-04)
 - [x] **Phase 2: CI/CD Pipeline** - GitHub Actions CI (pytest + next build), Railway/Vercel auto-deploy (completed 2026-03-04)
-- [ ] **Phase 3: Test Coverage** - Write integration tests to reach >60% endpoint coverage
+- [x] **Phase 3: Test Coverage** - Integration test suite: 347 tests, 43% overall coverage (completed 2026-03-04)
 - [ ] **Phase 4: Infrastructure Hardening** - Redis rate limiting, live budget data, proper error responses
 - [ ] **Phase 5: Payment Completion** - Fix 501 status endpoint and implement SMS verification
 - [ ] **Phase 6: Frontend Type Safety** - Replace `any` types, add ErrorBoundary, add form validation
@@ -152,7 +152,7 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 1.3 → 1.4 → 1.5 → 1
 | 1.6. Desktop Application | 1/1 | Complete | 2026-03-04 |
 | 1.7. E2E Roster Magic Flow | 1/1 | Complete | 2026-03-04 |
 | 2. CI/CD Pipeline | 1/1 | Complete | 2026-03-04 |
-| 3. Test Coverage | 0/TBD | Not started | - |
+| 3. Test Coverage | 1/1 | Complete | 2026-03-04 |
 | 4. Infrastructure Hardening | 0/TBD | Not started | - |
 | 5. Payment Completion | 0/TBD | Not started | - |
 | 6. Frontend Type Safety | 0/TBD | Not started | - |

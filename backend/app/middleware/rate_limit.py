@@ -1,21 +1,41 @@
 """
 Rate limiting middleware for RostraCore API.
 
-This middleware provides protection against brute force attacks by limiting
-the number of requests from a single IP address within a time window.
-
-For MVP: Uses in-memory storage (resets on server restart)
-For Production: Should be upgraded to Redis for distributed rate limiting
+Uses Redis for distributed rate limiting that persists across restarts.
+Falls back to in-memory storage if Redis is unavailable.
 """
 
 import time
-from typing import Dict, Tuple
+import logging
+from typing import Dict, Tuple, Optional
 from collections import defaultdict
-from fastapi import Request, HTTPException, status
+from fastapi import Request, status
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
 from app.config import settings
+
+logger = logging.getLogger(__name__)
+
+
+def _get_redis_client():
+    """Get a Redis client, or None if Redis is unavailable."""
+    try:
+        import redis
+        client = redis.Redis(
+            host=settings.REDIS_HOST,
+            port=settings.REDIS_PORT,
+            db=settings.REDIS_DB,
+            password=settings.REDIS_PASSWORD,
+            socket_connect_timeout=2,
+            socket_timeout=2,
+            decode_responses=True,
+        )
+        client.ping()
+        return client
+    except Exception as e:
+        logger.warning(f"Redis unavailable for rate limiting, using in-memory fallback: {e}")
+        return None
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
@@ -27,15 +47,18 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     - Per hour limit (default: 1000 requests)
 
     Storage:
-    - MVP: In-memory dictionary (simple, but resets on restart)
-    - Production: Should use Redis for distributed systems
+    - Primary: Redis (persists across restarts, works in distributed deployments)
+    - Fallback: In-memory dictionary (if Redis is unavailable)
     """
 
     def __init__(self, app):
         super().__init__(app)
 
-        # In-memory storage: {ip_address: [(timestamp, count)]}
-        self.request_history: Dict[str, list] = defaultdict(list)
+        # Try to connect to Redis
+        self._redis: Optional[object] = _get_redis_client()
+
+        # In-memory fallback storage
+        self._memory_store: Dict[str, list] = defaultdict(list)
 
         # Rate limits from config
         self.per_minute_limit = settings.RATE_LIMIT_PER_MINUTE
@@ -50,131 +73,116 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             "/openapi.json",
         ]
 
-    def _get_client_ip(self, request: Request) -> str:
-        """
-        Extract client IP address from request.
+        storage_type = "Redis" if self._redis else "in-memory"
+        logger.info(f"Rate limiter initialized with {storage_type} storage")
 
-        Handles proxy headers (X-Forwarded-For) for deployments behind
-        load balancers or reverse proxies.
-        """
-        # Check for X-Forwarded-For header (proxy/load balancer)
+    def _get_client_ip(self, request: Request) -> str:
+        """Extract client IP from request, handling proxy headers."""
         forwarded_for = request.headers.get("X-Forwarded-For")
         if forwarded_for:
-            # X-Forwarded-For can contain multiple IPs, take the first one
             return forwarded_for.split(",")[0].strip()
 
-        # Check for X-Real-IP header (nginx)
         real_ip = request.headers.get("X-Real-IP")
         if real_ip:
             return real_ip
 
-        # Fall back to direct client IP
         if request.client:
             return request.client.host
 
         return "unknown"
 
-    def _clean_old_entries(self, ip: str, current_time: float):
-        """
-        Remove entries older than 1 hour to prevent memory bloat.
+    def _check_rate_limit_redis(self, ip: str, current_time: float) -> Tuple[bool, str, int]:
+        """Check rate limit using Redis sliding window."""
+        try:
+            minute_key = f"rate:{ip}:minute"
+            hour_key = f"rate:{ip}:hour"
+            now_ms = int(current_time * 1000)
 
-        This keeps the in-memory storage size manageable.
-        """
-        one_hour_ago = current_time - 3600
+            pipe = self._redis.pipeline()
 
-        if ip in self.request_history:
-            self.request_history[ip] = [
-                (timestamp, count)
-                for timestamp, count in self.request_history[ip]
-                if timestamp > one_hour_ago
-            ]
+            # Remove expired entries and count remaining
+            one_minute_ago = now_ms - 60_000
+            one_hour_ago = now_ms - 3_600_000
 
-            # Remove IP entirely if no recent requests
-            if not self.request_history[ip]:
-                del self.request_history[ip]
+            # Minute window
+            pipe.zremrangebyscore(minute_key, 0, one_minute_ago)
+            pipe.zcard(minute_key)
 
-    def _check_rate_limit(self, ip: str, current_time: float) -> Tuple[bool, str, int]:
-        """
-        Check if IP has exceeded rate limits.
+            # Hour window
+            pipe.zremrangebyscore(hour_key, 0, one_hour_ago)
+            pipe.zcard(hour_key)
 
-        Returns:
-            (is_allowed, error_message, retry_after_seconds)
-        """
-        # Clean old entries first
-        self._clean_old_entries(ip, current_time)
+            results = pipe.execute()
+            minute_count = results[1]
+            hour_count = results[3]
 
-        # Calculate time windows
+            # Check per-minute limit
+            if minute_count >= self.per_minute_limit:
+                return (False, f"Rate limit exceeded: {self.per_minute_limit} requests per minute", 60)
+
+            # Check per-hour limit
+            if hour_count >= self.per_hour_limit:
+                return (False, f"Rate limit exceeded: {self.per_hour_limit} requests per hour", 300)
+
+            # Record this request
+            pipe2 = self._redis.pipeline()
+            pipe2.zadd(minute_key, {str(now_ms): now_ms})
+            pipe2.expire(minute_key, 120)  # TTL: 2 minutes
+            pipe2.zadd(hour_key, {str(now_ms): now_ms})
+            pipe2.expire(hour_key, 7200)  # TTL: 2 hours
+            pipe2.execute()
+
+            return (True, "", 0)
+
+        except Exception as e:
+            logger.warning(f"Redis rate limit check failed, allowing request: {e}")
+            return (True, "", 0)
+
+    def _check_rate_limit_memory(self, ip: str, current_time: float) -> Tuple[bool, str, int]:
+        """Check rate limit using in-memory storage (fallback)."""
         one_minute_ago = current_time - 60
         one_hour_ago = current_time - 3600
 
-        # Count requests in each window
-        requests_last_minute = sum(
-            count for timestamp, count in self.request_history[ip]
-            if timestamp > one_minute_ago
-        )
+        # Clean old entries
+        if ip in self._memory_store:
+            self._memory_store[ip] = [t for t in self._memory_store[ip] if t > one_hour_ago]
+            if not self._memory_store[ip]:
+                del self._memory_store[ip]
 
-        requests_last_hour = sum(
-            count for timestamp, count in self.request_history[ip]
-            if timestamp > one_hour_ago
-        )
+        entries = self._memory_store.get(ip, [])
 
-        # Check per-minute limit
-        if requests_last_minute >= self.per_minute_limit:
-            return (
-                False,
-                f"Rate limit exceeded: {self.per_minute_limit} requests per minute",
-                60  # Retry after 1 minute
-            )
+        minute_count = sum(1 for t in entries if t > one_minute_ago)
+        hour_count = len(entries)
 
-        # Check per-hour limit
-        if requests_last_hour >= self.per_hour_limit:
-            # Calculate when the oldest request in the hour will expire
-            oldest_timestamp = min(
-                timestamp for timestamp, _ in self.request_history[ip]
-                if timestamp > one_hour_ago
-            )
-            retry_after = int(oldest_timestamp + 3600 - current_time)
+        if minute_count >= self.per_minute_limit:
+            return (False, f"Rate limit exceeded: {self.per_minute_limit} requests per minute", 60)
 
-            return (
-                False,
-                f"Rate limit exceeded: {self.per_hour_limit} requests per hour",
-                retry_after
-            )
+        if hour_count >= self.per_hour_limit:
+            return (False, f"Rate limit exceeded: {self.per_hour_limit} requests per hour", 300)
+
+        # Record request
+        self._memory_store[ip].append(current_time)
 
         return (True, "", 0)
 
-    def _record_request(self, ip: str, current_time: float):
-        """Record a new request from the IP."""
-        self.request_history[ip].append((current_time, 1))
-
     async def dispatch(self, request: Request, call_next):
-        """
-        Process each request through rate limiting.
-
-        Skips rate limiting if:
-        - Feature is disabled (ENABLE_RATE_LIMITING=False)
-        - Path is whitelisted (health checks, docs, etc.)
-        """
-        # Skip rate limiting if disabled
+        """Process each request through rate limiting."""
         if not settings.ENABLE_RATE_LIMITING:
             return await call_next(request)
 
-        # Skip rate limiting for whitelisted paths
         if request.url.path in self.whitelist_paths:
             return await call_next(request)
 
-        # Get client IP
         client_ip = self._get_client_ip(request)
         current_time = time.time()
 
-        # Check rate limit
-        is_allowed, error_message, retry_after = self._check_rate_limit(
-            client_ip,
-            current_time
-        )
+        # Use Redis if available, otherwise fall back to memory
+        if self._redis:
+            is_allowed, error_message, retry_after = self._check_rate_limit_redis(client_ip, current_time)
+        else:
+            is_allowed, error_message, retry_after = self._check_rate_limit_memory(client_ip, current_time)
 
         if not is_allowed:
-            # Rate limit exceeded - return 429 Too Many Requests
             return JSONResponse(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 content={
@@ -189,13 +197,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 }
             )
 
-        # Record this request
-        self._record_request(client_ip, current_time)
-
-        # Process request
         response = await call_next(request)
-
-        # Add rate limit headers to response
         response.headers["X-RateLimit-Limit-Minute"] = str(self.per_minute_limit)
         response.headers["X-RateLimit-Limit-Hour"] = str(self.per_hour_limit)
 
@@ -205,73 +207,68 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 class LoginRateLimiter:
     """
     Specialized rate limiter for login attempts.
+    Uses Redis when available, in-memory fallback otherwise.
 
-    This is stricter than the general API rate limiter to prevent
-    brute force password attacks.
-
-    Limits:
-    - 5 failed login attempts per IP per 15 minutes
-    - Account lockout after MAX_LOGIN_ATTEMPTS (handled separately)
+    Limits: 5 failed login attempts per IP per 15 minutes.
     """
 
     def __init__(self):
-        # In-memory storage: {ip_address: [(timestamp, was_successful)]}
-        self.login_attempts: Dict[str, list] = defaultdict(list)
-
-        # Limits
+        self._redis = _get_redis_client()
+        self._memory_store: Dict[str, list] = defaultdict(list)
         self.max_attempts = 5
         self.window_seconds = 900  # 15 minutes
 
-    def _clean_old_attempts(self, ip: str, current_time: float):
-        """Remove login attempts older than the time window."""
-        cutoff_time = current_time - self.window_seconds
-
-        if ip in self.login_attempts:
-            self.login_attempts[ip] = [
-                (timestamp, success)
-                for timestamp, success in self.login_attempts[ip]
-                if timestamp > cutoff_time
-            ]
-
-            if not self.login_attempts[ip]:
-                del self.login_attempts[ip]
-
     def check_and_record(self, ip: str, was_successful: bool) -> Tuple[bool, int]:
-        """
-        Check if login is allowed and record the attempt.
+        """Check if login is allowed and record the attempt."""
+        if self._redis:
+            return self._check_redis(ip, was_successful)
+        return self._check_memory(ip, was_successful)
 
-        Returns:
-            (is_allowed, remaining_attempts)
-        """
+    def _check_redis(self, ip: str, was_successful: bool) -> Tuple[bool, int]:
+        """Redis-backed login rate check."""
+        try:
+            key = f"login_fails:{ip}"
+            failed_count = self._redis.get(key)
+            failed_count = int(failed_count) if failed_count else 0
+
+            if failed_count >= self.max_attempts:
+                ttl = self._redis.ttl(key)
+                return (False, max(ttl, 0))
+
+            if not was_successful:
+                pipe = self._redis.pipeline()
+                pipe.incr(key)
+                pipe.expire(key, self.window_seconds)
+                pipe.execute()
+
+            remaining = self.max_attempts - failed_count - (0 if was_successful else 1)
+            return (True, remaining)
+        except Exception:
+            return (True, self.max_attempts)
+
+    def _check_memory(self, ip: str, was_successful: bool) -> Tuple[bool, int]:
+        """In-memory login rate check (fallback)."""
         current_time = time.time()
+        cutoff = current_time - self.window_seconds
 
-        # Clean old attempts
-        self._clean_old_attempts(ip, current_time)
+        if ip in self._memory_store:
+            self._memory_store[ip] = [
+                (ts, ok) for ts, ok in self._memory_store[ip] if ts > cutoff
+            ]
+            if not self._memory_store[ip]:
+                del self._memory_store[ip]
 
-        # Count recent failed attempts
-        failed_attempts = sum(
-            1 for _, success in self.login_attempts.get(ip, [])
-            if not success
-        )
+        failed = sum(1 for _, ok in self._memory_store.get(ip, []) if not ok)
 
-        # Check if limit exceeded
-        if failed_attempts >= self.max_attempts:
-            # Calculate retry after time
-            oldest_attempt = min(
-                timestamp for timestamp, _ in self.login_attempts[ip]
-            )
-            retry_after = int(oldest_attempt + self.window_seconds - current_time)
-
+        if failed >= self.max_attempts:
+            oldest = min(ts for ts, _ in self._memory_store[ip])
+            retry_after = int(oldest + self.window_seconds - current_time)
             return (False, retry_after)
 
-        # Record this attempt
-        self.login_attempts[ip].append((current_time, was_successful))
-
-        # Calculate remaining attempts
-        remaining = self.max_attempts - failed_attempts - (0 if was_successful else 1)
-
+        self._memory_store.setdefault(ip, []).append((current_time, was_successful))
+        remaining = self.max_attempts - failed - (0 if was_successful else 1)
         return (True, remaining)
 
 
-# Global instance for login rate limiting
+# Global instance
 login_rate_limiter = LoginRateLimiter()

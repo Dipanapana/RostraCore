@@ -1,7 +1,9 @@
 """Main FastAPI application."""
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from app.config import settings
 from app.api.endpoints import employees, sites, shifts, availability, certifications, payroll, roster, roster_templates, dashboard, auth, exports, settings as settings_endpoint, organizations, organization_approval, organization_users, organization_settings, clients, payments, superadmin_analytics, subscriptions, subscription_plans, dashboards, superadmin_auth, invoices, reports, roster_preferences, superadmin, staffing_profiles, availability_patterns, system_settings, shift_patterns, leave, payroll_deductions, test_data, attendance, incidents, notifications, patrols, guard_restrictions, exceptions, performance, shift_swaps, inspections, assets, geofence, visitors, key_holding, comm_log, cert_alerts, occurrence_book, documents, training, contract_values, fleet, daily_activity, disciplinary, announcements, maintenance, sla_compliance, deployment_history, overtime, client_reports, workforce_forecast, compliance_calendar, budgets, emergency_contacts, site_profitability, iod, payroll_reports, contract_compliance, shift_handovers, incident_analytics, site_risk, patrol_analytics, skills_matrix, availability_heatmap, client_satisfaction, shift_costs, revenue_dashboard, deployment_map, ops_summary, biometric, emergency, lone_worker, messaging, client_portal, report_schedules, post_orders, psira_compliance, popia, firearms, custom_forms, location, role_permissions
 from app.middleware import RateLimitMiddleware, ForceHTTPSRedirectMiddleware
@@ -98,6 +100,26 @@ app.add_middleware(RateLimitMiddleware)
 # HTTPS redirect middleware - Forces HTTPS in redirect Location headers
 # This fixes Mixed Content errors when behind Railway's SSL termination proxy
 app.add_middleware(ForceHTTPSRedirectMiddleware)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Return 400 with descriptive error messages for invalid payloads."""
+    errors = []
+    for error in exc.errors():
+        field = " → ".join(str(loc) for loc in error["loc"] if loc != "body")
+        errors.append({
+            "field": field or "request",
+            "message": error["msg"],
+            "type": error["type"],
+        })
+    return JSONResponse(
+        status_code=400,
+        content={
+            "detail": "Invalid request data",
+            "errors": errors,
+        },
+    )
 
 
 @app.get("/")
