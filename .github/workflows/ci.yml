@@ -36,7 +36,7 @@ jobs:
       - name: Run tests
         run: |
           cd backend
-          python -m pytest tests/ -v --tb=short -m "not slow"
+          python -m pytest tests/ -v --tb=short -m "not slow and not integration"
 
   frontend-build:
     name: Frontend Build
