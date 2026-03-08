@@ -84,6 +84,7 @@ import {
   Lock,
   HelpCircle,
   FileSpreadsheet,
+  Inbox,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { usePermissions } from "@/context/PermissionsContext";
@@ -586,6 +587,14 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Clients & Sites",
         href: "/clients",
         icon: Building,
+        roles: MANAGEMENT_ROLES,
+        permissionKey: "clients.view",
+      },
+      {
+        key: "client-requests",
+        label: "Client Requests",
+        href: "/client-requests",
+        icon: Inbox,
         roles: MANAGEMENT_ROLES,
         permissionKey: "clients.view",
       },

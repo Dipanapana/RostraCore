@@ -70,6 +70,7 @@ from app.models.custom_form import FormTemplate, FormSubmission, FormStatus
 from app.models.role_permission import OrganizationRolePermission
 from app.models.roster_upload_log import RosterUploadLog
 from app.models.payment_transaction import PaymentTransaction, PaymentGateway, TransactionStatus
+from app.models.client_request import ClientRequest
 
 __all__ = [
     "User",
@@ -205,4 +206,5 @@ __all__ = [
     "PaymentTransaction",
     "PaymentGateway",
     "TransactionStatus",
+    "ClientRequest",
 ]

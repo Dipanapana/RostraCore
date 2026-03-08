@@ -232,7 +232,10 @@ with engine.begin() as conn:
         ]:
             conn.execute(text(f"DELETE FROM {table} WHERE org_id = :oid"), {"oid": org_id})
         # Delete admin user
-        conn.execute(text("DELETE FROM users WHERE org_id = :oid AND username = 'mafoko_admin'"), {"oid": org_id})
+        conn.execute(text(
+            "DELETE FROM users WHERE org_id = :oid AND username IN "
+            "('mafoko_admin', 'mafoko_scheduler', 'mafoko_finance', 'mafoko_guard')"
+        ), {"oid": org_id})
         print("  -> Cleaned existing data")
     else:
         result = conn.execute(text("""
@@ -283,6 +286,39 @@ with engine.begin() as conn:
         print("  -> Created admin user (mafoko_admin / Mafoko2026!)")
     else:
         print(f"  -> Admin user already exists (user_id={existing_user[0]})")
+        pwd_hash = hash_password("Mafoko2026!")
+
+    # Create additional role-based users
+    EXTRA_USERS = [
+        {"username": "mafoko_scheduler", "email": "scheduler@mafokosecurity.co.za",
+         "full_name": "Roster Scheduler", "role": "scheduler", "is_owner": False},
+        {"username": "mafoko_finance", "email": "finance@mafokosecurity.co.za",
+         "full_name": "Finance Officer", "role": "finance", "is_owner": False},
+        {"username": "mafoko_guard", "email": "guard@mafokosecurity.co.za",
+         "full_name": "Guard User", "role": "guard", "is_owner": False},
+    ]
+    for u in EXTRA_USERS:
+        exists = conn.execute(text(
+            "SELECT user_id FROM users WHERE username = :uname"
+        ), {"uname": u["username"]}).fetchone()
+        if not exists:
+            conn.execute(text("""
+                INSERT INTO users (
+                    username, email, hashed_password, full_name,
+                    role, org_id, is_owner, is_active, is_email_verified,
+                    failed_login_attempts
+                ) VALUES (
+                    :uname, :email, :pwd, :full_name,
+                    :role, :oid, :is_owner, true, true, 0
+                )
+            """), {
+                "uname": u["username"], "email": u["email"],
+                "pwd": pwd_hash, "full_name": u["full_name"],
+                "role": u["role"], "oid": org_id, "is_owner": u["is_owner"],
+            })
+            print(f"  -> Created {u['role']} user ({u['username']} / Mafoko2026!)")
+        else:
+            print(f"  -> {u['username']} already exists")
 
 
 # --Phase 3: 100 Employees ------------------------------------
@@ -907,7 +943,8 @@ print("\n" + "=" * 70)
 print("  SEEDING COMPLETE!")
 print("=" * 70)
 print(f"  Organization: Mafoko Security Patrols (org_id={org_id})")
-print(f"  Admin Login:  mafoko_admin / Mafoko2026!")
+print(f"  Logins:       mafoko_admin / mafoko_scheduler / mafoko_finance / mafoko_guard")
+print(f"  Password:     Mafoko2026!")
 print(f"  Employees:    {len(employees)}")
 print(f"  Clients:      {len(CLIENTS)}")
 print(f"  Sites:        {len(site_data)}")

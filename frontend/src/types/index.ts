@@ -415,3 +415,27 @@ export interface AvailabilityQueryParams {
   skip?: number
   limit?: number
 }
+
+export type ClientRequestType = 'extra_guards' | 'shift_change' | 'incident_report' | 'contract_change' | 'general'
+export type ClientRequestPriority = 'low' | 'medium' | 'high' | 'urgent'
+export type ClientRequestStatus = 'open' | 'in_progress' | 'resolved' | 'cancelled'
+
+export interface ClientRequest {
+  request_id: number
+  client_id: number
+  client_name: string | null
+  site_id: number | null
+  site_name: string | null
+  requested_by: string
+  request_type: ClientRequestType
+  subject: string
+  description: string | null
+  priority: ClientRequestPriority
+  status: ClientRequestStatus
+  assigned_to_user_id: number | null
+  assigned_to_name: string | null
+  resolution_notes: string | null
+  created_at: string
+  updated_at: string | null
+  resolved_at: string | null
+}

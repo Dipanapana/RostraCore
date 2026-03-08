@@ -46,7 +46,6 @@ export default function Navbar() {
             <nav className="hidden md:flex items-center gap-8">
               {[
                 { label: 'Features', href: '#features' },
-                { label: 'Pricing', href: '#pricing' },
               ].map((item) => (
                 <a
                   key={item.label}
@@ -91,7 +90,6 @@ export default function Navbar() {
           <div className="glass-panel rounded-xl p-4 space-y-4 flex flex-col animate-slide-up">
             {[
               { label: 'Features', href: '#features' },
-              { label: 'Pricing', href: '#pricing' },
             ].map((item) => (
               <a
                 key={item.label}

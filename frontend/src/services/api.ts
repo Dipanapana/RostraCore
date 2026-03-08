@@ -854,6 +854,15 @@ export const maintenanceApi = {
   dashboard: (days?: number) => api.get('/api/v1/maintenance/dashboard/', { params: { days } }),
 }
 
+export const clientRequestsApi = {
+  list: (params?: { client_id?: number; status?: string; priority?: string; request_type?: string; search?: string; limit?: number; offset?: number }) =>
+    api.get('/api/v1/client-requests/', { params }),
+  get: (id: number) => api.get(`/api/v1/client-requests/${id}`),
+  create: (data: Record<string, unknown>) => api.post('/api/v1/client-requests/', data),
+  update: (id: number, data: Record<string, unknown>) => api.put(`/api/v1/client-requests/${id}`, data),
+  remove: (id: number) => api.delete(`/api/v1/client-requests/${id}`),
+}
+
 export const slaApi = {
   list: (params?: { site_id?: number; status?: string; year?: number; month?: number }) =>
     api.get('/api/v1/sla/', { params }),
