@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import Sidebar from '@/components/layout/Sidebar'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 import PageHeader from '@/components/ui/PageHeader'
 import {
   FileText,
@@ -171,20 +171,18 @@ export default function PayslipDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <Sidebar />
-        <main className="flex-1 p-8 ml-64 flex items-center justify-center">
+      <DashboardLayout>
+        <div className="flex-1 p-8 flex items-center justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-        </main>
-      </div>
+        </div>
+      </DashboardLayout>
     )
   }
 
   if (error || !payroll) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <Sidebar />
-        <main className="flex-1 p-8 ml-64">
+      <DashboardLayout>
+        <div className="flex-1 p-8">
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-red-600" />
             <span className="text-red-700">{error || 'Payroll not found'}</span>
@@ -192,8 +190,8 @@ export default function PayslipDetailPage() {
           <div className="mt-4">
             <PageHeader backHref="/payroll" backLabel="Back to Payroll" />
           </div>
-        </main>
-      </div>
+        </div>
+      </DashboardLayout>
     )
   }
 
@@ -256,9 +254,8 @@ export default function PayslipDetailPage() {
   const employeeNumber = emp.employee_number || `EMP${String(emp.employee_id || 0).padStart(4, '0')}`
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      <main className="flex-1 p-8 ml-64">
+    <DashboardLayout>
+      <main className="flex-1 p-8">
         {/* Page Header with actions */}
         <div className="mb-6 print:hidden">
           <PageHeader
@@ -485,6 +482,6 @@ export default function PayslipDetailPage() {
           </div>
         </div>
       </main>
-    </div>
+    </DashboardLayout>
   )
 }

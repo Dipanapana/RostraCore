@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { overtimeApi, sitesApi, employeesApi } from '@/services/api'
 import { Timer, Plus, BarChart3, Edit, Trash2, CheckCircle, XCircle, Clock } from 'lucide-react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 function formatZAR(cents: number | null) {
   if (cents == null) return '—'
@@ -111,9 +112,10 @@ export default function OvertimePage() {
     hours: '', rate_multiplier: '1.5', hourly_rate: '', reason: '',
   })
 
-  if (loading) return <div className="p-8 text-gray-500">Loading...</div>
+  if (loading) return <DashboardLayout><div className="p-8 text-gray-500">Loading...</div></DashboardLayout>
 
   return (
+    <DashboardLayout>
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -360,5 +362,6 @@ export default function OvertimePage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

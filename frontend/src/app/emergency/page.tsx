@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { emergencyApi } from "@/services/api";
 import PageHeader from "@/components/ui/PageHeader";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 import {
   Siren,
   CheckCircle,
@@ -230,18 +231,19 @@ export default function EmergencyPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
-      </div>
+      <DashboardLayout>
+        <div className="flex h-[60vh] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+        </div>
+      </DashboardLayout>
     );
   }
 
   return (
+    <DashboardLayout>
     <div className="space-y-6">
       {/* Header */}
       <PageHeader
-        backHref="/dashboard"
-        backLabel="Back to Dashboard"
         title="Emergency Alerts"
         subtitle="Command center for panic/duress alerts and emergency response"
         icon={<Siren className={activeCount > 0 ? "text-red-500 animate-pulse" : "text-gray-400"} size={28} />}
@@ -477,5 +479,6 @@ export default function EmergencyPage() {
         />
       )}
     </div>
+    </DashboardLayout>
   );
 }

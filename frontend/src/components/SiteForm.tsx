@@ -133,10 +133,11 @@ export default function SiteForm({ site, onClose, onSuccess }: SiteFormProps) {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="site_name" className="block text-sm font-medium text-gray-700 mb-1">
                   Site Name <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id="site_name"
                   type="text"
                   name="site_name"
                   value={formData.site_name}
@@ -148,7 +149,7 @@ export default function SiteForm({ site, onClose, onSuccess }: SiteFormProps) {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="client_name" className="block text-sm font-medium text-gray-700 mb-1">
                   Client <span className="text-red-500">*</span>
                 </label>
                 {loadingClients ? (
@@ -161,6 +162,7 @@ export default function SiteForm({ site, onClose, onSuccess }: SiteFormProps) {
                   </div>
                 ) : (
                   <select
+                    id="client_name"
                     name="client_name"
                     value={formData.client_name}
                     onChange={handleChange}
@@ -178,10 +180,11 @@ export default function SiteForm({ site, onClose, onSuccess }: SiteFormProps) {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
                   Address <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id="address"
                   type="text"
                   name="address"
                   value={formData.address}
@@ -193,10 +196,11 @@ export default function SiteForm({ site, onClose, onSuccess }: SiteFormProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="gps_lat" className="block text-sm font-medium text-gray-700 mb-1">
                   GPS Latitude
                 </label>
                 <input
+                  id="gps_lat"
                   type="number"
                   name="gps_lat"
                   value={formData.gps_lat}
@@ -210,10 +214,11 @@ export default function SiteForm({ site, onClose, onSuccess }: SiteFormProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="gps_lng" className="block text-sm font-medium text-gray-700 mb-1">
                   GPS Longitude
                 </label>
                 <input
+                  id="gps_lng"
                   type="number"
                   name="gps_lng"
                   value={formData.gps_lng}
@@ -227,10 +232,11 @@ export default function SiteForm({ site, onClose, onSuccess }: SiteFormProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="shift_pattern" className="block text-sm font-medium text-gray-700 mb-1">
                   Shift Pattern
                 </label>
                 <select
+                  id="shift_pattern"
                   name="shift_pattern"
                   value={formData.shift_pattern}
                   onChange={handleChange}
@@ -246,10 +252,11 @@ export default function SiteForm({ site, onClose, onSuccess }: SiteFormProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="required_skill" className="block text-sm font-medium text-gray-700 mb-1">
                   Required Skill
                 </label>
                 <select
+                  id="required_skill"
                   name="required_skill"
                   value={formData.required_skill}
                   onChange={handleChange}
@@ -266,10 +273,11 @@ export default function SiteForm({ site, onClose, onSuccess }: SiteFormProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="billing_rate" className="block text-sm font-medium text-gray-700 mb-1">
                   Billing Rate (per hour)
                 </label>
                 <input
+                  id="billing_rate"
                   type="number"
                   name="billing_rate"
                   value={formData.billing_rate}
@@ -282,10 +290,11 @@ export default function SiteForm({ site, onClose, onSuccess }: SiteFormProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="min_staff" className="block text-sm font-medium text-gray-700 mb-1">
                   Minimum Staff <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id="min_staff"
                   type="number"
                   name="min_staff"
                   value={formData.min_staff}
@@ -297,10 +306,11 @@ export default function SiteForm({ site, onClose, onSuccess }: SiteFormProps) {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
                   Notes
                 </label>
                 <textarea
+                  id="notes"
                   name="notes"
                   value={formData.notes}
                   onChange={handleChange}

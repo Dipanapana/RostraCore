@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { documentsApi } from '@/services/api'
 import { employeesApi } from '@/services/api'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -179,6 +180,7 @@ export default function DocumentsPage() {
   // ── render ──
 
   return (
+    <DashboardLayout>
     <div className="p-4 md:p-6 space-y-6 max-w-[1400px] mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -437,5 +439,6 @@ export default function DocumentsPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

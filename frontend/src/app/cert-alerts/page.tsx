@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { certAlertsApi } from '@/services/api'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 import {
   AlertTriangle,
   AlertCircle,
@@ -99,6 +100,7 @@ export default function CertAlertsPage() {
   }
 
   return (
+    <DashboardLayout>
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-gray-900">Certification Alerts</h1>
@@ -335,5 +337,6 @@ export default function CertAlertsPage() {
         <div className="text-center py-12 text-gray-400">{loading ? 'Loading...' : 'No data'}</div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

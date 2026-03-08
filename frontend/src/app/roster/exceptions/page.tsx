@@ -13,6 +13,7 @@ import {
   X,
   ChevronDown,
 } from 'lucide-react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 interface ShiftException {
   exception_id: number
@@ -185,6 +186,7 @@ export default function ExceptionsPage() {
   }
 
   return (
+    <DashboardLayout>
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -514,5 +516,6 @@ export default function ExceptionsPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

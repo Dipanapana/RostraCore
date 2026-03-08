@@ -13,6 +13,7 @@ import {
   CheckCircle,
   Eye,
 } from 'lucide-react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 interface DAR {
   report_id: number
@@ -179,6 +180,7 @@ export default function DailyActivityPage() {
   }
 
   return (
+    <DashboardLayout>
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -556,5 +558,6 @@ export default function DailyActivityPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

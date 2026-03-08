@@ -9,7 +9,8 @@ import DashboardLayout from '@/components/layout/DashboardLayout'
 import DataTable, { Column } from '@/components/ui/DataTable'
 import Modal from '@/components/ui/Modal'
 import Link from 'next/link'
-import { Plus, Pencil, Trash2, Upload, Download, Calendar, Eye } from 'lucide-react'
+import { Plus, Pencil, Trash2, Upload, Download, Calendar, Eye, Users } from 'lucide-react'
+import TableSkeleton from '@/components/ui/TableSkeleton'
 import EmployeeAvailabilityPatterns from '@/components/EmployeeAvailabilityPatterns'
 
 export default function EmployeesPage() {
@@ -208,8 +209,12 @@ export default function EmployeesPage() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600"></div>
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="animate-pulse">
+            <div className="h-7 w-40 bg-gray-200 rounded mb-2" />
+            <div className="h-4 w-64 bg-gray-100 rounded" />
+          </div>
+          <TableSkeleton rows={8} columns={5} />
         </div>
       </DashboardLayout>
     )
@@ -256,6 +261,16 @@ export default function EmployeesPage() {
           data={employees}
           columns={columns}
           searchKeys={['first_name', 'last_name', 'id_number', 'role', 'status']}
+          emptyMessage="No employees yet"
+          emptyAction={
+            <button
+              onClick={() => setShowForm(true)}
+              className="mt-1 inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Add Employee
+            </button>
+          }
           actions={(emp) => (
             <>
               <button
@@ -265,6 +280,7 @@ export default function EmployeesPage() {
                 }}
                 className="p-2 text-gray-400 hover:text-green-500 hover:bg-green-50 rounded-lg transition-colors"
                 title="Availability"
+                aria-label="Availability"
               >
                 <Calendar className="w-4 h-4" />
               </button>
@@ -273,6 +289,7 @@ export default function EmployeesPage() {
                 onClick={(e) => e.stopPropagation()}
                 className="p-2 text-gray-400 hover:text-violet-500 hover:bg-violet-50 rounded-lg transition-colors inline-flex"
                 title="View Profile"
+                aria-label="View Profile"
               >
                 <Eye className="w-4 h-4" />
               </Link>
@@ -283,6 +300,7 @@ export default function EmployeesPage() {
                 }}
                 className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
                 title="Edit"
+                aria-label="Edit"
               >
                 <Pencil className="w-4 h-4" />
               </button>
@@ -293,6 +311,7 @@ export default function EmployeesPage() {
                 }}
                 className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                 title="Delete"
+                aria-label="Delete"
               >
                 <Trash2 className="w-4 h-4" />
               </button>

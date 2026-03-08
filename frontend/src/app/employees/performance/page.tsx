@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { performanceDashboardApi } from '@/services/api'
 import { Activity, Star, AlertTriangle, Users, Award } from 'lucide-react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 const SCORE_LABELS: Record<number, string> = { 1: 'Poor', 2: 'Below Avg', 3: 'Average', 4: 'Good', 5: 'Excellent' }
 const SCORE_COLORS: Record<number, string> = {
@@ -55,6 +56,7 @@ export default function PerformanceDashboardPage() {
   const maxDistCount = Math.max(...Object.values(data.score_distribution as Record<number, number>), 1)
 
   return (
+    <DashboardLayout>
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -207,5 +209,6 @@ export default function PerformanceDashboardPage() {
         </div>
       </div>
     </div>
+    </DashboardLayout>
   )
 }

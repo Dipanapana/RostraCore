@@ -142,3 +142,14 @@ body {
   color: #94a3b8;
   opacity: 0.5;
 }
+
+/* Accessible focus indicators for keyboard navigation */
+:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+}

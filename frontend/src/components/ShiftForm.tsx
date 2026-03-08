@@ -123,10 +123,11 @@ export default function ShiftForm({ shift, onClose, onSuccess }: ShiftFormProps)
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="site_id" className="block text-sm font-medium text-gray-700 mb-1">
                   Site <span className="text-red-500">*</span>
                 </label>
                 <select
+                  id="site_id"
                   name="site_id"
                   value={formData.site_id}
                   onChange={handleChange}
@@ -143,10 +144,11 @@ export default function ShiftForm({ shift, onClose, onSuccess }: ShiftFormProps)
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="start_time" className="block text-sm font-medium text-gray-700 mb-1">
                   Start Time <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id="start_time"
                   type="datetime-local"
                   name="start_time"
                   value={formData.start_time}
@@ -157,10 +159,11 @@ export default function ShiftForm({ shift, onClose, onSuccess }: ShiftFormProps)
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="end_time" className="block text-sm font-medium text-gray-700 mb-1">
                   End Time <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id="end_time"
                   type="datetime-local"
                   name="end_time"
                   value={formData.end_time}
@@ -171,10 +174,11 @@ export default function ShiftForm({ shift, onClose, onSuccess }: ShiftFormProps)
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="required_skill" className="block text-sm font-medium text-gray-700 mb-1">
                   Required Skill
                 </label>
                 <select
+                  id="required_skill"
                   name="required_skill"
                   value={formData.required_skill}
                   onChange={handleChange}
@@ -189,10 +193,11 @@ export default function ShiftForm({ shift, onClose, onSuccess }: ShiftFormProps)
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="assigned_employee_id" className="block text-sm font-medium text-gray-700 mb-1">
                   Assign Employee
                 </label>
                 <select
+                  id="assigned_employee_id"
                   name="assigned_employee_id"
                   value={formData.assigned_employee_id}
                   onChange={handleChange}
@@ -208,10 +213,11 @@ export default function ShiftForm({ shift, onClose, onSuccess }: ShiftFormProps)
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
                   Status <span className="text-red-500">*</span>
                 </label>
                 <select
+                  id="status"
                   name="status"
                   value={formData.status}
                   onChange={handleChange}
@@ -226,8 +232,9 @@ export default function ShiftForm({ shift, onClose, onSuccess }: ShiftFormProps)
               </div>
 
               <div className="md:col-span-2">
-                <label className="flex items-center">
+                <label htmlFor="is_overtime" className="flex items-center">
                   <input
+                    id="is_overtime"
                     type="checkbox"
                     name="is_overtime"
                     checked={formData.is_overtime}
@@ -239,10 +246,11 @@ export default function ShiftForm({ shift, onClose, onSuccess }: ShiftFormProps)
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
                   Notes
                 </label>
                 <textarea
+                  id="notes"
                   name="notes"
                   value={formData.notes}
                   onChange={handleChange}

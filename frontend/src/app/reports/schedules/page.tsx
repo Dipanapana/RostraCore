@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { reportScheduleApi } from "@/services/api";
 import PageHeader from "@/components/ui/PageHeader";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 import {
   Calendar,
   Plus,
@@ -206,17 +207,18 @@ export default function ReportSchedulesPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
-      </div>
+      <DashboardLayout>
+        <div className="flex h-[60vh] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+        </div>
+      </DashboardLayout>
     );
   }
 
   return (
+    <DashboardLayout>
     <div className="space-y-6">
       <PageHeader
-        backHref="/reports"
-        backLabel="Back to Reports"
         title="Report Schedules"
         subtitle="Automated report generation and email delivery"
         icon={<Calendar className="text-blue-600" size={28} />}
@@ -277,5 +279,6 @@ export default function ReportSchedulesPage() {
         <CreateModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); loadData(); }} />
       )}
     </div>
+    </DashboardLayout>
   );
 }

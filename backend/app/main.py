@@ -34,6 +34,14 @@ if settings.SENTRY_DSN:
         enable_tracing=True,
     )
 
+# Warn if SECRET_KEY is still the dev default in non-development environments
+if "dev-only" in settings.SECRET_KEY and settings.ENVIRONMENT != "development":
+    import warnings
+    warnings.warn(
+        "SECRET_KEY contains dev default! Set a strong SECRET_KEY in production.",
+        stacklevel=1,
+    )
+
 app = FastAPI(
     title="GuardianOS API",
     description="AI-Powered Security Workforce Management System",

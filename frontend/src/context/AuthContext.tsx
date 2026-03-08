@@ -4,8 +4,6 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/services/api";
 
-import { API_URL } from "@/lib/config";
-
 export interface User {
   user_id: number;
   username: string;
@@ -29,7 +27,14 @@ interface AuthContextType {
   isLoading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  token: null,
+  login: async () => {},
+  logout: async () => {},
+  isAuthenticated: false,
+  isLoading: true,
+});
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -50,12 +55,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUserInfo = async () => {
     try {
-      console.log("[AUTH] Fetching user info from API...");
       const response = await api.get("/api/v1/auth/me");
-      console.log("[AUTH] User info received:", response.data);
       setUser(response.data);
-    } catch (error) {
-      console.error("[AUTH] Not authenticated or session expired");
+    } catch {
       localStorage.removeItem('access_token');
       setToken(null);
       setUser(null);
@@ -66,10 +68,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (username: string, password: string) => {
     try {
-      console.log("[AUTH] 1. Starting login process...");
-      console.log("[AUTH] API_URL:", API_URL);
-
-      // Use URLSearchParams for OAuth2 password flow
       const params = new URLSearchParams();
       params.append('username', username);
       params.append('password', password);
@@ -80,18 +78,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
       });
 
-      console.log("[AUTH] 2. Login successful");
-      console.log("[AUTH] Response:", response.data);
-
       // Store token in localStorage, state, AND as a cookie for Next.js middleware
       if (response.data.access_token) {
-        console.log('[AUTH] Storing token:', response.data.access_token.substring(0, 30) + '...');
         localStorage.setItem('access_token', response.data.access_token);
         setToken(response.data.access_token);
-        // Set cookie so Next.js middleware can check auth (middleware can't access localStorage)
         document.cookie = `access_token=${response.data.access_token}; path=/; max-age=${30 * 60}; samesite=lax`;
-      } else {
-        console.error('[AUTH] No access_token in response!', response.data);
       }
 
       // Set user from response and determine redirect
@@ -100,18 +91,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(response.data.user);
         userRole = response.data.user.role;
       } else {
-        // Fetch user info if not in response
         const userResponse = await api.get("/api/v1/auth/me");
         setUser(userResponse.data);
         userRole = userResponse.data.role;
       }
 
-      // Redirect based on user role (use window.location for full page reload to reinitialize with token)
+      // Redirect based on role (full page reload to reinitialize with token)
       const redirectUrl = userRole?.toLowerCase() === 'superadmin' ? '/superadmin' : '/dashboard';
-      console.log(`[AUTH] 3. Redirecting to ${redirectUrl} (role: ${userRole})...`);
       window.location.href = redirectUrl;
     } catch (error: any) {
-      console.error("Login failed:", error);
       throw new Error(
         error.response?.data?.detail || "Invalid username or password"
       );
@@ -120,10 +108,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      // Call logout endpoint
       await api.post("/api/v1/auth/logout");
-    } catch (error) {
-      console.error("Logout API call failed:", error);
+    } catch {
+      // Non-fatal — clear local state regardless
     } finally {
       // Clear token and user state
       localStorage.removeItem('access_token');
@@ -151,9 +138,5 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
+  return useContext(AuthContext);
 }

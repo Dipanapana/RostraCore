@@ -11,6 +11,7 @@ import {
     CheckCircle,
     Users,
 } from 'lucide-react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 interface HourlyRate {
     psira_grade: string
@@ -128,13 +129,16 @@ export default function HourlyRatesSettings() {
 
     if (loading) {
         return (
+            <DashboardLayout>
             <div className="flex items-center justify-center min-h-[400px]">
                 <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600"></div>
             </div>
+            </DashboardLayout>
         )
     }
 
     return (
+        <DashboardLayout>
         <div className="p-6 space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
@@ -314,5 +318,6 @@ export default function HourlyRatesSettings() {
                 </ul>
             </div>
         </div>
+        </DashboardLayout>
     )
 }

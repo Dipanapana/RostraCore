@@ -37,6 +37,8 @@ from app.auth.security import (
 from app.auth.password_validator import validate_password_strength, get_password_requirements
 from app.services.verification_service import VerificationService
 from app.config import settings
+from app.middleware.rate_limit import login_rate_limiter
+from fastapi import Request
 import secrets
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -170,6 +172,7 @@ def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login")
 def login(
+    request: Request,
     response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
@@ -177,19 +180,20 @@ def login(
     """
     Login with username/email and password.
     Sets httpOnly cookies for secure token storage.
-
-    Args:
-        response: FastAPI Response object
-        form_data: OAuth2 form with username and password
-        db: Database session
-
-    Returns:
-        Success message with user info
-
-    Raises:
-        HTTPException: If credentials are invalid
     """
+    # Rate limit: 5 failed attempts per IP per 15 minutes
+    client_ip = request.headers.get("x-forwarded-for", request.headers.get("x-real-ip", request.client.host if request.client else "unknown"))
+    if "," in client_ip:
+        client_ip = client_ip.split(",")[0].strip()
+
     user = authenticate_user(db, form_data.username, form_data.password)
+
+    allowed, info = login_rate_limiter.check_and_record(client_ip, was_successful=bool(user))
+    if not allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Too many failed login attempts. Try again in {info} seconds.",
+        )
 
     if not user:
         raise HTTPException(
@@ -262,6 +266,7 @@ def login(
 
 @router.post("/login-json")
 def login_json(
+    request: Request,
     response: Response,
     credentials: UserLogin,
     db: Session = Depends(get_db)
@@ -269,16 +274,20 @@ def login_json(
     """
     Login with JSON body (alternative to form data).
     Sets httpOnly cookies for secure token storage.
-
-    Args:
-        response: FastAPI Response object
-        credentials: Login credentials
-        db: Database session
-
-    Returns:
-        Success message with user info
     """
+    # Rate limit: 5 failed attempts per IP per 15 minutes
+    client_ip = request.headers.get("x-forwarded-for", request.headers.get("x-real-ip", request.client.host if request.client else "unknown"))
+    if "," in client_ip:
+        client_ip = client_ip.split(",")[0].strip()
+
     user = authenticate_user(db, credentials.username, credentials.password)
+
+    allowed, info = login_rate_limiter.check_and_record(client_ip, was_successful=bool(user))
+    if not allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Too many failed login attempts. Try again in {info} seconds.",
+        )
 
     if not user:
         raise HTTPException(
@@ -504,6 +513,14 @@ def update_current_user(
 
     if user_update.full_name is not None:
         current_user.full_name = user_update.full_name
+
+    if user_update.phone is not None:
+        # Reset phone verification if number changed
+        if user_update.phone != current_user.phone:
+            current_user.phone = user_update.phone
+            current_user.is_phone_verified = False
+            current_user.phone_verification_code = None
+            current_user.phone_verification_sent_at = None
 
     # Role and is_active changes are NOT allowed via /me (self-update).
     # Use the admin /users/{id} endpoints to manage other users' roles.
@@ -793,19 +810,25 @@ def verify_phone(
 
 @router.post("/forgot-password", status_code=status.HTTP_200_OK)
 def forgot_password(
+    http_request: Request,
     request: ForgotPasswordRequest,
     db: Session = Depends(get_db)
 ):
     """
-    Request password reset email
-
-    Args:
-        request: ForgotPasswordRequest with email address
-        db: Database session
-
-    Returns:
-        Success message (always returns success for security)
+    Request password reset email.
+    Rate limited to 3 requests per IP per 15 minutes.
     """
+    # Rate limit password reset requests
+    client_ip = http_request.headers.get("x-forwarded-for", http_request.headers.get("x-real-ip", http_request.client.host if http_request.client else "unknown"))
+    if "," in client_ip:
+        client_ip = client_ip.split(",")[0].strip()
+
+    # Reuse login limiter with tighter limit check (always record as "failure" to count)
+    allowed, info = login_rate_limiter.check_and_record(f"pwd_reset:{client_ip}", was_successful=False)
+    if not allowed:
+        # Still return success to prevent email enumeration
+        return {"message": "If an account with that email exists, a password reset link has been sent."}
+
     result = VerificationService.send_password_reset(request.email, db)
     return result
 

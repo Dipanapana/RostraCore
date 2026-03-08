@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { shiftCostsApi } from '@/services/api'
 import { Coins, DollarSign, Clock, TrendingUp, Users, MapPin } from 'lucide-react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 function formatCurrency(val: number): string {
   return `R${val.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -25,8 +26,8 @@ export default function ShiftCostsPage() {
     fetchData().finally(() => setLoading(false))
   }, [fetchData])
 
-  if (loading) return <div className="p-8 text-gray-500">Loading...</div>
-  if (!data) return <div className="p-8 text-gray-500">No data available</div>
+  if (loading) return <DashboardLayout><div className="p-8 text-gray-500">Loading...</div></DashboardLayout>
+  if (!data) return <DashboardLayout><div className="p-8 text-gray-500">No data available</div></DashboardLayout>
 
   const costBreakdown = [
     { label: 'Regular Pay', value: data.regular_pay, color: 'bg-blue-500' },
@@ -39,6 +40,7 @@ export default function ShiftCostsPage() {
   ].filter(c => c.value > 0)
 
   return (
+    <DashboardLayout>
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -204,5 +206,6 @@ export default function ShiftCostsPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

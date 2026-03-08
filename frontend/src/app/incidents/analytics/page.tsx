@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { incidentAnalyticsApi } from '@/services/api'
 import { PieChart, AlertTriangle, CheckCircle, Clock, Building2 } from 'lucide-react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 const SEVERITY_COLORS: Record<string, string> = {
   LOW: 'bg-blue-100 text-blue-700',
@@ -38,12 +39,13 @@ export default function IncidentAnalyticsPage() {
     fetchData().finally(() => setLoading(false))
   }, [fetchData])
 
-  if (loading) return <div className="p-8 text-gray-500">Loading...</div>
-  if (!data) return <div className="p-8 text-gray-500">No data available</div>
+  if (loading) return <DashboardLayout><div className="p-8 text-gray-500">Loading...</div></DashboardLayout>
+  if (!data) return <DashboardLayout><div className="p-8 text-gray-500">No data available</div></DashboardLayout>
 
   const maxTypeCount = Math.max(...Object.values(data.by_type as Record<string, number>), 1)
 
   return (
+    <DashboardLayout>
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -196,5 +198,6 @@ export default function IncidentAnalyticsPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

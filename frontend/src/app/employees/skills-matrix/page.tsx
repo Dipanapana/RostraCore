@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { skillsMatrixApi } from '@/services/api'
 import { Grid3X3, Shield, AlertTriangle, Award, GraduationCap, Crosshair } from 'lucide-react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 const STATUS_STYLES: Record<string, string> = {
   valid: 'bg-emerald-50 text-emerald-700',
@@ -51,6 +52,7 @@ export default function SkillsMatrixPage() {
   }, [tab, fetchDashboard, fetchMatrix])
 
   return (
+    <DashboardLayout>
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -277,5 +279,6 @@ export default function SkillsMatrixPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

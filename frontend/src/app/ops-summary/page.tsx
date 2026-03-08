@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { opsSummaryApi } from '@/services/api'
 import PageHeader from '@/components/ui/PageHeader'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 import { Zap, Users, Building2, Shield, AlertTriangle, DollarSign, Clock, Calendar, FileText, CheckCircle, RefreshCw } from 'lucide-react'
 
 function formatCurrency(val: number): string {
@@ -37,8 +38,8 @@ export default function OpsSummaryPage() {
     fetchData().finally(() => setLoading(false))
   }, [fetchData])
 
-  if (loading) return <div className="p-8 text-gray-500">Loading...</div>
-  if (!data) return <div className="p-8 text-gray-500">No data available</div>
+  if (loading) return <DashboardLayout><div className="p-8 text-gray-500">Loading...</div></DashboardLayout>
+  if (!data) return <DashboardLayout><div className="p-8 text-gray-500">No data available</div></DashboardLayout>
 
   const w = data.workforce
   const o = data.operations
@@ -46,11 +47,10 @@ export default function OpsSummaryPage() {
   const f = data.financial
 
   return (
+    <DashboardLayout>
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <PageHeader
-        backHref="/dashboard"
-        backLabel="Back to Dashboard"
         title="Operational Summary"
         subtitle={`${data.date} · Generated ${data.generated_at?.split('T')[1]?.split('.')[0] || ''}`}
         icon={<Zap className="text-amber-500" size={28} />}
@@ -105,5 +105,6 @@ export default function OpsSummaryPage() {
         </div>
       </div>
     </div>
+    </DashboardLayout>
   )
 }

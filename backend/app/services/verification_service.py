@@ -157,38 +157,40 @@ class VerificationService:
         user.phone_verification_sent_at = datetime.utcnow()
         db.commit()
 
-        # TODO: Send actual SMS using Twilio, AWS SNS, etc.
-        # For now, log the code (in production, use SMS service)
-        logger.info(f"Phone verification code for {user.phone}: {code}")
-
-        # In development, return the code
-        if settings.ENVIRONMENT == "development":
-            return {
-                "status": "success",
-                "message": "Verification code sent",
-                "code": code,  # Only in dev!
-                "phone": user.phone
-            }
-
-        # In production, send actual SMS
+        # Send via SMS service
         try:
-            # Example using a hypothetical SMS service
-            # sms_service.send(
-            #     to=user.phone,
-            #     message=f"Your RostraCore verification code is: {code}"
-            # )
-            pass
+            from app.services.sms_service import SMSService
+
+            result = SMSService.send_verification_code(
+                to=user.phone,
+                code=code
+            )
+
+            if result["status"] == "success":
+                logger.info(f"Phone verification code sent to {user.phone}")
+
+                # In development mode, include code for easy testing
+                if settings.ENVIRONMENT == "development" and result.get("dev_mode"):
+                    return {
+                        "status": "success",
+                        "message": "Verification code sent",
+                        "code": code,  # Only in dev!
+                        "phone": user.phone
+                    }
+
+                return {
+                    "status": "success",
+                    "message": f"Verification code sent to {user.phone}"
+                }
+            else:
+                return result
+
         except Exception as e:
             logger.error(f"Failed to send verification SMS: {e}")
             return {
                 "status": "error",
                 "message": "Failed to send verification SMS"
             }
-
-        return {
-            "status": "success",
-            "message": f"Verification code sent to {user.phone}"
-        }
 
     @staticmethod
     def verify_phone_code(user_id: int, code: str, db: Session) -> Dict:

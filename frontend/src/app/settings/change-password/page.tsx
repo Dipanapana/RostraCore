@@ -2,18 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import {
   Lock,
   Eye,
   EyeOff,
-  ArrowLeft,
   Loader2,
   CheckCircle2,
   ShieldCheck,
 } from "lucide-react";
 import { getApiUrl } from "@/lib/config";
 import { useAuth } from "@/context/AuthContext";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 
 export default function ChangePasswordPage() {
   const router = useRouter();
@@ -99,6 +98,7 @@ export default function ChangePasswordPage() {
   // Success state
   if (success) {
     return (
+      <DashboardLayout>
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-white rounded-xl border border-gray-200 shadow-sm p-8 text-center">
           <ShieldCheck className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
@@ -117,21 +117,14 @@ export default function ChangePasswordPage() {
           </button>
         </div>
       </div>
+      </DashboardLayout>
     );
   }
 
   return (
+    <DashboardLayout>
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-lg mx-auto">
-        {/* Back link */}
-        <button
-          onClick={() => router.back()}
-          className="flex items-center text-gray-600 hover:text-gray-900 mb-6 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Settings
-        </button>
-
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
           <div className="mb-6">
             <h1 className="text-2xl font-semibold text-gray-900">
@@ -152,12 +145,13 @@ export default function ChangePasswordPage() {
 
             {/* Current Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="current_password" className="block text-sm font-medium text-gray-700 mb-2">
                 Current Password
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
+                  id="current_password"
                   type={showCurrentPassword ? "text" : "password"}
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
@@ -184,12 +178,13 @@ export default function ChangePasswordPage() {
 
             {/* New Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="new_password" className="block text-sm font-medium text-gray-700 mb-2">
                 New Password
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
+                  id="new_password"
                   type={showNewPassword ? "text" : "password"}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -279,12 +274,13 @@ export default function ChangePasswordPage() {
 
             {/* Confirm Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="confirm_password" className="block text-sm font-medium text-gray-700 mb-2">
                 Confirm New Password
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
+                  id="confirm_password"
                   type={showConfirmPassword ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -344,5 +340,6 @@ export default function ChangePasswordPage() {
         </div>
       </div>
     </div>
+    </DashboardLayout>
   );
 }

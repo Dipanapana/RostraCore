@@ -17,6 +17,7 @@ import {
   ChevronUp,
   BarChart3,
 } from 'lucide-react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -199,6 +200,7 @@ export default function InspectionsPage() {
   }
 
   return (
+    <DashboardLayout>
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -543,5 +545,6 @@ export default function InspectionsPage() {
         </>
       )}
     </div>
+    </DashboardLayout>
   )
 }

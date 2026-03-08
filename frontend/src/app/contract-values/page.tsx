@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 import {
   DollarSign, Plus, Search, X, Trash2, Edit2,
   BarChart3, Building, TrendingUp, AlertTriangle, Clock,
@@ -135,6 +136,7 @@ export default function ContractValuesPage() {
   // ── render ──
 
   return (
+    <DashboardLayout>
     <div className="p-4 md:p-6 space-y-6 max-w-[1400px] mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -369,5 +371,6 @@ export default function ContractValuesPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

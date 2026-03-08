@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import PageHeader from '@/components/ui/PageHeader'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 import { Play, Clock, X } from 'lucide-react'
 
 interface VideoItem {
@@ -70,10 +71,9 @@ export default function VideosPage() {
   const activeVideo = VIDEOS.find((v) => v.id === playing)
 
   return (
+    <DashboardLayout>
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <PageHeader
-        backHref="/help"
-        backLabel="Back to Help Center"
         title="Video Tutorials"
         subtitle="Watch step-by-step guides for key RostraCore features"
         icon={<Play className="text-blue-600" size={28} />}
@@ -139,5 +139,6 @@ export default function VideosPage() {
         Videos are generated programmatically using Remotion. Run <code className="bg-gray-100 px-1 rounded">npm run studio</code> in the <code className="bg-gray-100 px-1 rounded">videos/</code> directory to preview and render.
       </div>
     </div>
+    </DashboardLayout>
   )
 }

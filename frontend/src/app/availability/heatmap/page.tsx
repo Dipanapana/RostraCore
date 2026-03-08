@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { availabilityHeatmapApi } from '@/services/api'
 import { Flame, Users, CalendarOff, UserCheck, TrendingUp, TrendingDown } from 'lucide-react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 const DAY_LABELS: Record<string, string> = {
   monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed', thursday: 'Thu',
@@ -47,6 +48,7 @@ export default function AvailabilityHeatmapPage() {
   }
 
   return (
+    <DashboardLayout>
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -151,5 +153,6 @@ export default function AvailabilityHeatmapPage() {
         </div>
       </div>
     </div>
+    </DashboardLayout>
   )
 }

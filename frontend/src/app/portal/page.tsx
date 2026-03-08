@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { clientPortalApi } from "@/services/api";
 import PageHeader from "@/components/ui/PageHeader";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 import {
   Building2,
   ShieldCheck,
@@ -119,28 +120,31 @@ export default function ClientPortalPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
-      </div>
+      <DashboardLayout>
+        <div className="flex h-[60vh] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+        </div>
+      </DashboardLayout>
     );
   }
 
   if (!dashboard) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white p-12 text-center shadow-sm">
-        <ShieldCheck size={48} className="mx-auto text-gray-300 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900">Client Portal</h3>
-        <p className="text-sm text-gray-500 mt-1">No client association found for your account.</p>
-      </div>
+      <DashboardLayout>
+        <div className="rounded-xl border border-gray-200 bg-white p-12 text-center shadow-sm">
+          <ShieldCheck size={48} className="mx-auto text-gray-300 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900">Client Portal</h3>
+          <p className="text-sm text-gray-500 mt-1">No client association found for your account.</p>
+        </div>
+      </DashboardLayout>
     );
   }
 
   return (
+    <DashboardLayout>
     <div className="space-y-6">
       {/* Header */}
       <PageHeader
-        backHref="/dashboard"
-        backLabel="Back to Dashboard"
         title={`${dashboard.client_name} — Portal`}
         subtitle="Your security operations at a glance"
         icon={<Building2 className="text-blue-600" size={28} />}
@@ -320,5 +324,6 @@ export default function ClientPortalPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   );
 }

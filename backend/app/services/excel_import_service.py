@@ -168,6 +168,7 @@ class ExcelImportService:
         "ACCOUNT NUMBERS": "account_number",
         "EMPLOYEE NO": "employee_number",
         "RATE P/HR": "hourly_rate",
+        "BRANCH CODE": "branch_code",
     }
 
     @staticmethod

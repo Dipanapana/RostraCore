@@ -24,10 +24,10 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: CI/CD Pipeline** - GitHub Actions CI (pytest + next build), Railway/Vercel auto-deploy (completed 2026-03-04)
 - [x] **Phase 3: Test Coverage** - Integration test suite: 347 tests, 43% overall coverage (completed 2026-03-04)
 - [x] **Phase 4: Infrastructure Hardening** - Redis rate limiting, validation error handler, budget verified DB-driven (completed 2026-03-04)
-- [ ] **Phase 5: Payment Completion** - Fix 501 status endpoint and implement SMS verification
-- [ ] **Phase 6: Frontend Type Safety** - Replace `any` types, add ErrorBoundary, add form validation
-- [ ] **Phase 7: Frontend Navigation and UX** - Fix broken links, empty states, loading skeletons
-- [ ] **Phase 8: Accessibility** - Aria labels, form label pairing, color independence, skip nav, focus indicators
+- [x] **Phase 5: Payment Completion** - Fix 501 status endpoint and implement SMS verification (completed 2026-03-04)
+- [x] **Phase 6: Frontend Type Safety** - Replace `any` types, add ErrorBoundary, add form validation (completed 2026-03-05)
+- [x] **Phase 7: Frontend Navigation and UX** - Fix broken links, empty states, loading skeletons (completed 2026-03-05)
+- [x] **Phase 8: Accessibility** - Aria labels, form label pairing, color independence, skip nav, focus indicators (completed 2026-03-05)
 
 ## Phase Details
 
@@ -103,7 +103,9 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Calling the payment status endpoint with a valid payment ID returns the actual payment status stored in the database (not HTTP 501)
   2. A user with a registered phone number can trigger an SMS verification code and enter it to verify their number
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [x] 05-01-PLAN.md — PaymentTransaction model, fix 501 status endpoint, SMS service via Twilio, phone verification UI (PAY-01, PAY-02)
 
 ### Phase 6: Frontend Type Safety
 **Goal**: Frontend code has no runtime type surprises — all API shapes are typed, errors are caught, and forms validate before submission
@@ -113,7 +115,9 @@ Plans:
   1. The TypeScript compiler reports zero `any` type usages in API response handling — all shapes have explicit interfaces
   2. A page that encounters an unhandled runtime error shows an ErrorBoundary fallback UI instead of a blank screen
   3. Submitting a form with missing or invalid data shows inline field-level error messages before any API call is made
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [x] 06-01-PLAN.md — Eliminate all `any` from api.ts (87 instances), fix login catch block, add login form validation (FTS-01, FTS-02, FTS-03)
 
 ### Phase 7: Frontend Navigation and UX
 **Goal**: Every sidebar link leads to a working page and every data-less state communicates clearly to the user
@@ -123,7 +127,9 @@ Plans:
   1. Clicking any link in the sidebar navigates to a rendered page — no 404s, no dead stubs, no console errors
   2. A page with no data (e.g., no employees yet, no shifts created) shows a message explaining the empty state with a clear call-to-action to create the first item
   3. While data is loading from the API, the page shows skeleton placeholder components instead of blank content areas
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [x] 07-01-PLAN.md — EmptyState, TableSkeleton, DashboardSkeleton components + retrofit 6 pages (NAV-01, NAV-02, NAV-03)
 
 ### Phase 8: Accessibility
 **Goal**: The application is usable by keyboard-only users and compatible with screen readers
@@ -135,7 +141,9 @@ Plans:
   3. All status badges (active/inactive, pass/fail, etc.) use text or icon indicators alongside color — a color-blind user can distinguish states without color
   4. A "Skip to main content" link is present at the top of every page, allowing keyboard users to bypass the sidebar navigation
   5. All interactive elements (buttons, links, inputs) have a visible focus ring when navigated to by keyboard
-**Plans**: TBD
+**Plans:** 1 plan (swift-sauteeing-lampson.md)
+Plans:
+- [x] 08-01-PLAN.md — Skip nav, focus-visible CSS, aria-labels on 7 files, htmlFor/id on 6 forms, cert expiring icons (A11Y-01–A11Y-05)
 
 ## Progress
 
@@ -156,7 +164,7 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 1.3 → 1.4 → 1.5 → 1
 | 2. CI/CD Pipeline | 1/1 | Complete | 2026-03-04 |
 | 3. Test Coverage | 1/1 | Complete | 2026-03-04 |
 | 4. Infrastructure Hardening | 1/1 | Complete | 2026-03-04 |
-| 5. Payment Completion | 0/TBD | Not started | - |
-| 6. Frontend Type Safety | 0/TBD | Not started | - |
-| 7. Frontend Navigation and UX | 0/TBD | Not started | - |
-| 8. Accessibility | 0/TBD | Not started | - |
+| 5. Payment Completion | 1/1 | Complete | 2026-03-04 |
+| 6. Frontend Type Safety | 1/1 | Complete | 2026-03-05 |
+| 7. Frontend Navigation and UX | 1/1 | Complete | 2026-03-05 |
+| 8. Accessibility | 1/1 | Complete | 2026-03-05 |

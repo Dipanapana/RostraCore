@@ -5,6 +5,9 @@ import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { getApiUrl } from "@/lib/config";
+import TableSkeleton from "@/components/ui/TableSkeleton";
+import EmptyState from "@/components/ui/EmptyState";
+import { Building2 } from "lucide-react";
 
 interface Client {
   client_id: number;
@@ -174,13 +177,11 @@ export default function ClientsPage() {
 
   const fetchClients = async () => {
     if (!token) {
-      console.log("[CLIENTS] No token available, waiting for auth...");
       setLoading(false);
       return;
     }
 
     setLoading(true);
-    console.log("[CLIENTS] Fetching clients with token...");
 
     try {
       const response = await fetch(
@@ -190,24 +191,17 @@ export default function ClientsPage() {
         }
       );
 
-      console.log("[CLIENTS] Response status:", response.status);
-
       if (response.ok) {
         const data = await response.json();
-        console.log("[CLIENTS] Fetched", data.length, "clients");
         setClients(Array.isArray(data) ? data : []);
         setError("");
       } else {
-        const errorText = await response.text();
-        console.error("[CLIENTS] Error response:", errorText);
         setError(`Failed to fetch clients: ${response.status} ${response.statusText}`);
       }
     } catch (err: any) {
-      console.error("[CLIENTS] Fetch error:", err);
       setError(err.message || "Failed to fetch clients");
     } finally {
       setLoading(false);
-      console.log("[CLIENTS] Fetch complete, loading=false");
     }
   };
 
@@ -367,11 +361,12 @@ export default function ClientsPage() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600 mx-auto"></div>
-            <p className="mt-3 text-sm text-gray-500">Loading...</p>
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="animate-pulse">
+            <div className="h-7 w-48 bg-gray-200 rounded mb-2" />
+            <div className="h-4 w-72 bg-gray-100 rounded" />
           </div>
+          <TableSkeleton rows={6} columns={5} />
         </div>
       </DashboardLayout>
     );
@@ -500,10 +495,24 @@ export default function ClientsPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredClients.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                      {clients.length === 0
-                        ? 'No clients found. Click "Add Client" to create one.'
-                        : 'No clients match the selected date range.'}
+                    <td colSpan={6}>
+                      {clients.length === 0 ? (
+                        <EmptyState
+                          icon={Building2}
+                          title="No clients yet"
+                          description="Add your first client to get started"
+                          actionLabel="Add Client"
+                          onAction={() => {
+                            resetForm();
+                            setEditingClient(null);
+                            setShowModal(true);
+                          }}
+                        />
+                      ) : (
+                        <div className="px-6 py-12 text-center text-gray-500">
+                          No clients match the selected date range.
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ) : (
@@ -584,26 +593,26 @@ export default function ClientsPage() {
                   <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Basic Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Client Name *</label>
-                      <input type="text" value={formData.client_name} onChange={(e) => setFormData({ ...formData, client_name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required />
+                      <label htmlFor="client_name" className="block text-sm font-medium text-gray-700 mb-1">Client Name *</label>
+                      <input id="client_name" type="text" value={formData.client_name} onChange={(e) => setFormData({ ...formData, client_name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                      <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                      <label htmlFor="client_status" className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                      <select id="client_status" value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         <option value="active">Active</option>
                         <option value="inactive">Inactive</option>
                         <option value="suspended">Suspended</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Industry Sector</label>
-                      <select value={formData.industry_sector} onChange={(e) => setFormData({ ...formData, industry_sector: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                      <label htmlFor="industry_sector" className="block text-sm font-medium text-gray-700 mb-1">Industry Sector</label>
+                      <select id="industry_sector" value={formData.industry_sector} onChange={(e) => setFormData({ ...formData, industry_sector: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         {INDUSTRY_SECTORS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Company Type</label>
-                      <select value={formData.company_type} onChange={(e) => setFormData({ ...formData, company_type: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                      <label htmlFor="company_type" className="block text-sm font-medium text-gray-700 mb-1">Company Type</label>
+                      <select id="company_type" value={formData.company_type} onChange={(e) => setFormData({ ...formData, company_type: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         {COMPANY_TYPES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                       </select>
                     </div>
@@ -615,27 +624,27 @@ export default function ClientsPage() {
                   <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Registration & Compliance</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">CIPC Registration No.</label>
-                      <input type="text" value={formData.registration_number} onChange={(e) => setFormData({ ...formData, registration_number: e.target.value })} placeholder="e.g. 2020/123456/07" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                      <label htmlFor="registration_number" className="block text-sm font-medium text-gray-700 mb-1">CIPC Registration No.</label>
+                      <input id="registration_number" type="text" value={formData.registration_number} onChange={(e) => setFormData({ ...formData, registration_number: e.target.value })} placeholder="e.g. 2020/123456/07" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">VAT Number</label>
-                      <input type="text" value={formData.vat_number} onChange={(e) => setFormData({ ...formData, vat_number: e.target.value })} placeholder="e.g. 4123456789" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                      <label htmlFor="vat_number" className="block text-sm font-medium text-gray-700 mb-1">VAT Number</label>
+                      <input id="vat_number" type="text" value={formData.vat_number} onChange={(e) => setFormData({ ...formData, vat_number: e.target.value })} placeholder="e.g. 4123456789" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Income Tax Number</label>
-                      <input type="text" value={formData.income_tax_number} onChange={(e) => setFormData({ ...formData, income_tax_number: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                      <label htmlFor="income_tax_number" className="block text-sm font-medium text-gray-700 mb-1">Income Tax Number</label>
+                      <input id="income_tax_number" type="text" value={formData.income_tax_number} onChange={(e) => setFormData({ ...formData, income_tax_number: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">B-BBEE Level</label>
-                      <select value={formData.bbee_level} onChange={(e) => setFormData({ ...formData, bbee_level: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                      <label htmlFor="bbee_level" className="block text-sm font-medium text-gray-700 mb-1">B-BBEE Level</label>
+                      <select id="bbee_level" value={formData.bbee_level} onChange={(e) => setFormData({ ...formData, bbee_level: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         <option value="">Not specified</option>
                         {[1,2,3,4,5,6,7,8].map(n => <option key={n} value={n}>Level {n}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">B-BBEE Certificate Expiry</label>
-                      <input type="date" value={formData.bbee_certificate_expiry} onChange={(e) => setFormData({ ...formData, bbee_certificate_expiry: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                      <label htmlFor="bbee_certificate_expiry" className="block text-sm font-medium text-gray-700 mb-1">B-BBEE Certificate Expiry</label>
+                      <input id="bbee_certificate_expiry" type="date" value={formData.bbee_certificate_expiry} onChange={(e) => setFormData({ ...formData, bbee_certificate_expiry: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                     </div>
                   </div>
                 </div>
@@ -645,16 +654,16 @@ export default function ClientsPage() {
                   <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Primary Contact</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Contact Person</label>
-                      <input type="text" value={formData.contact_person} onChange={(e) => setFormData({ ...formData, contact_person: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                      <label htmlFor="contact_person" className="block text-sm font-medium text-gray-700 mb-1">Contact Person</label>
+                      <input id="contact_person" type="text" value={formData.contact_person} onChange={(e) => setFormData({ ...formData, contact_person: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                      <input type="email" value={formData.contact_email} onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                      <label htmlFor="contact_email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <input id="contact_email" type="email" value={formData.contact_email} onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                      <input type="tel" value={formData.contact_phone} onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                      <label htmlFor="contact_phone" className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                      <input id="contact_phone" type="tel" value={formData.contact_phone} onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                     </div>
                   </div>
                 </div>
@@ -664,16 +673,16 @@ export default function ClientsPage() {
                   <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Operations Contact</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                      <input type="text" value={formData.operations_contact_name} onChange={(e) => setFormData({ ...formData, operations_contact_name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                      <label htmlFor="ops_contact_name" className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                      <input id="ops_contact_name" type="text" value={formData.operations_contact_name} onChange={(e) => setFormData({ ...formData, operations_contact_name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                      <input type="email" value={formData.operations_contact_email} onChange={(e) => setFormData({ ...formData, operations_contact_email: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                      <label htmlFor="ops_contact_email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <input id="ops_contact_email" type="email" value={formData.operations_contact_email} onChange={(e) => setFormData({ ...formData, operations_contact_email: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                      <input type="tel" value={formData.operations_contact_phone} onChange={(e) => setFormData({ ...formData, operations_contact_phone: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                      <label htmlFor="ops_contact_phone" className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                      <input id="ops_contact_phone" type="tel" value={formData.operations_contact_phone} onChange={(e) => setFormData({ ...formData, operations_contact_phone: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                     </div>
                   </div>
                 </div>
@@ -683,12 +692,12 @@ export default function ClientsPage() {
                   <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Emergency Contact</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                      <input type="text" value={formData.emergency_contact_name} onChange={(e) => setFormData({ ...formData, emergency_contact_name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                      <label htmlFor="emergency_name" className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                      <input id="emergency_name" type="text" value={formData.emergency_contact_name} onChange={(e) => setFormData({ ...formData, emergency_contact_name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                      <input type="tel" value={formData.emergency_contact_phone} onChange={(e) => setFormData({ ...formData, emergency_contact_phone: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                      <label htmlFor="emergency_phone" className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                      <input id="emergency_phone" type="tel" value={formData.emergency_contact_phone} onChange={(e) => setFormData({ ...formData, emergency_contact_phone: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                     </div>
                   </div>
                 </div>
@@ -698,24 +707,24 @@ export default function ClientsPage() {
                   <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Billing & Contract</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Billing Rate (R/hr)</label>
-                      <input type="number" step="0.01" value={formData.billing_rate} onChange={(e) => setFormData({ ...formData, billing_rate: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                      <label htmlFor="billing_rate" className="block text-sm font-medium text-gray-700 mb-1">Billing Rate (R/hr)</label>
+                      <input id="billing_rate" type="number" step="0.01" value={formData.billing_rate} onChange={(e) => setFormData({ ...formData, billing_rate: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Target Margin %</label>
-                      <input type="number" step="0.1" min="0" max="100" value={formData.target_margin_pct} onChange={(e) => setFormData({ ...formData, target_margin_pct: e.target.value })} placeholder="e.g. 30" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                      <label htmlFor="target_margin_pct" className="block text-sm font-medium text-gray-700 mb-1">Target Margin %</label>
+                      <input id="target_margin_pct" type="number" step="0.1" min="0" max="100" value={formData.target_margin_pct} onChange={(e) => setFormData({ ...formData, target_margin_pct: e.target.value })} placeholder="e.g. 30" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Contract Start</label>
-                      <input type="date" value={formData.contract_start_date} onChange={(e) => setFormData({ ...formData, contract_start_date: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                      <label htmlFor="contract_start_date" className="block text-sm font-medium text-gray-700 mb-1">Contract Start</label>
+                      <input id="contract_start_date" type="date" value={formData.contract_start_date} onChange={(e) => setFormData({ ...formData, contract_start_date: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Contract End</label>
-                      <input type="date" value={formData.contract_end_date} onChange={(e) => setFormData({ ...formData, contract_end_date: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                      <label htmlFor="contract_end_date" className="block text-sm font-medium text-gray-700 mb-1">Contract End</label>
+                      <input id="contract_end_date" type="date" value={formData.contract_end_date} onChange={(e) => setFormData({ ...formData, contract_end_date: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Payment Terms</label>
-                      <select value={formData.payment_terms_days} onChange={(e) => setFormData({ ...formData, payment_terms_days: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                      <label htmlFor="payment_terms_days" className="block text-sm font-medium text-gray-700 mb-1">Payment Terms</label>
+                      <select id="payment_terms_days" value={formData.payment_terms_days} onChange={(e) => setFormData({ ...formData, payment_terms_days: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         {PAYMENT_TERMS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                       </select>
                     </div>
@@ -724,17 +733,17 @@ export default function ClientsPage() {
                       <label htmlFor="requires_po" className="ml-2 text-sm font-medium text-gray-700">Requires Purchase Order</label>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Billing Contact</label>
-                      <input type="text" value={formData.billing_contact_name} onChange={(e) => setFormData({ ...formData, billing_contact_name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                      <label htmlFor="billing_contact_name" className="block text-sm font-medium text-gray-700 mb-1">Billing Contact</label>
+                      <input id="billing_contact_name" type="text" value={formData.billing_contact_name} onChange={(e) => setFormData({ ...formData, billing_contact_name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Billing Email</label>
-                      <input type="email" value={formData.billing_email} onChange={(e) => setFormData({ ...formData, billing_email: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                      <label htmlFor="billing_email" className="block text-sm font-medium text-gray-700 mb-1">Billing Email</label>
+                      <input id="billing_email" type="email" value={formData.billing_email} onChange={(e) => setFormData({ ...formData, billing_email: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                     </div>
                   </div>
                   <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Billing Address</label>
-                    <textarea value={formData.billing_address} onChange={(e) => setFormData({ ...formData, billing_address: e.target.value })} rows={2} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    <label htmlFor="billing_address" className="block text-sm font-medium text-gray-700 mb-1">Billing Address</label>
+                    <textarea id="billing_address" value={formData.billing_address} onChange={(e) => setFormData({ ...formData, billing_address: e.target.value })} rows={2} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                   </div>
                 </div>
 
@@ -743,26 +752,26 @@ export default function ClientsPage() {
                   <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Location</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Province</label>
-                      <select value={formData.province} onChange={(e) => setFormData({ ...formData, province: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                      <label htmlFor="client_province" className="block text-sm font-medium text-gray-700 mb-1">Province</label>
+                      <select id="client_province" value={formData.province} onChange={(e) => setFormData({ ...formData, province: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         {SA_PROVINCES.map(p => <option key={p} value={p}>{p || 'Select...'}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                      <input type="text" value={formData.city} onChange={(e) => setFormData({ ...formData, city: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                      <label htmlFor="client_city" className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                      <input id="client_city" type="text" value={formData.city} onChange={(e) => setFormData({ ...formData, city: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                     </div>
                   </div>
                   <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Physical Address</label>
-                    <textarea value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} rows={2} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    <label htmlFor="client_address" className="block text-sm font-medium text-gray-700 mb-1">Physical Address</label>
+                    <textarea id="client_address" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} rows={2} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                   </div>
                 </div>
 
                 {/* Section: Notes */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                  <textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                  <label htmlFor="client_notes" className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                  <textarea id="client_notes" value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                 </div>
 
                 <div className="mt-6 flex gap-4">

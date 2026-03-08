@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { revenueApi } from '@/services/api'
 import { TrendingUp, DollarSign, AlertTriangle, CheckCircle, Building2, FileText } from 'lucide-react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 function formatCurrency(val: number): string {
   return `R${val.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -29,6 +30,7 @@ export default function RevenueDashboardPage() {
   if (!data) return <div className="p-8 text-gray-500">No data available</div>
 
   return (
+    <DashboardLayout>
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -160,5 +162,6 @@ export default function RevenueDashboardPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

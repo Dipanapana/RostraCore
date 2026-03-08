@@ -12,6 +12,7 @@ import {
   Shield,
   ChevronRight,
 } from "lucide-react";
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -170,6 +171,7 @@ export default function PatrolsPage() {
   const abandoned = runs.filter(r => r.status === "abandoned").length;
 
   return (
+    <DashboardLayout>
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -367,5 +369,6 @@ export default function PatrolsPage() {
         </div>
       </div>
     </div>
+    </DashboardLayout>
   );
 }

@@ -1,5 +1,6 @@
 """Client invoice API endpoints - Generate and manage client invoices."""
 
+import io
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
@@ -171,7 +172,7 @@ async def get_invoice_pdf(
     """
     Generate and return a PDF for the specified invoice.
     """
-    from app.services.invoice_pdf_generator import generate_invoice_pdf
+    from app.services.invoice_pdf_generator import generate_invoice_pdf_from_db
 
     invoice = db.query(ClientInvoice).filter(
         ClientInvoice.invoice_id == invoice_id,
@@ -184,15 +185,11 @@ async def get_invoice_pdf(
             detail="Invoice not found"
         )
 
-    # Load related data
-    client = db.query(Client).filter(Client.client_id == invoice.client_id).first()
-    organization = db.query(Organization).filter(Organization.org_id == org_id).first()
-
-    # Generate PDF
-    pdf_buffer = generate_invoice_pdf(invoice=invoice, client=client, organization=organization, db=db)
+    # Generate PDF using database-aware convenience function
+    pdf_bytes = generate_invoice_pdf_from_db(db, invoice.invoice_id, org_id)
 
     return StreamingResponse(
-        pdf_buffer,
+        io.BytesIO(pdf_bytes),
         media_type="application/pdf",
         headers={
             "Content-Disposition": f'attachment; filename="{invoice.invoice_number}.pdf"'

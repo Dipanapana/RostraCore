@@ -24,6 +24,7 @@ import {
   Receipt,
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import DashboardSkeleton from "@/components/ui/DashboardSkeleton";
 import MetricCard from "@/components/dashboard/MetricCard";
 import UtilizationChart from "@/components/dashboard/UtilizationChart";
 import ComplianceChart from "@/components/dashboard/ComplianceChart";
@@ -363,11 +364,8 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="min-h-[80vh] flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600" />
-            <p className="text-sm text-gray-500">Loading...</p>
-          </div>
+        <div className="max-w-[1600px] mx-auto">
+          <DashboardSkeleton />
         </div>
       </DashboardLayout>
     );

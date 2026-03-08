@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { iodApi } from '@/services/api'
 import { HeartPulse, Plus, X, Edit2, Trash2, AlertTriangle } from 'lucide-react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 const INJURY_TYPES = ['fracture', 'laceration', 'burn', 'strain', 'concussion', 'other']
 const STATUSES = ['reported', 'under_review', 'approved', 'rejected', 'closed']
@@ -135,6 +136,7 @@ export default function IODPage() {
   if (loading) return <div className="p-8 text-gray-500">Loading...</div>
 
   return (
+    <DashboardLayout>
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -374,5 +376,6 @@ export default function IODPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

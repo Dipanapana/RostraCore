@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { postOrdersApi, sitesApi } from "@/services/api";
 import PageHeader from "@/components/ui/PageHeader";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 import {
   FileText,
   Plus,
@@ -220,17 +221,18 @@ export default function PostOrdersPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
-      </div>
+      <DashboardLayout>
+        <div className="flex h-[60vh] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+        </div>
+      </DashboardLayout>
     );
   }
 
   return (
+    <DashboardLayout>
     <div className="space-y-6">
       <PageHeader
-        backHref="/sites"
-        backLabel="Back to Sites"
         title="Post Orders"
         subtitle="Site instructions and standing orders for guards"
         icon={<FileText className="text-blue-600" size={28} />}
@@ -311,5 +313,6 @@ export default function PostOrdersPage() {
       {showCreate && <CreateModal sites={sites} onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); loadData(); }} />}
       {viewing && <DetailModal order={viewing} onClose={() => setViewing(null)} />}
     </div>
+    </DashboardLayout>
   );
 }

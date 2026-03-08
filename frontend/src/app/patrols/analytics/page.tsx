@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { patrolAnalyticsApi } from '@/services/api'
 import { Radar, CheckCircle, XCircle, Clock, Route, AlertTriangle, Users, MapPin } from 'lucide-react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 export default function PatrolAnalyticsPage() {
   const [data, setData] = useState<any>(null)
@@ -21,10 +22,11 @@ export default function PatrolAnalyticsPage() {
     fetchData().finally(() => setLoading(false))
   }, [fetchData])
 
-  if (loading) return <div className="p-8 text-gray-500">Loading...</div>
-  if (!data) return <div className="p-8 text-gray-500">No data available</div>
+  if (loading) return <DashboardLayout><div className="p-8 text-gray-500">Loading...</div></DashboardLayout>
+  if (!data) return <DashboardLayout><div className="p-8 text-gray-500">No data available</div></DashboardLayout>
 
   return (
+    <DashboardLayout>
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -221,5 +223,6 @@ export default function PatrolAnalyticsPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

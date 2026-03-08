@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { billingApi } from '@/services/api'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 interface SubscriptionStatus {
   subscription_status: string
@@ -116,31 +117,25 @@ export default function BillingPage() {
 
   if (loading) {
     return (
+      <DashboardLayout>
       <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading billing information...</p>
         </div>
       </div>
+      </DashboardLayout>
     )
   }
 
   return (
+    <DashboardLayout>
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
           <div className="flex justify-between items-center">
             <div>
-              <button
-                onClick={() => router.back()}
-                className="flex items-center text-gray-600 hover:text-gray-900 mb-3 transition-colors"
-              >
-                <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                Back
-              </button>
               <h1 className="text-2xl font-semibold text-gray-900">Billing & Subscription</h1>
               <p className="text-gray-600 mt-1">Manage your GuardianOS subscription</p>
             </div>
@@ -338,5 +333,6 @@ export default function BillingPage() {
         )}
       </div>
     </div>
+    </DashboardLayout>
   )
 }

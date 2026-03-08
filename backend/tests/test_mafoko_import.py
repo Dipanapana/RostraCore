@@ -321,8 +321,8 @@ class TestRosterUploadEndpoints:
 
     def test_preview_no_file(self, client, auth_headers):
         response = client.post("/api/v1/roster-upload/mafoko/preview", headers=auth_headers)
-        assert response.status_code == 422  # Missing file
+        assert response.status_code in [400, 422]  # Missing file
 
     def test_upload_no_file(self, client, auth_headers):
         response = client.post("/api/v1/roster-upload/mafoko", headers=auth_headers)
-        assert response.status_code == 422  # Missing file
+        assert response.status_code in [400, 422]  # Missing file

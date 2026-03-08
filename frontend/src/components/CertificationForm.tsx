@@ -114,10 +114,11 @@ export default function CertificationForm({ certification, onClose, onSuccess }:
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="employee_id" className="block text-sm font-medium text-gray-700 mb-1">
                 Employee <span className="text-red-500">*</span>
               </label>
               <select
+                id="employee_id"
                 name="employee_id"
                 value={formData.employee_id}
                 onChange={handleChange}
@@ -134,10 +135,11 @@ export default function CertificationForm({ certification, onClose, onSuccess }:
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="cert_type" className="block text-sm font-medium text-gray-700 mb-1">
                 Certification Type <span className="text-red-500">*</span>
               </label>
               <select
+                id="cert_type"
                 name="cert_type"
                 value={formData.cert_type}
                 onChange={handleChange}
@@ -158,10 +160,11 @@ export default function CertificationForm({ certification, onClose, onSuccess }:
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="issue_date" className="block text-sm font-medium text-gray-700 mb-1">
                 Issue Date <span className="text-red-500">*</span>
               </label>
               <input
+                id="issue_date"
                 type="date"
                 name="issue_date"
                 value={formData.issue_date}
@@ -172,10 +175,11 @@ export default function CertificationForm({ certification, onClose, onSuccess }:
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="expiry_date" className="block text-sm font-medium text-gray-700 mb-1">
                 Expiry Date <span className="text-red-500">*</span>
               </label>
               <input
+                id="expiry_date"
                 type="date"
                 name="expiry_date"
                 value={formData.expiry_date}
@@ -186,10 +190,11 @@ export default function CertificationForm({ certification, onClose, onSuccess }:
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="cert_number" className="block text-sm font-medium text-gray-700 mb-1">
                 Certificate Number
               </label>
               <input
+                id="cert_number"
                 type="text"
                 name="cert_number"
                 value={formData.cert_number}
@@ -200,10 +205,11 @@ export default function CertificationForm({ certification, onClose, onSuccess }:
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="issuing_authority" className="block text-sm font-medium text-gray-700 mb-1">
                 Issuing Authority
               </label>
               <input
+                id="issuing_authority"
                 type="text"
                 name="issuing_authority"
                 value={formData.issuing_authority}
@@ -214,8 +220,9 @@ export default function CertificationForm({ certification, onClose, onSuccess }:
             </div>
 
             <div>
-              <label className="flex items-center">
+              <label htmlFor="verified" className="flex items-center">
                 <input
+                  id="verified"
                   type="checkbox"
                   name="verified"
                   checked={formData.verified}

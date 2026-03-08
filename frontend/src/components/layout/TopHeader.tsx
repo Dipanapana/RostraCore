@@ -215,6 +215,7 @@ export default function TopHeader() {
             href="/notifications"
             className="relative p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
             title="Notifications"
+            aria-label="Notifications"
           >
             <Bell className="w-5 h-5" />
             {unreadCount > 0 && (

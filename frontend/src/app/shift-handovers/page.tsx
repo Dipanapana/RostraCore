@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { shiftHandoversApi } from '@/services/api'
 import { Repeat, Plus, X, Check, Trash2, AlertTriangle } from 'lucide-react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 const PRIORITY_COLORS: Record<string, string> = {
   low: 'bg-gray-100 text-gray-700',
@@ -83,9 +84,10 @@ export default function ShiftHandoversPage() {
     } catch { /* ignore */ }
   }
 
-  if (loading) return <div className="p-8 text-gray-500">Loading...</div>
+  if (loading) return <DashboardLayout><div className="p-8 text-gray-500">Loading...</div></DashboardLayout>
 
   return (
+    <DashboardLayout>
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -263,5 +265,6 @@ export default function ShiftHandoversPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

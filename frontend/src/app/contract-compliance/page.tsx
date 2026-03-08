@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { contractComplianceApi } from '@/services/api'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 import { FileCheck, AlertTriangle, CheckCircle, XCircle, Clock, Building2, DollarSign } from 'lucide-react'
 
 function fmtZAR(val: number) {
@@ -66,6 +67,7 @@ export default function ContractCompliancePage() {
   if (loading) return <div className="p-8 text-gray-500">Loading...</div>
 
   return (
+    <DashboardLayout>
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -185,5 +187,6 @@ export default function ContractCompliancePage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

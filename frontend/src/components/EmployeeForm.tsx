@@ -386,10 +386,11 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
       </h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className={LABEL_CLASS}>
+          <label htmlFor="first_name" className={LABEL_CLASS}>
             First Name <span className="text-red-500">*</span>
           </label>
           <input
+            id="first_name"
             type="text"
             name="first_name"
             value={formData.first_name}
@@ -398,10 +399,11 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
           />
         </div>
         <div>
-          <label className={LABEL_CLASS}>
+          <label htmlFor="last_name" className={LABEL_CLASS}>
             Last Name <span className="text-red-500">*</span>
           </label>
           <input
+            id="last_name"
             type="text"
             name="last_name"
             value={formData.last_name}
@@ -410,10 +412,11 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
           />
         </div>
         <div className="md:col-span-2">
-          <label className={LABEL_CLASS}>
+          <label htmlFor="id_number" className={LABEL_CLASS}>
             ID Number <span className="text-red-500">*</span>
           </label>
           <input
+            id="id_number"
             type="text"
             name="id_number"
             value={formData.id_number}
@@ -425,10 +428,10 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
           </p>
         </div>
         <div>
-          <label className={LABEL_CLASS}>
+          <label htmlFor="role" className={LABEL_CLASS}>
             Role <span className="text-red-500">*</span>
           </label>
-          <select name="role" value={formData.role} onChange={handleChange} className={INPUT_CLASS}>
+          <select id="role" name="role" value={formData.role} onChange={handleChange} className={INPUT_CLASS}>
             {ROLE_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
@@ -468,8 +471,9 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
           </div>
         </div>
         <div>
-          <label className={LABEL_CLASS}>Status</label>
+          <label htmlFor="status" className={LABEL_CLASS}>Status</label>
           <select
+            id="status"
             name="status"
             value={formData.status}
             onChange={handleChange}
@@ -480,8 +484,9 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
           </select>
         </div>
         <div>
-          <label className={LABEL_CLASS}>Gender</label>
+          <label htmlFor="gender" className={LABEL_CLASS}>Gender</label>
           <select
+            id="gender"
             name="gender"
             value={formData.gender}
             onChange={handleChange}
@@ -495,8 +500,9 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
           </select>
         </div>
         <div>
-          <label className={LABEL_CLASS}>Hire Date</label>
+          <label htmlFor="hire_date" className={LABEL_CLASS}>Hire Date</label>
           <input
+            id="hire_date"
             type="date"
             name="hire_date"
             value={formData.hire_date}
@@ -505,8 +511,9 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
           />
         </div>
         <div>
-          <label className={LABEL_CLASS}>Termination Date</label>
+          <label htmlFor="termination_date" className={LABEL_CLASS}>Termination Date</label>
           <input
+            id="termination_date"
             type="date"
             name="termination_date"
             value={formData.termination_date}
@@ -536,10 +543,11 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {formData.pay_type === 'hourly' ? (
             <div>
-              <label className={LABEL_CLASS}>
+              <label htmlFor="hourly_rate" className={LABEL_CLASS}>
                 Hourly Rate (ZAR) <span className="text-red-500">*</span>
               </label>
               <input
+                id="hourly_rate"
                 type="number"
                 name="hourly_rate"
                 value={formData.hourly_rate}
@@ -554,10 +562,11 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
             </div>
           ) : (
             <div>
-              <label className={LABEL_CLASS}>
+              <label htmlFor="monthly_salary" className={LABEL_CLASS}>
                 Monthly Salary (ZAR) <span className="text-red-500">*</span>
               </label>
               <input
+                id="monthly_salary"
                 type="number"
                 name="monthly_salary"
                 value={formData.monthly_salary}
@@ -570,8 +579,9 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
           )}
 
           <div>
-            <label className={LABEL_CLASS}>Max Hours/Week</label>
+            <label htmlFor="max_hours_week" className={LABEL_CLASS}>Max Hours/Week</label>
             <input
+              id="max_hours_week"
               type="number"
               name="max_hours_week"
               value={formData.max_hours_week}
@@ -585,8 +595,9 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
           {showPsira && (
             <>
               <div>
-                <label className={LABEL_CLASS}>PSIRA Grade</label>
+                <label htmlFor="cert_level" className={LABEL_CLASS}>PSIRA Grade</label>
                 <select
+                  id="cert_level"
                   name="cert_level"
                   value={formData.cert_level}
                   onChange={handleChange}
@@ -601,8 +612,9 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
                 </select>
               </div>
               <div>
-                <label className={LABEL_CLASS}>PSIRA Number</label>
+                <label htmlFor="psira_number" className={LABEL_CLASS}>PSIRA Number</label>
                 <input
+                  id="psira_number"
                   type="text"
                   name="psira_number"
                   value={formData.psira_number}
@@ -626,8 +638,9 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
       </h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className={LABEL_CLASS}>Email</label>
+          <label htmlFor="email" className={LABEL_CLASS}>Email</label>
           <input
+            id="email"
             type="email"
             name="email"
             value={formData.email}
@@ -637,8 +650,9 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
           />
         </div>
         <div>
-          <label className={LABEL_CLASS}>Phone</label>
+          <label htmlFor="phone" className={LABEL_CLASS}>Phone</label>
           <input
+            id="phone"
             type="tel"
             name="phone"
             value={formData.phone}
@@ -648,8 +662,9 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
           />
         </div>
         <div>
-          <label className={LABEL_CLASS}>Home Location</label>
+          <label htmlFor="home_location" className={LABEL_CLASS}>Home Location</label>
           <input
+            id="home_location"
             type="text"
             name="home_location"
             value={formData.home_location}
@@ -659,8 +674,9 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
           />
         </div>
         <div>
-          <label className={LABEL_CLASS}>Province</label>
+          <label htmlFor="province" className={LABEL_CLASS}>Province</label>
           <select
+            id="province"
             name="province"
             value={formData.province}
             onChange={handleChange}
@@ -675,8 +691,9 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
           </select>
         </div>
         <div className="md:col-span-2">
-          <label className={LABEL_CLASS}>Address</label>
+          <label htmlFor="address" className={LABEL_CLASS}>Address</label>
           <input
+            id="address"
             type="text"
             name="address"
             value={formData.address}
@@ -686,8 +703,9 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
           />
         </div>
         <div>
-          <label className={LABEL_CLASS}>Emergency Contact Name</label>
+          <label htmlFor="emergency_contact_name" className={LABEL_CLASS}>Emergency Contact Name</label>
           <input
+            id="emergency_contact_name"
             type="text"
             name="emergency_contact_name"
             value={formData.emergency_contact_name}
@@ -697,8 +715,9 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
           />
         </div>
         <div>
-          <label className={LABEL_CLASS}>Emergency Contact Phone</label>
+          <label htmlFor="emergency_contact_phone" className={LABEL_CLASS}>Emergency Contact Phone</label>
           <input
+            id="emergency_contact_phone"
             type="tel"
             name="emergency_contact_phone"
             value={formData.emergency_contact_phone}
@@ -716,8 +735,9 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className={LABEL_CLASS}>Bank Name</label>
+            <label htmlFor="bank_name" className={LABEL_CLASS}>Bank Name</label>
             <select
+              id="bank_name"
               name="bank_name"
               value={formData.bank_name}
               onChange={handleChange}
@@ -732,8 +752,9 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
             </select>
           </div>
           <div>
-            <label className={LABEL_CLASS}>Account Type</label>
+            <label htmlFor="account_type" className={LABEL_CLASS}>Account Type</label>
             <select
+              id="account_type"
               name="account_type"
               value={formData.account_type}
               onChange={handleChange}
@@ -747,8 +768,9 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
             </select>
           </div>
           <div>
-            <label className={LABEL_CLASS}>Account Number</label>
+            <label htmlFor="account_number" className={LABEL_CLASS}>Account Number</label>
             <input
+              id="account_number"
               type="text"
               name="account_number"
               value={formData.account_number}
@@ -758,8 +780,9 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
             />
           </div>
           <div>
-            <label className={LABEL_CLASS}>Branch Code</label>
+            <label htmlFor="branch_code" className={LABEL_CLASS}>Branch Code</label>
             <input
+              id="branch_code"
               type="text"
               name="branch_code"
               value={formData.branch_code}
@@ -769,8 +792,9 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
             />
           </div>
           <div>
-            <label className={LABEL_CLASS}>Tax Number</label>
+            <label htmlFor="tax_number" className={LABEL_CLASS}>Tax Number</label>
             <input
+              id="tax_number"
               type="text"
               name="tax_number"
               value={formData.tax_number}
@@ -895,8 +919,9 @@ export default function EmployeeForm({ employee, onClose, onSuccess }: EmployeeF
 
         {/* Employee Number */}
         <div className="max-w-sm">
-          <label className={LABEL_CLASS}>Employee Number</label>
+          <label htmlFor="employee_number" className={LABEL_CLASS}>Employee Number</label>
           <input
+            id="employee_number"
             type="text"
             name="employee_number"
             value={formData.employee_number}

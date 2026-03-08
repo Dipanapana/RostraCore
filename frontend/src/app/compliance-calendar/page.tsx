@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { complianceCalendarApi } from '@/services/api'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 import { CalendarRange, AlertTriangle, AlertCircle, Info, Award, FileText, GraduationCap, Calendar } from 'lucide-react'
 
 const TYPE_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
@@ -53,6 +54,7 @@ export default function ComplianceCalendarPage() {
   if (loading) return <div className="p-8 text-gray-500">Loading...</div>
 
   return (
+    <DashboardLayout>
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -149,5 +151,6 @@ export default function ComplianceCalendarPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

@@ -355,3 +355,63 @@ export interface RosterGenerateResponse {
   shifts_auto_created?: number
   timing?: Record<string, number>
 }
+
+// ── Request Data Types (for API create/update calls) ────────────────────────
+
+export type EmployeeCreateData = Omit<Employee, 'employee_id'>
+export type EmployeeUpdateData = Partial<EmployeeCreateData>
+export type SiteCreateData = Omit<Site, 'site_id'>
+export type SiteUpdateData = Partial<SiteCreateData>
+export type ClientCreateData = Omit<Client, 'client_id'>
+export type ClientUpdateData = Partial<ClientCreateData>
+export type ShiftCreateData = Omit<Shift, 'shift_id'>
+export type ShiftUpdateData = Partial<ShiftCreateData>
+export type AvailabilityCreateData = Omit<Availability, 'availability_id'>
+export type CertificationCreateData = Omit<Certification, 'cert_id' | 'employee_id'>
+
+export interface RosterConfirmData {
+  assignments: RosterAssignment[]
+  start_date: string
+  end_date: string
+  site_ids?: number[]
+  notes?: string
+}
+
+// ── Query Param Types ───────────────────────────────────────────────────────
+
+export interface ShiftQueryParams {
+  site_id?: number
+  employee_id?: number
+  start_date?: string
+  end_date?: string
+  status?: string
+  skip?: number
+  limit?: number
+}
+
+export interface RosterDateRangeParams {
+  start_date?: string
+  end_date?: string
+  site_id?: number
+  client_id?: number
+}
+
+export interface ExportDateParams {
+  start_date?: string
+  end_date?: string
+  [key: string]: string | undefined
+}
+
+export interface CertificationQueryParams {
+  employee_id?: number
+  cert_type?: string
+  skip?: number
+  limit?: number
+}
+
+export interface AvailabilityQueryParams {
+  employee_id?: number
+  date?: string
+  skip?: number
+  limit?: number
+}

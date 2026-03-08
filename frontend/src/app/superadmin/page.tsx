@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { superadminApi } from '@/services/api'
-import Sidebar from '@/components/layout/Sidebar'
-import TopHeader from '@/components/layout/TopHeader'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 import {
   TrendingUp,
   TrendingDown,
@@ -347,8 +346,7 @@ export default function SuperadminPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <Sidebar />
+      <DashboardLayout>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
@@ -356,14 +354,13 @@ export default function SuperadminPage() {
             <p className="text-gray-500 text-sm mt-2">Crunching the numbers...</p>
           </div>
         </div>
-      </div>
+      </DashboardLayout>
     )
   }
 
   if (error) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <Sidebar />
+      <DashboardLayout>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
@@ -376,16 +373,12 @@ export default function SuperadminPage() {
             </button>
           </div>
         </div>
-      </div>
+      </DashboardLayout>
     )
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 flex flex-col min-h-screen">
-        <TopHeader />
-        <main className="flex-1 p-6 overflow-auto">
+    <DashboardLayout>
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -1220,8 +1213,6 @@ export default function SuperadminPage() {
               <p>Data generated at {new Date(analytics.generated_at).toLocaleString('en-ZA')}</p>
             )}
           </div>
-        </main>
-      </div>
-    </div>
+    </DashboardLayout>
   )
 }

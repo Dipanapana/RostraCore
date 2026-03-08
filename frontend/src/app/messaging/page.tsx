@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { messagingApi } from "@/services/api";
 import PageHeader from "@/components/ui/PageHeader";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 import {
   MessageSquare,
   Send,
@@ -196,18 +197,19 @@ export default function MessagingPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
-      </div>
+      <DashboardLayout>
+        <div className="flex h-[60vh] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+        </div>
+      </DashboardLayout>
     );
   }
 
   return (
+    <DashboardLayout>
     <div className="space-y-4">
       {/* Header */}
       <PageHeader
-        backHref="/dashboard"
-        backLabel="Back to Dashboard"
         title="Messaging"
         subtitle="Team communication channels"
         icon={<MessageSquare className="text-blue-600" size={28} />}
@@ -355,5 +357,6 @@ export default function MessagingPage() {
         />
       )}
     </div>
+    </DashboardLayout>
   );
 }

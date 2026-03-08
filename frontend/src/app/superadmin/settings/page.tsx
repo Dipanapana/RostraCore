@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { getApiUrl } from '@/lib/config'
-import Sidebar from '@/components/layout/Sidebar'
-import TopHeader from '@/components/layout/TopHeader'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 import {
   Shield,
   DollarSign,
@@ -13,7 +12,6 @@ import {
   AlertTriangle,
   CheckCircle,
   RefreshCw,
-  ArrowLeft,
   Info,
   Calculator,
 } from 'lucide-react'
@@ -167,15 +165,14 @@ export default function SuperadminSettingsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <Sidebar />
+      <DashboardLayout>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-600 text-lg">Loading Platform Settings...</p>
           </div>
         </div>
-      </div>
+      </DashboardLayout>
     )
   }
 
@@ -184,20 +181,10 @@ export default function SuperadminSettingsPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 flex flex-col min-h-screen">
-        <TopHeader />
-        <main className="flex-1 p-6 overflow-auto">
+    <DashboardLayout>
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <button
-                onClick={() => router.push('/superadmin')}
-                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5 text-gray-600" />
-              </button>
               <div>
                 <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-3">
                   <Shield className="w-8 h-8 text-amber-500" />
@@ -453,8 +440,6 @@ export default function SuperadminSettingsPage() {
               </div>
             </div>
           )}
-        </main>
-      </div>
-    </div>
+    </DashboardLayout>
   )
 }

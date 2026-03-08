@@ -1,6 +1,18 @@
 import axios from 'axios'
 import { getApiUrl } from '@/lib/config'
 import { toast } from '@/context/ToastContext'
+import type {
+  EmployeeCreateData, EmployeeUpdateData,
+  SiteCreateData, SiteUpdateData,
+  ClientCreateData, ClientUpdateData,
+  ShiftCreateData, ShiftUpdateData, ShiftQueryParams,
+  AvailabilityCreateData, AvailabilityQueryParams,
+  CertificationCreateData, CertificationQueryParams,
+  StaffingProfileCreate,
+  AvailabilityPatternCreate,
+  RosterGenerateRequest, RosterConfirmData, RosterDateRangeParams,
+  ExportDateParams,
+} from '@/types'
 
 // Create axios instance - always same-origin via rewrites (Next.js dev / Vercel prod)
 export const api = axios.create({
@@ -75,8 +87,8 @@ api.interceptors.response.use(
 export const employeesApi = {
   getAll: (params?: { status?: string; skip?: number; limit?: number }) => api.get('/api/v1/employees/', { params }),
   getById: (id: number) => api.get(`/api/v1/employees/${id}`),
-  create: (data: any) => api.post('/api/v1/employees/', data),
-  update: (id: number, data: any) => api.put(`/api/v1/employees/${id}`, data),
+  create: (data: EmployeeCreateData) => api.post('/api/v1/employees/', data),
+  update: (id: number, data: EmployeeUpdateData) => api.put(`/api/v1/employees/${id}`, data),
   delete: (id: number) => api.delete(`/api/v1/employees/${id}`),
   importFromExcel: (formData: FormData) => api.post('/api/v1/employees/import-excel', formData, {
     headers: {
@@ -93,8 +105,8 @@ export const employeesApi = {
 export const clientsApi = {
   getAll: () => api.get('/api/v1/clients/'),
   getById: (id: number) => api.get(`/api/v1/clients/${id}`),
-  create: (data: any) => api.post('/api/v1/clients/', data),
-  update: (id: number, data: any) => api.put(`/api/v1/clients/${id}`, data),
+  create: (data: ClientCreateData) => api.post('/api/v1/clients/', data),
+  update: (id: number, data: ClientUpdateData) => api.put(`/api/v1/clients/${id}`, data),
   delete: (id: number) => api.delete(`/api/v1/clients/${id}`),
   getContractAlerts: () => api.get('/api/v1/clients/contract-alerts'),
 }
@@ -102,8 +114,8 @@ export const clientsApi = {
 export const sitesApi = {
   getAll: () => api.get('/api/v1/sites/'),
   getById: (id: number) => api.get(`/api/v1/sites/${id}`),
-  create: (data: any) => api.post('/api/v1/sites/', data),
-  update: (id: number, data: any) => api.put(`/api/v1/sites/${id}`, data),
+  create: (data: SiteCreateData) => api.post('/api/v1/sites/', data),
+  update: (id: number, data: SiteUpdateData) => api.put(`/api/v1/sites/${id}`, data),
   delete: (id: number) => api.delete(`/api/v1/sites/${id}`),
 }
 
@@ -114,10 +126,10 @@ export const shiftPatternsApi = {
 }
 
 export const shiftsApi = {
-  getAll: (params?: any) => api.get('/api/v1/shifts/', { params }),
+  getAll: (params?: ShiftQueryParams) => api.get('/api/v1/shifts/', { params }),
   getById: (id: number) => api.get(`/api/v1/shifts/${id}`),
-  create: (data: any) => api.post('/api/v1/shifts/', data),
-  update: (id: number, data: any) => api.put(`/api/v1/shifts/${id}`, data),
+  create: (data: ShiftCreateData) => api.post('/api/v1/shifts/', data),
+  update: (id: number, data: ShiftUpdateData) => api.put(`/api/v1/shifts/${id}`, data),
   delete: (id: number) => api.delete(`/api/v1/shifts/${id}`),
   getAssignments: (shiftId: number) => api.get(`/api/v1/shifts/${shiftId}/assignments`),
   assignEmployee: (shiftId: number, employeeId: number) => api.post(`/api/v1/shifts/${shiftId}/assign/${employeeId}`),
@@ -129,13 +141,13 @@ export const shiftsApi = {
 }
 
 export const rosterApi = {
-  generate: (data: any) => api.post('/api/v1/roster/generate', data, { timeout: 180000 }), // 180 second timeout for optimization
-  preview: (params?: any) => api.get('/api/v1/roster/preview', { params }),
-  confirm: (data: any) => api.post('/api/v1/roster/confirm', data),
-  getBudgetSummary: (params?: any) => api.get('/api/v1/roster/budget-summary', { params }),
+  generate: (data: RosterGenerateRequest) => api.post('/api/v1/roster/generate', data, { timeout: 180000 }), // 180 second timeout for optimization
+  preview: (params?: RosterDateRangeParams) => api.get('/api/v1/roster/preview', { params }),
+  confirm: (data: RosterConfirmData) => api.post('/api/v1/roster/confirm', data),
+  getBudgetSummary: (params?: RosterDateRangeParams) => api.get('/api/v1/roster/budget-summary', { params }),
   getUnfilledShifts: (params?: { start_date?: string; end_date?: string; site_id?: number }) =>
     api.get('/api/v1/roster/unfilled-shifts', { params }),
-  getEmployeeHours: (params?: any) => api.get('/api/v1/roster/employee-hours', { params }),
+  getEmployeeHours: (params?: RosterDateRangeParams) => api.get('/api/v1/roster/employee-hours', { params }),
   getAssignmentDashboard: (params?: { start_date?: string; end_date?: string; client_id?: number }) =>
     api.get('/api/v1/roster/assignment-dashboard', { params }),
   getSparePool: (params?: { lookback_days?: number; buffer_pct?: number }) =>
@@ -164,19 +176,19 @@ export const rosterApi = {
 }
 
 export const availabilityApi = {
-  getAll: (params?: any) => api.get('/api/v1/availability/', { params }),
+  getAll: (params?: AvailabilityQueryParams) => api.get('/api/v1/availability/', { params }),
   getById: (id: number) => api.get(`/api/v1/availability/${id}`),
-  create: (data: any) => api.post('/api/v1/availability/', data),
-  update: (id: number, data: any) => api.put(`/api/v1/availability/${id}`, data),
+  create: (data: AvailabilityCreateData) => api.post('/api/v1/availability/', data),
+  update: (id: number, data: Partial<AvailabilityCreateData>) => api.put(`/api/v1/availability/${id}`, data),
   delete: (id: number) => api.delete(`/api/v1/availability/${id}`),
 }
 
 export const certificationsApi = {
-  getAll: (params?: any) => api.get('/api/v1/certifications/', { params }),
+  getAll: (params?: CertificationQueryParams) => api.get('/api/v1/certifications/', { params }),
   getExpiring: (days?: number) => api.get('/api/v1/certifications/expiring', { params: { days } }),
   getById: (id: number) => api.get(`/api/v1/certifications/${id}`),
-  create: (data: any) => api.post('/api/v1/certifications/', data),
-  update: (id: number, data: any) => api.put(`/api/v1/certifications/${id}`, data),
+  create: (data: CertificationCreateData) => api.post('/api/v1/certifications/', data),
+  update: (id: number, data: Partial<CertificationCreateData>) => api.put(`/api/v1/certifications/${id}`, data),
   delete: (id: number) => api.delete(`/api/v1/certifications/${id}`),
   getComplianceDashboard: () => api.get('/api/v1/certifications/compliance-dashboard'),
 }
@@ -187,8 +199,8 @@ export const rosterPreferencesApi = {
     return api.get(`/api/v1/roster-preferences${params}`)
   },
   getById: (id: number) => api.get(`/api/v1/roster-preferences/${id}`),
-  create: (data: any) => api.post('/api/v1/roster-preferences', data),
-  update: (id: number, data: any) => api.put(`/api/v1/roster-preferences/${id}`, data),
+  create: (data: Record<string, unknown>) => api.post('/api/v1/roster-preferences', data),
+  update: (id: number, data: Record<string, unknown>) => api.put(`/api/v1/roster-preferences/${id}`, data),
   delete: (id: number) => api.delete(`/api/v1/roster-preferences/${id}`),
   previewResolved: (params: {
     employee_id?: number
@@ -203,7 +215,7 @@ export const rosterPreferencesApi = {
     ).toString()
     return api.get(`/api/v1/roster-preferences/resolve/preview?${queryString}`)
   },
-  createEmergencyRequest: (data: any) => api.post('/api/v1/roster-preferences/emergency-shifts', data),
+  createEmergencyRequest: (data: Record<string, unknown>) => api.post('/api/v1/roster-preferences/emergency-shifts', data),
   getEmergencyRequests: (status?: string) => {
     const params = status ? `?status=${status}` : ''
     return api.get(`/api/v1/roster-preferences/emergency-shifts${params}`)
@@ -223,6 +235,16 @@ export const billingApi = {
   // Extend trial (superadmin only)
   extendTrial: (orgId?: number, days: number = 30) =>
     api.post('/api/v1/payments/extend-trial', null, { params: { org_id: orgId, days } }),
+
+  // Payment transaction status
+  getPaymentStatus: (paymentId: number) => api.get(`/api/v1/payments/status/${paymentId}`),
+
+  // Payment history
+  getPaymentHistory: (params?: { skip?: number; limit?: number; gateway?: string; status?: string }) =>
+    api.get('/api/v1/payments/history', { params }),
+
+  // Billing info
+  getBillingInfo: () => api.get('/api/v1/payments/billing/info'),
 }
 
 export const invoiceApi = {
@@ -299,7 +321,7 @@ export const superadminApi = {
 export const staffingProfilesApi = {
   getForSite: (siteId: number, activeOnly: boolean = true) =>
     api.get(`/api/v1/sites/${siteId}/staffing-profiles`, { params: { active_only: activeOnly } }),
-  create: (siteId: number, data: any) =>
+  create: (siteId: number, data: StaffingProfileCreate) =>
     api.post(`/api/v1/sites/${siteId}/staffing-profiles`, data),
   createStandard: (siteId: number, config: {
     weekday_day_staff: number
@@ -307,7 +329,7 @@ export const staffingProfilesApi = {
     weekend_day_staff: number
     weekend_night_staff: number
   }) => api.post(`/api/v1/sites/${siteId}/staffing-profiles/standard`, config),
-  update: (siteId: number, profileId: number, data: any) =>
+  update: (siteId: number, profileId: number, data: Partial<StaffingProfileCreate>) =>
     api.put(`/api/v1/sites/${siteId}/staffing-profiles/${profileId}`, data),
   delete: (siteId: number, profileId: number) =>
     api.delete(`/api/v1/sites/${siteId}/staffing-profiles/${profileId}`),
@@ -319,7 +341,7 @@ export const staffingProfilesApi = {
 export const availabilityPatternsApi = {
   getForEmployee: (employeeId: number, activeOnly: boolean = true) =>
     api.get(`/api/v1/employees/${employeeId}/availability-patterns`, { params: { active_only: activeOnly } }),
-  create: (employeeId: number, data: any) =>
+  create: (employeeId: number, data: AvailabilityPatternCreate) =>
     api.post(`/api/v1/employees/${employeeId}/availability-patterns`, data),
   createStandard: (employeeId: number, config: {
     effective_from: string
@@ -330,14 +352,14 @@ export const availabilityPatternsApi = {
     saturday_start?: string
     saturday_end?: string
   }) => api.post(`/api/v1/employees/${employeeId}/availability-patterns/standard`, config),
-  update: (employeeId: number, patternId: number, data: any) =>
+  update: (employeeId: number, patternId: number, data: Partial<AvailabilityPatternCreate>) =>
     api.put(`/api/v1/employees/${employeeId}/availability-patterns/${patternId}`, data),
   delete: (employeeId: number, patternId: number) =>
     api.delete(`/api/v1/employees/${employeeId}/availability-patterns/${patternId}`),
   getCalendar: (employeeId: number, startDate: string, endDate: string) =>
     api.post(`/api/v1/employees/${employeeId}/availability-calendar`, { start_date: startDate, end_date: endDate }),
   checkAvailability: (employeeId: number, date: string, time?: string) => {
-    const params: any = { date }
+    const params: Record<string, string> = { date }
     if (time) params.time = time
     return api.get(`/api/v1/employees/${employeeId}/check-availability`, { params })
   },
@@ -363,14 +385,14 @@ export const organizationSettingsApi = {
 
 export const exportsApi = {
   // PDF Reports
-  rosterPdf: (params?: any) => {
-    const queryString = new URLSearchParams(params).toString()
+  rosterPdf: (params?: ExportDateParams) => {
+    const queryString = new URLSearchParams(params as Record<string, string>).toString()
     return `${getApiUrl()}/api/v1/exports/roster/pdf${queryString ? '?' + queryString : ''}`
   },
 
   // Excel Reports
-  rosterExcel: (params?: any) => {
-    const queryString = new URLSearchParams(params).toString()
+  rosterExcel: (params?: ExportDateParams) => {
+    const queryString = new URLSearchParams(params as Record<string, string>).toString()
     return `${getApiUrl()}/api/v1/exports/roster/excel${queryString ? '?' + queryString : ''}`
   },
 
@@ -381,8 +403,8 @@ export const exportsApi = {
   // CSV Exports
   employeesCsv: () => `${getApiUrl()}/api/v1/exports/employees/csv`,
   sitesCsv: () => `${getApiUrl()}/api/v1/exports/sites/csv`,
-  shiftsCsv: (params?: any) => {
-    const queryString = new URLSearchParams(params).toString()
+  shiftsCsv: (params?: ExportDateParams) => {
+    const queryString = new URLSearchParams(params as Record<string, string>).toString()
     return `${getApiUrl()}/api/v1/exports/shifts/csv${queryString ? '?' + queryString : ''}`
   },
   certificationsCsv: () => `${getApiUrl()}/api/v1/exports/certifications/csv`,
@@ -390,8 +412,8 @@ export const exportsApi = {
   // Excel Exports
   employeesExcel: () => `${getApiUrl()}/api/v1/exports/employees/excel`,
   sitesExcel: () => `${getApiUrl()}/api/v1/exports/sites/excel`,
-  shiftsExcel: (params?: any) => {
-    const queryString = new URLSearchParams(params).toString()
+  shiftsExcel: (params?: ExportDateParams) => {
+    const queryString = new URLSearchParams(params as Record<string, string>).toString()
     return `${getApiUrl()}/api/v1/exports/shifts/excel${queryString ? '?' + queryString : ''}`
   },
   certificationsExcel: () => `${getApiUrl()}/api/v1/exports/certifications/excel`,
@@ -519,6 +541,16 @@ export const authApi = {
       current_password: currentPassword,
       new_password: newPassword,
     }),
+
+  // Profile
+  getMe: () => api.get('/api/v1/auth/me'),
+  updateProfile: (data: { email?: string; full_name?: string; phone?: string }) =>
+    api.put('/api/v1/auth/me', data),
+
+  // Phone verification
+  sendPhoneVerification: () => api.post('/api/v1/auth/send-phone-verification'),
+  verifyPhone: (code: string) =>
+    api.post(`/api/v1/auth/verify-phone?code=${code}`),
 }
 
 export const attendanceApi = {
@@ -632,7 +664,7 @@ export const inspectionsApi = {
     api.get('/api/v1/inspections/templates/', { params }),
   createTemplate: (data: { name: string; description?: string; site_id?: number; items: { key: string; label: string; required?: boolean }[] }) =>
     api.post('/api/v1/inspections/templates/', data),
-  updateTemplate: (id: number, data: any) =>
+  updateTemplate: (id: number, data: Record<string, unknown>) =>
     api.put(`/api/v1/inspections/templates/${id}`, data),
   deleteTemplate: (id: number) =>
     api.delete(`/api/v1/inspections/templates/${id}`),
@@ -650,8 +682,8 @@ export const inspectionsApi = {
 export const assetsApi = {
   list: (params?: { category?: string; status?: string; employee_id?: number; site_id?: number; search?: string; limit?: number; offset?: number }) =>
     api.get('/api/v1/assets/', { params }),
-  create: (data: any) => api.post('/api/v1/assets/', data),
-  update: (id: number, data: any) => api.put(`/api/v1/assets/${id}`, data),
+  create: (data: Record<string, unknown>) => api.post('/api/v1/assets/', data),
+  update: (id: number, data: Record<string, unknown>) => api.put(`/api/v1/assets/${id}`, data),
   issue: (id: number, data: { employee_id: number; site_id?: number; notes?: string }) =>
     api.post(`/api/v1/assets/${id}/issue`, data),
   returnAsset: (id: number, notes?: string) =>
@@ -685,7 +717,7 @@ export const geofenceApi = {
 export const visitorsApi = {
   list: (params?: { site_id?: number; status?: string; search?: string; days?: number; limit?: number; offset?: number }) =>
     api.get('/api/v1/visitors/', { params }),
-  signIn: (data: any) => api.post('/api/v1/visitors/', data),
+  signIn: (data: Record<string, unknown>) => api.post('/api/v1/visitors/', data),
   signOut: (id: number, data?: { notes?: string }) =>
     api.post(`/api/v1/visitors/${id}/sign-out/`, data || {}),
   onSite: (siteId?: number) =>
@@ -697,8 +729,8 @@ export const visitorsApi = {
 export const keysApi = {
   list: (params?: { site_id?: number; status?: string; key_type?: string; search?: string }) =>
     api.get('/api/v1/keys/', { params }),
-  create: (data: any) => api.post('/api/v1/keys/', data),
-  update: (id: number, data: any) => api.put(`/api/v1/keys/${id}/`, data),
+  create: (data: Record<string, unknown>) => api.post('/api/v1/keys/', data),
+  update: (id: number, data: Record<string, unknown>) => api.put(`/api/v1/keys/${id}/`, data),
   issue: (id: number, data: { employee_id: number; notes?: string }) =>
     api.post(`/api/v1/keys/${id}/issue/`, data),
   returnKey: (id: number, data?: { notes?: string }) =>
@@ -712,7 +744,7 @@ export const keysApi = {
 export const commLogApi = {
   list: (params?: { site_id?: number; comm_type?: string; priority?: string; resolved?: string; search?: string; days?: number; limit?: number }) =>
     api.get('/api/v1/comm-log/', { params }),
-  create: (data: any) => api.post('/api/v1/comm-log/', data),
+  create: (data: Record<string, unknown>) => api.post('/api/v1/comm-log/', data),
   resolve: (id: number, data: { resolved: string; resolution_notes?: string }) =>
     api.post(`/api/v1/comm-log/${id}/resolve/`, data),
   dashboard: (days?: number) => api.get('/api/v1/comm-log/dashboard/', { params: { days } }),
@@ -729,7 +761,7 @@ export const certAlertsApi = {
 export const dobApi = {
   list: (params?: { site_id?: number; category?: string; search?: string; date_from?: string; date_to?: string; days?: number; limit?: number }) =>
     api.get('/api/v1/occurrence-book/', { params }),
-  create: (data: any) => api.post('/api/v1/occurrence-book/', data),
+  create: (data: Record<string, unknown>) => api.post('/api/v1/occurrence-book/', data),
   dashboard: (days?: number) => api.get('/api/v1/occurrence-book/dashboard/', { params: { days } }),
 }
 
@@ -737,8 +769,8 @@ export const dobApi = {
 export const documentsApi = {
   list: (params?: { employee_id?: number; document_type?: string; search?: string; include_deleted?: boolean; limit?: number; offset?: number }) =>
     api.get('/api/v1/documents/', { params }),
-  create: (data: any) => api.post('/api/v1/documents/', data),
-  update: (id: number, data: any) => api.put(`/api/v1/documents/${id}/`, data),
+  create: (data: Record<string, unknown>) => api.post('/api/v1/documents/', data),
+  update: (id: number, data: Record<string, unknown>) => api.put(`/api/v1/documents/${id}/`, data),
   remove: (id: number) => api.delete(`/api/v1/documents/${id}/`),
   summary: () => api.get('/api/v1/documents/summary/'),
 }
@@ -748,14 +780,14 @@ export const trainingApi = {
   // Courses
   listCourses: (params?: { category?: string; active_only?: boolean; search?: string }) =>
     api.get('/api/v1/training/courses/', { params }),
-  createCourse: (data: any) => api.post('/api/v1/training/courses/', data),
-  updateCourse: (id: number, data: any) => api.put(`/api/v1/training/courses/${id}/`, data),
+  createCourse: (data: Record<string, unknown>) => api.post('/api/v1/training/courses/', data),
+  updateCourse: (id: number, data: Record<string, unknown>) => api.put(`/api/v1/training/courses/${id}/`, data),
   deleteCourse: (id: number) => api.delete(`/api/v1/training/courses/${id}/`),
   // Records
   listRecords: (params?: { employee_id?: number; course_id?: number; status?: string; search?: string; limit?: number; offset?: number }) =>
     api.get('/api/v1/training/records/', { params }),
-  createRecord: (data: any) => api.post('/api/v1/training/records/', data),
-  updateRecord: (id: number, data: any) => api.put(`/api/v1/training/records/${id}/`, data),
+  createRecord: (data: Record<string, unknown>) => api.post('/api/v1/training/records/', data),
+  updateRecord: (id: number, data: Record<string, unknown>) => api.put(`/api/v1/training/records/${id}/`, data),
   deleteRecord: (id: number) => api.delete(`/api/v1/training/records/${id}/`),
   // Dashboard
   dashboard: () => api.get('/api/v1/training/dashboard/'),
@@ -765,8 +797,8 @@ export const trainingApi = {
 export const contractValuesApi = {
   list: (params?: { client_id?: number; site_id?: number; active_only?: boolean }) =>
     api.get('/api/v1/contract-values/', { params }),
-  create: (data: any) => api.post('/api/v1/contract-values/', data),
-  update: (id: number, data: any) => api.put(`/api/v1/contract-values/${id}/`, data),
+  create: (data: Record<string, unknown>) => api.post('/api/v1/contract-values/', data),
+  update: (id: number, data: Record<string, unknown>) => api.put(`/api/v1/contract-values/${id}/`, data),
   remove: (id: number) => api.delete(`/api/v1/contract-values/${id}/`),
   dashboard: () => api.get('/api/v1/contract-values/dashboard/'),
 }
@@ -775,8 +807,8 @@ export const contractValuesApi = {
 export const fleetApi = {
   list: (params?: { status?: string; assigned_site_id?: number; search?: string }) =>
     api.get('/api/v1/fleet/', { params }),
-  create: (data: any) => api.post('/api/v1/fleet/', data),
-  update: (id: number, data: any) => api.put(`/api/v1/fleet/${id}/`, data),
+  create: (data: Record<string, unknown>) => api.post('/api/v1/fleet/', data),
+  update: (id: number, data: Record<string, unknown>) => api.put(`/api/v1/fleet/${id}/`, data),
   remove: (id: number) => api.delete(`/api/v1/fleet/${id}/`),
   dashboard: () => api.get('/api/v1/fleet/dashboard/'),
 }
@@ -785,7 +817,7 @@ export const fleetApi = {
 export const darApi = {
   list: (params?: { site_id?: number; employee_id?: number; status?: string; search?: string; days?: number; limit?: number; offset?: number }) =>
     api.get('/api/v1/daily-activity/', { params }),
-  create: (data: any) => api.post('/api/v1/daily-activity/', data),
+  create: (data: Record<string, unknown>) => api.post('/api/v1/daily-activity/', data),
   review: (id: number, data: { reviewer_notes?: string }) =>
     api.post(`/api/v1/daily-activity/${id}/review/`, data),
   remove: (id: number) => api.delete(`/api/v1/daily-activity/${id}/`),
@@ -796,8 +828,8 @@ export const darApi = {
 export const disciplinaryApi = {
   list: (params?: { employee_id?: number; type?: string; search?: string; days?: number; limit?: number; offset?: number }) =>
     api.get('/api/v1/disciplinary/', { params }),
-  create: (data: any) => api.post('/api/v1/disciplinary/', data),
-  update: (id: number, data: any) => api.put(`/api/v1/disciplinary/${id}/`, data),
+  create: (data: Record<string, unknown>) => api.post('/api/v1/disciplinary/', data),
+  update: (id: number, data: Record<string, unknown>) => api.put(`/api/v1/disciplinary/${id}/`, data),
   remove: (id: number) => api.delete(`/api/v1/disciplinary/${id}/`),
   dashboard: (days?: number) => api.get('/api/v1/disciplinary/dashboard/', { params: { days } }),
 }
@@ -806,8 +838,8 @@ export const disciplinaryApi = {
 export const announcementsApi = {
   list: (params?: { site_id?: number; priority?: string; category?: string; active_only?: boolean; search?: string; limit?: number; offset?: number }) =>
     api.get('/api/v1/announcements/', { params }),
-  create: (data: any) => api.post('/api/v1/announcements/', data),
-  update: (id: number, data: any) => api.put(`/api/v1/announcements/${id}/`, data),
+  create: (data: Record<string, unknown>) => api.post('/api/v1/announcements/', data),
+  update: (id: number, data: Record<string, unknown>) => api.put(`/api/v1/announcements/${id}/`, data),
   remove: (id: number) => api.delete(`/api/v1/announcements/${id}/`),
   dashboard: () => api.get('/api/v1/announcements/dashboard/'),
 }
@@ -816,8 +848,8 @@ export const announcementsApi = {
 export const maintenanceApi = {
   list: (params?: { site_id?: number; status?: string; priority?: string; category?: string; search?: string; days?: number; limit?: number }) =>
     api.get('/api/v1/maintenance/', { params }),
-  create: (data: any) => api.post('/api/v1/maintenance/', data),
-  update: (id: number, data: any) => api.put(`/api/v1/maintenance/${id}/`, data),
+  create: (data: Record<string, unknown>) => api.post('/api/v1/maintenance/', data),
+  update: (id: number, data: Record<string, unknown>) => api.put(`/api/v1/maintenance/${id}/`, data),
   remove: (id: number) => api.delete(`/api/v1/maintenance/${id}/`),
   dashboard: (days?: number) => api.get('/api/v1/maintenance/dashboard/', { params: { days } }),
 }
@@ -825,8 +857,8 @@ export const maintenanceApi = {
 export const slaApi = {
   list: (params?: { site_id?: number; status?: string; year?: number; month?: number }) =>
     api.get('/api/v1/sla/', { params }),
-  create: (data: any) => api.post('/api/v1/sla/', data),
-  update: (id: number, data: any) => api.put(`/api/v1/sla/${id}/`, data),
+  create: (data: Record<string, unknown>) => api.post('/api/v1/sla/', data),
+  update: (id: number, data: Record<string, unknown>) => api.put(`/api/v1/sla/${id}/`, data),
   remove: (id: number) => api.delete(`/api/v1/sla/${id}/`),
   dashboard: (year?: number) => api.get('/api/v1/sla/dashboard', { params: { year } }),
 }
@@ -834,8 +866,8 @@ export const slaApi = {
 export const deploymentsApi = {
   list: (params?: { employee_id?: number; site_id?: number; reason?: string; active_only?: boolean; limit?: number }) =>
     api.get('/api/v1/deployments/', { params }),
-  create: (data: any) => api.post('/api/v1/deployments/', data),
-  update: (id: number, data: any) => api.put(`/api/v1/deployments/${id}/`, data),
+  create: (data: Record<string, unknown>) => api.post('/api/v1/deployments/', data),
+  update: (id: number, data: Record<string, unknown>) => api.put(`/api/v1/deployments/${id}/`, data),
   remove: (id: number) => api.delete(`/api/v1/deployments/${id}/`),
   dashboard: () => api.get('/api/v1/deployments/dashboard'),
 }
@@ -843,8 +875,8 @@ export const deploymentsApi = {
 export const overtimeApi = {
   list: (params?: { employee_id?: number; site_id?: number; status?: string; days?: number }) =>
     api.get('/api/v1/overtime/', { params }),
-  create: (data: any) => api.post('/api/v1/overtime/', data),
-  update: (id: number, data: any) => api.put(`/api/v1/overtime/${id}/`, data),
+  create: (data: Record<string, unknown>) => api.post('/api/v1/overtime/', data),
+  update: (id: number, data: Record<string, unknown>) => api.put(`/api/v1/overtime/${id}/`, data),
   approve: (id: number, data: { status: string; rejection_reason?: string }) =>
     api.post(`/api/v1/overtime/${id}/approve/`, data),
   remove: (id: number) => api.delete(`/api/v1/overtime/${id}/`),
@@ -854,8 +886,8 @@ export const overtimeApi = {
 export const clientReportsApi = {
   list: (params?: { client_id?: number; report_type?: string; status?: string }) =>
     api.get('/api/v1/client-reports/', { params }),
-  create: (data: any) => api.post('/api/v1/client-reports/', data),
-  update: (id: number, data: any) => api.put(`/api/v1/client-reports/${id}/`, data),
+  create: (data: Record<string, unknown>) => api.post('/api/v1/client-reports/', data),
+  update: (id: number, data: Record<string, unknown>) => api.put(`/api/v1/client-reports/${id}/`, data),
   remove: (id: number) => api.delete(`/api/v1/client-reports/${id}/`),
   dashboard: () => api.get('/api/v1/client-reports/dashboard'),
 }
@@ -875,8 +907,8 @@ export const complianceCalendarApi = {
 export const budgetsApi = {
   list: (params?: { year?: number; category?: string; site_id?: number }) =>
     api.get('/api/v1/budgets/', { params }),
-  create: (data: any) => api.post('/api/v1/budgets/', data),
-  update: (id: number, data: any) => api.put(`/api/v1/budgets/${id}/`, data),
+  create: (data: Record<string, unknown>) => api.post('/api/v1/budgets/', data),
+  update: (id: number, data: Record<string, unknown>) => api.put(`/api/v1/budgets/${id}/`, data),
   remove: (id: number) => api.delete(`/api/v1/budgets/${id}/`),
   dashboard: (year?: number) => api.get('/api/v1/budgets/dashboard', { params: { year } }),
 }
@@ -884,8 +916,8 @@ export const budgetsApi = {
 export const emergencyContactsApi = {
   list: (params?: { employee_id?: number }) =>
     api.get('/api/v1/emergency-contacts/', { params }),
-  create: (data: any) => api.post('/api/v1/emergency-contacts/', data),
-  update: (id: number, data: any) => api.put(`/api/v1/emergency-contacts/${id}/`, data),
+  create: (data: Record<string, unknown>) => api.post('/api/v1/emergency-contacts/', data),
+  update: (id: number, data: Record<string, unknown>) => api.put(`/api/v1/emergency-contacts/${id}/`, data),
   remove: (id: number) => api.delete(`/api/v1/emergency-contacts/${id}/`),
   dashboard: () => api.get('/api/v1/emergency-contacts/dashboard'),
 }
@@ -925,8 +957,8 @@ export const contractComplianceApi = {
 export const iodApi = {
   list: (params?: { status?: string; employee_id?: number }) =>
     api.get('/api/v1/iod/', { params }),
-  create: (data: any) => api.post('/api/v1/iod/', data),
-  update: (id: number, data: any) => api.put(`/api/v1/iod/${id}/`, data),
+  create: (data: Record<string, unknown>) => api.post('/api/v1/iod/', data),
+  update: (id: number, data: Record<string, unknown>) => api.put(`/api/v1/iod/${id}/`, data),
   remove: (id: number) => api.delete(`/api/v1/iod/${id}/`),
   dashboard: () => api.get('/api/v1/iod/dashboard'),
 }
@@ -934,7 +966,7 @@ export const iodApi = {
 export const shiftHandoversApi = {
   list: (params?: { site_id?: number; acknowledged?: boolean; priority?: string; limit?: number }) =>
     api.get('/api/v1/shift-handovers/', { params }),
-  create: (data: any) => api.post('/api/v1/shift-handovers/', data),
+  create: (data: Record<string, unknown>) => api.post('/api/v1/shift-handovers/', data),
   acknowledge: (id: number) => api.put(`/api/v1/shift-handovers/${id}/acknowledge`),
   remove: (id: number) => api.delete(`/api/v1/shift-handovers/${id}/`),
   dashboard: () => api.get('/api/v1/shift-handovers/dashboard'),
@@ -966,8 +998,8 @@ export const availabilityHeatmapApi = {
 export const clientSatisfactionApi = {
   list: (clientId?: number, siteId?: number) =>
     api.get('/api/v1/client-satisfaction/', { params: { client_id: clientId, site_id: siteId } }),
-  create: (data: any) => api.post('/api/v1/client-satisfaction/', data),
-  update: (id: number, data: any) => api.put(`/api/v1/client-satisfaction/${id}`, data),
+  create: (data: Record<string, unknown>) => api.post('/api/v1/client-satisfaction/', data),
+  update: (id: number, data: Record<string, unknown>) => api.put(`/api/v1/client-satisfaction/${id}`, data),
   delete: (id: number) => api.delete(`/api/v1/client-satisfaction/${id}`),
   dashboard: () => api.get('/api/v1/client-satisfaction/dashboard'),
 }
@@ -994,8 +1026,8 @@ export const opsSummaryApi = {
 export const reportScheduleApi = {
   list: () => api.get('/api/v1/report-schedules/'),
   get: (id: number) => api.get(`/api/v1/report-schedules/${id}`),
-  create: (data: any) => api.post('/api/v1/report-schedules/', data),
-  update: (id: number, data: any) => api.put(`/api/v1/report-schedules/${id}`, data),
+  create: (data: Record<string, unknown>) => api.post('/api/v1/report-schedules/', data),
+  update: (id: number, data: Record<string, unknown>) => api.put(`/api/v1/report-schedules/${id}`, data),
   delete: (id: number) => api.delete(`/api/v1/report-schedules/${id}`),
   toggle: (id: number) => api.post(`/api/v1/report-schedules/${id}/toggle`),
 };
@@ -1003,7 +1035,7 @@ export const reportScheduleApi = {
 export const psiraApi = {
   getRates: (params?: { grade?: string; area?: number }) =>
     api.get('/api/v1/psira/rates', { params }),
-  createRate: (data: any) => api.post('/api/v1/psira/rates', data),
+  createRate: (data: Record<string, unknown>) => api.post('/api/v1/psira/rates', data),
   seedRates: () => api.post('/api/v1/psira/rates/seed'),
   checkCompliance: () => api.get('/api/v1/psira/check'),
 };
@@ -1012,20 +1044,20 @@ export const popiaApi = {
   getDashboard: () => api.get('/api/v1/popia/dashboard'),
   listConsents: (params?: { employee_id?: number; consent_type?: string }) =>
     api.get('/api/v1/popia/consent', { params }),
-  recordConsent: (data: any) => api.post('/api/v1/popia/consent', data),
+  recordConsent: (data: Record<string, unknown>) => api.post('/api/v1/popia/consent', data),
   withdrawConsent: (id: number) => api.post(`/api/v1/popia/consent/${id}/withdraw`),
   listRequests: (params?: { status_filter?: string }) =>
     api.get('/api/v1/popia/requests', { params }),
-  createRequest: (data: any) => api.post('/api/v1/popia/requests', data),
-  updateRequest: (id: number, data: any) => api.put(`/api/v1/popia/requests/${id}`, data),
+  createRequest: (data: Record<string, unknown>) => api.post('/api/v1/popia/requests', data),
+  updateRequest: (id: number, data: Record<string, unknown>) => api.put(`/api/v1/popia/requests/${id}`, data),
 };
 
 export const postOrdersApi = {
   list: (params?: { site_id?: number; status_filter?: string; skip?: number; limit?: number }) =>
     api.get('/api/v1/post-orders/', { params }),
   get: (id: number) => api.get(`/api/v1/post-orders/${id}`),
-  create: (data: any) => api.post('/api/v1/post-orders/', data),
-  update: (id: number, data: any) => api.put(`/api/v1/post-orders/${id}`, data),
+  create: (data: Record<string, unknown>) => api.post('/api/v1/post-orders/', data),
+  update: (id: number, data: Record<string, unknown>) => api.put(`/api/v1/post-orders/${id}`, data),
   delete: (id: number) => api.delete(`/api/v1/post-orders/${id}`),
   getActiveForSite: (siteId: number) => api.get(`/api/v1/post-orders/site/${siteId}/active`),
   acknowledge: (id: number) => api.post(`/api/v1/post-orders/${id}/acknowledge`),
@@ -1036,13 +1068,13 @@ export const firearmsApi = {
   list: (params?: { status_filter?: string; skip?: number; limit?: number }) =>
     api.get('/api/v1/firearms/', { params }),
   get: (id: number) => api.get(`/api/v1/firearms/${id}`),
-  create: (data: any) => api.post('/api/v1/firearms/', data),
+  create: (data: Record<string, unknown>) => api.post('/api/v1/firearms/', data),
   issue: (id: number, data: { employee_id: number; ammunition_issued?: number; condition_on_issue?: string }) =>
     api.post(`/api/v1/firearms/${id}/issue`, data),
   returnFirearm: (id: number, data: { ammunition_returned?: number; condition_on_return?: string }) =>
     api.post(`/api/v1/firearms/${id}/return`, data),
   getHistory: (id: number) => api.get(`/api/v1/firearms/${id}/history`),
-  inspect: (id: number, data: any) => api.post(`/api/v1/firearms/${id}/inspect`, data),
+  inspect: (id: number, data: Record<string, unknown>) => api.post(`/api/v1/firearms/${id}/inspect`, data),
   getOverdueInspections: () => api.get('/api/v1/firearms/overdue-inspections'),
 };
 
@@ -1050,10 +1082,10 @@ export const customFormsApi = {
   listTemplates: (params?: { status_filter?: string }) =>
     api.get('/api/v1/forms/templates', { params }),
   getTemplate: (id: number) => api.get(`/api/v1/forms/templates/${id}`),
-  createTemplate: (data: any) => api.post('/api/v1/forms/templates', data),
-  updateTemplate: (id: number, data: any) => api.put(`/api/v1/forms/templates/${id}`, data),
+  createTemplate: (data: Record<string, unknown>) => api.post('/api/v1/forms/templates', data),
+  updateTemplate: (id: number, data: Record<string, unknown>) => api.put(`/api/v1/forms/templates/${id}`, data),
   deleteTemplate: (id: number) => api.delete(`/api/v1/forms/templates/${id}`),
-  submitForm: (data: any) => api.post('/api/v1/forms/submit', data),
+  submitForm: (data: Record<string, unknown>) => api.post('/api/v1/forms/submit', data),
   listSubmissions: (params?: { template_id?: number; site_id?: number; skip?: number; limit?: number }) =>
     api.get('/api/v1/forms/submissions', { params }),
 };

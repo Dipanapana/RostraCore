@@ -13,6 +13,7 @@ import {
   X,
   LogOut,
 } from 'lucide-react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 interface VisitorRecord {
   visitor_id: number
@@ -189,6 +190,7 @@ export default function VisitorsPage() {
   }
 
   return (
+    <DashboardLayout>
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -621,5 +623,6 @@ export default function VisitorsPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

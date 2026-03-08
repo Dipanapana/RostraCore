@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { budgetsApi } from '@/services/api'
 import { Wallet, Plus, Pencil, Trash2, X } from 'lucide-react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 const CATEGORIES = ['wages', 'equipment', 'training', 'operations', 'other']
 const CAT_COLORS: Record<string, string> = {
@@ -106,9 +107,10 @@ export default function BudgetsPage() {
     } catch { /* ignore */ }
   }
 
-  if (loading) return <div className="p-8 text-gray-500">Loading...</div>
+  if (loading) return <DashboardLayout><div className="p-8 text-gray-500">Loading...</div></DashboardLayout>
 
   return (
+    <DashboardLayout>
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -321,5 +323,6 @@ export default function BudgetsPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

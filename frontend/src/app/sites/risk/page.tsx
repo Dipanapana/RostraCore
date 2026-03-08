@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { siteRiskApi } from '@/services/api'
 import { ShieldAlert, Building2, AlertTriangle, CheckCircle } from 'lucide-react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 const LEVEL_COLORS: Record<string, string> = {
   critical: 'bg-red-100 text-red-700',
@@ -49,6 +50,7 @@ export default function SiteRiskPage() {
   if (!data) return <div className="p-8 text-gray-500">No data available</div>
 
   return (
+    <DashboardLayout>
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -145,5 +147,6 @@ export default function SiteRiskPage() {
         </table>
       </div>
     </div>
+    </DashboardLayout>
   )
 }

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { deploymentsApi, sitesApi } from '@/services/api'
 import { employeesApi } from '@/services/api'
 import { History, Plus, BarChart3, Edit, Trash2, MapPin } from 'lucide-react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 const REASONS: Record<string, string> = {
   new_assignment: 'New Assignment',
@@ -139,9 +140,10 @@ export default function DeploymentsPage() {
     setShowEdit(r)
   }
 
-  if (loading) return <div className="p-8 text-gray-500">Loading...</div>
+  if (loading) return <DashboardLayout><div className="p-8 text-gray-500">Loading...</div></DashboardLayout>
 
   return (
+    <DashboardLayout>
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -398,5 +400,6 @@ export default function DeploymentsPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

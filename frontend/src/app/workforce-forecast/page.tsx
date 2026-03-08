@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { workforceApi } from '@/services/api'
 import { TrendingUp, Users, Building2, Calendar, Clock, AlertTriangle, CheckCircle, MapPin } from 'lucide-react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 function statusColor(s: string) {
   if (s === 'adequate') return 'text-green-600'
@@ -46,6 +47,7 @@ export default function WorkforceForecastPage() {
   if (loading) return <div className="p-8 text-gray-500">Loading...</div>
 
   return (
+    <DashboardLayout>
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -186,5 +188,6 @@ export default function WorkforceForecastPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

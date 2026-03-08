@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 export default function DashboardsHome() {
   const router = useRouter()
@@ -57,6 +58,7 @@ export default function DashboardsHome() {
   ]
 
   return (
+    <DashboardLayout>
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
@@ -68,15 +70,6 @@ export default function DashboardsHome() {
                 Choose a dashboard tailored to your role and needs
               </p>
             </div>
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back to Main Dashboard
-            </button>
           </div>
         </div>
 
@@ -168,5 +161,6 @@ export default function DashboardsHome() {
         </div>
       </div>
     </div>
+    </DashboardLayout>
   )
 }

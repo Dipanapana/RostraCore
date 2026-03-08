@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { popiaApi, employeesApi } from "@/services/api";
 import PageHeader from "@/components/ui/PageHeader";
+import DashboardLayout from '@/components/layout/DashboardLayout'
 import {
   Shield,
   Plus,
@@ -413,11 +414,10 @@ export default function POPIACompliancePage() {
   }
 
   return (
+    <DashboardLayout>
     <div className="space-y-6">
       {/* Header */}
       <PageHeader
-        backHref="/settings"
-        backLabel="Back to Settings"
         title="POPIA Compliance"
         subtitle="Protection of Personal Information Act -- consent management and data subject requests"
         icon={<Shield className="w-7 h-7 text-blue-600" />}
@@ -703,5 +703,6 @@ export default function POPIACompliancePage() {
         />
       )}
     </div>
+    </DashboardLayout>
   );
 }

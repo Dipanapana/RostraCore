@@ -11,6 +11,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout'
 import DataTable, { Column } from '@/components/ui/DataTable'
 import Modal from '@/components/ui/Modal'
 import { Plus, Pencil, Trash2, Calendar, Clock, MapPin, User, Filter, X, Wand2, CheckSquare, Loader2, UserPlus } from 'lucide-react'
+import TableSkeleton from '@/components/ui/TableSkeleton'
 
 // Shift template type for bulk generation
 interface ShiftTemplate {
@@ -381,8 +382,12 @@ export default function ShiftsPage() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600"></div>
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="animate-pulse">
+            <div className="h-7 w-48 bg-gray-200 rounded mb-2" />
+            <div className="h-4 w-64 bg-gray-100 rounded" />
+          </div>
+          <TableSkeleton rows={8} columns={5} />
         </div>
       </DashboardLayout>
     )
@@ -521,6 +526,16 @@ export default function ShiftsPage() {
           data={filteredShifts}
           columns={columns}
           searchKeys={['status']} // Basic search, real filtering is done above
+          emptyMessage="No shifts scheduled"
+          emptyAction={
+            <button
+              onClick={() => setShowForm(true)}
+              className="mt-1 inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Create Shift
+            </button>
+          }
           actions={(shift) => (
             <>
               {!shift.assigned_employee_id && shift.status !== 'cancelled' && (
@@ -532,6 +547,7 @@ export default function ShiftsPage() {
                   }}
                   className="p-2 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
                   title="Assign Guard"
+                  aria-label="Assign Guard"
                 >
                   <UserPlus className="w-4 h-4" />
                 </button>
@@ -543,6 +559,7 @@ export default function ShiftsPage() {
                 }}
                 className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
                 title="Edit"
+                aria-label="Edit"
               >
                 <Pencil className="w-4 h-4" />
               </button>
@@ -553,6 +570,7 @@ export default function ShiftsPage() {
                 }}
                 className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                 title="Delete"
+                aria-label="Delete"
               >
                 <Trash2 className="w-4 h-4" />
               </button>

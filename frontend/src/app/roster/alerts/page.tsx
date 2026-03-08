@@ -19,6 +19,7 @@ import {
   MapPin,
   Calendar,
 } from 'lucide-react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 interface PostingAlert {
   shift_id: number
@@ -291,6 +292,7 @@ export default function PostingAlertsPage() {
   const isUnderstaffed = (alert: PostingAlert) => alert.severity === 'critical' || alert.severity === 'warning'
 
   return (
+    <DashboardLayout>
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -788,5 +790,6 @@ export default function PostingAlertsPage() {
         )}
       </Modal>
     </div>
+    </DashboardLayout>
   )
 }

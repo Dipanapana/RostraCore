@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { clientSatisfactionApi, clientsApi } from '@/services/api'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 import { Star, TrendingUp, TrendingDown, AlertTriangle, Plus, X } from 'lucide-react'
 
 function StarRating({ rating }: { rating: number | null }) {
@@ -81,6 +82,7 @@ export default function ClientSatisfactionPage() {
   }
 
   return (
+    <DashboardLayout>
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -289,5 +291,6 @@ export default function ClientSatisfactionPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

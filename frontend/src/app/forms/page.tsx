@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { customFormsApi } from "@/services/api";
 import PageHeader from "@/components/ui/PageHeader";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 import {
   ClipboardList,
   Plus,
@@ -238,17 +239,18 @@ export default function FormsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
-      </div>
+      <DashboardLayout>
+        <div className="flex h-[60vh] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+        </div>
+      </DashboardLayout>
     );
   }
 
   return (
+    <DashboardLayout>
     <div className="space-y-6">
       <PageHeader
-        backHref="/dashboard"
-        backLabel="Back to Dashboard"
         title="Custom Forms"
         subtitle="Create and manage digital forms for inspections, checklists, and reports"
         icon={<ClipboardList className="text-blue-600" size={28} />}
@@ -303,5 +305,6 @@ export default function FormsPage() {
       {showCreate && <CreateTemplateModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); loadData(); }} />}
       {viewing && <SubmissionsModal template={viewing} onClose={() => setViewing(null)} />}
     </div>
+    </DashboardLayout>
   );
 }

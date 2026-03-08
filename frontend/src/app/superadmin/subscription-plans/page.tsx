@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { getApiUrl } from "@/lib/config";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 
 interface SubscriptionPlan {
   plan_id: number;
@@ -195,13 +196,16 @@ export default function SubscriptionPlansPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-8">
-        <div className="text-white text-center">Loading subscription plans...</div>
-      </div>
+      <DashboardLayout>
+        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-8">
+          <div className="text-white text-center">Loading subscription plans...</div>
+        </div>
+      </DashboardLayout>
     );
   }
 
   return (
+    <DashboardLayout>
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
@@ -468,5 +472,6 @@ export default function SubscriptionPlansPage() {
         </div>
       </div>
     </div>
+    </DashboardLayout>
   );
 }

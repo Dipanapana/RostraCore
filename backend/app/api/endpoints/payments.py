@@ -10,7 +10,7 @@ We implement monthly one-time payments with manual billing workflow.
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 from datetime import datetime, timedelta
 from decimal import Decimal
 from app.database import get_db
@@ -18,11 +18,13 @@ from app.models.organization import Organization, SubscriptionStatus
 from app.models.subscription_plan import SubscriptionPlan
 from app.models.employee import Employee
 from app.models.user import User
+from app.models.payment_transaction import PaymentTransaction
 from app.auth.security import get_current_user
 from app.services.payfast_service import payfast_service, PayFastService
 from app.services.yoco_service import yoco_service, YocoService
 from app.config import settings
 from pydantic import BaseModel
+import json
 import logging
 
 router = APIRouter()
@@ -152,7 +154,18 @@ async def payfast_webhook(
             logger.error(f"Organization {org_id} not found for payment {pf_payment_id}")
             return {"status": "error", "message": "Organization not found"}
 
+        # Idempotency: skip if this payment was already processed
+        existing = db.query(PaymentTransaction).filter(
+            PaymentTransaction.gateway_transaction_id == str(pf_payment_id),
+            PaymentTransaction.gateway == "payfast",
+        ).first()
+        if existing:
+            logger.info(f"PayFast webhook already processed: {pf_payment_id}")
+            return {"status": "success", "message": "Already processed"}
+
         # Handle payment status
+        pf_amount = Decimal(str(webhook_data.get("amount_gross", 0)))
+
         if payment_status == "COMPLETE":
             # Payment successful
             organization.subscription_status = SubscriptionStatus.ACTIVE
@@ -161,11 +174,37 @@ async def payfast_webhook(
             organization.subscription_next_billing_date = datetime.utcnow() + timedelta(days=30)
             organization.payment_failures = 0
 
+            transaction = PaymentTransaction(
+                org_id=org_id,
+                gateway="payfast",
+                gateway_transaction_id=str(pf_payment_id),
+                gateway_status="COMPLETE",
+                status="completed",
+                amount=pf_amount,
+                description=f"PayFast payment for {organization.company_name}",
+                metadata_json=json.dumps({k: str(v) for k, v in post_data.items()}),
+                completed_at=datetime.utcnow(),
+            )
+            db.add(transaction)
+
             logger.info(f"Payment successful for org {org_id}, subscription activated")
 
         elif payment_status == "CANCELLED":
             # Subscription cancelled
             organization.subscription_status = SubscriptionStatus.CANCELLED
+
+            transaction = PaymentTransaction(
+                org_id=org_id,
+                gateway="payfast",
+                gateway_transaction_id=str(pf_payment_id),
+                gateway_status="CANCELLED",
+                status="cancelled",
+                amount=pf_amount,
+                description="Subscription cancelled",
+                metadata_json=json.dumps({k: str(v) for k, v in post_data.items()}),
+            )
+            db.add(transaction)
+
             logger.info(f"Subscription cancelled for org {org_id}")
 
         elif payment_status == "FAILED":
@@ -175,6 +214,18 @@ async def payfast_webhook(
             if organization.payment_failures >= 3:
                 organization.subscription_status = SubscriptionStatus.SUSPENDED
                 logger.warning(f"Org {org_id} suspended after 3 payment failures")
+
+            transaction = PaymentTransaction(
+                org_id=org_id,
+                gateway="payfast",
+                gateway_transaction_id=str(pf_payment_id),
+                gateway_status="FAILED",
+                status="failed",
+                amount=pf_amount,
+                description=f"Payment failed (failure #{organization.payment_failures})",
+                metadata_json=json.dumps({k: str(v) for k, v in post_data.items()}),
+            )
+            db.add(transaction)
 
         # Save changes
         db.commit()
@@ -186,6 +237,8 @@ async def payfast_webhook(
             "payment_status": payment_status
         }
 
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions (e.g. invalid signature) without wrapping
     except Exception as e:
         logger.error(f"PayFast webhook error: {str(e)}")
         db.rollback()
@@ -195,20 +248,106 @@ async def payfast_webhook(
         )
 
 
-@router.get("/status/{payment_id}")
+class PaymentStatusResponse(BaseModel):
+    """Payment transaction status response."""
+    transaction_id: int
+    gateway: str
+    gateway_transaction_id: Optional[str] = None
+    status: str
+    amount: float
+    currency: str = "ZAR"
+    billing_period: Optional[str] = None
+    guard_count: Optional[int] = None
+    description: Optional[str] = None
+    created_at: datetime
+    completed_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+@router.get("/status/{payment_id}", response_model=PaymentStatusResponse)
 async def get_payment_status(
     payment_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """
-    Get payment status for a subscription payment.
+    """Get payment status for a specific transaction."""
+    transaction = db.query(PaymentTransaction).filter(
+        PaymentTransaction.transaction_id == payment_id
+    ).first()
 
-    TODO: Implement in Phase 4 (Subscription System)
-    """
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Payment status coming in Phase 4"
-    )
+    if not transaction:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Payment transaction not found"
+        )
+
+    # Verify user has access (same org, or superadmin)
+    if not current_user.is_superadmin and current_user.org_id != transaction.org_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only view your own organization's payments"
+        )
+
+    return transaction
+
+
+@router.get("/history")
+async def get_payment_history(
+    skip: int = 0,
+    limit: int = 20,
+    gateway: Optional[str] = None,
+    status_filter: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get payment transaction history for user's organization."""
+    if current_user.org_id is None and not current_user.is_superadmin:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No organization associated with your account"
+        )
+
+    limit = min(limit, 100)
+
+    query = db.query(PaymentTransaction)
+
+    if not current_user.is_superadmin:
+        query = query.filter(PaymentTransaction.org_id == current_user.org_id)
+
+    if gateway:
+        query = query.filter(PaymentTransaction.gateway == gateway)
+
+    if status_filter:
+        query = query.filter(PaymentTransaction.status == status_filter)
+
+    total = query.count()
+    transactions = query.order_by(
+        PaymentTransaction.created_at.desc()
+    ).offset(skip).limit(limit).all()
+
+    return {
+        "transactions": [
+            {
+                "transaction_id": t.transaction_id,
+                "gateway": t.gateway,
+                "gateway_transaction_id": t.gateway_transaction_id,
+                "status": t.status,
+                "amount": float(t.amount),
+                "currency": t.currency,
+                "billing_period": t.billing_period,
+                "guard_count": t.guard_count,
+                "description": t.description,
+                "created_at": t.created_at.isoformat() if t.created_at else None,
+                "completed_at": t.completed_at.isoformat() if t.completed_at else None,
+            }
+            for t in transactions
+        ],
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+    }
 
 
 # ==================== Per-Guard Subscription Endpoints ====================
@@ -595,7 +734,6 @@ async def yoco_webhook(
             )
 
         # Parse JSON body
-        import json
         data = json.loads(body)
 
         logger.info(f"Yoco webhook received: {data.get('type')}")
@@ -618,12 +756,25 @@ async def yoco_webhook(
             logger.error(f"Organization {org_id} not found for webhook")
             return {"status": "error", "message": "Organization not found"}
 
+        # Idempotency: skip if this event was already processed
+        checkout_id = event.get("checkout_id")
+        if checkout_id:
+            existing = db.query(PaymentTransaction).filter(
+                PaymentTransaction.gateway_transaction_id == checkout_id,
+                PaymentTransaction.gateway == "yoco",
+            ).first()
+            if existing:
+                logger.info(f"Yoco webhook already processed: {checkout_id}")
+                return {"status": "success", "message": "Already processed"}
+
         # Handle event types
+        yoco_amount = Decimal(str(event.get("amount", 0) / 100)) if event.get("amount") else Decimal("0")
+
         if event_type == "checkout.completed":
             # Payment successful
             organization.subscription_status = SubscriptionStatus.ACTIVE
             organization.last_payment_date = datetime.utcnow()
-            organization.last_payment_amount = Decimal(str(event.get("amount", 0) / 100))
+            organization.last_payment_amount = yoco_amount
             organization.last_payment_period = event.get("billing_period")
             organization.subscription_next_billing_date = yoco_service.get_next_billing_date()
             organization.payment_failures = 0
@@ -631,15 +782,58 @@ async def yoco_webhook(
             # Store last checkout ID for reference
             organization.yoco_last_checkout_id = event.get("checkout_id")
 
+            transaction = PaymentTransaction(
+                org_id=org_id,
+                gateway="yoco",
+                gateway_transaction_id=event.get("checkout_id"),
+                gateway_status="completed",
+                status="completed",
+                amount=yoco_amount,
+                currency=event.get("currency", "ZAR"),
+                billing_period=event.get("billing_period"),
+                guard_count=event.get("guard_count"),
+                description=f"Yoco payment for {organization.company_name}",
+                metadata_json=json.dumps(data),
+                completed_at=datetime.utcnow(),
+            )
+            db.add(transaction)
+
             logger.info(f"Payment successful for org {org_id}: R{organization.last_payment_amount}")
 
         elif event_type == "checkout.expired":
             # Payment window expired
+            transaction = PaymentTransaction(
+                org_id=org_id,
+                gateway="yoco",
+                gateway_transaction_id=event.get("checkout_id"),
+                gateway_status="expired",
+                status="expired",
+                amount=yoco_amount,
+                currency=event.get("currency", "ZAR"),
+                billing_period=event.get("billing_period"),
+                description="Checkout session expired",
+                metadata_json=json.dumps(data),
+            )
+            db.add(transaction)
+
             logger.warning(f"Checkout expired for org {org_id}")
-            # Don't change subscription status - they can try again
 
         elif event_type == "refund.completed":
-            # Refund processed - may need to handle subscription status
+            # Refund processed
+            transaction = PaymentTransaction(
+                org_id=org_id,
+                gateway="yoco",
+                gateway_transaction_id=event.get("checkout_id"),
+                gateway_status="refunded",
+                status="refunded",
+                amount=yoco_amount,
+                currency=event.get("currency", "ZAR"),
+                description="Refund processed",
+                metadata_json=json.dumps(data),
+                completed_at=datetime.utcnow(),
+            )
+            db.add(transaction)
+
             logger.info(f"Refund completed for org {org_id}")
 
         db.commit()
@@ -656,6 +850,8 @@ async def yoco_webhook(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid JSON"
         )
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions (e.g. invalid signature) without wrapping
     except Exception as e:
         logger.error(f"Yoco webhook error: {str(e)}")
         db.rollback()

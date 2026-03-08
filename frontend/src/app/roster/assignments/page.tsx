@@ -25,6 +25,7 @@ import {
     ShieldCheck,
     Loader2,
 } from 'lucide-react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 interface ShiftData {
     shift_id: number
@@ -441,14 +442,17 @@ export default function RosterAssignmentDashboard() {
 
     if (loading) {
         return (
+            <DashboardLayout>
             <div className="flex items-center justify-center min-h-[400px]">
                 <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600"></div>
             </div>
+            </DashboardLayout>
         )
     }
 
     if (error) {
         return (
+            <DashboardLayout>
             <div className="p-6">
                 <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-6 text-center">
                     <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
@@ -462,21 +466,16 @@ export default function RosterAssignmentDashboard() {
                     </button>
                 </div>
             </div>
+            </DashboardLayout>
         )
     }
 
     return (
+        <DashboardLayout>
         <div className="p-6 space-y-6">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                    <button
-                        onClick={() => router.back()}
-                        className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-                        title="Go back"
-                    >
-                        <ArrowLeft className="w-5 h-5" />
-                    </button>
                     <div>
                         <h1 className="text-2xl font-semibold text-gray-900">
                             Roster Assignment Dashboard
@@ -935,5 +934,6 @@ export default function RosterAssignmentDashboard() {
                 </div>
             )}
         </div>
+        </DashboardLayout>
     )
 }

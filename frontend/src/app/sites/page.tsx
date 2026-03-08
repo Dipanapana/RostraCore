@@ -10,6 +10,7 @@ import DataTable, { Column } from '@/components/ui/DataTable'
 import Modal from '@/components/ui/Modal'
 import Link from 'next/link'
 import { Plus, Pencil, Trash2, MapPin, Users, Clock, Settings2, Eye } from 'lucide-react'
+import TableSkeleton from '@/components/ui/TableSkeleton'
 import SiteStaffingProfiles from '@/components/SiteStaffingProfiles'
 
 export default function SitesPage() {
@@ -125,8 +126,12 @@ export default function SitesPage() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600"></div>
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="animate-pulse">
+            <div className="h-7 w-32 bg-gray-200 rounded mb-2" />
+            <div className="h-4 w-56 bg-gray-100 rounded" />
+          </div>
+          <TableSkeleton rows={6} columns={4} />
         </div>
       </DashboardLayout>
     )
@@ -166,6 +171,16 @@ export default function SitesPage() {
           data={sites}
           columns={columns}
           searchKeys={['site_name', 'client_name', 'address', 'required_skill']}
+          emptyMessage="No sites yet"
+          emptyAction={
+            <button
+              onClick={() => setShowForm(true)}
+              className="mt-1 inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Add Site
+            </button>
+          }
           actions={(site) => (
             <>
               <button
@@ -175,6 +190,7 @@ export default function SitesPage() {
                 }}
                 className="p-2 text-gray-400 hover:text-green-500 hover:bg-green-50 rounded-lg transition-colors"
                 title="Staffing Profiles"
+                aria-label="Staffing Profiles"
               >
                 <Settings2 className="w-4 h-4" />
               </button>
@@ -183,6 +199,7 @@ export default function SitesPage() {
                 onClick={(e) => e.stopPropagation()}
                 className="p-2 text-gray-400 hover:text-violet-500 hover:bg-violet-50 rounded-lg transition-colors inline-flex"
                 title="View Site"
+                aria-label="View Site"
               >
                 <Eye className="w-4 h-4" />
               </Link>
@@ -193,6 +210,7 @@ export default function SitesPage() {
                 }}
                 className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
                 title="Edit"
+                aria-label="Edit"
               >
                 <Pencil className="w-4 h-4" />
               </button>
@@ -203,6 +221,7 @@ export default function SitesPage() {
                 }}
                 className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                 title="Delete"
+                aria-label="Delete"
               >
                 <Trash2 className="w-4 h-4" />
               </button>

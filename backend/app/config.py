@@ -23,12 +23,12 @@ class Settings(BaseSettings):
     # API
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
-    DEBUG: bool = True
+    DEBUG: bool = False
     ENVIRONMENT: str = "development"  # development, staging, production
     API_V1_PREFIX: str = "/api/v1"
 
     # Security
-    SECRET_KEY: str = "your-secret-key-change-in-production"
+    SECRET_KEY: str = "dev-only-change-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30  # 30 min - refresh tokens handle session continuity
 
@@ -129,6 +129,11 @@ class Settings(BaseSettings):
     YOCO_PUBLIC_KEY: str = ""  # Set in .env (pk_test_... or pk_live_...)
     YOCO_WEBHOOK_SECRET: str = ""  # Set in .env for webhook signature verification
     YOCO_SANDBOX: bool = True  # True for testing, False for production
+
+    # SMS Configuration (Twilio)
+    TWILIO_ACCOUNT_SID: Optional[str] = None
+    TWILIO_AUTH_TOKEN: Optional[str] = None
+    TWILIO_PHONE_NUMBER: Optional[str] = None  # e.g., "+27xxxxxxxxx"
 
     # Security Settings
     PASSWORD_MIN_LENGTH: int = 8

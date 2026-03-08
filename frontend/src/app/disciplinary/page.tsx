@@ -11,6 +11,7 @@ import {
   Pencil,
   Trash2,
 } from 'lucide-react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 interface DisciplinaryCase {
   case_id: number
@@ -154,6 +155,7 @@ export default function DisciplinaryPage() {
   }
 
   return (
+    <DashboardLayout>
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -443,5 +445,6 @@ export default function DisciplinaryPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

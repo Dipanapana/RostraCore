@@ -11,7 +11,12 @@ interface PermissionsContextType {
   refreshPermissions: () => Promise<void>;
 }
 
-const PermissionsContext = createContext<PermissionsContextType | undefined>(undefined);
+const PermissionsContext = createContext<PermissionsContextType>({
+  permissions: [],
+  hasPermission: () => false,
+  permissionsLoaded: false,
+  refreshPermissions: async () => {},
+});
 
 export function PermissionsProvider({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated } = useAuth();
@@ -72,9 +77,5 @@ export function PermissionsProvider({ children }: { children: React.ReactNode })
 }
 
 export function usePermissions() {
-  const context = useContext(PermissionsContext);
-  if (context === undefined) {
-    throw new Error("usePermissions must be used within a PermissionsProvider");
-  }
-  return context;
+  return useContext(PermissionsContext);
 }

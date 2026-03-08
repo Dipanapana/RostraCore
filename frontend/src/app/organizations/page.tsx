@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getApiUrl } from "@/lib/config";
+import DashboardLayout from '@/components/layout/DashboardLayout';
 
 interface Organization {
   org_id: number;
@@ -168,6 +169,7 @@ export default function OrganizationsPage() {
   }
 
   return (
+    <DashboardLayout>
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <div>
@@ -410,5 +412,6 @@ export default function OrganizationsPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   );
 }

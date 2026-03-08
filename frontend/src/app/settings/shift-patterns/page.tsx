@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Sidebar from '@/components/layout/Sidebar'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 import {
   Clock,
   Plus,
@@ -188,9 +188,8 @@ export default function ShiftPatternsPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      <main className="flex-1 p-8 ml-64">
+    <DashboardLayout>
+      <main className="flex-1 p-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -513,6 +512,6 @@ export default function ShiftPatternsPage() {
           </div>
         )}
       </main>
-    </div>
+    </DashboardLayout>
   )
 }

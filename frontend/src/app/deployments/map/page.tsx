@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { deploymentMapApi } from '@/services/api'
 import { Map, Users, Building2, AlertTriangle, CheckCircle, XCircle, Shield } from 'lucide-react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 const STATUS_STYLES: Record<string, string> = {
   adequately_staffed: 'bg-emerald-50 text-emerald-700',
@@ -33,14 +34,15 @@ export default function DeploymentMapPage() {
     fetchData().finally(() => setLoading(false))
   }, [fetchData])
 
-  if (loading) return <div className="p-8 text-gray-500">Loading...</div>
-  if (!data) return <div className="p-8 text-gray-500">No data available</div>
+  if (loading) return <DashboardLayout><div className="p-8 text-gray-500">Loading...</div></DashboardLayout>
+  if (!data) return <DashboardLayout><div className="p-8 text-gray-500">No data available</div></DashboardLayout>
 
   const filteredSites = filter === 'all'
     ? data.sites
     : data.sites.filter((s: any) => s.staffing_status === filter)
 
   return (
+    <DashboardLayout>
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -149,5 +151,6 @@ export default function DeploymentMapPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

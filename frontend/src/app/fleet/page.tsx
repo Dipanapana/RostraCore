@@ -6,6 +6,7 @@ import {
   AlertTriangle, Clock, Wrench, MapPin, BarChart3, Fuel,
 } from 'lucide-react'
 import { fleetApi, sitesApi, employeesApi } from '@/services/api'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -162,6 +163,7 @@ export default function FleetPage() {
   // ── render ──
 
   return (
+    <DashboardLayout>
     <div className="p-4 md:p-6 space-y-6 max-w-[1400px] mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -439,5 +441,6 @@ export default function FleetPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { rosterPreferencesApi, clientsApi, sitesApi, employeesApi, organizationSettingsApi } from '@/services/api'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 interface RosterPreference {
   preference_id?: number
@@ -217,19 +218,11 @@ export default function SettingsPage() {
   }
 
   return (
+    <DashboardLayout>
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Page Header */}
         <div className="mb-6">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center text-gray-600 hover:text-gray-900 mb-3 transition-colors"
-          >
-            <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Back
-          </button>
           <h1 className="text-2xl font-semibold text-gray-900">Settings</h1>
           <p className="text-gray-600 mt-1">Configure your organization settings</p>
         </div>
@@ -248,6 +241,18 @@ export default function SettingsPage() {
               className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
             >
               Change Password
+            </button>
+          </div>
+          <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors mt-3">
+            <div>
+              <h3 className="text-sm font-medium text-gray-900">Phone Verification</h3>
+              <p className="text-sm text-gray-500 mt-0.5">Verify your phone number via SMS</p>
+            </div>
+            <button
+              onClick={() => router.push('/settings/phone-verification')}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+            >
+              Verify Phone
             </button>
           </div>
         </div>
@@ -801,5 +806,6 @@ export default function SettingsPage() {
         )}
       </div>
     </div>
+    </DashboardLayout>
   )
 }

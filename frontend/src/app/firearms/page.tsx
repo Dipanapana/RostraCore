@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { firearmsApi, employeesApi } from '@/services/api'
 import PageHeader from '@/components/ui/PageHeader'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 import {
   Crosshair,
   Plus,
@@ -255,11 +256,10 @@ export default function FirearmsPage() {
   // ---------------------------------------------------------------------------
 
   return (
+    <DashboardLayout>
     <div className="space-y-6">
       {/* Header */}
       <PageHeader
-        backHref="/dashboard"
-        backLabel="Back to Dashboard"
         title="Firearms Register"
         subtitle="Manage firearms, issue/return, inspections & compliance"
         icon={<Crosshair className="text-blue-600" size={28} />}
@@ -844,5 +844,6 @@ export default function FirearmsPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

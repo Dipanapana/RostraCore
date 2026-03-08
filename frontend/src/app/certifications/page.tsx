@@ -9,6 +9,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout'
 import DataTable, { Column } from '@/components/ui/DataTable'
 import Modal from '@/components/ui/Modal'
 import { Plus, Pencil, Trash2, Award, Calendar, AlertTriangle, CheckCircle, Filter, X, User } from 'lucide-react'
+import TableSkeleton from '@/components/ui/TableSkeleton'
 
 export default function CertificationsPage() {
   const [certifications, setCertifications] = useState<Certification[]>([])
@@ -171,6 +172,7 @@ export default function CertificationsPage() {
           <div className="flex flex-col gap-1">
             <span className={`px-2.5 py-0.5 inline-flex items-center gap-1 text-xs font-medium rounded-full ${status.color}`}>
               {status.status === 'expired' && <AlertTriangle className="w-3 h-3" />}
+              {(status.status === 'expiring' || status.status === 'warning') && <Calendar className="w-3 h-3" />}
               {status.status === 'valid' && <CheckCircle className="w-3 h-3" />}
               {status.label}
             </span>
@@ -188,8 +190,12 @@ export default function CertificationsPage() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600"></div>
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="animate-pulse">
+            <div className="h-7 w-56 bg-gray-200 rounded mb-2" />
+            <div className="h-4 w-72 bg-gray-100 rounded" />
+          </div>
+          <TableSkeleton rows={6} columns={5} />
         </div>
       </DashboardLayout>
     )
@@ -248,6 +254,7 @@ export default function CertificationsPage() {
             <select
               value={filterEmployee}
               onChange={(e) => setFilterEmployee(e.target.value)}
+              aria-label="Filter by employee"
               className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             >
               <option value="">All Employees</option>
@@ -261,6 +268,7 @@ export default function CertificationsPage() {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
+              aria-label="Filter by type"
               className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             >
               <option value="">All Types</option>
@@ -274,6 +282,7 @@ export default function CertificationsPage() {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
+              aria-label="Filter by status"
               className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             >
               <option value="">All Statuses</option>
@@ -308,6 +317,16 @@ export default function CertificationsPage() {
           data={filteredCertifications}
           columns={columns}
           searchKeys={['cert_type', 'cert_number']}
+          emptyMessage="No certifications tracked"
+          emptyAction={
+            <button
+              onClick={() => setShowForm(true)}
+              className="mt-1 inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Add Certification
+            </button>
+          }
           actions={(cert) => (
             <>
               <button
@@ -317,6 +336,7 @@ export default function CertificationsPage() {
                 }}
                 className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
                 title="Edit"
+                aria-label="Edit"
               >
                 <Pencil className="w-4 h-4" />
               </button>
@@ -327,6 +347,7 @@ export default function CertificationsPage() {
                 }}
                 className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                 title="Delete"
+                aria-label="Delete"
               >
                 <Trash2 className="w-4 h-4" />
               </button>

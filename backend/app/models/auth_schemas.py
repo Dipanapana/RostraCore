@@ -38,6 +38,7 @@ class UserUpdate(BaseModel):
     """User update schema."""
     email: Optional[EmailStr] = None
     full_name: Optional[str] = None
+    phone: Optional[str] = None
     role: Optional[UserRole] = None
     is_active: Optional[bool] = None
 
@@ -54,8 +55,11 @@ class UserResponse(BaseModel):
     username: str
     email: str
     full_name: Optional[str] = None
+    phone: Optional[str] = None
     role: UserRole
     is_active: bool
+    is_email_verified: bool = False
+    is_phone_verified: bool = False
     created_at: datetime
     last_login: Optional[datetime] = None
 

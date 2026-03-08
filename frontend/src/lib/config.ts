@@ -8,10 +8,6 @@
  * @version 5.0 - Dec 8 2025 - Added console log for deployment verification
  */
 
-// Log version on load to verify deployment
-if (typeof window !== 'undefined') {
-  console.log('[RostraCore] API Config v5.0 loaded - using Vercel rewrites');
-}
 
 /**
  * Get the API URL base.

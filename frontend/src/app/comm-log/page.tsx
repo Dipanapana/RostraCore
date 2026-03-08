@@ -15,6 +15,7 @@ import {
   ArrowUp,
   BarChart3,
 } from 'lucide-react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 interface CommEntry {
   log_id: number
@@ -169,6 +170,7 @@ export default function CommLogPage() {
   }
 
   return (
+    <DashboardLayout>
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -506,5 +508,6 @@ export default function CommLogPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

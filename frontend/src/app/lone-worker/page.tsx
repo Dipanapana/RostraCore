@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { loneWorkerApi } from "@/services/api";
 import PageHeader from "@/components/ui/PageHeader";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 import {
   UserCheck,
   AlertTriangle,
@@ -136,18 +137,19 @@ export default function LoneWorkerPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
-      </div>
+      <DashboardLayout>
+        <div className="flex h-[60vh] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+        </div>
+      </DashboardLayout>
     );
   }
 
   return (
+    <DashboardLayout>
     <div className="space-y-6">
       {/* Header */}
       <PageHeader
-        backHref="/dashboard"
-        backLabel="Back to Dashboard"
         title="Lone Worker Protection"
         subtitle="Monitor solo guards with periodic check-in tracking and escalation"
         icon={<UserCheck className="text-blue-600" size={28} />}
@@ -351,5 +353,6 @@ export default function LoneWorkerPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   );
 }

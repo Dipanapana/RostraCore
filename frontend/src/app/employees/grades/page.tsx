@@ -13,6 +13,7 @@ import {
   Settings,
   Clock,
 } from 'lucide-react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 interface GradeData {
   grade: string
@@ -108,18 +109,11 @@ export default function GuardGradesPage() {
   }
 
   return (
+    <DashboardLayout>
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <button
-              onClick={() => router.back()}
-              className="text-sm text-gray-500 hover:text-gray-700"
-            >
-              ← Back
-            </button>
-          </div>
           <h1 className="text-2xl font-semibold text-gray-900">Guard Grades</h1>
           <p className="text-gray-500 mt-1">
             PSIRA grade distribution and wage differentiation across your workforce
@@ -389,5 +383,6 @@ export default function GuardGradesPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

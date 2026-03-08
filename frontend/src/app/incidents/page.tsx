@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { incidentsApi } from "@/services/api";
 import { AlertTriangle, CheckCircle, Search, RefreshCw, Clock, ShieldAlert } from "lucide-react";
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -177,6 +178,7 @@ export default function IncidentsPage() {
   };
 
   return (
+    <DashboardLayout>
     <div className="p-6 max-w-7xl mx-auto">
       {/* Page header */}
       <div className="flex items-center justify-between mb-6">
@@ -343,5 +345,6 @@ export default function IncidentsPage() {
         />
       )}
     </div>
+    </DashboardLayout>
   );
 }

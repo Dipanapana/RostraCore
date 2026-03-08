@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { emergencyApi, loneWorkerApi, incidentsApi } from "@/services/api";
 import PageHeader from "@/components/ui/PageHeader";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 import {
   Radio,
   Siren,
@@ -129,18 +130,19 @@ export default function CommandCenterPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
-      </div>
+      <DashboardLayout>
+        <div className="flex h-[60vh] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+        </div>
+      </DashboardLayout>
     );
   }
 
   return (
+    <DashboardLayout>
     <div className="space-y-4">
       {/* Header */}
       <PageHeader
-        backHref="/dashboard"
-        backLabel="Back to Dashboard"
         title="Command Center"
         subtitle="Real-time operational overview — auto-refreshes every 10s"
         icon={<Radio className={emergencyCount > 0 ? "text-red-600 animate-pulse" : "text-blue-600"} size={28} />}
@@ -273,5 +275,6 @@ export default function CommandCenterPage() {
         </div>
       </div>
     </div>
+    </DashboardLayout>
   );
 }

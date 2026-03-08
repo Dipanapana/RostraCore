@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { slaApi } from '@/services/api'
 import { sitesApi } from '@/services/api'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 import { Target, Plus, BarChart3, Edit, Trash2, CheckCircle, AlertTriangle, XCircle } from 'lucide-react'
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -149,6 +150,7 @@ export default function SLACompliancePage() {
   if (loading) return <div className="p-8 text-gray-500">Loading...</div>
 
   return (
+    <DashboardLayout>
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -451,5 +453,6 @@ export default function SLACompliancePage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

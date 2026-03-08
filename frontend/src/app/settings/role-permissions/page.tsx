@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { rolePermissionsApi } from '@/services/api'
-import PageHeader from '@/components/ui/PageHeader'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 import { Shield, RotateCcw, Save, Check, ChevronDown, ChevronRight } from 'lucide-react'
 
 interface PermissionCategory {
@@ -106,25 +106,28 @@ export default function RolePermissionsPage() {
     setExpandedCategories(prev => ({ ...prev, [key]: !prev[key] }))
   }
 
-  if (loading) return <div className="p-8 text-gray-500">Loading permissions...</div>
+  if (loading) return <DashboardLayout><div className="p-8 text-gray-500">Loading permissions...</div></DashboardLayout>
 
   return (
+    <DashboardLayout>
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      <PageHeader
-        backHref="/settings"
-        backLabel="Back to Settings"
-        title="Role Permissions"
-        subtitle="Configure which features each role can access"
-        icon={<Shield className="text-blue-600" size={28} />}
-        actions={
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
+            <Shield className="text-blue-600" size={28} />
+            Role Permissions
+          </h1>
+          <p className="text-sm text-gray-500 mt-0.5">Configure which features each role can access</p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={resetDefaults}
             className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
           >
             <RotateCcw size={14} /> Reset to Defaults
           </button>
-        }
-      />
+        </div>
+      </div>
 
       {/* Role Tabs + Save Buttons */}
       <div className="flex flex-wrap gap-3">
@@ -241,5 +244,6 @@ export default function RolePermissionsPage() {
         Admin, Company Admin, and Superadmin roles always have full access and cannot be customised.
       </div>
     </div>
+    </DashboardLayout>
   )
 }

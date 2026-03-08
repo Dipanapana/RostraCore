@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { clientReportsApi } from '@/services/api'
 import { clientsApi, sitesApi } from '@/services/api'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 import { FileBarChart, Plus, BarChart3, Edit, Trash2, Send, Eye } from 'lucide-react'
 
 const REPORT_TYPES: Record<string, string> = {
@@ -145,6 +146,7 @@ export default function ClientReportsPage() {
   if (loading) return <div className="p-8 text-gray-500">Loading...</div>
 
   return (
+    <DashboardLayout>
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -391,5 +393,6 @@ export default function ClientReportsPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { payrollExportApi } from '@/services/api'
 import { Download, FileSpreadsheet, CheckCircle, AlertCircle } from 'lucide-react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 const FORMATS = [
   {
@@ -61,6 +62,7 @@ export default function PayrollExportsPage() {
   const currentFormat = FORMATS.find(f => f.key === selectedFormat)
 
   return (
+    <DashboardLayout>
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -155,5 +157,6 @@ export default function PayrollExportsPage() {
         </button>
       </div>
     </div>
+    </DashboardLayout>
   )
 }

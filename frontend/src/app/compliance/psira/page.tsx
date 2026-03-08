@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { psiraApi } from "@/services/api";
 import PageHeader from "@/components/ui/PageHeader";
+import DashboardLayout from '@/components/layout/DashboardLayout'
 import {
   Shield,
   CheckCircle,
@@ -92,11 +93,10 @@ export default function PSIRACompliancePage() {
   const complianceRate = data ? Math.round((data.compliant / Math.max(data.total_employees, 1)) * 100) : 0;
 
   return (
+    <DashboardLayout>
     <div className="space-y-6">
       {/* Header */}
       <PageHeader
-        backHref="/employees/compliance"
-        backLabel="Back to Compliance"
         title="PSIRA Wage Compliance"
         subtitle="South African minimum wage rate compliance by PSIRA grade"
         icon={<Shield className="text-blue-600" size={28} />}
@@ -234,5 +234,6 @@ export default function PSIRACompliancePage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   );
 }

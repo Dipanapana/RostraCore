@@ -18,6 +18,7 @@ export default function LoginPage() {
   const [verificationEmail, setVerificationEmail] = useState("");
   const [resendLoading, setResendLoading] = useState(false);
   const [resendSuccess, setResendSuccess] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<{ username?: string; password?: string }>({});
   const { login } = useAuth();
   const router = useRouter();
 
@@ -26,13 +27,23 @@ export default function LoginPage() {
     setError("");
     setNeedsVerification(false);
     setResendSuccess("");
+
+    // Client-side validation
+    const errors: { username?: string; password?: string } = {};
+    if (!username.trim()) errors.username = "Email or username is required";
+    if (!password) errors.password = "Password is required";
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
     setLoading(true);
 
     try {
       await login(username, password);
       // Redirect happens in AuthContext
-    } catch (err: any) {
-      const message = err.message || "Login failed";
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Login failed";
       setError(message);
       if (message.toLowerCase().includes("verify your email")) {
         setNeedsVerification(true);
@@ -148,13 +159,19 @@ export default function LoginPage() {
                   id="username"
                   type="text"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={(e) => {
+                    setUsername(e.target.value);
+                    if (fieldErrors.username) setFieldErrors((prev) => ({ ...prev, username: undefined }));
+                  }}
                   required
-                  className="block w-full pl-11 pr-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                  className={`block w-full pl-11 pr-4 py-3 bg-white border rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400 ${fieldErrors.username ? 'border-red-400' : 'border-gray-300'}`}
                   placeholder="Enter your email"
                   disabled={loading}
                 />
               </div>
+              {fieldErrors.username && (
+                <p className="text-xs text-red-500 mt-1">{fieldErrors.username}</p>
+              )}
             </div>
 
             {/* Password Field */}
@@ -178,9 +195,12 @@ export default function LoginPage() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (fieldErrors.password) setFieldErrors((prev) => ({ ...prev, password: undefined }));
+                  }}
                   required
-                  className="block w-full pl-11 pr-12 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                  className={`block w-full pl-11 pr-12 py-3 bg-white border rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400 ${fieldErrors.password ? 'border-red-400' : 'border-gray-300'}`}
                   placeholder="Enter your password"
                   disabled={loading}
                 />
@@ -197,6 +217,9 @@ export default function LoginPage() {
                   )}
                 </button>
               </div>
+              {fieldErrors.password && (
+                <p className="text-xs text-red-500 mt-1">{fieldErrors.password}</p>
+              )}
             </div>
 
             {/* Submit Button */}

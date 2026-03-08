@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { billingApi } from '@/services/api'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 export default function BillingSuccessPage() {
   const router = useRouter()
@@ -32,6 +33,7 @@ export default function BillingSuccessPage() {
   }, [router])
 
   return (
+    <DashboardLayout>
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
       <div className="max-w-md w-full">
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 text-center">
@@ -89,5 +91,6 @@ export default function BillingSuccessPage() {
         </div>
       </div>
     </div>
+    </DashboardLayout>
   )
 }
