@@ -230,7 +230,7 @@ export default function PayrollPage() {
   }, [token]);
 
   const fetchPayrolls = async () => {
-    if (!token) return;
+    if (!token) { setLoading(false); return; }
 
     try {
       const response = await fetch(`${getApiUrl()}/api/v1/payroll`, {

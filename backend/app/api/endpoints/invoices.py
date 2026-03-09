@@ -46,25 +46,25 @@ class InvoiceResponse(BaseModel):
     """Invoice response schema."""
     invoice_id: int
     client_id: int
-    client_name: str
+    client_name: str = "Unknown"
     invoice_number: str
     invoice_date: date
     period_start: date
     period_end: date
-    due_date: Optional[date]
-    total_hours: float
-    total_shifts: int
-    subtotal: float
-    tax_amount: float
-    total_amount: float
-    status: str
-    paid_date: Optional[date]
-    payment_reference: Optional[str]
-    notes: Optional[str]
-    payment_terms: Optional[str]
-    purchase_order_number: Optional[str]
-    created_at: datetime
-    updated_at: datetime
+    due_date: Optional[date] = None
+    total_hours: Optional[float] = 0.0
+    total_shifts: Optional[int] = 0
+    subtotal: Optional[float] = 0.0
+    tax_amount: Optional[float] = 0.0
+    total_amount: Optional[float] = 0.0
+    status: Optional[str] = "draft"
+    paid_date: Optional[date] = None
+    payment_reference: Optional[str] = None
+    notes: Optional[str] = None
+    payment_terms: Optional[str] = None
+    purchase_order_number: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -112,14 +112,37 @@ async def list_invoices(
 
     invoices = query.order_by(ClientInvoice.invoice_date.desc()).offset(skip).limit(limit).all()
 
-    # Add client names
+    # Build response with client names
+    # Cache client lookups
+    client_cache: dict[int, str] = {}
     result = []
     for inv in invoices:
-        client = db.query(Client).filter(Client.client_id == inv.client_id).first()
-        result.append({
-            **inv.__dict__,
-            "client_name": client.client_name if client else "Unknown"
-        })
+        if inv.client_id not in client_cache:
+            client = db.query(Client).filter(Client.client_id == inv.client_id).first()
+            client_cache[inv.client_id] = client.client_name if client else "Unknown"
+        result.append(InvoiceResponse(
+            invoice_id=inv.invoice_id,
+            client_id=inv.client_id,
+            client_name=client_cache[inv.client_id],
+            invoice_number=inv.invoice_number,
+            invoice_date=inv.invoice_date,
+            period_start=inv.period_start,
+            period_end=inv.period_end,
+            due_date=inv.due_date,
+            total_hours=inv.total_hours,
+            total_shifts=inv.total_shifts,
+            subtotal=inv.subtotal,
+            tax_amount=inv.tax_amount,
+            total_amount=inv.total_amount,
+            status=inv.status,
+            paid_date=inv.paid_date,
+            payment_reference=inv.payment_reference,
+            notes=inv.notes,
+            payment_terms=inv.payment_terms,
+            purchase_order_number=inv.purchase_order_number,
+            created_at=inv.created_at,
+            updated_at=inv.updated_at,
+        ))
 
     return result
 

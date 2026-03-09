@@ -1341,10 +1341,15 @@ export default function Sidebar() {
   }, []);
 
   // Derive nav items from role
-  const role = (user?.role ?? "guard") as UserRole;
+  const role = (user?.role?.toLowerCase() ?? "guard") as UserRole;
   const isSuperadmin =
-    user?.is_superadmin === true || role?.toLowerCase() === "superadmin";
-  const visibleEntries = getVisibleEntries(role, permissionsLoaded ? hasPermission : undefined);
+    user?.is_superadmin === true || role === "superadmin";
+  // Admin roles always get full access — don't wait for permissions to load
+  const isFullAccessRole = role === "admin" || role === "company_admin" || role === "superadmin";
+  const effectiveHasPermission = isFullAccessRole
+    ? () => true
+    : effectiveHasPermission;
+  const visibleEntries = getVisibleEntries(role, effectiveHasPermission);
 
   // ── Effects ────────────────────────────────────────────
 
@@ -1376,7 +1381,7 @@ export default function Sidebar() {
   useEffect(() => {
     for (const entry of NAV_ENTRIES) {
       if (entry.kind === "group") {
-        const visChildren = getVisibleChildren(entry.children, role, permissionsLoaded ? hasPermission : undefined);
+        const visChildren = getVisibleChildren(entry.children, role, effectiveHasPermission);
         if (isGroupActive(visChildren, pathname)) {
           setExpandedGroups((prev) => {
             if (prev[entry.key]) return prev;
@@ -1385,7 +1390,7 @@ export default function Sidebar() {
         }
       }
     }
-  }, [pathname, role, hasPermission, permissionsLoaded]);
+  }, [pathname, role, effectiveHasPermission]);
 
   // Close mobile drawer on navigation
   useEffect(() => {
@@ -1490,7 +1495,7 @@ export default function Sidebar() {
   };
 
   const renderGroup = (entry: NavGroup, collapsed: boolean) => {
-    const visChildren = getVisibleChildren(entry.children, role, permissionsLoaded ? hasPermission : undefined);
+    const visChildren = getVisibleChildren(entry.children, role, effectiveHasPermission);
     if (visChildren.length === 0) return null;
 
     const active = isGroupActive(visChildren, pathname);

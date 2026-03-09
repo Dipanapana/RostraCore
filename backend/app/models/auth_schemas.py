@@ -1,7 +1,7 @@
 """Pydantic schemas for authentication."""
 
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from app.models.user import UserRole
 
@@ -58,9 +58,13 @@ class UserResponse(BaseModel):
     phone: Optional[str] = None
     role: UserRole
     is_active: bool
+    is_owner: bool = False
+    is_superadmin: bool = False
+    org_id: Optional[int] = None
     is_email_verified: bool = False
     is_phone_verified: bool = False
-    created_at: datetime
+    managed_client_ids: Optional[List[int]] = None
+    created_at: Optional[datetime] = None
     last_login: Optional[datetime] = None
 
     class Config:

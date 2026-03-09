@@ -161,21 +161,24 @@ async def get_payroll(
 
     payrolls = query.order_by(PayrollSummary.period_start.desc()).offset(skip).limit(limit).all()
 
-    # Add employee name
+    # Add employee name — cache lookups
+    emp_cache: dict[int, str] = {}
     result = []
     for p in payrolls:
-        employee = db.query(Employee).filter(Employee.employee_id == p.employee_id).first()
+        if p.employee_id not in emp_cache:
+            employee = db.query(Employee).filter(Employee.employee_id == p.employee_id).first()
+            emp_cache[p.employee_id] = f"{employee.first_name} {employee.last_name}" if employee else "Unknown"
         result.append({
             "payroll_id": p.payroll_id,
             "employee_id": p.employee_id,
-            "employee_name": f"{employee.first_name} {employee.last_name}" if employee else "Unknown",
-            "period_start": p.period_start.isoformat(),
-            "period_end": p.period_end.isoformat(),
-            "total_hours": p.total_hours,
-            "overtime_hours": p.overtime_hours,
-            "gross_pay": p.gross_pay,
-            "expenses_total": p.expenses_total,
-            "net_pay": p.net_pay
+            "employee_name": emp_cache[p.employee_id],
+            "period_start": p.period_start.isoformat() if p.period_start else None,
+            "period_end": p.period_end.isoformat() if p.period_end else None,
+            "total_hours": p.total_hours or 0.0,
+            "overtime_hours": p.overtime_hours or 0.0,
+            "gross_pay": p.gross_pay or 0.0,
+            "expenses_total": p.expenses_total or 0.0,
+            "net_pay": p.net_pay or 0.0,
         })
 
     return result
@@ -362,13 +365,13 @@ async def get_payroll_detail(
             "name": f"{employee.first_name} {employee.last_name}",
             "hourly_rate": employee.hourly_rate
         } if employee else None,
-        "period_start": payroll.period_start.isoformat(),
-        "period_end": payroll.period_end.isoformat(),
-        "total_hours": payroll.total_hours,
-        "overtime_hours": payroll.overtime_hours,
-        "gross_pay": payroll.gross_pay,
-        "expenses_total": payroll.expenses_total,
-        "net_pay": payroll.net_pay
+        "period_start": payroll.period_start.isoformat() if payroll.period_start else None,
+        "period_end": payroll.period_end.isoformat() if payroll.period_end else None,
+        "total_hours": payroll.total_hours or 0.0,
+        "overtime_hours": payroll.overtime_hours or 0.0,
+        "gross_pay": payroll.gross_pay or 0.0,
+        "expenses_total": payroll.expenses_total or 0.0,
+        "net_pay": payroll.net_pay or 0.0,
     }
 
 
