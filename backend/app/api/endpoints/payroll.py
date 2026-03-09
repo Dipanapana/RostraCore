@@ -177,8 +177,15 @@ async def get_payroll(
             "total_hours": p.total_hours or 0.0,
             "overtime_hours": p.overtime_hours or 0.0,
             "gross_pay": p.gross_pay or 0.0,
+            "paye": p.paye or 0.0,
+            "uif": p.uif_employee or 0.0,
+            "uif_employee": p.uif_employee or 0.0,
+            "uif_employer": p.uif_employer or 0.0,
+            "sdl": p.sdl or 0.0,
+            "total_deductions": p.total_deductions or 0.0,
             "expenses_total": p.expenses_total or 0.0,
             "net_pay": p.net_pay or 0.0,
+            "status": getattr(p, 'status', None) or "draft",
         })
 
     return result

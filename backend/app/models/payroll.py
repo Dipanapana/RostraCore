@@ -22,6 +22,25 @@ class PayrollSummary(Base):
     expenses_total = Column(Float, default=0.0)
     net_pay = Column(Float, default=0.0)
 
+    # SA Tax deductions
+    uif_employee = Column(Float, default=0.0)
+    paye = Column(Float, default=0.0)
+    uif_employer = Column(Float, default=0.0)
+    sdl = Column(Float, default=0.0)
+    provident_fund = Column(Float, default=0.0)
+    medical_aid = Column(Float, default=0.0)
+    other_deductions = Column(Float, default=0.0)
+    total_deductions = Column(Float, default=0.0)
+    total_employer_contributions = Column(Float, default=0.0)
+    cost_to_company = Column(Float, default=0.0)
+    annual_taxable_income = Column(Float, nullable=True)
+    tax_bracket = Column(String(50), nullable=True)
+    effective_tax_rate = Column(Float, nullable=True)
+    currency_code = Column(String(10), default="ZAR")
+    exchange_rate_used = Column(Float, nullable=True)
+    original_currency = Column(String(10), nullable=True)
+    original_gross_pay = Column(Float, nullable=True)
+
     # Status workflow: draft -> approved -> paid
     status = Column(String(20), default="draft", nullable=False, index=True)
     approved_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)

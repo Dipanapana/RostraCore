@@ -743,17 +743,33 @@ def seed_company(eng, config):
                 net_pay = gross_pay - expenses
                 paid_at = datetime.combine(month_end + timedelta(days=5), time(12, 0)) if status == "paid" else None
 
+                sdl = gross_pay * 0.01  # Skills Development Levy
+                uif_employer = min(gross_pay * 0.01, 177.12)
+                total_deductions = uif + paye_monthly
+                total_employer_contrib = uif_employer + sdl
+                ctc = gross_pay + total_employer_contrib
+                net_pay = gross_pay - total_deductions
+
                 conn.execute(text("""
                     INSERT INTO payroll_summary (
                         org_id, employee_id, period_start, period_end,
                         total_hours, overtime_hours, gross_pay,
-                        expenses_total, net_pay, status, paid_at
-                    ) VALUES (:oid, :eid, :start, :end, :hours, :ot, :gross, :exp, :net, :status, :paid)
+                        expenses_total, net_pay, status, paid_at,
+                        paye, uif_employee, uif_employer, sdl,
+                        total_deductions, total_employer_contributions,
+                        cost_to_company, currency_code
+                    ) VALUES (:oid, :eid, :start, :end, :hours, :ot, :gross, :exp, :net, :status, :paid,
+                              :paye, :uif_emp, :uif_er, :sdl,
+                              :tot_ded, :tot_er, :ctc, 'ZAR')
                 """), {
                     "oid": org_id, "eid": emp["id"], "start": month_start, "end": month_end,
                     "hours": total_hours, "ot": ot_hours,
                     "gross": round(gross_pay, 2), "exp": round(expenses, 2),
                     "net": round(net_pay, 2), "status": status, "paid": paid_at,
+                    "paye": round(paye_monthly, 2), "uif_emp": round(uif, 2),
+                    "uif_er": round(uif_employer, 2), "sdl": round(sdl, 2),
+                    "tot_ded": round(total_deductions, 2), "tot_er": round(total_employer_contrib, 2),
+                    "ctc": round(ctc, 2),
                 })
                 payroll_count += 1
 

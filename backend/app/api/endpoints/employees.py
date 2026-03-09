@@ -568,6 +568,24 @@ async def get_turnover_analytics(
     }
 
 
+@router.get("/download-template")
+async def download_employee_template():
+    """
+    Download Excel template for employee import.
+
+    Returns an Excel file with sample data and correct column headers.
+    """
+    template_bytes = ExcelImportService.generate_employee_template()
+
+    return Response(
+        content=template_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": "attachment; filename=employee_import_template.xlsx"
+        }
+    )
+
+
 @router.get("/{employee_id}", response_model=EmployeeResponse)
 async def get_employee(
     employee_id: int,
@@ -753,24 +771,6 @@ async def import_from_easyroster(
         )
 
     return result
-
-
-@router.get("/download-template")
-async def download_employee_template():
-    """
-    Download Excel template for employee import.
-
-    Returns an Excel file with sample data and correct column headers.
-    """
-    template_bytes = ExcelImportService.generate_employee_template()
-
-    return Response(
-        content=template_bytes,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={
-            "Content-Disposition": "attachment; filename=employee_import_template.xlsx"
-        }
-    )
 
 
 @router.get("/{employee_id}/shifts", response_model=List[dict])
