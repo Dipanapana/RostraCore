@@ -246,7 +246,8 @@ with engine.begin() as conn:
                 bank_name, bank_account_number, bank_branch_code, bank_account_holder,
                 billing_email, max_employees, max_sites, is_active,
                 payslip_template, subscription_started_at,
-                active_guard_count, monthly_rate_per_guard, current_month_cost
+                active_guard_count, monthly_rate_per_guard, current_month_cost,
+                payment_failures, client_management_mode
             ) VALUES (
                 'MAFOKO', 'Mafoko Security Patrols (Pty) Ltd', 'business', 'active',
                 'approved', '1234 Arcadia Street, Hatfield', 'Pretoria', '0028', '0123625000',
@@ -254,7 +255,8 @@ with engine.begin() as conn:
                 'FNB', '62345678901', '250655', 'Mafoko Security Patrols',
                 'accounts@mafokosecurity.co.za', 250, 40, true,
                 'professional', :sub_start,
-                100, 29.00, 2900.00
+                100, 29.00, 2900.00,
+                0, 'internal'
             ) RETURNING org_id
         """), {"sub_start": datetime(2025, 6, 1)})
         org_id = result.fetchone()[0]
@@ -279,7 +281,7 @@ with engine.begin() as conn:
             ) VALUES (
                 'mafoko_admin', 'admin@mafokosecurity.co.za', :pwd,
                 'Thabo Mafoko', '0123625001',
-                'company_admin', :oid, true, true, true,
+                'COMPANY_ADMIN', :oid, true, true, true,
                 0
             )
         """), {"pwd": pwd_hash, "oid": org_id})
@@ -291,11 +293,11 @@ with engine.begin() as conn:
     # Create additional role-based users
     EXTRA_USERS = [
         {"username": "mafoko_scheduler", "email": "scheduler@mafokosecurity.co.za",
-         "full_name": "Roster Scheduler", "role": "scheduler", "is_owner": False},
+         "full_name": "Roster Scheduler", "role": "SCHEDULER", "is_owner": False},
         {"username": "mafoko_finance", "email": "finance@mafokosecurity.co.za",
-         "full_name": "Finance Officer", "role": "finance", "is_owner": False},
+         "full_name": "Finance Officer", "role": "FINANCE", "is_owner": False},
         {"username": "mafoko_guard", "email": "guard@mafokosecurity.co.za",
-         "full_name": "Guard User", "role": "guard", "is_owner": False},
+         "full_name": "Guard User", "role": "GUARD", "is_owner": False},
     ]
     for u in EXTRA_USERS:
         exists = conn.execute(text(
@@ -560,10 +562,10 @@ for month_start, month_end, period_label in MONTHS:
     print(f"\n  --{period_label} --")
 
     with engine.begin() as conn:
-        # Create one roster per site per month
+        # Create all rosters for this month in one batch
+        roster_ids = {}  # site_id -> roster_id
         for site in site_data:
             roster_code = f"MAF-{site['site_code']}-{period_label}"
-
             result = conn.execute(text("""
                 INSERT INTO rosters (
                     org_id, roster_code, name, start_date, end_date,
@@ -575,9 +577,7 @@ for month_start, month_end, period_label in MONTHS:
                 ) VALUES (
                     :oid, :code, :name, :start, :end,
                     :cid, 'completed', 'production_cpsat', 'optimal',
-                    0, 0, 0,
-                    0, 0, 0,
-                    0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0,
                     true, true, :created
                 ) RETURNING roster_id
             """), {
@@ -588,15 +588,18 @@ for month_start, month_end, period_label in MONTHS:
                 "cid": site["client_id"],
                 "created": datetime.combine(month_start, time(8, 0)),
             })
-            roster_id = result.fetchone()[0]
+            roster_ids[site["site_id"]] = result.fetchone()[0]
 
+        print(f"    Rosters created ({len(site_data)}), building shifts...")
+
+        # Build all shifts in memory, then batch insert per site
+        for site in site_data:
+            roster_id = roster_ids[site["site_id"]]
             site_emps = site_employee_map[site["site_id"]]
+            shift_rows = []
             current_date = month_start
-            month_shifts = 0
-            month_assignments = 0
 
             while current_date <= month_end:
-                # Create day shift (06:00-18:00) and night shift (18:00-06:00)
                 for shift_type in ["day", "night"]:
                     if shift_type == "day":
                         s_start = datetime.combine(current_date, time(6, 0))
@@ -604,95 +607,81 @@ for month_start, month_end, period_label in MONTHS:
                     else:
                         s_start = datetime.combine(current_date, time(18, 0))
                         s_end = datetime.combine(current_date + timedelta(days=1), time(6, 0))
-
-                    result = conn.execute(text("""
-                        INSERT INTO shifts (
-                            org_id, site_id, start_time, end_time,
-                            required_staff, status, is_overtime,
-                            includes_meal_break, meal_break_duration_minutes
-                        ) VALUES (
-                            :oid, :sid, :start, :end,
-                            :staff, 'COMPLETED', false,
-                            true, 60
-                        ) RETURNING shift_id
-                    """), {
+                    shift_rows.append({
                         "oid": org_id, "sid": site["site_id"],
                         "start": s_start, "end": s_end,
                         "staff": site["min_staff"],
+                        "shift_type": shift_type, "cur_date": current_date,
                     })
-                    shift_id = result.fetchone()[0]
-                    total_shifts += 1
-                    month_shifts += 1
-
-                    # Assign employees (5 on, 2 off pattern)
-                    for emp_idx, emp in enumerate(site_emps[:site["min_staff"]]):
-                        # Simple rotation: skip if day_of_year + emp_idx % 7 in [5, 6]
-                        day_offset = (current_date.timetuple().tm_yday + emp_idx) % 7
-                        if day_offset >= 5:
-                            continue  # Day off
-
-                        regular_hours = 11.0  # 12h shift - 1h meal
-                        overtime_hours = 0.0
-                        rate = emp["rate"]
-
-                        # Premium calculations
-                        sunday_premium = 0.0
-                        holiday_premium = 0.0
-                        night_premium = 0.0
-                        premium_type = "regular"
-
-                        if is_holiday(current_date):
-                            holiday_premium = regular_hours * rate * 1.0  # Double time = extra 100%
-                            premium_type = "holiday"
-                        elif is_sunday(current_date):
-                            sunday_premium = regular_hours * rate * 0.5  # Time and a half = extra 50%
-                            premium_type = "sunday"
-
-                        if shift_type == "night":
-                            night_premium = regular_hours * rate * 0.1  # 10% night allowance
-
-                        regular_pay = regular_hours * rate
-                        total_cost = regular_pay + sunday_premium + holiday_premium + night_premium
-
-                        conn.execute(text("""
-                            INSERT INTO shift_assignments (
-                                shift_id, employee_id, roster_id, status,
-                                regular_hours, overtime_hours,
-                                regular_pay, overtime_pay,
-                                night_premium, weekend_premium, sunday_premium, holiday_premium,
-                                travel_reimbursement,
-                                total_cost, premium_type,
-                                is_confirmed, checked_in, checked_out,
-                                assigned_at
-                            ) VALUES (
-                                :sid, :eid, :rid, 'completed',
-                                :reg_h, :ot_h,
-                                :reg_pay, 0,
-                                :night, :weekend, :sunday, :holiday,
-                                0,
-                                :total, :ptype,
-                                true, true, true,
-                                :assigned
-                            )
-                        """), {
-                            "sid": shift_id, "eid": emp["id"], "rid": roster_id,
-                            "reg_h": regular_hours, "ot_h": overtime_hours,
-                            "reg_pay": regular_pay, "night": night_premium,
-                            "weekend": sunday_premium,  # weekend_premium = sunday premium
-                            "sunday": sunday_premium, "holiday": holiday_premium,
-                            "total": total_cost, "ptype": premium_type,
-                            "assigned": datetime.combine(month_start, time(8, 0)),
-                        })
-                        total_assignments += 1
-                        month_assignments += 1
-
                 current_date += timedelta(days=1)
 
+            # Batch insert all shifts for this site and get IDs
+            shift_ids = []
+            for row in shift_rows:
+                r = conn.execute(text("""
+                    INSERT INTO shifts (org_id, site_id, start_time, end_time,
+                        required_staff, status, is_overtime, includes_meal_break, meal_break_duration_minutes)
+                    VALUES (:oid, :sid, :start, :end, :staff, 'COMPLETED', false, true, 60)
+                    RETURNING shift_id
+                """), row)
+                shift_ids.append((r.fetchone()[0], row["shift_type"], row["cur_date"]))
+            total_shifts += len(shift_ids)
+
+            # Build all assignments in memory
+            assignment_batch = []
+            for shift_id, shift_type, cur_date in shift_ids:
+                for emp_idx, emp in enumerate(site_emps[:site["min_staff"]]):
+                    day_offset = (cur_date.timetuple().tm_yday + emp_idx) % 7
+                    if day_offset >= 5:
+                        continue
+                    regular_hours = 11.0
+                    rate = emp["rate"]
+                    sunday_premium = holiday_premium = night_premium = 0.0
+                    premium_type = "regular"
+                    if is_holiday(cur_date):
+                        holiday_premium = regular_hours * rate * 1.0
+                        premium_type = "holiday"
+                    elif is_sunday(cur_date):
+                        sunday_premium = regular_hours * rate * 0.5
+                        premium_type = "sunday"
+                    if shift_type == "night":
+                        night_premium = regular_hours * rate * 0.1
+                    regular_pay = regular_hours * rate
+                    tc = regular_pay + sunday_premium + holiday_premium + night_premium
+                    assignment_batch.append({
+                        "sid": shift_id, "eid": emp["id"], "rid": roster_id,
+                        "reg_h": regular_hours, "ot_h": 0.0,
+                        "reg_pay": regular_pay, "night": night_premium,
+                        "weekend": sunday_premium, "sunday": sunday_premium,
+                        "holiday": holiday_premium, "total": tc, "ptype": premium_type,
+                        "assigned": datetime.combine(month_start, time(8, 0)),
+                    })
+
+            # Batch insert assignments (chunks of 200 to avoid query size limits)
+            CHUNK = 200
+            for i in range(0, len(assignment_batch), CHUNK):
+                chunk = assignment_batch[i:i+CHUNK]
+                for row in chunk:
+                    conn.execute(text("""
+                        INSERT INTO shift_assignments (
+                            shift_id, employee_id, roster_id, status,
+                            regular_hours, overtime_hours, regular_pay, overtime_pay,
+                            night_premium, weekend_premium, sunday_premium, holiday_premium,
+                            travel_reimbursement, total_cost, premium_type,
+                            is_confirmed, checked_in, checked_out, assigned_at)
+                        VALUES (:sid, :eid, :rid, 'completed',
+                            :reg_h, :ot_h, :reg_pay, 0,
+                            :night, :weekend, :sunday, :holiday,
+                            0, :total, :ptype, true, true, true, :assigned)
+                    """), row)
+            total_assignments += len(assignment_batch)
+
             # Update roster stats
+            month_shifts_count = len(shift_ids)
+            month_assign_count = len(assignment_batch)
             conn.execute(text("""
                 UPDATE rosters SET
-                    total_shifts = :ts,
-                    assigned_shifts = :as_,
+                    total_shifts = :ts, assigned_shifts = :as_,
                     unassigned_shifts = :ts - :as_,
                     total_cost = (SELECT COALESCE(SUM(total_cost), 0) FROM shift_assignments WHERE roster_id = :rid),
                     regular_pay_cost = (SELECT COALESCE(SUM(regular_pay), 0) FROM shift_assignments WHERE roster_id = :rid),
@@ -700,9 +689,9 @@ for month_start, month_end, period_label in MONTHS:
                     premium_cost = (SELECT COALESCE(SUM(night_premium + sunday_premium + holiday_premium), 0) FROM shift_assignments WHERE roster_id = :rid),
                     travel_reimbursement = 0
                 WHERE roster_id = :rid
-            """), {"ts": month_shifts, "as_": month_assignments, "rid": roster_id})
+            """), {"ts": month_shifts_count, "as_": month_assign_count, "rid": roster_id})
 
-    print(f"  -> {period_label}: Created shifts and assignments for {len(site_data)} sites")
+    print(f"  -> {period_label}: {len(site_data)} sites done")
 
 print(f"\n  Total: {total_shifts} shifts, {total_assignments} assignments")
 
