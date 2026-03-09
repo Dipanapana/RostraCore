@@ -175,6 +175,63 @@ export const rosterApi = {
   }) => api.get('/api/v1/roster/site-coverage-calendar', { params }),
 }
 
+export const rosterUploadApi = {
+  detect: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post('/api/v1/roster-upload-generic/detect', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
+  preview: (file: File, columnMapping: Record<string, number | undefined>, options?: {
+    default_start_time?: string
+    default_end_time?: string
+    site_id?: number
+    client_id?: number
+    site_name?: string
+    client_name?: string
+  }) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('column_mapping', JSON.stringify(columnMapping))
+    if (options?.default_start_time) formData.append('default_start_time', options.default_start_time)
+    if (options?.default_end_time) formData.append('default_end_time', options.default_end_time)
+    if (options?.site_id) formData.append('site_id', String(options.site_id))
+    if (options?.client_id) formData.append('client_id', String(options.client_id))
+    if (options?.site_name) formData.append('site_name', options.site_name)
+    if (options?.client_name) formData.append('client_name', options.client_name)
+    return api.post('/api/v1/roster-upload-generic/preview', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
+  import: (file: File, columnMapping: Record<string, number | undefined>, options?: {
+    default_start_time?: string
+    default_end_time?: string
+    site_id?: number
+    client_id?: number
+    site_name?: string
+    client_name?: string
+    auto_create_site?: boolean
+  }) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('column_mapping', JSON.stringify(columnMapping))
+    if (options?.default_start_time) formData.append('default_start_time', options.default_start_time)
+    if (options?.default_end_time) formData.append('default_end_time', options.default_end_time)
+    if (options?.site_id) formData.append('site_id', String(options.site_id))
+    if (options?.client_id) formData.append('client_id', String(options.client_id))
+    if (options?.site_name) formData.append('site_name', options.site_name)
+    if (options?.client_name) formData.append('client_name', options.client_name)
+    if (options?.auto_create_site) formData.append('auto_create_site', 'true')
+    return api.post('/api/v1/roster-upload-generic/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
+  getFormats: () => api.get('/api/v1/roster-upload-generic/formats'),
+  getHistory: (params?: { skip?: number; limit?: number }) =>
+    api.get('/api/v1/roster-upload-generic/history', { params }),
+}
+
 export const availabilityApi = {
   getAll: (params?: AvailabilityQueryParams) => api.get('/api/v1/availability/', { params }),
   getById: (id: number) => api.get(`/api/v1/availability/${id}`),

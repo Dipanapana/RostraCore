@@ -88,6 +88,119 @@ export interface RosterSummary {
   average_cost_per_shift: number
 }
 
+// ── Generic Roster Upload types ─────────────────────────────────────────────
+
+export interface ColumnMapping {
+  employee_name?: number
+  employee_id?: number
+  date?: number
+  start_time?: number
+  end_time?: number
+  site_name?: number
+  client_name?: number
+  grade?: number
+  psira_number?: number
+  notes?: number
+  _header_row?: number
+  _data_start_row?: number
+}
+
+export interface FormatDetection {
+  detected_format: 'mafoko_do_grid' | 'rostracore_template' | 'generic' | 'unknown'
+  confidence: number
+  headers: string[]
+  sample_rows: string[][]
+  suggested_mapping: ColumnMapping
+  header_row: number
+  data_start_row: number
+}
+
+export interface RosterUploadPreview {
+  status: string
+  detected_format?: string
+  period: { start: string | null; end: string | null }
+  site_resolved?: {
+    site_id: number | null
+    site_name: string | null
+    client_id: number | null
+    client_name: string | null
+  }
+  summary: {
+    total_entries: number
+    employees_matched: number
+    employees_unmatched: number
+    total_assignments: number
+    estimated_cost: number
+    unique_dates?: number
+    unique_sites?: string[]
+  }
+  unmatched_employees: Array<{
+    identifier: string
+    employee_id?: string
+    name: string
+    grade?: string
+    row_number: number
+  }>
+  suggestions: Array<{
+    type: string
+    severity: 'error' | 'warning' | 'info'
+    employee: string | null
+    message: string
+  }>
+  parse_warnings?: string[]
+  warnings?: string[]
+  errors?: string[]
+}
+
+export interface RosterImportResult {
+  status: string
+  detected_format?: string
+  upload_id?: number
+  roster_id?: number
+  roster_code?: string
+  message?: string
+  period?: { start: string; end: string }
+  site_resolved?: {
+    site_id: number | null
+    site_name: string | null
+    client_id: number | null
+    client_name: string | null
+  }
+  summary?: {
+    total_entries: number
+    employees_matched: number
+    employees_unmatched: number
+    shifts_created: number
+    assignments_created: number
+    total_cost: number
+    regular_cost: number
+    overtime_cost: number
+    premium_cost: number
+  }
+  unmatched_employees?: Array<{
+    identifier: string
+    name: string
+    grade?: string
+    row_number: number
+  }>
+  suggestions?: Array<{
+    type: string
+    severity: 'error' | 'warning' | 'info'
+    employee: string | null
+    message: string
+  }>
+  warnings?: string[]
+  errors?: string[]
+}
+
+export interface RosterFormat {
+  id: string
+  name: string
+  description: string
+  auto_detected: boolean
+  columns: string
+}
+
 export interface Availability {
   availability_id: number
   employee_id: number

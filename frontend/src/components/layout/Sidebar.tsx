@@ -403,7 +403,7 @@ const NAV_ENTRIES: NavEntry[] = [
       },
       {
         key: "roster-upload",
-        label: "Site Roster Upload",
+        label: "Upload Roster",
         href: "/roster/upload",
         icon: FileSpreadsheet,
         roles: MANAGEMENT_ROLES,
