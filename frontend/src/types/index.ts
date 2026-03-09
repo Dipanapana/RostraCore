@@ -338,7 +338,7 @@ export interface AvailabilityCalendarDay {
 }
 
 // Organization Users
-export type UserRole = 'admin' | 'company_admin' | 'scheduler' | 'guard' | 'finance' | 'superadmin'
+export type UserRole = 'admin' | 'company_admin' | 'scheduler' | 'guard' | 'finance' | 'superadmin' | 'client_viewer'
 
 export interface OrganizationUser {
   user_id: number

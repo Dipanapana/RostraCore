@@ -14,6 +14,7 @@ const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
   { value: 'scheduler', label: 'Scheduler' },
   { value: 'finance', label: 'Finance' },
   { value: 'guard', label: 'Guard' },
+  { value: 'client_viewer', label: 'Client Viewer' },
 ]
 
 export default function UsersPage() {

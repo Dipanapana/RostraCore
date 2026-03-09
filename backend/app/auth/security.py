@@ -274,8 +274,8 @@ def require_roles(allowed_roles: list[UserRole]):
 
 
 def is_admin(current_user: User = Depends(get_current_user)) -> User:
-    """Require admin role."""
-    return require_role(UserRole.ADMIN)(current_user)
+    """Require admin or company_admin role."""
+    return require_roles([UserRole.ADMIN, UserRole.COMPANY_ADMIN])(current_user)
 
 
 def require_finance_access(current_user: User = Depends(get_current_user)) -> User:

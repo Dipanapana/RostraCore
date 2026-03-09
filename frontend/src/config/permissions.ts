@@ -17,6 +17,7 @@ export type UserRole =
   | 'finance'
   | 'guard'
   | 'superadmin'
+  | 'client_viewer'
 
 /**
  * A single top-level navigation item shown in the sidebar.
@@ -70,7 +71,7 @@ export const NAV_ITEMS: NavItem[] = [
     label: 'Dashboard',
     icon: 'LayoutDashboard',
     href: '/dashboard',
-    roles: ['admin', 'company_admin', 'scheduler', 'finance', 'guard', 'superadmin'],
+    roles: ['admin', 'company_admin', 'scheduler', 'finance', 'guard', 'superadmin', 'client_viewer'],
   },
   {
     id: 'people',
@@ -191,7 +192,7 @@ export const NAV_ITEMS: NavItem[] = [
  */
 export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
   // Dashboard — everyone
-  '/dashboard': ['admin', 'company_admin', 'scheduler', 'finance', 'guard', 'superadmin'],
+  '/dashboard': ['admin', 'company_admin', 'scheduler', 'finance', 'guard', 'superadmin', 'client_viewer'],
 
   // People / Employees
   '/employees': ['admin', 'company_admin', 'scheduler', 'superadmin'],
@@ -227,6 +228,20 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
   // Settings (change-password is accessible to all authenticated users)
   '/settings': ['admin', 'company_admin', 'superadmin'],
   '/settings/change-password': ['admin', 'company_admin', 'scheduler', 'finance', 'guard', 'superadmin'],
+
+  // Client Requests
+  '/client-requests': ['admin', 'company_admin', 'scheduler', 'superadmin', 'client_viewer'],
+
+  // Roster Upload & Templates
+  '/roster/upload': ['admin', 'company_admin', 'scheduler', 'superadmin'],
+  '/roster/templates': ['admin', 'company_admin', 'scheduler', 'superadmin'],
+
+  // Operations
+  '/maintenance': ['admin', 'company_admin', 'scheduler', 'superadmin'],
+  '/incidents': ['admin', 'company_admin', 'scheduler', 'superadmin'],
+  '/attendance': ['admin', 'company_admin', 'scheduler', 'superadmin'],
+  '/training': ['admin', 'company_admin', 'scheduler', 'superadmin'],
+  '/fleet': ['admin', 'company_admin', 'superadmin'],
 
   // Superadmin only
   '/superadmin': ['superadmin'],

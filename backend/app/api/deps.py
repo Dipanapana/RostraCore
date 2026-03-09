@@ -38,20 +38,20 @@ def get_current_active_admin(
     current_user: User = Depends(get_current_user)
 ) -> User:
     """
-    Get current active admin user.
+    Get current active admin or company_admin user.
 
     Args:
         current_user: Current authenticated user
 
     Returns:
-        Current user if they are an admin
+        Current user if they are an admin or company_admin
 
     Raises:
-        HTTPException: If user is not an admin
+        HTTPException: If user is not an admin or company_admin
     """
     from fastapi import HTTPException, status
 
-    if not is_admin(current_user):
+    if current_user.role not in (UserRole.ADMIN, UserRole.COMPANY_ADMIN):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin privileges required"

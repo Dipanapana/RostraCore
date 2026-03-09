@@ -99,7 +99,8 @@ export type UserRole =
   | "scheduler"
   | "guard"
   | "finance"
-  | "superadmin";
+  | "superadmin"
+  | "client_viewer";
 
 interface NavChild {
   key: string;
@@ -1348,7 +1349,7 @@ export default function Sidebar() {
   const isFullAccessRole = role === "admin" || role === "company_admin" || role === "superadmin";
   const effectiveHasPermission = isFullAccessRole
     ? () => true
-    : effectiveHasPermission;
+    : permissionsLoaded ? hasPermission : undefined;
   const visibleEntries = getVisibleEntries(role, effectiveHasPermission);
 
   // ── Effects ────────────────────────────────────────────
