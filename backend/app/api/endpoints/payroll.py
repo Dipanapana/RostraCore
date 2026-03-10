@@ -392,20 +392,45 @@ async def get_payroll_detail(
 
     employee = payroll.employee
 
+    from app.models.organization import Organization
+    org = db.query(Organization).filter(Organization.org_id == org_id).first()
+
+    hourly_rate = employee.hourly_rate or 0 if employee else 0
+    overtime_pay = round((payroll.overtime_hours or 0) * hourly_rate * 1.5, 2)
+
     return {
         "payroll_id": payroll.payroll_id,
         "employee": {
             "employee_id": employee.employee_id,
             "name": f"{employee.first_name} {employee.last_name}",
-            "hourly_rate": employee.hourly_rate
+            "hourly_rate": hourly_rate,
+            "employee_number": employee.employee_number or f"EMP{employee.employee_id:04d}",
+            "id_number": employee.id_number or "",
+            "psira_number": employee.psira_number or "",
+            "psira_grade": employee.psira_grade or "",
+            "position": getattr(employee, "position", None) or "Security Officer",
+            "department": getattr(employee, "department", None) or "Security Operations",
+            "tax_number": employee.tax_number or "",
+            "bank_name": employee.bank_name or "",
+            "account_number": employee.account_number or "",
+            "branch_code": employee.branch_code or "",
+            "account_type": employee.account_type or "",
         } if employee else None,
         "period_start": payroll.period_start.isoformat() if payroll.period_start else None,
         "period_end": payroll.period_end.isoformat() if payroll.period_end else None,
         "total_hours": payroll.total_hours or 0.0,
         "overtime_hours": payroll.overtime_hours or 0.0,
         "gross_pay": payroll.gross_pay or 0.0,
+        "basic_salary": round((payroll.gross_pay or 0) - overtime_pay, 2),
+        "overtime_pay": overtime_pay,
         "expenses_total": payroll.expenses_total or 0.0,
         "net_pay": payroll.net_pay or 0.0,
+        "paye": payroll.paye or 0.0,
+        "uif": payroll.uif_employee or 0.0,
+        "provident_fund": payroll.provident_fund or 0.0,
+        "total_deductions": payroll.total_deductions or 0.0,
+        "status": payroll.status or "draft",
+        "org_name": org.company_name if org else None,
     }
 
 
@@ -558,8 +583,69 @@ async def generate_comprehensive_payroll(
         if payroll_data.get("status") == "error":
             raise HTTPException(status_code=400, detail=payroll_data.get("message"))
 
+        # Persist results to payroll_summary table
+        created_ids = []
+        for emp in payroll_data.get("employees", []):
+            emp_id = emp.get("employee_id")
+            if not emp_id:
+                continue
+
+            existing = db.query(PayrollSummary).filter(
+                and_(
+                    PayrollSummary.employee_id == emp_id,
+                    PayrollSummary.org_id == org_id,
+                    PayrollSummary.period_start == start,
+                    PayrollSummary.period_end == end,
+                )
+            ).first()
+
+            gross = float(emp.get("gross_salary", 0))
+            uif_val = float(emp.get("uif", 0))
+            sdl_val = round(gross * 0.01, 2)
+
+            fields = dict(
+                org_id=org_id,
+                total_hours=float(emp.get("total_hours_worked", 0)),
+                overtime_hours=float(emp.get("extra_hours", 0)),
+                gross_pay=gross,
+                expenses_total=0.0,
+                net_pay=float(emp.get("net_salary", 0)),
+                paye=float(emp.get("paye", 0)),
+                uif_employee=uif_val,
+                uif_employer=uif_val,
+                sdl=sdl_val,
+                provident_fund=float(emp.get("provident_fund", 0)),
+                other_deductions=float(emp.get("psira_deduction", 0)) + float(emp.get("bargaining_council", 0)) + float(emp.get("nucaaw", 0)) + float(emp.get("hospital_cover", 0)) + float(emp.get("defect", 0)),
+                total_deductions=float(emp.get("total_deductions", 0)),
+                total_employer_contributions=round(uif_val + sdl_val, 2),
+                cost_to_company=round(gross + uif_val + sdl_val, 2),
+                status="draft",
+            )
+
+            if existing:
+                for k, v in fields.items():
+                    setattr(existing, k, v)
+                db.flush()
+                created_ids.append(existing.payroll_id)
+            else:
+                record = PayrollSummary(
+                    employee_id=emp_id,
+                    period_start=start,
+                    period_end=end,
+                    **fields,
+                )
+                db.add(record)
+                db.flush()
+                created_ids.append(record.payroll_id)
+
+        db.commit()
+
+        payroll_data["payroll_records_created"] = len(created_ids)
+        payroll_data["payroll_ids"] = created_ids
         return payroll_data
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating payroll: {str(e)}")
 

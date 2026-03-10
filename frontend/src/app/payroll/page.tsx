@@ -83,13 +83,6 @@ const STATUS_CONFIG: Record<
     color: "bg-gray-100 text-gray-800",
 
     label: "Draft",
-    next: "reviewed",
-    nextLabel: "Review",
-  },
-  reviewed: {
-    color: "bg-amber-50 text-amber-700",
-
-    label: "Reviewed",
     next: "approved",
     nextLabel: "Approve",
   },
