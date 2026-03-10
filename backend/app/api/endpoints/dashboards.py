@@ -131,26 +131,34 @@ async def get_executive_dashboard(
         Organization.is_active == True
     ).scalar() or 0
 
-    # 10. Shifts Trend (last 7 days) — use ShiftAssignment join instead of Shift.assigned_employee_id
-    shifts_trend = []
-    for i in range(6, -1, -1):
-        day = now - timedelta(days=i)
-        day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
-        day_end = day_start + timedelta(days=1)
+    # 10. Shifts Trend (last 7 days) — single GROUP BY query instead of 7 separate queries
+    seven_days_ago = (now - timedelta(days=6)).replace(hour=0, minute=0, second=0, microsecond=0)
 
-        day_shifts = db.query(func.count(distinct(ShiftAssignment.shift_id))).join(
-            Shift, Shift.shift_id == ShiftAssignment.shift_id
-        ).filter(
-            Shift.start_time >= day_start,
-            Shift.start_time < day_end,
-            ShiftAssignment.status != 'cancelled',
-            *([Shift.org_id == org_id] if org_id else [])
-        ).scalar() or 0
+    daily_trend_rows = db.query(
+        func.date(Shift.start_time).label('day'),
+        func.count(distinct(ShiftAssignment.shift_id)).label('shifts')
+    ).join(
+        ShiftAssignment, ShiftAssignment.shift_id == Shift.shift_id
+    ).filter(
+        Shift.start_time >= seven_days_ago,
+        ShiftAssignment.status != 'cancelled',
+        *([Shift.org_id == org_id] if org_id else [])
+    ).group_by(
+        func.date(Shift.start_time)
+    ).all()
 
-        shifts_trend.append({
-            "date": day.strftime("%Y-%m-%d"),
-            "shifts": day_shifts
-        })
+    trend_lookup = {
+        str(row.day): row.shifts
+        for row in daily_trend_rows
+    }
+
+    shifts_trend = [
+        {
+            "date": (now - timedelta(days=i)).strftime("%Y-%m-%d"),
+            "shifts": trend_lookup.get((now - timedelta(days=i)).strftime("%Y-%m-%d"), 0)
+        }
+        for i in range(6, -1, -1)
+    ]
 
     dashboard_data = {
         "period": {

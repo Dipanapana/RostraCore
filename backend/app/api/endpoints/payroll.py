@@ -83,10 +83,17 @@ async def get_my_payslip(
             detail="No employee record linked to your account"
         )
 
+    # Use date-range comparison instead of extract() to allow index use
+    period_start_min = date(target_year, target_month, 1)
+    if target_month == 12:
+        period_start_max = date(target_year + 1, 1, 1)
+    else:
+        period_start_max = date(target_year, target_month + 1, 1)
+
     payrolls = db.query(PayrollSummary).filter(
         PayrollSummary.employee_id == employee.employee_id,
-        extract("year", PayrollSummary.period_start) == target_year,
-        extract("month", PayrollSummary.period_start) == target_month
+        PayrollSummary.period_start >= period_start_min,
+        PayrollSummary.period_start < period_start_max
     ).order_by(PayrollSummary.period_start.desc()).all()
 
     regular_hours = sum((p.total_hours - p.overtime_hours) for p in payrolls)
@@ -153,11 +160,28 @@ async def get_payroll(
     if employee_id:
         query = query.filter(PayrollSummary.employee_id == employee_id)
 
-    # Filter by year/month using period_start date
-    if year:
-        query = query.filter(extract('year', PayrollSummary.period_start) == year)
-    if month:
-        query = query.filter(extract('month', PayrollSummary.period_start) == month)
+    # Filter by year/month using date-range comparison (allows index use)
+    if year and month:
+        period_min = date(year, month, 1)
+        period_max = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
+        query = query.filter(
+            PayrollSummary.period_start >= period_min,
+            PayrollSummary.period_start < period_max
+        )
+    elif year:
+        query = query.filter(
+            PayrollSummary.period_start >= date(year, 1, 1),
+            PayrollSummary.period_start < date(year + 1, 1, 1)
+        )
+    elif month:
+        # Month without year — use current year
+        current_year = date.today().year
+        period_min = date(current_year, month, 1)
+        period_max = date(current_year + 1, 1, 1) if month == 12 else date(current_year, month + 1, 1)
+        query = query.filter(
+            PayrollSummary.period_start >= period_min,
+            PayrollSummary.period_start < period_max
+        )
 
     payrolls = query.order_by(PayrollSummary.period_start.desc()).offset(skip).limit(limit).all()
 
@@ -355,7 +379,10 @@ async def get_payroll_detail(
     db: Session = Depends(get_db)
 ):
     """Get detailed payroll record (filtered by organization via employee)."""
-    payroll = db.query(PayrollSummary).join(Employee).filter(
+    from sqlalchemy.orm import joinedload
+    payroll = db.query(PayrollSummary).options(
+        joinedload(PayrollSummary.employee)
+    ).join(Employee).filter(
         PayrollSummary.payroll_id == payroll_id,
         Employee.org_id == org_id
     ).first()
@@ -363,7 +390,7 @@ async def get_payroll_detail(
     if not payroll:
         raise HTTPException(status_code=404, detail="Payroll record not found")
 
-    employee = db.query(Employee).filter(Employee.employee_id == payroll.employee_id).first()
+    employee = payroll.employee
 
     return {
         "payroll_id": payroll.payroll_id,
@@ -424,6 +451,35 @@ async def update_payroll_status(
         payroll.paid_at = datetime.utcnow()
 
     db.commit()
+
+    # Send notifications (fire-and-forget)
+    try:
+        from app.services.push_service import PushService
+        push = PushService(db)
+        org_id = current_user.org_id
+
+        if new_status in ("approved", "paid"):
+            push.notify_payroll_approved(payroll, new_status, org_id, current_user.user_id)
+
+        if new_status == "paid":
+            push.notify_payslip_ready(payroll, org_id)
+            # Send payslip email
+            employee = db.query(Employee).filter(
+                Employee.employee_id == payroll.employee_id
+            ).first()
+            if employee and employee.email:
+                from app.services.email_service import EmailService
+                EmailService.send_payslip_email(
+                    to=employee.email,
+                    user_name=f"{employee.first_name} {employee.last_name}",
+                    period_display=payroll.period_start.strftime("%B %Y"),
+                    net_pay=payroll.net_pay or 0.0,
+                    payslip_url="/payroll/my-payslip",
+                    company_name="",
+                )
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning("Payroll notification failed: %s", exc)
 
     return {
         "payroll_id": payroll_id,

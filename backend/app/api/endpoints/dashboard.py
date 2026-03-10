@@ -1,8 +1,8 @@
 """Dashboard analytics endpoint."""
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func, case as sa_case
 from datetime import datetime, timedelta
 from typing import Dict, List
 
@@ -15,6 +15,8 @@ from app.models.certification import Certification
 from app.models.availability import Availability
 from app.models.user import User
 from app.models.client import Client
+from app.models.payroll import PayrollSummary
+from app.models.client_invoice import ClientInvoice
 from app.services.cache_service import cached, CacheService
 from app.api.deps import get_current_user
 
@@ -139,6 +141,58 @@ def get_dashboard_metrics(
     # Calculate fill rate
     fill_rate = (assigned_shifts / total_shifts * 100) if total_shifts > 0 else 0
 
+    # ── Financial Metrics ──────────────────────────────────────────────
+    current_month_start = today.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=today.day - 1)
+    last_month_end = current_month_start - timedelta(days=1)
+    last_month_start = last_month_end.replace(day=1)
+
+    # Current month payroll
+    payroll_current = db.query(
+        func.sum(PayrollSummary.gross_pay),
+        func.sum(PayrollSummary.net_pay),
+        func.sum(PayrollSummary.total_deductions),
+        func.count(PayrollSummary.payroll_id),
+    ).filter(
+        PayrollSummary.org_id == org_id,
+        PayrollSummary.period_start >= current_month_start.date(),
+    ).first()
+
+    # Last month payroll (for trend)
+    payroll_last = db.query(
+        func.sum(PayrollSummary.gross_pay),
+    ).filter(
+        PayrollSummary.org_id == org_id,
+        PayrollSummary.period_start >= last_month_start.date(),
+        PayrollSummary.period_start < current_month_start.date(),
+    ).scalar() or 0
+
+    # Invoice metrics
+    invoices_total = db.query(func.count(ClientInvoice.invoice_id)).filter(
+        ClientInvoice.org_id == org_id
+    ).scalar() or 0
+
+    invoices_outstanding = db.query(
+        func.count(ClientInvoice.invoice_id),
+        func.coalesce(func.sum(ClientInvoice.total_amount), 0),
+    ).filter(
+        ClientInvoice.org_id == org_id,
+        ClientInvoice.status.in_(["sent", "overdue"]),
+    ).first()
+
+    invoices_overdue = db.query(func.count(ClientInvoice.invoice_id)).filter(
+        ClientInvoice.org_id == org_id,
+        ClientInvoice.status == "overdue",
+    ).scalar() or 0
+
+    # Revenue (paid invoices current month)
+    revenue_current = db.query(
+        func.coalesce(func.sum(ClientInvoice.total_amount), 0)
+    ).filter(
+        ClientInvoice.org_id == org_id,
+        ClientInvoice.status == "paid",
+        ClientInvoice.paid_date >= current_month_start.date(),
+    ).scalar() or 0
+
     metrics = {
         "users": {
             "total": total_users,
@@ -167,7 +221,23 @@ def get_dashboard_metrics(
         },
         "availability": {
             "total_records": total_availability_records
-        }
+        },
+        "payroll": {
+            "gross_pay": float(payroll_current[0] or 0),
+            "net_pay": float(payroll_current[1] or 0),
+            "total_deductions": float(payroll_current[2] or 0),
+            "records": payroll_current[3] or 0,
+            "last_month_gross": float(payroll_last),
+        },
+        "invoices": {
+            "total": invoices_total,
+            "outstanding_count": invoices_outstanding[0] or 0,
+            "outstanding_amount": float(invoices_outstanding[1] or 0),
+            "overdue_count": invoices_overdue,
+        },
+        "revenue": {
+            "current_month": float(revenue_current),
+        },
     }
 
     # Cache for 5 minutes (300 seconds)
@@ -206,30 +276,35 @@ def get_upcoming_shifts(
     if cached_shifts:
         return cached_shifts
 
-    # Get shifts for sites in this organization
-    org_site_ids = db.query(Site.site_id).join(Client).filter(
-        Client.org_id == org_id
-    ).subquery()
-
-    shifts = db.query(Shift).filter(
-        Shift.site_id.in_(org_site_ids),
+    # Use Shift.org_id directly (indexed) instead of site subquery
+    shifts = db.query(Shift).options(
+        joinedload(Shift.site)
+    ).filter(
+        Shift.org_id == org_id,
         Shift.start_time > datetime.now()
     ).order_by(Shift.start_time).limit(limit).all()
 
-    result = []
-    for s in shifts:
-        # Get confirmed assignments for this shift
-        assignments = db.query(ShiftAssignment).filter(
-            ShiftAssignment.shift_id == s.shift_id,
+    # Bulk-load assignments with employees for all shifts (2 queries total)
+    shift_ids = [s.shift_id for s in shifts]
+    from collections import defaultdict
+    assignments_by_shift = defaultdict(list)
+    if shift_ids:
+        all_assignments = db.query(ShiftAssignment).options(
+            joinedload(ShiftAssignment.employee)
+        ).filter(
+            ShiftAssignment.shift_id.in_(shift_ids),
             ShiftAssignment.status.in_([AssignmentStatus.CONFIRMED, AssignmentStatus.COMPLETED])
         ).all()
+        for a in all_assignments:
+            assignments_by_shift[a.shift_id].append(a)
 
-        # Get employee names (multiple employees can be assigned)
-        employee_names = []
-        for assignment in assignments:
-            if assignment.employee:
-                employee_names.append(f"{assignment.employee.first_name} {assignment.employee.last_name}")
-
+    result = []
+    for s in shifts:
+        assignments = assignments_by_shift[s.shift_id]
+        employee_names = [
+            f"{a.employee.first_name} {a.employee.last_name}"
+            for a in assignments if a.employee
+        ]
         employee_name = ", ".join(employee_names) if employee_names else "Unassigned"
 
         result.append({
@@ -310,28 +385,33 @@ def get_cost_trends(
     org_id = current_user.org_id
     if not org_id:
         return {"trend": [], "summary": {"total_cost": 0, "avg_daily_cost": 0, "period_days": days}}
+
+    # Check cache
+    cache_key_cost = f"dashboard:cost_trends:org_{org_id}:{days}"
+    cached = CacheService.get(cache_key_cost)
+    if cached:
+        return cached
+
     start_date = datetime.now() - timedelta(days=days)
 
-    # Get shifts for sites in this organization
-    org_site_ids = db.query(Site.site_id).join(Client).filter(
-        Client.org_id == org_id
-    ).subquery()
-
-    # Query shift assignments in the period (including pending for projected costs)
-    assignments = db.query(ShiftAssignment).join(Shift).filter(
-        Shift.site_id.in_(org_site_ids),
+    # Single aggregation query: daily cost grouped in SQL (uses Shift.org_id directly)
+    daily_costs_rows = db.query(
+        func.date(Shift.start_time).label('day'),
+        func.sum(ShiftAssignment.total_cost).label('total_cost')
+    ).join(
+        Shift, Shift.shift_id == ShiftAssignment.shift_id
+    ).filter(
+        Shift.org_id == org_id,
         Shift.start_time >= start_date,
         ShiftAssignment.status.in_([AssignmentStatus.PENDING, AssignmentStatus.CONFIRMED, AssignmentStatus.COMPLETED])
+    ).group_by(
+        func.date(Shift.start_time)
     ).all()
 
-    # Calculate daily costs using BCEA-compliant assignment.total_cost
-    daily_costs = {}
-    for assignment in assignments:
-        if assignment.shift:
-            date_key = assignment.shift.start_time.date().isoformat()
-            # Use assignment.total_cost which includes BCEA premiums (Sunday 1.5x, Holiday 2.0x)
-            cost = assignment.total_cost or 0.0
-            daily_costs[date_key] = daily_costs.get(date_key, 0) + cost
+    daily_costs = {
+        str(row.day): float(row.total_cost or 0)
+        for row in daily_costs_rows
+    }
 
     # Prepare trend data
     trend_data = []
@@ -349,7 +429,7 @@ def get_cost_trends(
     total_cost = sum(daily_costs.values())
     avg_daily_cost = total_cost / days if days > 0 else 0
 
-    return {
+    result = {
         "trend": trend_data,
         "summary": {
             "total_cost": round(total_cost, 2),
@@ -357,6 +437,9 @@ def get_cost_trends(
             "period_days": days
         }
     }
+
+    CacheService.set(cache_key_cost, result, ttl=180)
+    return result
 
 
 @router.get("/employee-utilization")
@@ -379,35 +462,47 @@ def get_employee_utilization(
     org_id = current_user.org_id
     if not org_id:
         return []  # No org = no data
+
+    # Check cache
+    cache_key_util = f"dashboard:employee_utilization:org_{org_id}:{days}"
+    cached = CacheService.get(cache_key_util)
+    if cached:
+        return cached
+
     start_date = datetime.now() - timedelta(days=days)
 
-    # Get all active employees in this organization
+    # Single aggregation query: shifts + hours per employee (instead of N queries)
+    stats_rows = db.query(
+        ShiftAssignment.employee_id,
+        func.count(ShiftAssignment.assignment_id).label('shifts_assigned'),
+        func.sum(ShiftAssignment.regular_hours + ShiftAssignment.overtime_hours).label('total_hours')
+    ).join(
+        Shift, Shift.shift_id == ShiftAssignment.shift_id
+    ).filter(
+        Shift.org_id == org_id,
+        Shift.start_time >= start_date,
+        ShiftAssignment.status.in_([AssignmentStatus.CONFIRMED, AssignmentStatus.COMPLETED])
+    ).group_by(ShiftAssignment.employee_id).all()
+
+    stats_by_emp = {r.employee_id: r for r in stats_rows}
+
+    # Get all active employees (single query)
     employees = db.query(Employee).filter(
         Employee.org_id == org_id,
         Employee.status == EmployeeStatus.ACTIVE
     ).all()
 
     utilization_data = []
-
     for emp in employees:
-        # Count shift assignments for this employee (confirmed/completed)
-        assignments = db.query(ShiftAssignment).join(Shift).filter(
-            ShiftAssignment.employee_id == emp.employee_id,
-            ShiftAssignment.status.in_([AssignmentStatus.CONFIRMED, AssignmentStatus.COMPLETED]),
-            Shift.start_time >= start_date
-        ).all()
-
-        total_hours = 0.0
-        for assignment in assignments:
-            if assignment.shift:
-                duration = (assignment.shift.end_time - assignment.shift.start_time).total_seconds() / 3600
-                total_hours += duration
+        stats = stats_by_emp.get(emp.employee_id)
+        total_hours = float(stats.total_hours or 0) if stats else 0.0
+        shifts_assigned = stats.shifts_assigned if stats else 0
 
         utilization_data.append({
             "employee_id": emp.employee_id,
             "name": f"{emp.first_name} {emp.last_name}",
             "role": emp.role.value,
-            "shifts_assigned": len(assignments),
+            "shifts_assigned": shifts_assigned,
             "total_hours": round(total_hours, 2),
             "avg_hours_per_week": round(total_hours / (days / 7), 2) if days > 0 else 0,
             "utilization_rate": round((total_hours / (days * 24)) * 100, 2)
@@ -416,6 +511,7 @@ def get_employee_utilization(
     # Sort by total hours descending
     utilization_data.sort(key=lambda x: x["total_hours"], reverse=True)
 
+    CacheService.set(cache_key_util, utilization_data, ttl=300)
     return utilization_data
 
 
@@ -438,30 +534,48 @@ def get_site_coverage(
     if not org_id:
         return []  # No org = no data
 
+    # Check cache
+    cache_key_cov = f"dashboard:site_coverage:org_{org_id}"
+    cached = CacheService.get(cache_key_cov)
+    if cached:
+        return cached
+
     # Get sites for clients in this organization
     sites = db.query(Site).join(Client).filter(
         Client.org_id == org_id
     ).all()
 
+    site_ids = [s.site_id for s in sites]
+
+    # Pre-aggregate: total + upcoming shifts per site (1 query instead of 2*N)
+    now = datetime.now()
+    shift_stats = db.query(
+        Shift.site_id,
+        func.count(Shift.shift_id).label('total_shifts'),
+        func.count(sa_case((Shift.start_time > now, Shift.shift_id))).label('upcoming_shifts')
+    ).filter(
+        Shift.site_id.in_(site_ids)
+    ).group_by(Shift.site_id).all() if site_ids else []
+
+    # Pre-aggregate: assigned shifts per site (1 query instead of N)
+    assigned_stats = db.query(
+        Shift.site_id,
+        func.count(func.distinct(ShiftAssignment.shift_id)).label('assigned_shifts')
+    ).join(
+        ShiftAssignment, ShiftAssignment.shift_id == Shift.shift_id
+    ).filter(
+        Shift.site_id.in_(site_ids),
+        ShiftAssignment.status.in_([AssignmentStatus.CONFIRMED, AssignmentStatus.COMPLETED])
+    ).group_by(Shift.site_id).all() if site_ids else []
+
+    # Build lookups
+    total_by_site = {r.site_id: (r.total_shifts, r.upcoming_shifts) for r in shift_stats}
+    assigned_by_site = {r.site_id: r.assigned_shifts for r in assigned_stats}
+
     coverage_data = []
-
     for site in sites:
-        total_shifts = db.query(Shift).filter(
-            Shift.site_id == site.site_id
-        ).count()
-
-        # Count shifts with at least one confirmed assignment
-        assigned_shift_ids = db.query(ShiftAssignment.shift_id).join(Shift).filter(
-            Shift.site_id == site.site_id,
-            ShiftAssignment.status.in_([AssignmentStatus.CONFIRMED, AssignmentStatus.COMPLETED])
-        ).distinct().all()
-        assigned_shifts = len(assigned_shift_ids)
-
-        upcoming_shifts = db.query(Shift).filter(
-            Shift.site_id == site.site_id,
-            Shift.start_time > datetime.now()
-        ).count()
-
+        total_shifts, upcoming_shifts = total_by_site.get(site.site_id, (0, 0))
+        assigned_shifts = assigned_by_site.get(site.site_id, 0)
         coverage_rate = (assigned_shifts / total_shifts * 100) if total_shifts > 0 else 0
 
         coverage_data.append({
@@ -478,6 +592,7 @@ def get_site_coverage(
     # Sort by coverage rate ascending (show sites needing attention first)
     coverage_data.sort(key=lambda x: x["coverage_rate"])
 
+    CacheService.set(cache_key_cov, coverage_data, ttl=300)
     return coverage_data
 
 
@@ -505,19 +620,20 @@ def get_weekly_summary(
             "hours": {"total": 0, "avg_per_employee": 0},
             "employees_utilized": 0
         }
+    # Check cache
+    cache_key_weekly = f"dashboard:weekly_summary:org_{org_id}"
+    cached = CacheService.get(cache_key_weekly)
+    if cached:
+        return cached
+
     today = datetime.now()
     start_of_week = today - timedelta(days=today.weekday())
     start_of_week = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
     end_of_week = start_of_week + timedelta(days=7)
 
-    # Get shifts for sites in this organization
-    org_site_ids = db.query(Site.site_id).join(Client).filter(
-        Client.org_id == org_id
-    ).subquery()
-
-    # Shifts this week
+    # Use Shift.org_id directly (indexed) instead of site subquery
     shifts_this_week = db.query(Shift).filter(
-        Shift.site_id.in_(org_site_ids),
+        Shift.org_id == org_id,
         Shift.start_time >= start_of_week,
         Shift.start_time < end_of_week
     ).all()
@@ -551,7 +667,7 @@ def get_weekly_summary(
     # Employees working this week
     employees_this_week = len(set(a.employee_id for a in assignments_this_week))
 
-    return {
+    result = {
         "week_start": start_of_week.date().isoformat(),
         "week_end": end_of_week.date().isoformat(),
         "shifts": {
@@ -570,3 +686,6 @@ def get_weekly_summary(
         },
         "employees_utilized": employees_this_week
     }
+
+    CacheService.set(cache_key_weekly, result, ttl=120)
+    return result

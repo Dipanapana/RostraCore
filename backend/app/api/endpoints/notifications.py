@@ -65,6 +65,7 @@ def list_notifications(
     if unread_only:
         query = query.filter(Notification.is_read == False)
 
+    total_count = query.count()
     notifications = query.order_by(Notification.created_at.desc()).offset(skip).limit(limit).all()
     unread_count = db.query(Notification).filter(
         Notification.user_id == current_user.user_id,
@@ -75,7 +76,7 @@ def list_notifications(
     return {
         "notifications": [_notification_to_dict(n) for n in notifications],
         "unread_count": unread_count,
-        "total": len(notifications),
+        "total": total_count,
     }
 
 

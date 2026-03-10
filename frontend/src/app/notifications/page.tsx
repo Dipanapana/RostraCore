@@ -3,62 +3,14 @@
 import { useState, useEffect, useCallback } from 'react'
 import { formatDistanceToNow, parseISO } from 'date-fns'
 import {
-  Bell,
-  Calendar,
-  AlertTriangle,
-  Banknote,
-  CalendarClock,
   CheckCheck,
   Inbox,
-  Shield,
 } from 'lucide-react'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import { notificationsApi } from '@/services/api'
+import { getTypeIcon, getTypeColor, type NotificationItem } from '@/lib/notificationUtils'
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-interface Notification {
-  notification_id: number
-  title: string
-  message: string
-  notification_type: string
-  is_read: boolean
-  read_at: string | null
-  reference_type: string | null
-  reference_id: number | null
-  created_at: string
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function getTypeIcon(type: string) {
-  const t = type.toLowerCase()
-  if (t.includes('shift') || t.includes('assignment') || t.includes('schedule')) return Calendar
-  if (t.includes('leave')) return CalendarClock
-  if (t.includes('incident') || t.includes('alert')) return AlertTriangle
-  if (t.includes('payroll') || t.includes('pay') || t.includes('salary')) return Banknote
-  if (t.includes('psira') || t.includes('cert') || t.includes('compliance')) return Shield
-  return Bell
-}
-
-function getTypeColor(type: string): string {
-  const t = type.toLowerCase()
-  if (t.includes('shift') || t.includes('assignment') || t.includes('schedule'))
-    return 'text-blue-500 bg-blue-50'
-  if (t.includes('leave'))
-    return 'text-amber-500 bg-amber-50'
-  if (t.includes('incident') || t.includes('alert'))
-    return 'text-red-500 bg-red-50'
-  if (t.includes('payroll') || t.includes('pay') || t.includes('salary'))
-    return 'text-emerald-500 bg-emerald-50'
-  if (t.includes('psira') || t.includes('cert') || t.includes('compliance'))
-    return 'text-violet-500 bg-violet-50'
-  return 'text-gray-500 bg-gray-100'
-}
+type Notification = NotificationItem
 
 function fmtAgo(iso: string): string {
   try {

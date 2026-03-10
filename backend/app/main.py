@@ -5,7 +5,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.config import settings
-from app.api.endpoints import employees, sites, shifts, availability, certifications, payroll, roster, roster_templates, roster_upload, dashboard, auth, exports, settings as settings_endpoint, organizations, organization_approval, organization_users, organization_settings, clients, payments, superadmin_analytics, subscriptions, subscription_plans, dashboards, superadmin_auth, invoices, reports, roster_preferences, superadmin, staffing_profiles, availability_patterns, system_settings, shift_patterns, leave, payroll_deductions, test_data, attendance, incidents, notifications, patrols, guard_restrictions, exceptions, performance, shift_swaps, inspections, assets, geofence, visitors, key_holding, comm_log, cert_alerts, occurrence_book, documents, training, contract_values, fleet, daily_activity, disciplinary, announcements, maintenance, sla_compliance, deployment_history, overtime, client_reports, workforce_forecast, compliance_calendar, budgets, emergency_contacts, site_profitability, iod, payroll_reports, contract_compliance, shift_handovers, incident_analytics, site_risk, patrol_analytics, skills_matrix, availability_heatmap, client_satisfaction, shift_costs, revenue_dashboard, deployment_map, ops_summary, biometric, emergency, lone_worker, messaging, client_portal, report_schedules, post_orders, psira_compliance, popia, firearms, custom_forms, location, role_permissions, client_requests, roster_upload_generic
+from app.api.endpoints import employees, sites, shifts, availability, certifications, payroll, roster, roster_templates, roster_upload, dashboard, auth, exports, settings as settings_endpoint, organizations, organization_approval, organization_users, organization_settings, clients, payments, superadmin_analytics, subscriptions, subscription_plans, dashboards, superadmin_auth, invoices, reports, roster_preferences, superadmin, staffing_profiles, availability_patterns, system_settings, shift_patterns, leave, payroll_deductions, test_data, attendance, incidents, notifications, patrols, guard_restrictions, exceptions, performance, shift_swaps, inspections, assets, geofence, visitors, key_holding, comm_log, cert_alerts, occurrence_book, documents, training, contract_values, fleet, daily_activity, disciplinary, announcements, maintenance, sla_compliance, deployment_history, overtime, client_reports, workforce_forecast, compliance_calendar, budgets, emergency_contacts, site_profitability, iod, payroll_reports, contract_compliance, shift_handovers, incident_analytics, site_risk, patrol_analytics, skills_matrix, availability_heatmap, client_satisfaction, shift_costs, revenue_dashboard, deployment_map, ops_summary, biometric, emergency, lone_worker, messaging, client_portal, report_schedules, post_orders, psira_compliance, popia, firearms, custom_forms, location, role_permissions, client_requests, roster_upload_generic, universal_import
 from app.middleware import RateLimitMiddleware, ForceHTTPSRedirectMiddleware
 
 # Initialize Sentry for error tracking and performance monitoring
@@ -92,6 +92,10 @@ class TrailingSlashMiddleware:
 
 
 app.add_middleware(TrailingSlashMiddleware)
+
+# GZip compression for large JSON responses (60-80% size reduction)
+from fastapi.middleware.gzip import GZipMiddleware
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # CORS middleware
 app.add_middleware(
@@ -389,6 +393,9 @@ app.include_router(role_permissions.router, prefix=f"{settings.API_V1_PREFIX}/ro
 
 # Client Service Requests / Tickets
 app.include_router(client_requests.router, prefix=f"{settings.API_V1_PREFIX}/client-requests", tags=["client-requests"])
+
+# Universal Excel Import
+app.include_router(universal_import.router, prefix=f"{settings.API_V1_PREFIX}/universal-import", tags=["universal-import"])
 
 
 if __name__ == "__main__":

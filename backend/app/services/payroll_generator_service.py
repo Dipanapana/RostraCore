@@ -173,6 +173,27 @@ class PayrollGeneratorService:
             OrganizationPayrollConfig.org_id == org_id
         ).first()
 
+        # Bulk-load all assignments for all employees upfront (1 query instead of N)
+        from sqlalchemy.orm import joinedload
+        from collections import defaultdict
+
+        employee_id_list = [emp.employee_id for emp in employees]
+        bulk_assignment_query = db.query(ShiftAssignment).options(
+            joinedload(ShiftAssignment.shift)
+        ).join(Shift).filter(
+            ShiftAssignment.employee_id.in_(employee_id_list),
+            Shift.start_time >= datetime.combine(start_date, datetime.min.time()),
+            Shift.end_time <= datetime.combine(end_date, datetime.max.time()),
+            ShiftAssignment.status.in_(["confirmed", "completed"])
+        )
+        if site_ids:
+            bulk_assignment_query = bulk_assignment_query.filter(Shift.site_id.in_(site_ids))
+
+        all_assignments = bulk_assignment_query.all()
+        assignments_by_employee = defaultdict(list)
+        for a in all_assignments:
+            assignments_by_employee[a.employee_id].append(a)
+
         # Process each employee
         payroll_records: List[PayrollEmployeeRecord] = []
         employees_with_no_shifts: List[str] = []
@@ -185,7 +206,8 @@ class PayrollGeneratorService:
                 end_date=end_date,
                 site_ids=site_ids,
                 include_deductions=include_deductions,
-                org_config=org_config
+                org_config=org_config,
+                preloaded_assignments=assignments_by_employee.get(employee.employee_id)
             )
 
             # Salaried employees always included; hourly employees need at least one shift
@@ -235,24 +257,28 @@ class PayrollGeneratorService:
         end_date: date,
         site_ids: Optional[List[int]] = None,
         include_deductions: bool = True,
-        org_config=None
+        org_config=None,
+        preloaded_assignments=None
     ) -> PayrollEmployeeRecord:
         """Process payroll for a single employee."""
 
         record = PayrollEmployeeRecord(employee, start_date, end_date)
 
-        # Get shift assignments for this employee in the date range
-        assignment_query = db.query(ShiftAssignment).join(Shift).filter(
-            ShiftAssignment.employee_id == employee.employee_id,
-            Shift.start_time >= datetime.combine(start_date, datetime.min.time()),
-            Shift.end_time <= datetime.combine(end_date, datetime.max.time()),
-            ShiftAssignment.status.in_(["confirmed", "completed"])
-        )
+        # Use preloaded assignments if available, otherwise query (backward-compatible)
+        if preloaded_assignments is not None:
+            assignments = preloaded_assignments
+        else:
+            assignment_query = db.query(ShiftAssignment).join(Shift).filter(
+                ShiftAssignment.employee_id == employee.employee_id,
+                Shift.start_time >= datetime.combine(start_date, datetime.min.time()),
+                Shift.end_time <= datetime.combine(end_date, datetime.max.time()),
+                ShiftAssignment.status.in_(["confirmed", "completed"])
+            )
 
-        if site_ids:
-            assignment_query = assignment_query.filter(Shift.site_id.in_(site_ids))
+            if site_ids:
+                assignment_query = assignment_query.filter(Shift.site_id.in_(site_ids))
 
-        assignments = assignment_query.all()
+            assignments = assignment_query.all()
 
         # Track unique days worked
         days_worked = set()

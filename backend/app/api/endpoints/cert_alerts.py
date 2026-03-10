@@ -17,6 +17,18 @@ from app.auth.security import get_current_org_id
 router = APIRouter()
 
 
+@router.post("/send-expiry-notifications")
+def send_expiry_notifications(
+    days: int = Query(30, le=90, description="Days ahead to check for expiring certifications"),
+    org_id: int = Depends(get_current_org_id),
+    db: Session = Depends(get_db),
+):
+    """Manually trigger in-app notifications for certifications expiring within N days."""
+    from app.services.push_service import PushService
+    count = PushService(db).notify_psira_expiry_batch(org_id, days_threshold=days)
+    return {"notifications_sent": count}
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

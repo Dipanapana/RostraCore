@@ -78,8 +78,40 @@ def payroll_trend(
 ):
     """Monthly payroll trend for the last N months."""
     today = date.today()
-    trends = []
 
+    # Calculate the full date range (single query instead of N queries)
+    first_month = today.replace(day=1)
+    for _ in range(months - 1):
+        first_month = (first_month - timedelta(days=1)).replace(day=1)
+
+    # Single query: load all PayrollSummary rows in range
+    rows = (
+        db.query(
+            PayrollSummary.employee_id,
+            PayrollSummary.period_start,
+            PayrollSummary.gross_pay,
+            PayrollSummary.net_pay,
+        )
+        .join(Employee, Employee.employee_id == PayrollSummary.employee_id)
+        .filter(
+            Employee.org_id == org_id,
+            PayrollSummary.period_start >= first_month,
+            PayrollSummary.period_start <= today,
+        )
+        .all()
+    )
+
+    # Group in Python by (year, month)
+    from collections import defaultdict
+    monthly = defaultdict(lambda: {"gross": 0.0, "net": 0.0, "employees": set()})
+    for r in rows:
+        key = (r.period_start.year, r.period_start.month)
+        monthly[key]["gross"] += r.gross_pay or 0
+        monthly[key]["net"] += r.net_pay or 0
+        monthly[key]["employees"].add(r.employee_id)
+
+    # Rebuild trend list in correct order
+    trends = []
     for i in range(months - 1, -1, -1):
         m = today.month - i
         y = today.year
@@ -87,35 +119,16 @@ def payroll_trend(
             m += 12
             y -= 1
 
-        period_start = date(y, m, 1)
-        if m == 12:
-            period_end = date(y + 1, 1, 1) - timedelta(days=1)
-        else:
-            period_end = date(y, m + 1, 1) - timedelta(days=1)
-
-        records = (
-            db.query(PayrollSummary)
-            .join(Employee, Employee.employee_id == PayrollSummary.employee_id)
-            .filter(
-                Employee.org_id == org_id,
-                PayrollSummary.period_start >= period_start,
-                PayrollSummary.period_start <= period_end,
-            )
-            .all()
-        )
-
-        total_gross = sum(r.gross_pay or 0 for r in records)
-        total_net = sum(r.net_pay or 0 for r in records)
-        headcount = len(set(r.employee_id for r in records))
-
+        data = monthly.get((y, m), {"gross": 0.0, "net": 0.0, "employees": set()})
+        period_label = date(y, m, 1)
         trends.append({
-            "month": period_start.strftime("%b %Y"),
+            "month": period_label.strftime("%b %Y"),
             "year": y,
             "month_num": m,
-            "headcount": headcount,
-            "total_gross": round(total_gross, 2),
-            "total_net": round(total_net, 2),
-            "total_deductions": round(total_gross - total_net, 2),
+            "headcount": len(data["employees"]),
+            "total_gross": round(data["gross"], 2),
+            "total_net": round(data["net"], 2),
+            "total_deductions": round(data["gross"] - data["net"], 2),
         })
 
     return {"months": months, "trend": trends}

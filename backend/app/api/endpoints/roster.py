@@ -676,9 +676,47 @@ async def get_assignment_dashboard(
         }
     }
 
+    # --- Bulk-load all data upfront (3 queries instead of N*M*K) ---
+    from collections import defaultdict
+
+    client_ids = [c.client_id for c in clients]
+
+    # 1. All sites for all clients
+    all_sites = db.query(Site).filter(
+        Site.client_id.in_(client_ids)
+    ).order_by(Site.site_name).all()
+
+    sites_by_client = defaultdict(list)
+    for site in all_sites:
+        sites_by_client[site.client_id].append(site)
+
+    site_ids = [s.site_id for s in all_sites]
+
+    # 2. All shifts for all sites in date range
+    all_shifts = db.query(Shift).filter(
+        Shift.site_id.in_(site_ids),
+        Shift.start_time >= start_date,
+        Shift.end_time <= end_date
+    ).order_by(Shift.start_time).all()
+
+    shifts_by_site = defaultdict(list)
+    for shift in all_shifts:
+        shifts_by_site[shift.site_id].append(shift)
+
+    shift_ids_all = [s.shift_id for s in all_shifts]
+
+    # 3. All assignments for all shifts
+    all_assignments = db.query(ShiftAssignment).filter(
+        ShiftAssignment.shift_id.in_(shift_ids_all)
+    ).all() if shift_ids_all else []
+
+    assignments_by_shift = defaultdict(list)
+    for a in all_assignments:
+        assignments_by_shift[a.shift_id].append(a)
+
+    # --- Build response using dict lookups ---
     for client in clients:
-        # Get sites for this client
-        sites = db.query(Site).filter(Site.client_id == client.client_id).order_by(Site.site_name).all()
+        sites = sites_by_client[client.client_id]
 
         client_data = {
             "client_id": client.client_id,
@@ -695,19 +733,11 @@ async def get_assignment_dashboard(
         }
 
         for site in sites:
-            # Get shifts for this site in the date range
-            shifts = db.query(Shift).filter(
-                Shift.site_id == site.site_id,
-                Shift.start_time >= start_date,
-                Shift.end_time <= end_date
-            ).order_by(Shift.start_time).all()
+            shifts = shifts_by_site[site.site_id]
 
             site_shifts = []
             for shift in shifts:
-                # Get assignments for this shift
-                assignments = db.query(ShiftAssignment).filter(
-                    ShiftAssignment.shift_id == shift.shift_id
-                ).all()
+                assignments = assignments_by_shift[shift.shift_id]
 
                 assigned_count = len(assignments)
                 required_staff = shift.required_staff or 1
@@ -1180,6 +1210,33 @@ async def update_roster_status(
         if new_status == "published" and old_status != "published":
             _create_roster_snapshot(db, roster, current_user.user_id, label="Published")
             db.commit()
+
+            # Send notifications to all employees
+            try:
+                from app.services.push_service import PushService
+                PushService(db).notify_roster_published(roster, org_id)
+            except Exception as exc:
+                logger.warning("Roster publish notification failed: %s", exc)
+
+            # Send email notification (fire-and-forget)
+            try:
+                from app.services.email_service import EmailService
+                from app.models.employee import Employee
+                emps = db.query(Employee).filter(
+                    Employee.org_id == org_id,
+                    Employee.email.isnot(None),
+                ).all()
+                emails = [e.email for e in emps if e.email]
+                if emails:
+                    EmailService.send_roster_published_notification(
+                        to_list=emails,
+                        period_start=roster.start_date.strftime("%d %b %Y"),
+                        period_end=roster.end_date.strftime("%d %b %Y"),
+                        company_name="",
+                        roster_url=f"{settings.FRONTEND_URL}/roster" if hasattr(settings, 'FRONTEND_URL') else "/roster",
+                    )
+            except Exception as exc:
+                logger.warning("Roster publish email failed: %s", exc)
 
         # Audit trail
         AuditService.log_change(

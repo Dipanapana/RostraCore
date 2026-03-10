@@ -229,3 +229,129 @@ class PushService:
                 {"type": "emergency_alert", "alert_id": alert.alert_id, "priority": "critical"},
             )
         self.db.commit()
+
+    # ------------------------------------------------------------------
+    # Roster & Payroll notifications
+    # ------------------------------------------------------------------
+
+    def notify_roster_published(self, roster, org_id: int) -> None:
+        """Notify all active employees that a new roster has been published."""
+        from app.models.employee import EmployeeStatus
+
+        employees = self.db.query(Employee).filter(
+            Employee.org_id == org_id,
+            Employee.status == EmployeeStatus.ACTIVE,
+        ).all()
+
+        period = f"{roster.start_date.strftime('%d %b')} \u2013 {roster.end_date.strftime('%d %b %Y')}"
+        title = "New Roster Published"
+        body = f"Your schedule for {period} is now available."
+
+        for emp in employees:
+            user = self._user_for_employee(emp.employee_id)
+            if not user:
+                continue
+            self._notify_user(
+                user, org_id, title, body,
+                NotificationType.GENERAL,
+                "roster", roster.roster_id,
+                {"type": "roster_published", "roster_id": roster.roster_id},
+            )
+        self.db.commit()
+
+    def notify_payslip_ready(self, payroll, org_id: int) -> None:
+        """Notify the employee that their payslip is ready."""
+        user = self._user_for_employee(payroll.employee_id)
+        if not user:
+            return
+        period = payroll.period_start.strftime("%B %Y")
+        net = f"R{payroll.net_pay:,.2f}" if payroll.net_pay else "R0.00"
+        title = "Payslip Ready"
+        body = f"Your payslip for {period} is now available. Net pay: {net}."
+        self._notify_user(
+            user, org_id, title, body,
+            NotificationType.GENERAL,
+            "payroll", payroll.payroll_id,
+            {"type": "payslip_ready", "payroll_id": payroll.payroll_id},
+        )
+        self.db.commit()
+
+    def notify_payroll_approved(self, payroll, new_status: str, org_id: int, actor_user_id: int) -> None:
+        """Notify admin users when payroll is approved or marked paid."""
+        emp = self.db.query(Employee).filter(
+            Employee.employee_id == payroll.employee_id
+        ).first()
+        emp_name = f"{emp.first_name} {emp.last_name}" if emp else "employee"
+        period = payroll.period_start.strftime("%B %Y")
+
+        if new_status == "approved":
+            title = "Payroll Approved"
+            body = f"Payroll for {emp_name} ({period}) has been approved."
+        else:
+            title = "Payroll Marked Paid"
+            body = f"Payroll for {emp_name} ({period}) has been marked as paid."
+
+        admins = self._admin_users(org_id)
+        for admin in admins:
+            if admin.user_id == actor_user_id:
+                continue
+            self._notify_user(
+                admin, org_id, title, body,
+                NotificationType.GENERAL,
+                "payroll", payroll.payroll_id,
+                {"type": "payroll_status", "payroll_id": payroll.payroll_id, "status": new_status},
+            )
+        self.db.commit()
+
+    def notify_psira_expiry_batch(self, org_id: int, days_threshold: int = 30) -> int:
+        """Create notifications for certifications expiring within threshold days. Returns count."""
+        from datetime import date, timedelta
+        from app.models.certification import Certification
+
+        today = date.today()
+        cutoff = today + timedelta(days=days_threshold)
+
+        emp_ids = [
+            e.employee_id
+            for e in self.db.query(Employee.employee_id).filter(Employee.org_id == org_id).all()
+        ]
+        if not emp_ids:
+            return 0
+
+        certs = self.db.query(Certification).filter(
+            Certification.employee_id.in_(emp_ids),
+            Certification.expiry_date >= today,
+            Certification.expiry_date <= cutoff,
+        ).all()
+
+        admins = self._admin_users(org_id)
+        if not admins:
+            return 0
+
+        count = 0
+        for cert in certs:
+            emp = self.db.query(Employee).filter(
+                Employee.employee_id == cert.employee_id
+            ).first()
+            if not emp:
+                continue
+            days_left = (cert.expiry_date - today).days
+            emp_name = f"{emp.first_name} {emp.last_name}"
+            title = f"PSIRA Cert Expiring: {emp_name}"
+            body = (
+                f"{emp_name}'s {cert.cert_type} certification expires in "
+                f"{days_left} day{'s' if days_left != 1 else ''} "
+                f"({cert.expiry_date.strftime('%d %b %Y')})."
+            )
+            for admin in admins:
+                self._notify_user(
+                    admin, org_id, title, body,
+                    NotificationType.GENERAL,
+                    "certification", cert.cert_id,
+                    {"type": "psira_expiry", "cert_id": cert.cert_id, "days_left": days_left},
+                )
+                count += 1
+
+        if count:
+            self.db.commit()
+        return count
