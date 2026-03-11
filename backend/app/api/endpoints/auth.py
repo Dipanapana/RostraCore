@@ -259,7 +259,13 @@ def login(
             "user_id": user.user_id,
             "username": user.username,
             "email": user.email,
-            "role": user.role.value
+            "full_name": user.full_name,
+            "role": user.role.value,
+            "is_active": user.is_active or False,
+            "is_owner": user.is_owner or False,
+            "is_superadmin": user.is_superadmin,
+            "org_id": user.org_id,
+            "managed_client_ids": user.managed_client_ids,
         }
     }
 
@@ -347,11 +353,19 @@ def login_json(
 
     return {
         "message": "Logged in successfully",
+        "access_token": access_token,
+        "token_type": "bearer",
         "user": {
             "user_id": user.user_id,
             "username": user.username,
             "email": user.email,
-            "role": user.role.value
+            "full_name": user.full_name,
+            "role": user.role.value,
+            "is_active": user.is_active or False,
+            "is_owner": user.is_owner or False,
+            "is_superadmin": user.is_superadmin,
+            "org_id": user.org_id,
+            "managed_client_ids": user.managed_client_ids,
         }
     }
 

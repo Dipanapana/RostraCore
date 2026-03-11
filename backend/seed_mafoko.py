@@ -33,6 +33,7 @@ MONTHS = [
     (date(2025, 12, 1), date(2025, 12, 31), "2025-12"),
     (date(2026, 1, 1), date(2026, 1, 31), "2026-01"),
     (date(2026, 2, 1), date(2026, 2, 28), "2026-02"),
+    (date(2026, 3, 1), date(2026, 3, 31), "2026-03"),
 ]
 
 SA_HOLIDAYS = {
@@ -40,7 +41,7 @@ SA_HOLIDAYS = {
     date(2025, 12, 25),  # Christmas
     date(2025, 12, 26),  # Day of Goodwill
     date(2026, 1, 1),    # New Year's Day
-    date(2026, 2, 1),    # (none, but keep for weekend checks)
+    date(2026, 3, 21),   # Human Rights Day
 }
 
 # --South African Name Data ------------------------------------
@@ -263,6 +264,25 @@ with engine.begin() as conn:
         print(f"  -> Created organization (org_id={org_id})")
 
 
+# --Phase 1.5: Fix NULL booleans for ALL users (production safety) --
+print("\n[1.5/10] Fixing NULL boolean fields on users table...")
+
+with engine.begin() as conn:
+    conn.execute(text(
+        "UPDATE users SET is_phone_verified = false WHERE is_phone_verified IS NULL"
+    ))
+    conn.execute(text(
+        "UPDATE users SET is_email_verified = false WHERE is_email_verified IS NULL"
+    ))
+    conn.execute(text(
+        "UPDATE users SET is_active = true WHERE is_active IS NULL"
+    ))
+    conn.execute(text(
+        "UPDATE users SET is_owner = false WHERE is_owner IS NULL"
+    ))
+    print("  -> Fixed NULL boolean fields")
+
+
 # --Phase 2: Admin User ---------------------------------------
 print("\n[2/10] Creating admin user...")
 
@@ -277,12 +297,12 @@ with engine.begin() as conn:
             INSERT INTO users (
                 username, email, hashed_password, full_name, phone,
                 role, org_id, is_owner, is_active, is_email_verified,
-                failed_login_attempts
+                is_phone_verified, failed_login_attempts
             ) VALUES (
                 'mafoko_admin', 'admin@mafokosecurity.co.za', :pwd,
                 'Thabo Mafoko', '0123625001',
                 'COMPANY_ADMIN', :oid, true, true, true,
-                0
+                false, 0
             )
         """), {"pwd": pwd_hash, "oid": org_id})
         print("  -> Created admin user (mafoko_admin / Mafoko2026!)")
@@ -308,10 +328,10 @@ with engine.begin() as conn:
                 INSERT INTO users (
                     username, email, hashed_password, full_name,
                     role, org_id, is_owner, is_active, is_email_verified,
-                    failed_login_attempts
+                    is_phone_verified, failed_login_attempts
                 ) VALUES (
                     :uname, :email, :pwd, :full_name,
-                    :role, :oid, :is_owner, true, true, 0
+                    :role, :oid, :is_owner, true, true, false, 0
                 )
             """), {
                 "uname": u["username"], "email": u["email"],

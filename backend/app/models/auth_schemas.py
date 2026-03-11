@@ -57,12 +57,12 @@ class UserResponse(BaseModel):
     full_name: Optional[str] = None
     phone: Optional[str] = None
     role: UserRole
-    is_active: bool
-    is_owner: bool = False
-    is_superadmin: bool = False
+    is_active: Optional[bool] = True
+    is_owner: Optional[bool] = False
+    is_superadmin: Optional[bool] = False
     org_id: Optional[int] = None
-    is_email_verified: bool = False
-    is_phone_verified: bool = False
+    is_email_verified: Optional[bool] = False
+    is_phone_verified: Optional[bool] = False
     managed_client_ids: Optional[List[int]] = None
     created_at: Optional[datetime] = None
     last_login: Optional[datetime] = None

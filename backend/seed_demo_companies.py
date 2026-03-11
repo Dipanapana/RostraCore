@@ -363,10 +363,10 @@ def seed_company(eng, config):
                     INSERT INTO users (
                         username, email, hashed_password, full_name,
                         role, org_id, is_owner, is_active, is_email_verified,
-                        failed_login_attempts
+                        is_phone_verified, failed_login_attempts
                     ) VALUES (
                         :uname, :email, :pwd, :full_name,
-                        :role, :oid, :is_owner, true, true, 0
+                        :role, :oid, :is_owner, true, true, false, 0
                     )
                 """), {
                     "uname": u["username"], "email": u["email"],
