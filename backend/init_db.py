@@ -111,7 +111,7 @@ def init_database():
         with engine.connect() as conn:
             # Set is_owner = TRUE for admin users so they keep full access
             try:
-                result = conn.execute(_t("UPDATE users SET is_owner = TRUE WHERE role = 'admin' AND is_owner = FALSE"))
+                result = conn.execute(_t("UPDATE users SET is_owner = TRUE WHERE role IN ('admin', 'ADMIN') AND is_owner = FALSE"))
                 conn.commit()
                 print(f"[init_db] Set is_owner=TRUE for admin users (affected: {result.rowcount})")
             except Exception as e:
@@ -119,7 +119,7 @@ def init_database():
 
             # Also set is_owner = TRUE for company_admin users
             try:
-                result = conn.execute(_t("UPDATE users SET is_owner = TRUE WHERE role = 'company_admin' AND is_owner = FALSE"))
+                result = conn.execute(_t("UPDATE users SET is_owner = TRUE WHERE role IN ('company_admin', 'COMPANY_ADMIN') AND is_owner = FALSE"))
                 conn.commit()
                 print(f"[init_db] Set is_owner=TRUE for company_admin users (affected: {result.rowcount})")
             except Exception as e:

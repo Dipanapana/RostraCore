@@ -36,8 +36,8 @@ interface AssignmentFromApi {
   shift_id: number
   employee_id: number
   status: string
-  cost_regular: number
-  cost_overtime: number
+  regular_pay: number
+  overtime_pay: number
 }
 
 interface Employee {
@@ -199,7 +199,7 @@ export default function RosterBoardPage() {
                   assignment_id: a.assignment_id,
                   employee_id: a.employee_id,
                   employee_name: emp ? `${emp.first_name} ${emp.last_name}` : `Employee #${a.employee_id}`,
-                  cost: (a.cost_regular || 0) + (a.cost_overtime || 0),
+                  cost: (a.regular_pay || 0) + (a.overtime_pay || 0),
                 }
               }),
           }
