@@ -735,76 +735,73 @@ for month_start, month_end, period_label in MONTHS:
         batch_emps = employees[batch_start:batch_start+20]
         with engine.begin() as conn:
             for emp in batch_emps:
-            result = conn.execute(text("""
-                SELECT
-                    COALESCE(SUM(sa.regular_hours), 0) as total_hours,
-                    COALESCE(SUM(sa.overtime_hours), 0) as ot_hours,
-                    COALESCE(SUM(sa.total_cost), 0) as gross
-                FROM shift_assignments sa
-                JOIN shifts s ON s.shift_id = sa.shift_id
-                WHERE sa.employee_id = :eid
-                  AND s.start_time >= :start
-                  AND s.start_time < :end
-            """), {
-                "eid": emp["id"],
-                "start": datetime.combine(month_start, time(0, 0)),
-                "end": datetime.combine(month_end + timedelta(days=1), time(0, 0)),
-            })
-            row = result.fetchone()
-            total_hours = float(row[0])
-            ot_hours = float(row[1])
-            gross_pay = float(row[2])
+                result = conn.execute(text("""
+                    SELECT
+                        COALESCE(SUM(sa.regular_hours), 0) as total_hours,
+                        COALESCE(SUM(sa.overtime_hours), 0) as ot_hours,
+                        COALESCE(SUM(sa.total_cost), 0) as gross
+                    FROM shift_assignments sa
+                    JOIN shifts s ON s.shift_id = sa.shift_id
+                    WHERE sa.employee_id = :eid
+                      AND s.start_time >= :start
+                      AND s.start_time < :end
+                """), {
+                    "eid": emp["id"],
+                    "start": datetime.combine(month_start, time(0, 0)),
+                    "end": datetime.combine(month_end + timedelta(days=1), time(0, 0)),
+                })
+                row = result.fetchone()
+                total_hours = float(row[0])
+                ot_hours = float(row[1])
+                gross_pay = float(row[2])
 
-            if total_hours == 0:
-                continue  # Employee didn't work this month
+                if total_hours == 0:
+                    continue  # Employee didn't work this month
 
-            # Calculate deductions (simplified SA tax)
-            annual_gross = gross_pay * 12
-            # UIF: 1% capped at R177.12
-            uif = min(gross_pay * 0.01, 177.12)
-            # PAYE: simplified bracket calculation
-            if annual_gross <= 95750:
-                paye_annual = 0
-            elif annual_gross <= 237100:
-                paye_annual = (annual_gross - 95750) * 0.18
-            elif annual_gross <= 370500:
-                paye_annual = 25443 + (annual_gross - 237100) * 0.26
-            elif annual_gross <= 512800:
-                paye_annual = 60127 + (annual_gross - 370500) * 0.31
-            else:
-                paye_annual = 104240 + (annual_gross - 512800) * 0.36
+                # Calculate deductions (simplified SA tax)
+                annual_gross = gross_pay * 12
+                uif = min(gross_pay * 0.01, 177.12)
+                if annual_gross <= 95750:
+                    paye_annual = 0
+                elif annual_gross <= 237100:
+                    paye_annual = (annual_gross - 95750) * 0.18
+                elif annual_gross <= 370500:
+                    paye_annual = 25443 + (annual_gross - 237100) * 0.26
+                elif annual_gross <= 512800:
+                    paye_annual = 60127 + (annual_gross - 370500) * 0.31
+                else:
+                    paye_annual = 104240 + (annual_gross - 512800) * 0.36
 
-            # Primary rebate
-            paye_annual = max(0, paye_annual - 17235)
-            paye_monthly = paye_annual / 12
+                paye_annual = max(0, paye_annual - 17235)
+                paye_monthly = paye_annual / 12
 
-            expenses = uif + paye_monthly
-            net_pay = gross_pay - expenses
+                expenses = uif + paye_monthly
+                net_pay = gross_pay - expenses
 
-            paid_at = None
-            if status == "paid":
-                paid_at = datetime.combine(month_end, time(12, 0)) + timedelta(days=5)
+                paid_at = None
+                if status == "paid":
+                    paid_at = datetime.combine(month_end, time(12, 0)) + timedelta(days=5)
 
-            conn.execute(text("""
-                INSERT INTO payroll_summary (
-                    org_id, employee_id, period_start, period_end,
-                    total_hours, overtime_hours, gross_pay,
-                    expenses_total, net_pay, status, paid_at
-                ) VALUES (
-                    :oid, :eid, :start, :end,
-                    :hours, :ot, :gross,
-                    :expenses, :net, :status, :paid
-                )
-            """), {
-                "oid": org_id, "eid": emp["id"],
-                "start": month_start, "end": month_end,
-                "hours": total_hours, "ot": ot_hours,
-                "gross": round(gross_pay, 2),
-                "expenses": round(expenses, 2),
-                "net": round(net_pay, 2),
-                "status": status, "paid": paid_at,
-            })
-            payroll_count += 1
+                conn.execute(text("""
+                    INSERT INTO payroll_summary (
+                        org_id, employee_id, period_start, period_end,
+                        total_hours, overtime_hours, gross_pay,
+                        expenses_total, net_pay, status, paid_at
+                    ) VALUES (
+                        :oid, :eid, :start, :end,
+                        :hours, :ot, :gross,
+                        :expenses, :net, :status, :paid
+                    )
+                """), {
+                    "oid": org_id, "eid": emp["id"],
+                    "start": month_start, "end": month_end,
+                    "hours": total_hours, "ot": ot_hours,
+                    "gross": round(gross_pay, 2),
+                    "expenses": round(expenses, 2),
+                    "net": round(net_pay, 2),
+                    "status": status, "paid": paid_at,
+                })
+                payroll_count += 1
 
     print(f"  -> {period_label}: Created payroll records (status={status})")
 
