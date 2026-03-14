@@ -167,32 +167,81 @@ const ADMIN_ROLES: UserRole[] = ["admin", "company_admin", "superadmin"];
 // Remove keys from this set to restore items to the sidebar
 // ---------------------------------------------------------------------------
 const HIDDEN_NAV_KEYS = new Set([
-  // Mobile-dependent (require mobile app/hardware)
+  // ── MVP: Hide everything not critical for first installation ────────
+  // Reveal incrementally as features are validated and client needs grow.
+  //
+  // VISIBLE: dashboard, employees, certifications, generate-roster,
+  //   roster-board, shifts, time-leave, attendance, clients, payroll,
+  //   my-payslips, universal-import, settings, invoices, reports,
+  //   availability, billing/subscription
+
+  // Standalone features (not ready)
+  "ops-summary",
+  "emergency",
   "lone-worker",
-  "geofencing",
-  "visitors",
-  "keys",
-  "shift-handovers",
-  "occurrence-book",
-  "assets",
-  // Placeholder analytics (no backend data yet)
+  "messaging",
+  "portal",
+  "command-center",
+
+  // Workforce — non-essential
+  "guard-setup",
+  "cert-alerts",
+  "training",
+  "skills-matrix",
+  "disciplinary",
+  "emergency-contacts",
+  "iod",
+  "guard-grades",
+  "deployments",
+  "deployment-map",
+  "roster-templates",
+  "roster-upload",
+  "posting-alerts",
+  "exceptions",
+  "coverage",
+  "shift-swaps",
+  "spare-pool",
+  "compliance",
+  "psira-compliance",
+  "popia-compliance",
+  "guard-restrictions",
+  "overtime",
+  "attendance-analytics",
+  "availability-heatmap",
   "hr-analytics",
   "turnover",
   "performance-dashboard",
   "workforce-compliance",
-  "availability-heatmap",
+
+  // Operations — non-essential
+  "client-requests",
   "contract-renewals",
   "client-satisfaction",
+  "sites",
   "site-risk",
-  "incident-analytics",
+  "patrols",
   "patrol-analytics",
+  "inspections",
+  "incidents",
+  "incident-analytics",
+  "assets",
+  "firearms",
+  "geofencing",
+  "visitors",
+  "keys",
+  "comm-log",
+  "shift-handovers",
+  "post-orders",
+  "forms",
+  "occurrence-book",
+  "documents",
+  "fleet",
+  "daily-activity",
+  "announcements",
+  "maintenance",
+
+  // Finance — non-essential
   "shift-costs",
-  // Placeholder standalone features (no backend integration yet)
-  "emergency",
-  "messaging",
-  "command-center",
-  "portal",
-  "ops-summary",
 ]);
 
 const NAV_ENTRIES: NavEntry[] = [
@@ -409,6 +458,14 @@ const NAV_ENTRIES: NavEntry[] = [
         icon: FileSpreadsheet,
         roles: MANAGEMENT_ROLES,
         permissionKey: "roster.view",
+      },
+      {
+        key: "universal-import",
+        label: "Import Data",
+        href: "/import",
+        icon: Upload,
+        roles: MANAGEMENT_ROLES,
+        permissionKey: "employees.view",
       },
       {
         key: "posting-alerts",
@@ -845,6 +902,20 @@ const NAV_ENTRIES: NavEntry[] = [
         label: "Payroll",
         href: "/payroll",
         icon: Banknote,
+        roles: [
+          "admin",
+          "company_admin",
+          "finance",
+          "guard",
+          "superadmin",
+        ],
+        permissionKey: "payroll.view",
+      },
+      {
+        key: "my-payslips",
+        label: "My Payslips",
+        href: "/my-payslips",
+        icon: Receipt,
         roles: [
           "admin",
           "company_admin",

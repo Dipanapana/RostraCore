@@ -12,6 +12,7 @@ import os
 import sys
 import random
 import hashlib
+import time as _time
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
@@ -26,7 +27,10 @@ DB_URL = os.environ.get(
 if DB_URL.startswith("postgres://"):
     DB_URL = DB_URL.replace("postgres://", "postgresql://", 1)
 
-engine = create_engine(DB_URL, pool_pre_ping=True, pool_recycle=60)
+engine = create_engine(
+    DB_URL, pool_pre_ping=True, pool_recycle=30,
+    connect_args={"connect_timeout": 10, "options": "-c statement_timeout=30000"},
+)
 
 # --Date ranges ------------------------------------------------
 MONTHS = [
@@ -640,17 +644,29 @@ for month_start, month_end, period_label in MONTHS:
                 })
             current_date += timedelta(days=1)
 
-        # Insert shifts (one transaction per site)
+        # Insert shifts (batches of 30 per transaction with retry)
         shift_ids = []
-        with engine.begin() as conn:
-            for row in shift_rows:
-                r = conn.execute(text("""
-                    INSERT INTO shifts (org_id, site_id, start_time, end_time,
-                        required_staff, status, is_overtime, includes_meal_break, meal_break_duration_minutes)
-                    VALUES (:oid, :sid, :start, :end, :staff, 'COMPLETED', false, true, 60)
-                    RETURNING shift_id
-                """), row)
-                shift_ids.append((r.fetchone()[0], row["shift_type"], row["cur_date"]))
+        SHIFT_CHUNK = 30
+        for si in range(0, len(shift_rows), SHIFT_CHUNK):
+            s_chunk = shift_rows[si:si+SHIFT_CHUNK]
+            for attempt in range(3):
+                try:
+                    with engine.begin() as conn:
+                        for row in s_chunk:
+                            r = conn.execute(text("""
+                                INSERT INTO shifts (org_id, site_id, start_time, end_time,
+                                    required_staff, status, is_overtime, includes_meal_break, meal_break_duration_minutes)
+                                VALUES (:oid, :sid, :start, :end, :staff, 'COMPLETED', false, true, 60)
+                                RETURNING shift_id
+                            """), row)
+                            shift_ids.append((r.fetchone()[0], row["shift_type"], row["cur_date"]))
+                    break
+                except Exception as e:
+                    if attempt < 2:
+                        print(f"    Shift retry {attempt+1}: {str(e)[:60]}")
+                        _time.sleep(2)
+                    else:
+                        raise
         total_shifts += len(shift_ids)
 
         # Build assignments in memory
@@ -683,24 +699,33 @@ for month_start, month_end, period_label in MONTHS:
                     "assigned": datetime.combine(month_start, time(8, 0)),
                 })
 
-        # Insert assignments in batches of 100 (separate transactions)
-        CHUNK = 100
+        # Insert assignments in batches of 50 with retry (Railway proxy drops)
+        CHUNK = 50
         for i in range(0, len(assignment_batch), CHUNK):
             chunk = assignment_batch[i:i+CHUNK]
-            with engine.begin() as conn:
-                for row in chunk:
-                    conn.execute(text("""
-                        INSERT INTO shift_assignments (
-                            shift_id, employee_id, roster_id, status,
-                            regular_hours, overtime_hours, regular_pay, overtime_pay,
-                            night_premium, weekend_premium, sunday_premium, holiday_premium,
-                            travel_reimbursement, total_cost, premium_type,
-                            is_confirmed, checked_in, checked_out, assigned_at)
-                        VALUES (:sid, :eid, :rid, 'completed',
-                            :reg_h, :ot_h, :reg_pay, 0,
-                            :night, :weekend, :sunday, :holiday,
-                            0, :total, :ptype, true, true, true, :assigned)
-                    """), row)
+            for attempt in range(3):
+                try:
+                    with engine.begin() as conn:
+                        for row in chunk:
+                            conn.execute(text("""
+                                INSERT INTO shift_assignments (
+                                    shift_id, employee_id, roster_id, status,
+                                    regular_hours, overtime_hours, regular_pay, overtime_pay,
+                                    night_premium, weekend_premium, sunday_premium, holiday_premium,
+                                    travel_reimbursement, total_cost, premium_type,
+                                    is_confirmed, checked_in, checked_out, assigned_at)
+                                VALUES (:sid, :eid, :rid, 'completed',
+                                    :reg_h, :ot_h, :reg_pay, 0,
+                                    :night, :weekend, :sunday, :holiday,
+                                    0, :total, :ptype, true, true, true, :assigned)
+                            """), row)
+                    break  # success
+                except Exception as e:
+                    if attempt < 2:
+                        print(f"    Retry {attempt+1} (batch {i//CHUNK}): {str(e)[:60]}")
+                        _time.sleep(2)
+                    else:
+                        raise
         total_assignments += len(assignment_batch)
 
         # Update roster stats (tiny transaction)
