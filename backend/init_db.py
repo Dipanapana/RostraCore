@@ -146,4 +146,6 @@ def init_database():
 
 if __name__ == "__main__":
     success = init_database()
-    sys.exit(0 if success else 1)
+    if not success:
+        print("[init_db] WARNING: DB init failed — uvicorn will start anyway. Tables may already exist.")
+    sys.exit(0)  # Always exit 0 so Railway starts uvicorn even if DB is temporarily unavailable
