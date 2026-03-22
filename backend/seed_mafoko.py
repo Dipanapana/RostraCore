@@ -209,45 +209,43 @@ with engine.begin() as conn:
         "SELECT org_id FROM organizations WHERE org_code = 'MAFOKO'"
     )).fetchone()
 
-    if existing:
-        org_id = existing[0]
-        print(f"  -> Organization already exists (org_id={org_id}), reusing")
-        # Delete all existing data for clean re-seed (FK-safe ordering)
-        print("  -> Cleaning existing data...")
-        # Tables without org_id - delete via JOINs first
-        conn.execute(text(
-            "DELETE FROM payment_transactions WHERE org_id = :oid"
-        ), {"oid": org_id})
-        conn.execute(text("""
-            DELETE FROM invoice_line_items WHERE invoice_id IN
-            (SELECT invoice_id FROM client_invoices WHERE org_id = :oid)
-        """), {"oid": org_id})
-        conn.execute(text("""
-            DELETE FROM shift_assignments WHERE shift_id IN
-            (SELECT shift_id FROM shifts WHERE org_id = :oid)
-        """), {"oid": org_id})
-        conn.execute(text("""
-            DELETE FROM certifications WHERE employee_id IN
-            (SELECT employee_id FROM employees WHERE org_id = :oid)
-        """), {"oid": org_id})
-        # Tables with org_id - direct delete
-        for table in [
-            "client_invoices", "payroll_summary", "shifts", "rosters",
-            "contract_values", "employees", "sites", "clients",
-        ]:
-            conn.execute(text(f"DELETE FROM {table} WHERE org_id = :oid"), {"oid": org_id})
-        # Delete refresh tokens + users (FK-safe)
-        conn.execute(text("""
-            DELETE FROM refresh_tokens WHERE user_id IN
-            (SELECT user_id FROM users WHERE org_id = :oid AND username IN
-            ('mafoko_admin', 'mafoko_scheduler', 'mafoko_finance', 'mafoko_guard'))
-        """), {"oid": org_id})
-        conn.execute(text(
-            "DELETE FROM users WHERE org_id = :oid AND username IN "
-            "('mafoko_admin', 'mafoko_scheduler', 'mafoko_finance', 'mafoko_guard')"
-        ), {"oid": org_id})
-        print("  -> Cleaned existing data")
-    else:
+if existing:
+    org_id = existing[0]
+    print(f"  -> Organization already exists (org_id={org_id}), reusing")
+    print("  -> Cleaning existing data (small transactions)...")
+
+    # Each cleanup step in its own transaction to avoid Railway timeouts
+    cleanup_queries = [
+        ("payment_transactions", "DELETE FROM payment_transactions WHERE org_id = :oid"),
+        ("invoice_line_items", "DELETE FROM invoice_line_items WHERE invoice_id IN (SELECT invoice_id FROM client_invoices WHERE org_id = :oid)"),
+        ("shift_assignments", "DELETE FROM shift_assignments WHERE shift_id IN (SELECT shift_id FROM shifts WHERE org_id = :oid)"),
+        ("certifications", "DELETE FROM certifications WHERE employee_id IN (SELECT employee_id FROM employees WHERE org_id = :oid)"),
+        ("client_invoices", "DELETE FROM client_invoices WHERE org_id = :oid"),
+        ("payroll_summary", "DELETE FROM payroll_summary WHERE org_id = :oid"),
+        ("shifts", "DELETE FROM shifts WHERE org_id = :oid"),
+        ("rosters", "DELETE FROM rosters WHERE org_id = :oid"),
+        ("contract_values", "DELETE FROM contract_values WHERE org_id = :oid"),
+        ("employees", "DELETE FROM employees WHERE org_id = :oid"),
+        ("sites", "DELETE FROM sites WHERE org_id = :oid"),
+        ("clients", "DELETE FROM clients WHERE org_id = :oid"),
+        ("refresh_tokens", "DELETE FROM refresh_tokens WHERE user_id IN (SELECT user_id FROM users WHERE org_id = :oid AND username IN ('mafoko_admin', 'mafoko_scheduler', 'mafoko_finance', 'mafoko_guard'))"),
+        ("mafoko_users", "DELETE FROM users WHERE org_id = :oid AND username IN ('mafoko_admin', 'mafoko_scheduler', 'mafoko_finance', 'mafoko_guard')"),
+    ]
+    for label, sql in cleanup_queries:
+        for attempt in range(3):
+            try:
+                with engine.begin() as conn:
+                    conn.execute(text(sql), {"oid": org_id})
+                break
+            except Exception as e:
+                if attempt < 2:
+                    print(f"    Cleanup retry ({label}): {str(e)[:60]}")
+                    _time.sleep(2)
+                else:
+                    print(f"    WARNING: cleanup failed for {label}: {str(e)[:80]}")
+    print("  -> Cleaned existing data")
+else:
+    with engine.begin() as conn:
         result = conn.execute(text("""
             INSERT INTO organizations (
                 org_code, company_name, subscription_tier, subscription_status,
